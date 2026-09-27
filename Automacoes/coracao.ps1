@@ -32,9 +32,13 @@ function Achar-Python {
     }
     return $null
 }
+# Pen drive / HD externo = qualquer unidade que nao seja a do Windows, com o projeto na raiz ou em KARUZO
 function Pendrive-Com-Projeto {
-    Get-Volume | Where-Object { $_.DriveType -eq 'Removable' -and $_.DriveLetter -and (Test-Path "$($_.DriveLetter):\Solicitacoes NF\.git") } |
-        ForEach-Object { "$($_.DriveLetter):\Solicitacoes NF" } | Select-Object -First 1
+    Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -ne "$env:SystemDrive\" } | ForEach-Object {
+        foreach ($p in @((Join-Path $_.Root "KARUZO\Solicitacoes NF"), (Join-Path $_.Root "Solicitacoes NF"))) {
+            if (Test-Path (Join-Path $p ".git")) { $p }
+        }
+    } | Select-Object -First 1
 }
 
 Write-Host "==================== SOLICITACOES NF - INSTALAR / ATUALIZAR ====================" -ForegroundColor Cyan
@@ -74,8 +78,7 @@ if ($temGit) { Ok (git --version) } else { Aviso "Sem Git: a instalacao funciona
 
 # 3. Projeto no lugar certo (rodando do pen drive -> vai pra Area de Trabalho) + versao nova
 Passo 3 "Projeto"
-$raiz = [IO.Path]::GetPathRoot($pasta)
-$noPendrive = (Get-Volume | Where-Object { $_.DriveType -eq 'Removable' -and "$($_.DriveLetter):\" -eq $raiz })
+$noPendrive = [IO.Path]::GetPathRoot($pasta) -ne "$env:SystemDrive\"
 if ($noPendrive) {
     $destino = Join-Path ([Environment]::GetFolderPath("Desktop")) "Solicitacoes NF"
     if (Test-Path (Join-Path $destino ".git")) {
