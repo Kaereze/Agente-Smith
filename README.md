@@ -64,4 +64,4 @@ Planilhas precisam estar compartilhadas com o `client_email` da chave (Central: 
 2. `git clone <link do repositório>` numa pasta
 3. Duplo clique em **`Bat\configurar_este_pc.bat`**: instala, pede a chave do Google, identifica o PC e agenda
    (conferente em todo PC; cópia + envio **só** no PC do `agente_principal`)
-4. Atualizar depois: **`Battualizar.bat`**
+4. Atualizar depois: **`Bat\atualizar.bat`**
