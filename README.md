@@ -32,6 +32,8 @@ src/
   cota_envio.py          cota do servidor (KingHost 250/h)
   tratamento.py          datas, CPF/CNPJ, CEP
   lock_execucao.py       uma execução por vez
+  identidade.py          quem é este PC (contas do Outlook × Cadastro_Hoteis)
+  robo_antigo.py         convivência com o Apps Script antigo
   arquivos.py · config.py · log_util.py · rede_util.py · modelos.py · console_utf8.py
 apps_script/             menu da Planilha Central (colar no Apps Script)
 Bat/                     atalhos (.bat) · Automacoes/ agendamentos (.ps1)
@@ -60,6 +62,6 @@ Planilhas precisam estar compartilhadas com o `client_email` da chave (Central: 
 
 1. `git clone <link do repositório>` e depois `Bat\instalar.bat`
 2. Chave do Google em `%APPDATA%\SolicitacoesNF\chave-api.json`
-3. Sem `config.local.json` o PC fica como **conferente** (só marca NF enviada/Tratativa). **Só um PC** pode ser `"papel": "principal"`.
+3. O PC se identifica sozinho pelas contas do Outlook × Cadastro_Hoteis (`src/identidade.py`): o do `agente_principal` (João) copia, envia e atende o menu; os outros só marcam NF enviada/Tratativa. Forçar à mão: `config.local.json` com `{"papel": "conferente"}`.
 4. Conferente sozinho ao ligar o Windows: `Automacoes\agendar_conferente.ps1`
 5. Atualizar: `git pull`

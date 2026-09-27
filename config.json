@@ -64,6 +64,8 @@
     "email_hotel": "B",
     "agente": "C"
   },
+  "_ajuda_agente_principal": "PC do agente principal (detectado pelas contas do Outlook) copia, envia e atende o menu; os outros só conferem",
+  "agente_principal": "João",
   "_ajuda_agentes": "E-mail por agente (só se destino_envio = agente)",
   "agentes": {
     "João": "",

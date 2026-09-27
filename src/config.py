@@ -9,6 +9,7 @@ CAMINHO_CONFIG_LOCAL = PASTA_PROJETO / "config.local.json"   # por PC, fora do g
 PASTA_ESTADO = PASTA_PROJETO / "estado"
 PASTA_SIMULACAO = PASTA_PROJETO / "saida_simulacao"
 PASTA_LOGS = PASTA_PROJETO / "logs"
+CAMINHO_MAQUINA = PASTA_ESTADO / "maquina.json"   # quem é este PC (identidade.py)
 
 MODOS_VALIDOS = ("SIMULACAO", "TESTE", "PRODUCAO")
 
@@ -28,9 +29,28 @@ def carregar_config(caminho=CAMINHO_CONFIG):
                            f"Confira vírgulas e aspas perto dessa linha.")
     if Path(caminho) == CAMINHO_CONFIG:
         _mesclar(cfg, _ler_local())
-    cfg.setdefault("papel", "conferente")   # sem config.local.json = só conferente (nunca envia)
+    if "papel" not in cfg:
+        cfg["papel"] = _papel_pela_identidade(cfg)
     validar_config(cfg)
     return cfg
+
+
+def _papel_pela_identidade(cfg):
+    """principal = PC do agente_principal (detectado pelas contas do Outlook); resto = conferente."""
+    try:
+        with open(CAMINHO_MAQUINA, "r", encoding="utf-8") as f:
+            maquina = json.load(f)
+    except (FileNotFoundError, ValueError):
+        return "conferente"
+    agente, principal = maquina.get("agente"), cfg.get("agente_principal")
+    if agente and principal and not maquina.get("conflito") and _norm(agente) == _norm(principal):
+        return "principal"
+    return "conferente"
+
+
+def _norm(t):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", str(t)) if unicodedata.category(c) != "Mn").strip().lower()
 
 
 def _ler_local():

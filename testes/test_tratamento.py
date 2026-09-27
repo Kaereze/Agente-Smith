@@ -73,7 +73,26 @@ def test_pc_sem_config_local_nunca_envia(tmp_path, monkeypatch):
     cfg_arq.write_text(json.dumps(base), encoding="utf-8")
     monkeypatch.setattr(config, "CAMINHO_CONFIG", cfg_arq)
     monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "config.local.json")
+    monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
     assert not config.e_principal(config.carregar_config(cfg_arq))
     (tmp_path / "config.local.json").write_text('{"papel": "principal", "outlook": {"tentativas_conexao": 2}}', encoding="utf-8")
     cfg = config.carregar_config(cfg_arq)
     assert config.e_principal(cfg) and cfg["outlook"]["tentativas_conexao"] == 2
+
+
+def test_pc_do_agente_principal_vira_principal_sozinho(tmp_path, monkeypatch):
+    import json
+    import config
+    monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "nao_existe.json")
+    monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
+    cfg_arq = tmp_path / "config.json"
+    base = json.load(open(config.CAMINHO_CONFIG, encoding="utf-8"))
+    base["agente_principal"] = "João"
+    cfg_arq.write_text(json.dumps(base), encoding="utf-8")
+    monkeypatch.setattr(config, "CAMINHO_CONFIG", cfg_arq)
+    (tmp_path / "maquina.json").write_text('{"agente": "Joao"}', encoding="utf-8")
+    assert config.carregar_config(cfg_arq)["papel"] == "principal"
+    (tmp_path / "maquina.json").write_text('{"agente": "Clara"}', encoding="utf-8")
+    assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+    (tmp_path / "maquina.json").write_text('{"agente": "João", "conflito": "trocou"}', encoding="utf-8")
+    assert config.carregar_config(cfg_arq)["papel"] == "conferente"

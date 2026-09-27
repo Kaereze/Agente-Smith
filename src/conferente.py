@@ -417,6 +417,25 @@ def _agora_txt():
     return datetime.datetime.now().strftime("%d/%m %H:%M")
 
 
+IDENTIDADE_SEGUNDOS = 6 * 60 * 60
+
+
+def _identificar(cfg):
+    try:
+        import pythoncom
+        import win32com.client
+        import identidade
+        from config import caminho_chave_google
+        from sheets import BackendGoogle
+        pythoncom.CoInitialize()
+        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        dados = identidade.detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
+        papel = carregar_config()["papel"]
+        logger.info(f"🪪 Este PC: {dados.get('agente') or '?'} → papel {papel}")
+    except Exception as e:
+        logger.warning(f"⚠️ Não consegui identificar este PC agora ({e}) — mantenho o que já sabia.")
+
+
 class _SoConferente(Exception):
     """PC conferente: não fala com a aba Status."""
 
@@ -578,13 +597,19 @@ def main():
                 f"pedidos do menu ⚡ Ativar Claudio a cada {TICK_SEGUNDOS}s).")
     categorias_ok = False
     backend = None
-    proxima_conferencia = proximo_sinal = 0.0
+    proxima_conferencia = proximo_sinal = proxima_identidade = 0.0
     while True:
         agora = time.monotonic()
         try:
             cfg = carregar_config()  # pega mudanças no config.json sem precisar reiniciar
         except ErroDeConfig as e:
             logger.error(f"❌ {e}")
+
+        # Quem é este PC (contas do Outlook × Cadastro_Hoteis) — ao ligar e a cada 6 h
+        if agora >= proxima_identidade:
+            _identificar(cfg)
+            proxima_identidade = agora + IDENTIDADE_SEGUNDOS
+            cfg = carregar_config()
 
         # Planilha: pedidos do menu + sinal de vida (só no PC principal)
         try:
