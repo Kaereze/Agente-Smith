@@ -1,0 +1,13 @@
+# ambiente e cache
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# dados do robô (hóspedes, logs) — nunca sobem
+estado/
+logs/
+saida_simulacao/
+FALHA_CRITICA.txt
+*.tmp
+# config só deste PC (papel principal/conferente)
+config.local.json

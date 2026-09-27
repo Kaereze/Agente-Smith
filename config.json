@@ -1,0 +1,154 @@
+{
+  "_LEIA_ME": "Configuração do robô. Chaves com _ são só anotação.",
+  "_ajuda_modo": "PRODUCAO envia · TESTE só pro email_teste · SIMULACAO não envia",
+  "modo": "PRODUCAO",
+  "email_teste": "notafiscal@redeandradeondina.com.br",
+  "_ajuda_conta_remetente": "Conta que envia quando a caixa do hotel não está neste Outlook",
+  "conta_remetente": "notafiscal@redeandradeondina.com.br",
+  "_ajuda_caminho_chave_google": "Chave da conta de serviço do Google",
+  "caminho_chave_google": "%APPDATA%\\SolicitacoesNF\\chave-api.json",
+  "_ajuda_planilha_central_id": "ID da Planilha Central",
+  "planilha_central_id": "1OT-ypZAbRMoil27pS4YgzlgynibASr0LYfwhQ8D1_Q8",
+  "aba_cadastro_hoteis": "Cadastro_Hoteis",
+  "aba_status": "Status",
+  "_ajuda_limite": "Máx. de solicitações por e-mail",
+  "limite_solicitacoes_por_email": 40,
+  "_ajuda_formato_data_planilha": "Formato padrão de data (cada aba é detectada sozinha)",
+  "formato_data_planilha": "americano",
+  "outlook": {
+    "_ajuda": "Espera e tentativas do Outlook",
+    "tentativas_conexao": 5,
+    "espera_entre_tentativas_segundos": 60,
+    "espera_confirmacao_envio_segundos": 180
+  },
+  "colunas": {
+    "_ajuda": "Nomes das colunas",
+    "enviado": "Enviado",
+    "carimbo": "Carimbo de data/hora",
+    "_ajuda_listas": "Lista = aceita qualquer um desses nomes",
+    "email_hospede": [
+      "Endereço de e-mail",
+      "E-mail"
+    ],
+    "nome_hospede": [
+      "Nome do Hóspede",
+      "Nome Tomador",
+      "Nome do Titular da Reserva"
+    ],
+    "reserva_no_tomador": "Reserva no Nome do Tomador",
+    "nome_pessoa_fisica": "Nome Pessoa Física",
+    "nota_dividida": "Nota Dividida",
+    "dividida_quantas": [
+      "Dividida em quantas vezes",
+      "Dividida em quantas"
+    ]
+  },
+  "_ajuda_colunas_documento": "Colunas de CPF/CNPJ",
+  "colunas_documento": {
+    "Documento Tomador": "cpf_cnpj"
+  },
+  "_ajuda_colunas_ocultas": "Colunas que não vão no e-mail",
+  "colunas_ocultas": [
+    "Enviado",
+    "IMPORTANTE",
+    "Carimbo de data/hora",
+    "Termos de aceite",
+    "Avaliação do Formulário de Notas Fiscais",
+    "Preenchimento intuitivo",
+    "Ritmo de preenchimento",
+    "Sugestão de melhoria no formulário"
+  ],
+  "_ajuda_cadastro_colunas": "Cadastro_Hoteis: A hotel · B e-mail · C agente",
+  "cadastro_colunas": {
+    "hotel": "A",
+    "email_hotel": "B",
+    "agente": "C"
+  },
+  "_ajuda_agentes": "E-mail por agente (só se destino_envio = agente)",
+  "agentes": {
+    "João": "",
+    "Cristian": "notafiscal@redeandradedunashotel.com.br",
+    "Clara": "notafiscal@redeandrademinihotel.com.br",
+    "Bernardo": ""
+  },
+  "_ajuda_abas_respostas": "Marcador das abas de hotel na Central",
+  "marcador_aba_respostas": "(respostas)",
+  "_ajuda_abas_ignoradas": "Abas de respostas que o robô NUNCA lê (testes).",
+  "abas_ignoradas": [
+    "Solicitação Nota Fiscal (TesteEdu) (respostas)"
+  ],
+  "_ajuda_apelidos_hoteis": "Nome na aba/planilha -> nome no Cadastro_Hoteis",
+  "apelidos_hoteis": {
+    "Governador Valadares": "GV",
+    "Estrela Praia": "ESTRELA DALVA PRAIA",
+    "Lg Inn": "L GINN",
+    "Mirante": "MIRANTE FOZ",
+    "Barra Vento": "BARRAVENTO",
+    "CWB": "NOVO CWB",
+    "Canadal": "CANADA",
+    "GOIÂNIA": "GOIÂNIA CENTRO",
+    "Mar Hotell": "MAR HOTEL",
+    "Mine Hotel": "MINI HOTEL",
+    "Pousada Norte": "POUSADA DO NORTE",
+    "Renascença": "RENASSENÇA",
+    "VERNON": "NOVO VERNON"
+  },
+  "_ajuda_fontes_hoteis": "Pasta do Drive com as planilhas dos hotéis",
+  "fontes_hoteis": {
+    "pasta_drive_id": "191qTzoQLc78xBk9wvcyxcAx8Xs-aU9ug",
+    "aba_respostas": "Respostas ao formulário 1",
+    "planilha_para_hotel": {
+      "Nota Fiscal (Navegantes) (respostas)": "NAVEGANTESBPS",
+      "Solicitação Nota Fiscal (Navegantes) (respostas)": "NAVEGANTES"
+    },
+    "ignorar": [
+      "Solicitação Nota Fiscal (TesteEdu) (respostas)",
+      "Formulário NF (TesteHotel) (respostas)"
+    ]
+  },
+  "_ajuda_robo_antigo": "Robô antigo (Apps Script/Gmail): nos hotéis onde ele ainda marca TRUE, pedido novo espera espera_minutos antes do nosso enviar; e-mail dele na caixa = não reenvia",
+  "robo_antigo": {
+    "remetente": "redeandrade.notafiscal@gmail.com",
+    "espera_minutos": 75,
+    "dias_ativo": 3,
+    "dias_caixa": 10
+  },
+  "_ajuda_cota_envio": "Limite do servidor de e-mail por hora",
+  "_ajuda_visual_email": "classico (branco + verde #00786c) · verde (fundo verde)",
+  "visual_email": "classico",
+  "_ajuda_destino_envio": "hotel = e-mail da coluna B do Cadastro_Hoteis · agente = e-mail em agentes",
+  "destino_envio": "hotel",
+  "cota_envio": {
+    "provedor": "KingHost",
+    "limite_por_hora": 250
+  },
+  "_ajuda_conferencia": "Assunto 'NF 1234 - NOME' + anexo = NF enviada · outro e-mail = Tratativa",
+  "conferencia": {
+    "intervalo_segundos": 60,
+    "extensoes_anexo_nf": [
+      "pdf",
+      "xml",
+      "zip"
+    ],
+    "dias_maximos": 45
+  },
+  "_ajuda_dropbox_notas": "Pastas do Dropbox com as NFs (só leitura)",
+  "dropbox_notas": {
+    "ativo": true,
+    "pastas": [
+      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 1 - JOÃO\\2026 - JOÃO",
+      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 2 - CLARA\\Notas Fiscais Hóspedes\\2026 - CLARA",
+      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 3 - CRISTIAN\\2026 - CRISTIAN",
+      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 4 - BERNARDO\\2026"
+    ],
+    "intervalo_minutos": 5
+  },
+  "_ajuda_somente_hoteis": "Teste: só esses hotéis ([] = todos)",
+  "somente_hoteis": [],
+  "_ajuda_registro_central": "Cópia das enviadas pra aba Registros (planilha precisa estar compartilhada)",
+  "registro_central": {
+    "ativo": true,
+    "planilha_id": "1NbOWWWVBojOxd33GLGR-LVEwssVPDLYPLXNHrhXFWpw",
+    "aba": "Registros"
+  }
+}
