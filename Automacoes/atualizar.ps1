@@ -4,7 +4,14 @@ Set-Location $pasta
 $py = Join-Path $pasta ".venv\Scripts\python.exe"
 
 Write-Host "Baixando a versao nova..." -ForegroundColor Cyan
-git pull --ff-only
+$origem = git remote get-url origin 2>$null
+$pen = Get-Volume | Where-Object { $_.DriveType -eq 'Removable' -and $_.DriveLetter -and (Test-Path "$($_.DriveLetter):\Solicitacoes NF\.git") } | Select-Object -First 1
+if ($pen -and ($origem -notlike "http*" -or -not (Test-Path $origem -ErrorAction SilentlyContinue))) {
+    Write-Host "Pegando do pen drive ($($pen.DriveLetter):)..." -ForegroundColor Cyan
+    git pull --ff-only "$($pen.DriveLetter):\Solicitacoes NF" main
+} else {
+    git pull --ff-only
+}
 if ($LASTEXITCODE -ne 0) { Write-Host "git pull falhou (sem internet ou arquivo alterado a mao neste PC)." -ForegroundColor Red; Read-Host "Enter"; exit 1 }
 
 & $py -m pip install -q --disable-pip-version-check -r requirements.txt
