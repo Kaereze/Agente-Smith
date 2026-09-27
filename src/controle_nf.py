@@ -80,6 +80,27 @@ SERVICOS = {
 }
 
 
+# "Descrição do Serviço" das NFs da rede:
+#   DATA DE CHECK-IN: 24/09/2026 · DATA DE CHECK-OUT: 25/10/2026 · VALOR DA DIÁRIA: R$ 140,00 · VALOR DO ESTACIONAMENTO: R$ 20,00
+_CHECK = re.compile(r"CHECK[\s-]*(IN|OUT)\s*:?\s*(\d{2})/(\d{2})/(\d{4})")
+_VALOR_SERVICO = re.compile(r"VALOR\s+D[AOE]S?\s+([A-Z ]+?)\s*:?\s*R\$\s*([\d.]+,\d{2})")
+
+
+def ler_descricao_nota(texto):
+    """{"checkin": "dd/mm", "checkout": "dd/mm", "servicos": {...com valor > 0}} ou None se a nota não tem o bloco."""
+    import unicodedata
+    t = "".join(c for c in unicodedata.normalize("NFD", texto or "") if unicodedata.category(c) != "Mn").upper()
+    datas = {tipo: f"{d}/{m}" for tipo, d, m, _a in _CHECK.findall(t)}
+    servicos = set()
+    for rotulo, valor in _VALOR_SERVICO.findall(t):
+        if float(valor.replace(".", "").replace(",", ".")) <= 0:
+            continue
+        servicos |= servicos_no_texto(rotulo) or ({"consumo"} if "CONSUMO" in rotulo else set())
+    if not datas and not servicos:
+        return None
+    return {"checkin": datas.get("IN"), "checkout": datas.get("OUT"), "servicos": servicos}
+
+
 def servicos_no_texto(texto):
     return {nome for nome, padrao in SERVICOS.items() if padrao.search(texto or "")}
 
@@ -135,9 +156,19 @@ def conferir_conteudo(sol, texto):
     if nome:
         provas.append("nome confere")
     # Mesmo CPF/CNPJ não basta: empresa se hospeda várias vezes (Planex, NF 1369, 27/09/2026)
-    if sol.get("datas") and not data and len(datas_nota) >= 2:
+    desc = ler_descricao_nota(texto)
+    pedidas = {d[:5] for d in sol.get("datas", [])}
+    if desc and desc["checkin"] and pedidas:
+        # check-in OU check-out (a nota às vezes sai com o mês do check-out errado: 25/10 em vez de 25/09)
+        if not ({desc["checkin"], desc["checkout"]} & pedidas):
+            return "nao_confere", " · ".join(provas + [f"estadia da nota (check-in {desc['checkin']}) não é a do pedido"])
+        if not data:
+            provas.append(f"check-in {desc['checkin']} confere")
+            data = desc["checkin"]
+    elif sol.get("datas") and not data and len(datas_nota) >= 2:
         return "nao_confere", " · ".join(provas + ["datas da estadia não batem"])
-    pedidos, na_nota = set(sol.get("servicos", [])), servicos_no_texto(t)
+    pedidos = set(sol.get("servicos", []))
+    na_nota = desc["servicos"] if desc and desc["servicos"] else servicos_no_texto(t)
     if pedidos and na_nota and not (pedidos & na_nota):
         return "nao_confere", " · ".join(provas + [f"serviço diferente (pediu {', '.join(sorted(pedidos))}; "
                                                     f"nota de {', '.join(sorted(na_nota))})"])

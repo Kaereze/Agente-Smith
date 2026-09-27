@@ -150,3 +150,38 @@ def test_hospede_errou_o_ano_da_estadia():
            "valores": [], "servicos": ["diaria"]}
     nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " CNPJ 12.345.678/0001-90 hospedagem diária 25/09/2026 27/09/2026"
     assert conferir_conteudo(sol, nota)[0] == "confere"
+
+
+BLOCO_1202 = """Descrição do Serviço
+DATA DE CHECK-IN: 24/09/2026
+DATA DE CHECK-OUT: 25/10/2026
+QUANTIDADE DE DIÁRIAS: 1
+VALOR DA DIÁRIA: R$ 140,00
+VALOR DO ESTACIONAMENTO: R$ 20,00
+TRIBUTAÇÃO MUNICIPAL (ISSQN)"""
+
+
+def test_le_a_descricao_do_servico_da_nota():
+    from controle_nf import ler_descricao_nota
+    d = ler_descricao_nota(BLOCO_1202)
+    assert d == {"checkin": "24/09", "checkout": "25/10", "servicos": {"diaria", "estacionamento"}}
+    d = ler_descricao_nota("DATA DE CHECK-IN: 18/09/2026\nVALOR DE DIARIA: R$148,77\nVALOR DO CONSUMO: R$ 0,00")
+    assert d["servicos"] == {"diaria"}                 # consumo zerado não conta
+
+
+def test_checkout_com_mes_errado_na_nota_ainda_confere():
+    """NF 1202 real: check-out 25/10 (era 25/09) — o check-in 24/09 basta."""
+    from controle_nf import conferir_conteudo
+    sol = {"documentos": ["12345678000190"], "datas": ["24/09/2026", "25/09/2026"], "nomes": ["Crop"], "valores": [],
+           "servicos": ["diaria", "estacionamento"]}
+    texto = ("NOTA FISCAL " * 20) + " CNPJ 12.345.678/0001-90 " + BLOCO_1202
+    res, prova = conferir_conteudo(sol, texto)
+    assert res == "confere", prova
+
+
+def test_pediu_so_consumo_e_a_nota_e_de_diaria_e_estacionamento():
+    from controle_nf import conferir_conteudo
+    sol = {"documentos": ["12345678000190"], "datas": ["24/09/2026", "25/09/2026"], "nomes": ["Crop"], "valores": [],
+           "servicos": ["consumo"]}
+    texto = ("NOTA FISCAL " * 20) + " CNPJ 12.345.678/0001-90 " + BLOCO_1202
+    assert conferir_conteudo(sol, texto)[0] == "nao_confere"
