@@ -131,7 +131,7 @@ class Relogio:
 def cfg():
     with open(os.path.join(PASTA_PROJETO, "config.json"), encoding="utf-8") as f:
         c = json.load(f)
-    c.update(modo="PRODUCAO", email_teste="teste@x.com", planilha_central_id=CENTRAL, somente_hoteis=[], destino_envio="agente",
+    c.update(modo="PRODUCAO", email_teste="teste@x.com", planilha_central_id=CENTRAL, somente_hoteis=[], destino_envio="agente", agrupar_email="hotel",
              registro_central={"ativo": True, "planilha_id": "REGISTROS", "aba": "Registros"},
              agentes={"João": "notafiscal1@andradehoteis.com.br", "Clara": "notafiscal2@andradehoteis.com.br",
                       "Cristian": "notafiscal3@andradehoteis.com.br", "Bernardo": "notafiscal4@andradehoteis.com.br"})

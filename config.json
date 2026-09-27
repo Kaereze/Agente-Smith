@@ -13,6 +13,9 @@
   "aba_status": "Status",
   "_ajuda_limite": "Máx. de solicitações por e-mail",
   "limite_solicitacoes_por_email": 40,
+  "_ajuda_agrupar_email": "solicitacao = 1 e-mail por solicitação · hotel = junta as do hotel num e-mail",
+  "agrupar_email": "solicitacao",
+  "max_emails_por_execucao": 150,
   "_ajuda_formato_data_planilha": "Formato padrão de data (cada aba é detectada sozinha)",
   "formato_data_planilha": "americano",
   "outlook": {

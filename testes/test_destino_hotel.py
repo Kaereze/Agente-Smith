@@ -80,3 +80,21 @@ def test_confirma_envio_na_caixa_do_hotel_com_conta_de_verdade():
     assert o.esta_nos_enviados("NF-AAAAAAAAAA", destinatario="notafiscal@barra.com.br")   # saiu pela Ondina
     assert not o.esta_nos_enviados("NF-CCCCCCCCCC", destinatario="notafiscal@luxor.com.br")
     assert not o.esta_na_caixa_saida("NF-BBBBBBBBBB", destinatario="ondina@x.com")
+
+
+def test_uma_solicitacao_por_email(cfg, planilha, outlook):
+    """Pedido do João: nada de juntar 22 num e-mail — cada solicitação vai sozinha."""
+    cfg.update(destino_envio="hotel", agrupar_email="solicitacao")
+    relogio = Relogio()
+    executar(cfg, planilha, outlook, agora=AGORA, esperar=relogio.esperar, relogio=relogio.agora)
+    estrela = [e for e in outlook.enviados if e.destinatario == "notafiscal@estrela.com.br"]
+    assert len(estrela) == 2                   # as 2 pendentes do mesmo hotel, cada uma no seu e-mail
+    assert all(len(e.solicitacoes) == 1 for e in outlook.enviados)
+    assert all(e.assunto.startswith("Solicitação NF - ") for e in outlook.enviados)
+
+
+def test_teto_de_emails_por_rodada(cfg, planilha, outlook):
+    cfg.update(destino_envio="hotel", agrupar_email="solicitacao", max_emails_por_execucao=2)
+    relogio = Relogio()
+    executar(cfg, planilha, outlook, agora=AGORA, esperar=relogio.esperar, relogio=relogio.agora)
+    assert len(outlook.enviados) == 2          # o resto fica sem TRUE e vai na próxima rodada

@@ -42,6 +42,11 @@ def _hoteis_em_ordem(solicitacoes):
     return list(contagem.items())
 
 
+def assunto_individual(s):
+    """'Solicitação NF - RONDONÓPOLIS - Nome do hóspede' (1 solicitação por e-mail)."""
+    return f"Solicitação NF - {s.hotel.nome} - {s.nome_titulo}"[:TAMANHO_MAXIMO_ASSUNTO]
+
+
 def montar_assunto(solicitacoes, parte=1, total_partes=1):
     """'Solicitações NF (12) - Hotel A, Hotel B' — corta a lista de hotéis se ficar longa."""
     nomes = [nome for nome, _ in _hoteis_em_ordem(solicitacoes)]
@@ -256,20 +261,21 @@ def montar_emails(solicitacoes, cfg):
     montar = montar_html_verde if controle_nf.VISUAL == "verde" else montar_html
     limite = cfg["limite_solicitacoes_por_email"]
     modo_teste = cfg["modo"] == "TESTE"
+    uma_por_email = cfg.get("agrupar_email", "hotel") == "solicitacao"
     for operador, lista in agrupar_por_operador(solicitacoes).items():
-        partes = _dividir(lista, limite)
+        partes = [[s] for s in lista] if uma_por_email else _dividir(lista, limite)
         for i, parte in enumerate(partes, start=1):
             codigo = novo_codigo()
             for n, s in enumerate(parte, start=1):
                 s.ref = f"{codigo}-{n:02d}"  # o conferente acha a solicitação no e-mail por aqui
-            assunto = montar_assunto(parte, i, len(partes))
+            assunto = (assunto_individual(parte[0]) if uma_por_email else montar_assunto(parte, i, len(partes)))
             if modo_teste:
                 assunto = "[TESTE] " + assunto
             emails.append(EmailMontado(
                 operador=operador,
                 destinatario=cfg["email_teste"] if modo_teste else operador,
                 assunto=assunto,
-                html=montar(operador, parte, codigo, i, len(partes),
+                html=montar(operador, parte, codigo, 1 if uma_por_email else i, 1 if uma_por_email else len(partes),
                                  cfg.get("formato_data_planilha", "americano"),
                                  aviso_teste=operador if modo_teste else None),
                 codigo=codigo,

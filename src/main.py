@@ -293,6 +293,10 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
         return 0
 
     emails = montar_emails(pendentes, cfg)
+    teto = int(cfg.get("max_emails_por_execucao", 150))
+    if len(emails) > teto:  # cota do servidor: o resto vai na próxima rodada (continua sem TRUE)
+        logger.warning(f"🚦 {len(emails)} e-mails nesta rodada — envio {teto} agora e o resto na próxima (cota do servidor).")
+        emails = emails[:teto]
     logger.info(f"✉️ {len(emails)} e-mail(s) montado(s) pra {len({e.operador for e in emails})} operador(es).")
 
     if modo == "SIMULACAO":
