@@ -3,6 +3,7 @@ import datetime
 import logging
 import msvcrt
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -380,6 +381,54 @@ def garantir_categorias(namespace):
         logger.debug(f"Não consegui criar as categorias coloridas ({e}) — o texto aparece do mesmo jeito.")
 
 
+NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
+_ja_olhados = set()
+
+
+def _e_email_de_solicitacao(item, remetente_antigo):
+    try:
+        corpo = item.Body or ""
+        return ("Código de envio: NF-" in corpo) or str(item.SenderEmailAddress or "").lower() == remetente_antigo
+    except Exception:
+        return False
+
+
+def marcar_notas_divididas(namespace, cfg, dias=45, so_conta=None):
+    """Tag azul "Nota dividida" nos e-mails de solicitação (robô novo e antigo) que pedem mais de uma nota."""
+    from controle_nf import CATEGORIA_DIVIDIDA, pede_nota_dividida
+    remetente_antigo = str(cfg.get("robo_antigo", {}).get("remetente", "redeandrade.notafiscal@gmail.com")).lower()
+    desde = datetime.datetime.now() - datetime.timedelta(days=dias)
+    marcados = 0
+    for conta in namespace.Accounts:
+        if so_conta and (conta.SmtpAddress or "").lower() != so_conta:
+            continue
+        try:
+            itens = conta.DeliveryStore.GetDefaultFolder(6).Items
+            itens.Sort("[ReceivedTime]", True)
+        except Exception:
+            continue
+        for item in itens:
+            try:
+                if item.ReceivedTime.replace(tzinfo=None) < desde:
+                    break
+                chave = item.EntryID
+            except Exception:
+                continue
+            if chave in _ja_olhados:
+                continue
+            _ja_olhados.add(chave)
+            if not _e_email_de_solicitacao(item, remetente_antigo):
+                continue
+            atuais = [c.strip() for c in re.split(r"[;,]", item.Categories or "") if c.strip()]
+            if CATEGORIA_DIVIDIDA in atuais or not pede_nota_dividida(item.Body or ""):
+                continue
+            item.Categories = ", ".join(atuais + [CATEGORIA_DIVIDIDA])
+            item.Save()
+            marcados += 1
+            logger.info(f"🔀 Nota dividida: '{(item.Subject or '')[:70]}' ({conta.SmtpAddress})")
+    return marcados
+
+
 # --- Laço ---
 def uma_volta(outlook, namespace, cfg, agora=None):
     import controle_nf
@@ -597,7 +646,7 @@ def main():
                 f"pedidos do menu ⚡ Ativar Claudio a cada {TICK_SEGUNDOS}s).")
     categorias_ok = False
     backend = None
-    proxima_conferencia = proximo_sinal = proxima_identidade = 0.0
+    proxima_conferencia = proximo_sinal = proxima_identidade = proxima_dividida = 0.0
     while True:
         agora = time.monotonic()
         try:
@@ -639,6 +688,9 @@ def main():
                     garantir_categorias(namespace)
                     categorias_ok = True
                 uma_volta(outlook, namespace, cfg)
+                if agora >= proxima_dividida:
+                    marcar_notas_divididas(namespace, cfg)
+                    proxima_dividida = agora + NOTAS_DIVIDIDAS_SEGUNDOS
             except Exception as e:
                 logger.warning(f"⚠️ Volta do conferente falhou ({e}) — tento de novo em {intervalo}s.")
             try:

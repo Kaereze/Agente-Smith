@@ -20,8 +20,24 @@ CATEGORIA_CONCLUIDO = "✅ NF concluído"
 CATEGORIA_PENDENTE = "⏳ NF pendente"
 CATEGORIA_TRATATIVA = "💬 Tratativa"
 CATEGORIAS_DO_ROBO = (CATEGORIA_CONCLUIDO, CATEGORIA_PENDENTE, CATEGORIA_TRATATIVA)
-# Cores do Outlook (OlCategoryColor): 5 verde, 4 amarelo, 2 laranja
-CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2}
+CATEGORIA_DIVIDIDA = "Nota dividida"   # fica no e-mail pra sempre (não entra em CATEGORIAS_DO_ROBO)
+# Cores do Outlook (OlCategoryColor): 5 verde, 4 amarelo, 2 laranja, 8 azul
+CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2, CATEGORIA_DIVIDIDA: 8}
+
+# Hóspede pede mais de uma nota (campo "Nota Dividida = Sim" ou pedido escrito)
+_ROTULOS_DIVISAO = re.compile(r"nota dividida\s*[:\s]*(nao|não|sim)\b|dividida em quantas( vezes)?\s*[:\s]*\S*", re.I)
+_PEDIDO_DIVISAO = re.compile(
+    r"\b(separad[ao]s?|separar|separe|separando|dividir|divida|dividid[ao]s?)\b"
+    r"|\buma (nota )?(para|pra|por) cada\b|\bcada (uma|um) (em )?(sua |uma )?nota\b"
+    r"|\bnotas? (distintas|diferentes|individuais|individual)\b|\b(duas|tres|três|2|3|4) notas\b", re.I)
+
+
+def pede_nota_dividida(texto):
+    """True se o texto do e-mail/solicitação pede a nota dividida ou separada."""
+    t = re.sub(r"\s+", " ", texto or "")
+    if re.search(r"nota dividida\s*[:\s]*sim\b|dividida em quantas( vezes)?\s*[:\s]*[2-9]\b", t, re.I):
+        return True
+    return bool(_PEDIDO_DIVISAO.search(_ROTULOS_DIVISAO.sub(" ", t)))
 
 
 # --- Regras ---
@@ -196,7 +212,7 @@ def assunto_com_contador(assunto, feitas, total):
 
 def categorias_atualizadas(categorias_atuais, feitas, total, tem_tratativa):
     """Mantém as categorias que a equipe pôs à mão; troca só as do robô."""
-    outras = [c.strip() for c in (categorias_atuais or "").split(",")
+    outras = [c.strip() for c in re.split(r"[;,]", categorias_atuais or "")
               if c.strip() and c.strip() not in CATEGORIAS_DO_ROBO]
     nossas = [CATEGORIA_CONCLUIDO if feitas >= total else CATEGORIA_PENDENTE]
     if tem_tratativa and feitas < total:
