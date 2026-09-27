@@ -118,3 +118,35 @@ def test_nota_do_dropbox_antes_do_pedido_nao_conta():
     r = _registro(_sol([("CNPJ Tomador", "26295687000123")]))
     assert r.aplicar_nota_dropbox("X:/NF 801.pdf", ("801", "K"), datetime.datetime(2026, 9, 10), lambda: NOTA_OCR,
                                   "PC 1 - JOÃO") is None
+
+
+def test_mesmo_cnpj_outra_estadia_nao_e_a_nota():
+    """Caso real 27/09: Consórcio Planex, pedido de 23/09 a 28/09, NF 1369 era da estadia de 18 a 19/09."""
+    from controle_nf import conferir_conteudo
+    sol = {"documentos": ["12345678000190"], "datas": ["23/09/2026", "28/09/2026"], "nomes": ["Consorcio Planex"],
+           "valores": [], "servicos": ["diaria"]}
+    nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " Tomador CNPJ 12.345.678/0001-90 Consorcio Planex "
+    nota += "Hospedagem diária período 18/09/2026 a 19/09/2026 emitida em 24/09/2026"
+    res, prova = conferir_conteudo(sol, nota)
+    assert res == "nao_confere" and "datas" in prova
+
+
+def test_pediu_consumo_nota_de_diaria_nao_e_a_nota():
+    """Hóspede pede diária ontem e consumo hoje com os mesmos dados: a NF da diária não fecha o pedido do consumo."""
+    from controle_nf import conferir_conteudo
+    sol = {"documentos": ["12345678901"], "datas": ["20/09/2026", "22/09/2026"], "nomes": ["Ze Silva"],
+           "valores": [], "servicos": ["consumo"]}
+    nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " CPF 123.456.789-01 Ze Silva Hospedagem diária 20/09/2026 a 22/09/2026"
+    res, prova = conferir_conteudo(sol, nota)
+    assert res == "nao_confere" and "serviço diferente" in prova
+    sol["servicos"] = ["diaria"]
+    assert conferir_conteudo(sol, nota)[0] == "confere"
+
+
+def test_hospede_errou_o_ano_da_estadia():
+    """Caso real 27/09: 'Incomum viagens' digitou 25/09/0026; a NF 1201 (25/09/2026) é a certa."""
+    from controle_nf import conferir_conteudo
+    sol = {"documentos": ["12345678000190"], "datas": ["25/09/0026", "26/09/0026"], "nomes": ["Incomum viagens"],
+           "valores": [], "servicos": ["diaria"]}
+    nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " CNPJ 12.345.678/0001-90 hospedagem diária 25/09/2026 27/09/2026"
+    assert conferir_conteudo(sol, nota)[0] == "confere"

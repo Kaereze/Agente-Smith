@@ -72,12 +72,26 @@ _DINHEIRO = re.compile(r"(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*|\d+),(\d{2})\b")
 _DATA = re.compile(r"\b(\d{2})[/f](\d{2})[/f](\d{4})\b")
 
 
+# Serviço pedido × serviço da nota (mesmo hóspede pede diária num dia e consumo no outro)
+SERVICOS = {
+    "diaria": re.compile(r"\bdi[aá]ria|hospedagem|hospedage\b", re.I),
+    "consumo": re.compile(r"consumo|frigobar|restaurante|alimenta|refei[cç]|\bbar\b|lavanderia", re.I),
+    "estacionamento": re.compile(r"estacionamento|garagem|vaga\b", re.I),
+}
+
+
+def servicos_no_texto(texto):
+    return {nome for nome, padrao in SERVICOS.items() if padrao.search(texto or "")}
+
+
 def provas_da_solicitacao(solicitacao):
     """O que dá pra procurar dentro da nota: CPF/CNPJ, valores em R$ e datas de check-in/out."""
     from tratamento import tipo_documento
-    docs, valores, datas = [], [], []
+    docs, valores, datas, servicos = [], [], [], set()
     for campo, valor in solicitacao.campos:
         texto = str(valor)
+        if "informa" in normalizar(campo) or "descri" in normalizar(campo):
+            servicos |= servicos_no_texto(texto)
         digitos = re.sub(r"\D", "", texto)
         if tipo_documento(campo, {"documento tomador": "cpf_cnpj"}) in ("cpf", "cnpj", "cpf_cnpj") and len(digitos) in (11, 14):
             docs.append(digitos)
@@ -87,7 +101,7 @@ def provas_da_solicitacao(solicitacao):
                 valores.append(v)
         if "check" in normalizar(campo):
             datas += [f"{d}/{m}/{a}" for d, m, a in _DATA.findall(texto)]
-    return {"documentos": sorted(set(docs)), "valores": valores, "datas": sorted(set(datas))}
+    return {"documentos": sorted(set(docs)), "valores": valores, "datas": sorted(set(datas)), "servicos": sorted(servicos)}
 
 
 def _normalizar_texto_nota(texto):
@@ -113,12 +127,20 @@ def conferir_conteudo(sol, texto):
     if valor:
         provas.append(f"valor R$ {valor} confere")
     datas_nota = {f"{d}/{m}/{a}" for d, m, a in _DATA.findall(t)}
-    data = next((d for d in sol.get("datas", []) if d in datas_nota), None)
+    dias_nota = {x[:5] for x in datas_nota}   # dia/mês: hóspede às vezes erra o ano ("25/09/0026")
+    data = next((d for d in sol.get("datas", []) if d[:5] in dias_nota), None)
     if data:
         provas.append(f"check-in/out {data[:5]} confere")
     nome = any(_tokens(n) and _tokens(n) <= _tokens(t) for n in sol.get("nomes", []))
     if nome:
         provas.append("nome confere")
+    # Mesmo CPF/CNPJ não basta: empresa se hospeda várias vezes (Planex, NF 1369, 27/09/2026)
+    if sol.get("datas") and not data and len(datas_nota) >= 2:
+        return "nao_confere", " · ".join(provas + ["datas da estadia não batem"])
+    pedidos, na_nota = set(sol.get("servicos", [])), servicos_no_texto(t)
+    if pedidos and na_nota and not (pedidos & na_nota):
+        return "nao_confere", " · ".join(provas + [f"serviço diferente (pediu {', '.join(sorted(pedidos))}; "
+                                                    f"nota de {', '.join(sorted(na_nota))})"])
     if doc or (valor and (data or nome)) or (nome and data):
         return "confere", " · ".join(provas)
     return "nao_confere", " · ".join(provas) or "nada da solicitação aparece na nota"
@@ -261,6 +283,24 @@ class Registro:
     def data_mais_antiga_aberta(self):
         datas = [s["data_pedido"] for s in self.abertas().values() if s.get("data_pedido")]
         return min(datas) if datas else None
+
+    def igualar_gemeas(self):
+        """Mesma solicitação em 2 e-mails (junto e depois separado): NF/tratativa valem pros dois."""
+        grupos = {}
+        for ref, s in self.solicitacoes.items():
+            grupos.setdefault((s.get("aba"), s.get("carimbo"), tuple(s.get("emails", []))), []).append(ref)
+        mudou = 0
+        for refs in (g for g in grupos.values() if len(g) > 1):
+            nfs = {k: v for r in refs for k, v in self.solicitacoes[r].get("nfs", {}).items()}
+            trat = {k: v for r in refs for k, v in self.solicitacoes[r].get("tratativas", {}).items()}
+            for r in refs:
+                s = self.solicitacoes[r]
+                if s.get("nfs", {}) != nfs or s.get("tratativas", {}) != trat:
+                    s["nfs"], s["tratativas"] = dict(nfs), dict(trat)
+                    if s.get("codigo") in self.emails:
+                        self.emails[s["codigo"]]["precisa_atualizar"] = True
+                    mudou += 1
+        return mudou
 
     def ja_processado(self, entry_id):
         return any(entry_id in {n.get("entry_id") for n in s["nfs"].values()} or entry_id in s["tratativas"]

@@ -440,6 +440,7 @@ def uma_volta(outlook, namespace, cfg, agora=None):
         mudancas = varrer_enviados(namespace, registro, cfg, agora)
         mudancas += reconferir_antigas(namespace, registro)
         mudancas += varrer_dropbox(registro, cfg, agora)
+        mudancas += registro.igualar_gemeas()
         atualizados = atualizar_consolidados(outlook, namespace, registro)
     return mudancas, atualizados
 

@@ -152,3 +152,13 @@ def test_robo_de_envio_anota_no_registro(cfg, planilha, outlook, pastas_temporar
     with abrir_registro(pastas_temporarias / "estado" / "controle_nf.json") as r:
         assert len(r.emails) == 2 and len(r.solicitacoes) == 4
         assert {e.codigo for e in outlook.enviados} == set(r.emails)
+
+
+def test_mesma_solicitacao_em_dois_emails_fica_igual_nos_dois():
+    from controle_nf import Registro
+    base = {"aba": "A", "carimbo": "25/09/2026 20:34:48", "emails": ["x@y.com"], "tratativas": {}}
+    reg = Registro({"solicitacoes": {"NF-1-01": {**base, "codigo": "NF-1", "nfs": {"1201": {"data": "2026-09-27T13:54"}}},
+                                     "NF-2-01": {**base, "codigo": "NF-2", "nfs": {}}},
+                    "emails": {"NF-1": {"refs": ["NF-1-01"]}, "NF-2": {"refs": ["NF-2-01"]}}})
+    assert reg.igualar_gemeas() == 1
+    assert "1201" in reg.solicitacoes["NF-2-01"]["nfs"] and reg.emails["NF-2"]["precisa_atualizar"]
