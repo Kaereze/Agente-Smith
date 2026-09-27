@@ -1,4 +1,4 @@
 @echo off
-:: Baixa a versao nova do GitHub e reinicia o conferente
+:: Atalho pro coracao (INSTALAR_OU_ATUALIZAR.bat)
 cd /d "%~dp0.."
-powershell -NoProfile -ExecutionPolicy Bypass -File "Automacoes\atualizar.ps1"
+call INSTALAR_OU_ATUALIZAR.bat %*

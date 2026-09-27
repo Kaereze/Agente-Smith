@@ -1,4 +1,4 @@
 @echo off
-:: Configura este PC (rodar uma vez em cada PC novo)
+:: Atalho pro coracao (INSTALAR_OU_ATUALIZAR.bat)
 cd /d "%~dp0.."
-powershell -NoProfile -ExecutionPolicy Bypass -File "Automacoes\configurar_pc.ps1"
+call INSTALAR_OU_ATUALIZAR.bat %*
