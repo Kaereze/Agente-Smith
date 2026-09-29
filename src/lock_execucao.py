@@ -1,4 +1,4 @@
-"""Trava: uma execução por vez (cópia, envio e conferência)."""
+"""Trava entre processos: cópia, envio e conferência nunca rodam juntos."""
 import datetime
 import json
 import msvcrt
@@ -16,8 +16,7 @@ logger = configurar_logging(__name__)
 ARQUIVO_LOCK = str(PASTA_ESTADO / "_execucao.lock")
 _ARQUIVO_MUTEX = ARQUIVO_LOCK + ".mutex"
 
-# Uma execução normal leva poucos minutos
-IDADE_MAXIMA_SEGUNDOS = 60 * 60
+IDADE_MAXIMA_SEGUNDOS = 60 * 60   # execução normal leva minutos; mais que isso = trava órfã
 
 
 def _processo_esta_vivo(pid):
@@ -57,7 +56,6 @@ def _criar_lock_atomicamente():
 
 
 def adquirir_lock():
-    """True = pode rodar. False = já tem outra execução rodando agora."""
     os.makedirs(os.path.dirname(ARQUIVO_LOCK), exist_ok=True)
     with open(_ARQUIVO_MUTEX, "a+b") as arquivo_mutex:
         try:
@@ -94,7 +92,7 @@ def _decidir_e_adquirir_lock():
 
 
 def liberar_lock():
-    """Apaga a trava — só se ela for desta execução. Nunca dá erro."""
+    """Só apaga se a trava for deste processo. Nunca levanta."""
     try:
         if not os.path.exists(ARQUIVO_LOCK):
             return

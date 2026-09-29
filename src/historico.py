@@ -1,4 +1,4 @@
-"""Log de Envios (aba + CSV) e lista de já enviadas (válvula de escape)."""
+"""Log de Envios (aba da Central + CSV local) e registro das solicitações já confirmadas."""
 import csv
 import datetime
 import json
@@ -31,7 +31,7 @@ ORIGEM_SEPARADO = "Botão Envio Separado"
 
 
 def texto_simples(erro):
-    """Traduz um erro técnico pra uma frase que qualquer um entende."""
+    """Erro técnico -> frase para o usuário final."""
     t = f"{type(erro).__name__}: {erro}"
     baixo = t.lower()
     if "outlook" in baixo:
@@ -63,12 +63,12 @@ def explicar_aba_pulada(erro_aba):
 
 
 class Execucao:
-    """Junta tudo o que aconteceu numa execução e grava no log no final."""
+    """Acumula as linhas de uma execução e grava tudo no final."""
 
     def __init__(self, origem, quem, modo, agora=None):
         self.origem, self.quem, self.modo = origem, quem or "?", modo
         self.agora = agora or datetime.datetime.now()
-        self.linhas = []   # dicts; "codigo" e "ok" servem pra contar os e-mails
+        self.linhas = []
 
     def _base(self):
         return {"data": self.agora.strftime("%d/%m/%Y %H:%M:%S"), "quem": self.quem, "origem": self.origem,
@@ -78,7 +78,6 @@ class Execucao:
         self.linhas.append({**self._base(), "resultado": resultado, "explicacao": explicacao, "hotel": hotel})
 
     def email(self, email, resultado, explicacao, ok):
-        """Uma linha por hotel dentro do e-mail."""
         por_hotel = {}
         for s in email.solicitacoes:
             por_hotel.setdefault(s.hotel.nome, []).append(s)
@@ -91,7 +90,7 @@ class Execucao:
             })
 
     def reparo(self, solicitacoes, registros):
-        """Válvula: já estavam enviadas (sem TRUE) — só marcou TRUE."""
+        """Solicitações que já tinham saído e só receberam o TRUE."""
         por_hotel = {}
         for s in solicitacoes:
             por_hotel.setdefault(s.hotel.nome, []).append(s)
@@ -116,7 +115,7 @@ class Execucao:
                  contagem if "ok" in l else "", l.get("codigo", "")] for l in self.linhas]
 
     def gravar(self, backend, cfg, pasta_logs):
-        """Planilha (mais recente no topo) + CSV no computador. Nunca derruba o robô."""
+        """Nunca levanta: falha no log não pode derrubar o envio."""
         if not self.linhas:
             return
         tabela = self.como_tabela()
@@ -156,13 +155,12 @@ def _faixas(numeros):
     return ", ".join(partes)
 
 
-# --- Válvula de escape ---
 def _chave_txt(s):
     return " | ".join(str(p) for p in s.chave)
 
 
 class JaEnviadas:
-    """estado\\ja_enviadas.json — o que o robô CONFIRMOU que enviou (em Itens Enviados)."""
+    """Solicitações confirmadas em Itens Enviados. Evita reenvio se o TRUE falhar."""
 
     def __init__(self, caminho):
         self.caminho = str(caminho)

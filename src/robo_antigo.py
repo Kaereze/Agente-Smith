@@ -1,4 +1,8 @@
-"""Convivência com o robô antigo (Apps Script/Gmail): dá a vez a ele e não reenvia o que ele já mandou."""
+"""Convivência com o robô antigo (Apps Script via Gmail), que ainda atende alguns hotéis.
+
+Um pedido é identificado pelo e-mail do hóspede + carimbo do formulário até o segundo,
+que o robô antigo imprime no rodapé ("Enviado em: Fri Sep 25 2026 22:58:03 GMT-0300").
+"""
 import datetime
 import json
 import re
@@ -18,7 +22,7 @@ def opcoes(cfg):
 
 
 def momento(carimbo, formato):
-    """'25/09/2026 22:58:03' -> datetime (até o segundo) — identifica UMA resposta do formulário."""
+    """'25/09/2026 22:58:03' -> datetime"""
     data = ler_data(carimbo, formato)
     h = re.search(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", carimbo or "")
     if not data or not h:
@@ -27,7 +31,7 @@ def momento(carimbo, formato):
 
 
 def momento_do_email_antigo(texto):
-    """'Fri Sep 25 2026 22:58:03 GMT-0300' (rodapé 'Enviado em' do robô antigo) -> datetime."""
+    """'Fri Sep 25 2026 22:58:03 GMT-0300' -> datetime"""
     m = re.search(r"(\w{3}) (\d{1,2}) (\d{4}) (\d{2}):(\d{2}):(\d{2})", texto or "")
     if not m or m.group(1).lower() not in MESES:
         return None
@@ -39,9 +43,8 @@ def chave(email, quando):
     return (str(email or "").strip().lower(), quando)
 
 
-# --- Quais hotéis o robô antigo ainda atende (visto pela cópia) ---
 def registrar_atividade(caminho, vistos):
-    """vistos = {hotel: datetime do pedido mais recente que o antigo marcou TRUE}."""
+    """vistos = {hotel: pedido mais recente que o robô antigo marcou TRUE}"""
     try:
         atual = json.load(open(caminho, encoding="utf-8"))
     except (FileNotFoundError, ValueError):
@@ -61,9 +64,8 @@ def hoteis_ativos(caminho, agora, dias):
     return {h for h, iso in atual.items() if datetime.datetime.fromisoformat(iso) >= limite}
 
 
-# --- Caixas de e-mail: o que o robô antigo já mandou ---
 def emails_do_robo_antigo(namespace, remetente, desde):
-    """{(email_hospede, momento_do_pedido): 'dd/mm HH:MM'} lidos das Caixas de Entrada deste Outlook."""
+    """{(email_hospede, momento_do_pedido): 'dd/mm HH:MM'} das Caixas de Entrada deste Outlook."""
     achados = {}
 
     def varrer(pasta, profundidade=0):
@@ -105,7 +107,7 @@ def emails_do_robo_antigo(namespace, remetente, desde):
 
 
 def separar(pendentes, ativos, agora, espera_minutos):
-    """(liberadas, aguardando): nos hotéis com robô antigo ativo, pedido recente espera a vez dele."""
+    """-> (liberadas, aguardando). Em hotel onde o antigo está ativo, pedido recente espera a vez dele."""
     liberadas, aguardando = [], []
     limite = agora - datetime.timedelta(minutes=espera_minutos)
     for s in pendentes:
@@ -118,7 +120,7 @@ def separar(pendentes, ativos, agora, espera_minutos):
 
 
 def ja_mandadas_pelo_antigo(pendentes, enviados_antigo):
-    """[(solicitacao, 'dd/mm HH:MM')] das pendentes que o robô antigo já mandou (mesmo e-mail + mesmo segundo)."""
+    """-> [(solicitacao, 'dd/mm HH:MM')]"""
     saida = []
     for s in pendentes:
         quando = momento(s.carimbo, s.formato_data)

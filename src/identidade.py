@@ -1,5 +1,6 @@
-"""Identidade do PC: descobre o agente pelas contas do Outlook × Cadastro_Hoteis (lógica do Mail Analytics).
-Uso: python src\\identidade.py  (mostra quem é este PC)
+"""Descobre de qual agente é este PC votando com as contas do Outlook contra o Cadastro_Hoteis.
+
+    python src\\identidade.py
 """
 import datetime
 import json
@@ -15,14 +16,14 @@ from tratamento import normalizar
 
 logger = configurar_logging(__name__)
 
-# Travas da votação (mesmas do Mail Analytics): na dúvida, recusa — nunca chuta
-MINIMO_CONTAS = 5        # perfil do Outlook carregando pode mostrar só 1-2 contas
-MAIORIA = 0.80           # contas de mais de um agente no mesmo PC = não atribui
-VANTAGEM = 5             # poucas contas deixam a porcentagem enganosa
+# Na dúvida, não atribui.
+MINIMO_CONTAS = 5        # perfil ainda carregando costuma mostrar só 1-2 contas
+MAIORIA = 0.80
+VANTAGEM = 5             # com poucas contas a porcentagem sozinha engana
 
 
 def apurar(contas, cadastro):
-    """{agente: votos} — cada conta do Outlook vota 1 vez (a 1ª linha do cadastro com o e-mail dela decide)."""
+    """{agente: votos}; cada conta vota uma vez, na primeira linha do cadastro com o e-mail dela."""
     contas = {c.strip().lower() for c in contas if c}
     voto = {}
     for _hotel, email, agente in cadastro:
@@ -36,7 +37,7 @@ def apurar(contas, cadastro):
 
 
 def resolver(contas, cadastro):
-    """(agente | None, confiança %, motivo, retentável)."""
+    """-> (agente | None, confiança %, motivo, retentável)"""
     votos = apurar(contas, cadastro)
     total = sum(votos.values())
     ranking = sorted(votos.items(), key=lambda kv: kv[1], reverse=True)
@@ -54,7 +55,7 @@ def resolver(contas, cadastro):
 
 
 def detectar(cfg, namespace, backend):
-    """Detecta, compara com o que este PC já sabia (estado/maquina.json) e grava. Devolve o dict gravado."""
+    """Detecta, compara com estado/maquina.json e grava o resultado."""
     contas = [str(getattr(c, "SmtpAddress", "") or "") for c in namespace.Accounts]
     aba = cfg["aba_cadastro_hoteis"]
     linhas = backend.ler_abas(cfg["planilha_central_id"], [aba])[0].get(aba, [])

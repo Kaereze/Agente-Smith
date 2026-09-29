@@ -1,5 +1,8 @@
-"""Cópia: traz as respostas das planilhas dos hotéis (Drive) pra Central.
-Uso: python src\\sincronizar.py [--gravar | --agendado --enviar]
+"""Copia as respostas das planilhas dos hotéis (pasta do Drive) para as abas da Central.
+
+    python src\\sincronizar.py                     prévia, não grava
+    python src\\sincronizar.py --gravar
+    python src\\sincronizar.py --agendado --enviar  ciclo do Agendador: copia e envia
 """
 import datetime
 import json
@@ -24,12 +27,11 @@ from tratamento import detectar_formato_data, ler_data, normalizar
 logger = configurar_logging("sincronizar")
 
 MIME_PLANILHA = "application/vnd.google-apps.spreadsheet"
-PAUSA_ENTRE_LEITURAS = 1.1   # o Google deixa ~60 leituras por minuto pro robô
+PAUSA_ENTRE_LEITURAS = 1.1   # cota da Sheets API: 60 leituras/min
 
 
-# --- Regras puras (testáveis sem Google) ---
 def hotel_da_planilha(nome_arquivo, cfg, cadastro):
-    """'Nota Fiscal (Lg Inn) (respostas)' -> 'L GINN' (nome no Cadastro_Hoteis) ou None."""
+    """'Nota Fiscal (Lg Inn) (respostas)' -> 'L GINN' | None"""
     fontes = cfg.get("fontes_hoteis", {})
     manual = {normalizar(k): v for k, v in fontes.get("planilha_para_hotel", {}).items()}
     if normalizar(nome_arquivo) in manual:
@@ -43,20 +45,24 @@ def hotel_da_planilha(nome_arquivo, cfg, cadastro):
 
 
 def _hora(texto):
-    """'9:35:54' e '09:35:54' viram a mesma coisa ('09:35:54'). '' se não tiver hora."""
+    """'9:35:54' -> '09:35:54'; '' se não houver hora."""
     m = re.search(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", texto or "")
     return f"{int(m.group(1)):02d}:{m.group(2)}:{m.group(3) or '00'}" if m else ""
 
 
 def _chave_linha(linha, i_carimbo, i_email, formato):
-    """Identifica a resposta do Forms sem depender do formato de data (5/28 x 28/05)."""
+    """Chave independente do formato de data (5/28 x 28/05)."""
     carimbo = _celula(linha, i_carimbo)
     data = ler_data(carimbo, formato)
     return (data.isoformat() if data else carimbo, _hora(carimbo), _celula(linha, i_email).lower())
 
 
 def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
-    """origem  = linhas da planilha do hotel (cabeçalho + dados)"""
+    """Junta a planilha do hotel (origem) com a aba da Central (destino). -> (linhas, resumo)
+
+    A origem manda nos dados; o TRUE vem de qualquer um dos lados (hotel, Central ou
+    ja_enviadas). Linhas que só existem na Central vão pro fim e nunca são apagadas.
+    """
     col = cfg["colunas"]
     cab = [str(c).strip() for c in origem[0]]
     if _achar_coluna(cab, col["enviado"]) is None:
@@ -66,7 +72,6 @@ def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
     i_email = _achar_coluna(cab, col.get("email_hospede", ""))
     fmt_o = detectar_formato_data((_celula(l, i_car) for l in origem[1:]), cfg.get("formato_data_planilha", "americano"))
 
-    # Linhas que já estão na Central (com o TRUE que o robô marcou lá)
     linhas_d, exatas, soltas = [], {}, {}
     if destino and len(destino) > 1:
         cab_d = [str(c).strip() for c in destino[0]]
@@ -111,7 +116,7 @@ def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
         true_lista = k in chaves_ja_enviadas
         if ja_true:
             resumo["true_origem"] += 1
-            if not true_lista:  # TRUE na planilha do hotel sem ter sido o nosso robô = robô antigo
+            if not true_lista:   # TRUE no hotel que não fomos nós = robô antigo
                 quando = robo_antigo.momento(_celula(l, i_car), fmt_o)
                 if quando and (resumo["ultimo_antigo"] is None or quando > resumo["ultimo_antigo"]):
                     resumo["ultimo_antigo"] = quando
@@ -124,7 +129,6 @@ def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
         l[i_env] = bool(ja_true or true_central or true_lista)
         novas.append(l[:len(cab)])
         resumo["linhas"] += 1
-    # o que só existe na Central fica (no fim), nunca é apagado
     for idx, (l, _true) in enumerate(linhas_d):
         if idx not in usadas:
             novas.append(list(l))
@@ -133,7 +137,7 @@ def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
 
 
 def _chave_tem_hora_diferente(linhas_d, idx, k, destino, col, fmt):
-    """Casamento por data+e-mail só vale se a linha da Central NÃO tiver hora (ou tiver a mesma)."""
+    """Casamento só por data+e-mail vale se a linha da Central não tiver hora ou tiver a mesma."""
     cab_d = [str(c).strip() for c in destino[0]]
     d_car = _achar_coluna(cab_d, col["carimbo"])
     hora = _hora(_celula(linhas_d[idx][0], d_car))
@@ -141,7 +145,7 @@ def _chave_tem_hora_diferente(linhas_d, idx, k, destino, col, fmt):
 
 
 def chaves_da_lista_ja_enviadas(caminho):
-    """Transforma a lista de "já enviadas" do robô (estado/ja_enviadas.json) nas mesmas chaves de…"""
+    """estado/ja_enviadas.json -> chaves no formato de _chave_linha."""
     try:
         registros = json.load(open(caminho, encoding="utf-8"))
     except FileNotFoundError:
@@ -159,7 +163,6 @@ def chaves_da_lista_ja_enviadas(caminho):
     return chaves
 
 
-# --- Google (Drive + Planilhas) ---
 def listar_pasta(caminho_chave, pasta_id):
     from google.auth.transport.requests import AuthorizedSession
     from google.oauth2.service_account import Credentials
@@ -179,7 +182,7 @@ def listar_pasta(caminho_chave, pasta_id):
 
 
 def _ler_planilha_hotel(cliente, arquivo, cfg):
-    """Lê a aba de respostas da planilha do hotel"""
+    """Tenta a aba padrão numa chamada só; se ela não existir, abre a planilha e procura."""
     preferida = cfg.get("fontes_hoteis", {}).get("aba_respostas", "Respostas ao formulário 1")
     try:
         r = com_retry(lambda: cliente.http_client.values_batch_get(
@@ -191,7 +194,6 @@ def _ler_planilha_hotel(cliente, arquivo, cfg):
             raise
     sh = com_retry(lambda: cliente.open_by_key(arquivo["id"]), e_erro_passageiro_google)
     abas = [w.title for w in com_retry(sh.worksheets, e_erro_passageiro_google)]
-    preferida = cfg.get("fontes_hoteis", {}).get("aba_respostas", "Respostas ao formulário 1")
     aba = preferida if preferida in abas else ([a for a in abas if "respostas" in a.lower()] or abas[:1])[0]
     time.sleep(PAUSA_ENTRE_LEITURAS)
     r = com_retry(lambda: sh.values_batch_get([nome_intervalo(aba)], params={"valueRenderOption": "FORMATTED_VALUE"}),
@@ -200,14 +202,13 @@ def _ler_planilha_hotel(cliente, arquivo, cfg):
 
 
 def mapear_fontes(backend, cfg, chave):
-    """Qual planilha da pasta é de qual hotel, e qual aba da Central recebe cada hotel"""
+    """Planilhas da pasta por hotel e a aba da Central que recebe cada hotel."""
     fontes = cfg.get("fontes_hoteis", {})
     central = cfg["planilha_central_id"]
     cad_linhas = backend.ler_abas(central, [cfg["aba_cadastro_hoteis"]])[0][cfg["aba_cadastro_hoteis"]]
     cadastro = {normalizar(l[0]): l[0].strip() for l in cad_linhas if l and l[0].strip()}
     ignorar = {normalizar(n) for n in fontes.get("ignorar", [])}
 
-    # 1. Quais planilhas existem e de qual hotel é cada uma
     arquivos = listar_pasta(chave, fontes["pasta_drive_id"])
     por_hotel, sem_hotel = {}, []
     for a in arquivos:
@@ -216,7 +217,6 @@ def mapear_fontes(backend, cfg, chave):
         h = hotel_da_planilha(a["name"], cfg, cadastro)
         (por_hotel.setdefault(h, []).append(a) if h else sem_hotel.append(a["name"]))
 
-    # 2. Aba de destino de cada hotel na Central
     abas_central = backend.listar_abas(central)
     destino_do_hotel = {}
     apelidos = {normalizar(k): v for k, v in cfg.get("apelidos_hoteis", {}).items() if not k.startswith("_")}
@@ -240,7 +240,6 @@ def sincronizar(gravar=False):
     cadastro, por_hotel, sem_hotel = m["cadastro"], m["por_hotel"], m["sem_hotel"]
     abas_central, destino_do_hotel = m["abas_central"], m["destino_do_hotel"]
 
-    # 3. O que o robô já enviou (válvula de escape)
     estado = PASTA_ESTADO / "sincronizacao.json"
     try:
         marcas = json.load(open(estado, encoding="utf-8"))
@@ -253,10 +252,10 @@ def sincronizar(gravar=False):
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
         arquivo_backup = PASTA_ESTADO / f"backup_central_{inicio_copia:%Y%m%d_%H%M%S}.json"
-    # Todas as abas de hotel da Central numa leitura só
     dados_central, _ = backend.ler_abas(central, [destino_do_hotel[h] for h in por_hotel if h in destino_do_hotel])
     for hotel, lista in sorted(por_hotel.items()):
-        # [ACHADO REAL 26/09/2026] O Drive NÃO muda a "data de modificação" quando o Google Forms grava uma…
+        # Lê sempre: o Drive não atualiza modifiedTime quando o Forms grava uma resposta,
+        # então não dá pra pular planilha "sem mudança". A aba só é regravada se mudou.
         lidas = []
         for a in sorted(lista, key=lambda x: x["modifiedTime"], reverse=True):
             time.sleep(PAUSA_ENTRE_LEITURAS)
@@ -278,7 +277,6 @@ def sincronizar(gravar=False):
         if gravar and resumo["mudou"]:
             if destino:
                 copia_de_seguranca[aba_destino] = destino
-            # cópia de segurança do que havia na aba ANTES (gravada antes de mexer)
             json.dump(copia_de_seguranca, open(arquivo_backup, "w", encoding="utf-8"), ensure_ascii=False)
             _gravar_aba(backend, cliente, central, aba_destino, novas, criar=aba_destino not in abas_central)
             logger.info(f"📥 {hotel}: {resumo['linhas']} linhas copiadas pra '{aba_destino}' "
@@ -287,7 +285,6 @@ def sincronizar(gravar=False):
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
         json.dump(marcas, open(estado, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-        # a conferência usa isto pra saber o que chegou DEPOIS da última cópia
         open(PASTA_ESTADO / "ultima_copia.txt", "w", encoding="utf-8").write(inicio_copia.isoformat(timespec="seconds"))
         robo_antigo.registrar_atividade(PASTA_ESTADO / "robo_antigo.json",
                                         {r["hotel"]: r.get("ultimo_antigo") for r in relatorio if "linhas" in r})
@@ -296,7 +293,7 @@ def sincronizar(gravar=False):
 
 
 def _como_texto(linhas):
-    """Tabela como a planilha devolve: TRUE/FALSE em texto e sem células vazias no fim da linha."""
+    """Normaliza como a API devolve (booleanos em texto, sem vazios à direita) pra comparar."""
     saida = []
     for l in linhas or []:
         l = ["TRUE" if v is True else "FALSE" if v is False else str(v) for v in l]
@@ -308,8 +305,7 @@ def _como_texto(linhas):
     return saida
 
 
-def _limpar_backups_antigos(manter=48):
-    """Guarda só as últimas `manter` cópias de segurança (a cópia roda a cada 30 min)."""
+def _limpar_backups_antigos(manter=48):   # 24h de cópias a cada 30 min
     backups = sorted(PASTA_ESTADO.glob("backup_central_*.json"))
     for velho in backups[:-manter]:
         try:
@@ -319,7 +315,7 @@ def _limpar_backups_antigos(manter=48):
 
 
 def _gravar_aba(backend, cliente, central, aba, linhas, criar):
-    """Escreve POR CIMA primeiro e só depois limpa o que sobrou (linhas/colunas a mais da versão antiga)"""
+    """Sobrescreve e só depois limpa as sobras: a aba nunca fica vazia no meio da gravação."""
     from gspread.utils import rowcol_to_a1
     planilha = backend._planilha(central)
     largura = max(len(l) for l in linhas)
@@ -336,9 +332,9 @@ def _gravar_aba(backend, cliente, central, aba, linhas, criar):
     com_retry(lambda: ws.update(range_name="A1", values=corpo, value_input_option="RAW"), e_erro_passageiro_google)
     time.sleep(PAUSA_ENTRE_LEITURAS)
     sobras = []
-    if ws.col_count > largura:     # colunas a mais da versão antiga
+    if ws.col_count > largura:
         sobras.append(f"{rowcol_to_a1(1, largura + 1)}:{rowcol_to_a1(ws.row_count, ws.col_count)}")
-    if ws.row_count > len(corpo):  # linhas a mais da versão antiga
+    if ws.row_count > len(corpo):
         sobras.append(f"A{len(corpo) + 1}:{rowcol_to_a1(ws.row_count, largura)}")
     if sobras and not criar:
         com_retry(lambda: ws.batch_clear(sobras), e_erro_passageiro_google)
@@ -346,7 +342,6 @@ def _gravar_aba(backend, cliente, central, aba, linhas, criar):
 
 
 def rodar_agendado():
-    """Chamado a cada 30 min pelo Agendador de Tarefas"""
     from lock_execucao import adquirir_lock, liberar_lock
     if not e_principal(carregar_config()):
         logger.warning("⛔ Este PC está como conferente (config.local.json) — a cópia só roda no PC principal.")
@@ -372,7 +367,7 @@ def rodar_agendado():
 
 
 def copiar_e_enviar():
-    """O ciclo automático (a cada 30 min): 1) copia as respostas novas dos hotéis pra Central; 2) roda o…"""
+    """Ciclo do Agendador: copia e, em seguida, envia o que ficou pendente."""
     codigo = rodar_agendado()
     try:
         import main as robo_envio

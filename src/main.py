@@ -1,4 +1,4 @@
-"""Robô de envio (raiz do fluxo): lê pendentes, envia, confirma em Itens Enviados e marca TRUE."""
+"""Envio: lê pendentes, envia, confirma em Itens Enviados e só então marca TRUE."""
 import datetime
 import os
 import re
@@ -29,7 +29,6 @@ INTERVALO_CONFERENCIA_SEGUNDOS = 10
 
 
 def _marcar_e_registrar(backend, cfg, solicitacoes, registrar=True):
-    """Marca TRUE e copia pro registro central. Devolve True se a marcação deu certo."""
     try:
         marcadas, nao_encontradas = marcar_enviados(backend, cfg, solicitacoes)
     except Exception as e:
@@ -43,7 +42,7 @@ def _marcar_e_registrar(backend, cfg, solicitacoes, registrar=True):
 
 
 def conferir_envios_anteriores(backend, outlook, cfg, diario, agora, ja_enviadas=None, log_exec=None):
-    """Resolve o que ficou pela metade na execução anterior"""
+    """Resolve o diário da execução anterior. Devolve (chaves bloqueadas, avisos)."""
     bloqueadas, avisos, confirmadas, codigos_confirmados = set(), [], [], []
     for entrada in diario.listar():
         solicitacoes = solicitacoes_da_entrada(entrada)
@@ -84,7 +83,6 @@ def conferir_envios_anteriores(backend, outlook, cfg, diario, agora, ja_enviadas
 
 
 def filtrar_somente_hoteis(hoteis, cfg):
-    """Se `somente_hoteis` estiver preenchido no config, trabalha só com esses (útil pra teste)."""
     escolhidos = {normalizar(h) for h in cfg.get("somente_hoteis", []) if str(h).strip()}
     if not escolhidos:
         return hoteis
@@ -96,7 +94,6 @@ def filtrar_somente_hoteis(hoteis, cfg):
 
 
 def registrar_para_conferencia(emails, agora):
-    """Anota os consolidados enviados pro conferente (conferente.py) acompanhar as NFs."""
     if not emails:
         return
     try:
@@ -129,7 +126,7 @@ def salvar_simulacao(emails, agora, pasta=None):
 
 
 def aguardar_confirmacoes(outlook, emails, desde, cfg, esperar=time.sleep, relogio=time.monotonic):
-    """Espera cada e-mail aparecer em Itens Enviados. Devolve o conjunto de códigos confirmados."""
+    """-> códigos que apareceram em Itens Enviados dentro do prazo."""
     limite = relogio() + int(cfg["outlook"]["espera_confirmacao_envio_segundos"])
     faltando = {e.codigo for e in emails}
     destino = {e.codigo: e.destinatario for e in emails}
@@ -152,7 +149,7 @@ def _hoteis_txt(email):
 
 
 def ler_selecao(texto):
-    """Seleção do menu Envio Separado (aba Status, B13), escrita de um jeito legível:"""
+    """B13 da aba Status: "aba | 131, 132 | reenviar" -> {aba, linhas, reenviar}."""
     partes = [p.strip() for p in str(texto or "").split(" | ")]
     if len(partes) < 2 or not partes[0]:
         return None
@@ -163,8 +160,8 @@ def ler_selecao(texto):
 
 
 def _pendentes_da_selecao(backend, cfg, selecao, log_exec):
-    """Envio Separado: só o hotel e as linhas escolhidas (com 'reenviar', inclui linhas que já têm TRUE)."""
-    cfg_sem_filtro = dict(cfg, somente_hoteis=[])   # escolha explícita: o filtro de teste não vale aqui
+    """Com 'reenviar', inclui linhas que já têm TRUE."""
+    cfg_sem_filtro = dict(cfg, somente_hoteis=[])
     hoteis, erros = ler_hoteis(backend, cfg_sem_filtro)
     hotel = next((h for h in hoteis if h.aba == selecao["aba"]), None)
     if hotel is None:
@@ -191,7 +188,7 @@ def _pendentes_da_selecao(backend, cfg, selecao, log_exec):
 
 
 def _convivencia_robo_antigo(backend, cfg, outlook, pendentes, ja_enviadas, log_exec, agora):
-    """Dá a vez ao robô antigo e não reenvia o que ele já mandou (mesmo e-mail + mesmo segundo do formulário)."""
+    """Dá a vez ao robô antigo (Apps Script) e marca TRUE no que ele já mandou, sem reenviar."""
     op = robo_antigo.opcoes(cfg)
     ativos = robo_antigo.hoteis_ativos(PASTA_ESTADO / "robo_antigo.json", agora, op["dias_ativo"])
     pendentes, aguardando = robo_antigo.separar(pendentes, ativos, agora, op["espera_minutos"])
@@ -225,11 +222,10 @@ def _convivencia_robo_antigo(backend, cfg, outlook, pendentes, ja_enviadas, log_
 
 def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time.monotonic, log_exec=None,
              selecao=None):
-    """Uma execução completa"""
     agora = agora or datetime.datetime.now()
     modo = cfg["modo"]
     log_exec = log_exec or Execucao(ORIGEM_MANUAL, "", modo, agora)
-    por_pedido = log_exec.origem != ORIGEM_AGENDADO   # alguém pediu: sempre deixa rastro no log
+    por_pedido = log_exec.origem != ORIGEM_AGENDADO   # a pedido de alguém: sempre deixa rastro no log
     logger.info("=" * 60)
     logger.info(f"🤖 Solicitações NF — início ({modo}) · {log_exec.origem} · {log_exec.quem}")
 
@@ -270,7 +266,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
         if antes != len(pendentes):
             logger.info(f"🔒 {antes - len(pendentes)} solicitação(ões) já tratada(s) pela execução anterior — não reenviadas.")
 
-    # Válvula de escape: sem TRUE, mas o robô já tinha confirmado o envio -> só marca TRUE.
+    # Sem TRUE mas já confirmado em Enviados (a marcação falhou antes): só marca.
     reenviar = bool(selecao and selecao["reenviar"])
     if modo == "PRODUCAO" and not reenviar:
         ja = [s for s in pendentes if ja_enviadas.contem(s)]
@@ -294,7 +290,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
 
     emails = montar_emails(pendentes, cfg)
     teto = int(cfg.get("max_emails_por_execucao", 150))
-    if len(emails) > teto:  # cota do servidor: o resto vai na próxima rodada (continua sem TRUE)
+    if len(emails) > teto:   # cota do servidor; o resto fica sem TRUE e vai na próxima
         logger.warning(f"🚦 {len(emails)} e-mails nesta rodada — envio {teto} agora e o resto na próxima (cota do servidor).")
         emails = emails[:teto]
     logger.info(f"✉️ {len(emails)} e-mail(s) montado(s) pra {len({e.operador for e in emails})} operador(es).")
@@ -312,7 +308,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
     for posicao, email in enumerate(emails):
         logger.info(f"📤 Enviando {email.codigo} -> {email.destinatario} | {len(email.solicitacoes)} solicitação(ões) | {_hoteis_txt(email)}")
         if modo == "PRODUCAO":
-            diario.anotar(email, agora)  # mesmo relógio da conferência (idade_minutos)
+            diario.anotar(email, agora)
         try:
             outlook.enviar(email)
             enviados.append(email)
@@ -322,7 +318,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
             log_exec.email(email, ERRO, "Não foi enviado. " + texto_simples(e) +
                            " As linhas continuam sem TRUE e vão de novo na próxima execução.", ok=False)
             try:
-                outlook.conectar()  # Outlook pode ter fechado — tenta reabrir pro próximo e-mail
+                outlook.conectar()
             except Exception as e2:
                 logger.error(f"❌ Outlook não voltou ({e2}) — parando os envios. O resto vai na próxima execução.")
                 for resto in emails[posicao + 1:]:
@@ -354,7 +350,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
 
     emails_ok = [e for e in enviados if e.codigo in confirmados]
     for e in emails_ok:
-        ja_enviadas.anotar(e.solicitacoes, e.codigo, e.destinatario, agora)  # válvula: anotado ANTES do TRUE
+        ja_enviadas.anotar(e.solicitacoes, e.codigo, e.destinatario, agora)   # antes do TRUE, de propósito
     registrar_para_conferencia(emails_ok, agora)
     solicitacoes_ok = [s for e in emails_ok for s in e.solicitacoes]
     marcou = True
@@ -388,11 +384,10 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
     return 0 if sucesso else 1
 
 
-OCUPADO = 3  # código de saída quando outra execução já está rodando (só usado a pedido)
+OCUPADO = 3   # exit code quando a trava está com outra execução
 
 
 def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None):
-    """Ponto de entrada de verdade: config, trava, conexões reais e rede de segurança"""
     from lock_execucao import adquirir_lock, liberar_lock
     from outlook import OutlookNF
     from sheets import BackendGoogle
@@ -425,7 +420,7 @@ def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None):
         log_exec.geral(ERRO, "A execução parou antes de terminar. " + texto_simples(e) +
                              " O que não foi confirmado continua pendente e vai na próxima.")
         if backend is not None and cfg["modo"] != "SIMULACAO":
-            gravar_status(backend, cfg, False, f"ERRO: {e}")  # nunca dá erro (só loga)
+            gravar_status(backend, cfg, False, f"ERRO: {e}")
         return 1
     finally:
         if cfg["modo"] != "SIMULACAO":

@@ -1,21 +1,21 @@
-"""Configuração: lê e valida o config.json."""
+"""Leitura e validação do config.json (+ config.local.json por PC)."""
 import json
 import os
 from pathlib import Path
 
 PASTA_PROJETO = Path(__file__).resolve().parent.parent
 CAMINHO_CONFIG = PASTA_PROJETO / "config.json"
-CAMINHO_CONFIG_LOCAL = PASTA_PROJETO / "config.local.json"   # por PC, fora do git
+CAMINHO_CONFIG_LOCAL = PASTA_PROJETO / "config.local.json"
 PASTA_ESTADO = PASTA_PROJETO / "estado"
 PASTA_SIMULACAO = PASTA_PROJETO / "saida_simulacao"
 PASTA_LOGS = PASTA_PROJETO / "logs"
-CAMINHO_MAQUINA = PASTA_ESTADO / "maquina.json"   # quem é este PC (identidade.py)
+CAMINHO_MAQUINA = PASTA_ESTADO / "maquina.json"
 
 MODOS_VALIDOS = ("SIMULACAO", "TESTE", "PRODUCAO")
 
 
 class ErroDeConfig(Exception):
-    """Config com problema — a mensagem já diz o que corrigir."""
+    pass
 
 
 def carregar_config(caminho=CAMINHO_CONFIG):
@@ -36,7 +36,6 @@ def carregar_config(caminho=CAMINHO_CONFIG):
 
 
 def _papel_pela_identidade(cfg):
-    """principal = PC do agente_principal (detectado pelas contas do Outlook); resto = conferente."""
     try:
         with open(CAMINHO_MAQUINA, "r", encoding="utf-8") as f:
             maquina = json.load(f)
@@ -72,7 +71,7 @@ def _mesclar(base, extra):
 
 
 def e_principal(cfg):
-    """Só o PC principal copia, envia e atende o menu. Os outros só marcam NF enviada/Tratativa."""
+    """Só o principal copia, envia e atende o menu; os conferentes só marcam as tags."""
     return cfg.get("papel") == "principal"
 
 
@@ -125,8 +124,7 @@ def caminho_chave_google(cfg):
     return os.path.expandvars(str(cfg.get("caminho_chave_google", "")).strip())
 
 
-if __name__ == "__main__":
-    # Usado pelo Bat\TESTAR_CONFIG.bat — só confere e mostra o resumo.
+if __name__ == "__main__":   # Bat\TESTAR_CONFIG.bat
     import sys
     try:
         c = carregar_config()

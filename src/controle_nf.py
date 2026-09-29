@@ -1,4 +1,8 @@
-"""Controle das NFs: registro de cada solicitação enviada e reconhecimento da NF saindo pro hóspede."""
+"""Registro das solicitações enviadas e reconhecimento da NF que sai para o hóspede.
+
+Uma NF é reconhecida pelo assunto "NF 1234 - NOME" com anexo, ou por um PDF salvo no Dropbox;
+em ambos os casos o conteúdo da nota é comparado com a solicitação antes de marcar ✅.
+"""
 import contextlib
 import datetime
 import html
@@ -20,11 +24,9 @@ CATEGORIA_CONCLUIDO = "✅ NF concluído"
 CATEGORIA_PENDENTE = "⏳ NF pendente"
 CATEGORIA_TRATATIVA = "💬 Tratativa"
 CATEGORIAS_DO_ROBO = (CATEGORIA_CONCLUIDO, CATEGORIA_PENDENTE, CATEGORIA_TRATATIVA)
-CATEGORIA_DIVIDIDA = "Nota dividida"   # fica no e-mail pra sempre (não entra em CATEGORIAS_DO_ROBO)
-# Cores do Outlook (OlCategoryColor): 5 verde, 4 amarelo, 2 laranja, 8 azul
-CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2, CATEGORIA_DIVIDIDA: 8}
+CATEGORIA_DIVIDIDA = "Nota dividida"   # permanente: fora de CATEGORIAS_DO_ROBO de propósito
+CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2, CATEGORIA_DIVIDIDA: 8}   # OlCategoryColor
 
-# Hóspede pede mais de uma nota (campo "Nota Dividida = Sim" ou pedido escrito)
 _ROTULOS_DIVISAO = re.compile(r"nota dividida\s*[:\s]*(nao|não|sim)\b|dividida em quantas( vezes)?\s*[:\s]*\S*", re.I)
 _PEDIDO_DIVISAO = re.compile(
     r"\b(separad[ao]s?|separar|separe|separando|dividir|divida|dividid[ao]s?)\b"
@@ -33,16 +35,15 @@ _PEDIDO_DIVISAO = re.compile(
 
 
 def pede_nota_dividida(texto):
-    """True se o texto do e-mail/solicitação pede a nota dividida ou separada."""
+    """Pelo campo do formulário ou por pedido escrito ("uma nota pra cada", "separadas"...)."""
     t = re.sub(r"\s+", " ", texto or "")
     if re.search(r"nota dividida\s*[:\s]*sim\b|dividida em quantas( vezes)?\s*[:\s]*[2-9]\b", t, re.I):
         return True
     return bool(_PEDIDO_DIVISAO.search(_ROTULOS_DIVISAO.sub(" ", t)))
 
 
-# --- Regras ---
 def ler_assunto_nf(assunto):
-    """'NF 1212 - JOÃO SILVA - 363305' -> ('1212', 'JOÃO SILVA'). None se não for assunto de NF."""
+    """'NF 1212 - JOÃO SILVA - 363305' -> ('1212', 'JOÃO SILVA') | None"""
     m = PADRAO_ASSUNTO_NF.match(assunto or "")
     if not m:
         return None
@@ -59,20 +60,19 @@ def _tokens(nome):
 
 
 def nome_bate(nome_assunto, nomes_solicitacao):
-    """Todas as palavras do nome no assunto (3+ letras) aparecem num dos nomes da solicitação."""
+    """Todas as palavras (3+ letras) do nome no assunto estão num dos nomes da solicitação."""
     procurados = _tokens(nome_assunto)
     if not procurados:
         return False
     return any(procurados <= _tokens(n) for n in nomes_solicitacao)
 
 
-# --- Provas de DENTRO da nota (PDF anexo, lido com texto ou com o OCR do Windows) ---
-MINIMO_TEXTO_LEGIVEL = 200   # abaixo disso o PDF é imagem (ou o OCR não conseguiu ler)
+# --- Conteúdo da nota (texto do PDF ou OCR do Windows) ---
+MINIMO_TEXTO_LEGIVEL = 200   # abaixo disso o PDF é imagem ou o OCR falhou
 _DINHEIRO = re.compile(r"(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*|\d+),(\d{2})\b")
-_DATA = re.compile(r"\b(\d{2})[/f](\d{2})[/f](\d{4})\b")
+_DATA = re.compile(r"\b(\d{2})[/f](\d{2})[/f](\d{4})\b")   # OCR lê "/" como "f"
 
-
-# Serviço pedido × serviço da nota (mesmo hóspede pede diária num dia e consumo no outro)
+# O mesmo hóspede costuma pedir diária e consumo em notas separadas
 SERVICOS = {
     "diaria": re.compile(r"\bdi[aá]ria|hospedagem|hospedage\b", re.I),
     "consumo": re.compile(r"consumo|frigobar|restaurante|alimenta|refei[cç]|\bbar\b|lavanderia", re.I),
@@ -80,14 +80,14 @@ SERVICOS = {
 }
 
 
-# "Descrição do Serviço" das NFs da rede:
-#   DATA DE CHECK-IN: 24/09/2026 · DATA DE CHECK-OUT: 25/10/2026 · VALOR DA DIÁRIA: R$ 140,00 · VALOR DO ESTACIONAMENTO: R$ 20,00
+# Bloco "Descrição do Serviço" das NFs da rede:
+#   DATA DE CHECK-IN: 24/09/2026 · DATA DE CHECK-OUT: 25/09/2026 · VALOR DA DIÁRIA: R$ 140,00 · VALOR DO ESTACIONAMENTO: R$ 20,00
 _CHECK = re.compile(r"CHECK[\s-]*(IN|OUT)\s*:?\s*(\d{2})/(\d{2})/(\d{4})")
 _VALOR_SERVICO = re.compile(r"VALOR\s+D[AOE]S?\s+([A-Z ]+?)\s*:?\s*R\$\s*([\d.]+,\d{2})")
 
 
 def ler_descricao_nota(texto):
-    """{"checkin": "dd/mm", "checkout": "dd/mm", "servicos": {...com valor > 0}} ou None se a nota não tem o bloco."""
+    """-> {"checkin": "dd/mm", "checkout": "dd/mm", "servicos": {com valor > 0}} | None"""
     import unicodedata
     t = "".join(c for c in unicodedata.normalize("NFD", texto or "") if unicodedata.category(c) != "Mn").upper()
     datas = {tipo: f"{d}/{m}" for tipo, d, m, _a in _CHECK.findall(t)}
@@ -106,7 +106,7 @@ def servicos_no_texto(texto):
 
 
 def provas_da_solicitacao(solicitacao):
-    """O que dá pra procurar dentro da nota: CPF/CNPJ, valores em R$ e datas de check-in/out."""
+    """O que procurar dentro da nota: CPF/CNPJ, valores, datas de check-in/out e serviços."""
     from tratamento import tipo_documento
     docs, valores, datas, servicos = [], [], [], set()
     for campo, valor in solicitacao.campos:
@@ -126,15 +126,19 @@ def provas_da_solicitacao(solicitacao):
 
 
 def _normalizar_texto_nota(texto):
-    """Corrige os tropeços comuns do OCR: 'f' no lugar de '/', 'O' no lugar de '0' nos centavos."""
+    """Erros comuns do OCR: 'f' por '/', 'oo' por '00', vírgula dos centavos sumida."""
     t = re.sub(r"(\d)f(\d)", r"\1/\2", texto or "")
     t = re.sub(r"(\d)\s?,\s?[Oo]{2}\b", r"\1,00", t)
-    t = re.sub(r"(\d) (\d{2})\b", r"\1,\2", t)          # "306 oo" / "15 30" -> "306,oo"/"15,30"
+    t = re.sub(r"(\d) (\d{2})\b", r"\1,\2", t)
     return t
 
 
 def conferir_conteudo(sol, texto):
-    """Compara a solicitação com o texto da nota"""
+    """-> ("confere" | "nao_confere" | "sem_texto", provas legíveis)
+
+    Confere com CPF/CNPJ, ou com dois entre valor, data e nome. Mesmo com o documento batendo,
+    a estadia e o serviço da nota têm que ser os do pedido: empresas se hospedam várias vezes.
+    """
     if not texto or len(texto.strip()) < MINIMO_TEXTO_LEGIVEL:
         return "sem_texto", "não consegui ler a nota (confira)"
     t = _normalizar_texto_nota(texto)
@@ -148,18 +152,17 @@ def conferir_conteudo(sol, texto):
     if valor:
         provas.append(f"valor R$ {valor} confere")
     datas_nota = {f"{d}/{m}/{a}" for d, m, a in _DATA.findall(t)}
-    dias_nota = {x[:5] for x in datas_nota}   # dia/mês: hóspede às vezes erra o ano ("25/09/0026")
+    dias_nota = {x[:5] for x in datas_nota}   # só dia/mês: o ano vem errado com frequência ("0026")
     data = next((d for d in sol.get("datas", []) if d[:5] in dias_nota), None)
     if data:
         provas.append(f"check-in/out {data[:5]} confere")
     nome = any(_tokens(n) and _tokens(n) <= _tokens(t) for n in sol.get("nomes", []))
     if nome:
         provas.append("nome confere")
-    # Mesmo CPF/CNPJ não basta: empresa se hospeda várias vezes (Planex, NF 1369, 27/09/2026)
     desc = ler_descricao_nota(texto)
     pedidas = {d[:5] for d in sol.get("datas", [])}
     if desc and desc["checkin"] and pedidas:
-        # check-in OU check-out (a nota às vezes sai com o mês do check-out errado: 25/10 em vez de 25/09)
+        # Basta um dos dois: a nota às vezes sai com o mês do check-out errado
         if not ({desc["checkin"], desc["checkout"]} & pedidas):
             return "nao_confere", " · ".join(provas + [f"estadia da nota (check-in {desc['checkin']}) não é a do pedido"])
         if not data:
@@ -178,7 +181,7 @@ def conferir_conteudo(sol, texto):
 
 
 def situacao(sol):
-    """('ok' | 'parcial' | 'tratativa' | 'aguardando', texto do selo)."""
+    """-> ('ok' | 'conferir' | 'parcial' | 'tratativa' | 'aguardando', texto do selo)"""
     todas = sol.get("nfs", {})
     nfs = {n: d for n, d in todas.items() if not d.get("conferir")}
     a_conferir = {n: d for n, d in todas.items() if d.get("conferir")}
@@ -208,12 +211,9 @@ def _data_curta(iso):
 
 CORES_SELO = {"ok": "#1e7e34", "parcial": "#1f5fa8", "tratativa": "#c26a00", "aguardando": "#d5bda1",
               "conferir": "#6b4f9e"}
-# "Aguardando" ficou creme (paleta nova): texto verde escuro pra dar leitura
-COR_TEXTO_SELO = {"aguardando": "#0b4a43"}
+COR_TEXTO_SELO = {"aguardando": "#0b4a43"}   # fundo creme pede texto escuro
 
-
-# Visual dos e-mails: "classico" (dourado) ou "verde" (paleta nova: verde #173f39 + creme #d5bda1)
-VISUAL = "classico"
+VISUAL = "classico"   # "classico" | "verde"; definido por montar_email a partir do config
 VERDE, CREME, VERDE_CARTAO, CREME_APAGADO = "#173f39", "#d5bda1", "#1f4b44", "#a8977f"
 ESTILO_SELO_VERDE = {
     "ok": f"background:{CREME};color:{VERDE};border:1px solid {CREME};",
@@ -225,10 +225,9 @@ ESTILO_SELO_VERDE = {
 
 
 def paragrafo_status(ref, sol):
-    """O parágrafo de status de uma solicitação dentro do e-mail — sempre com o [ref ...] no fim."""
+    """Selo de status; o "[ref X]" no fim é a âncora que trocar_paragrafo_status procura."""
     tipo, texto = situacao(sol)
     if VISUAL == "verde":
-        # sem emoji colorido: só as duas cores da rede
         texto = texto.replace("✅", "✔").replace("💬 ", "").replace("⏳ ", "")
         return (f'<p style="font-family:Segoe UI,Arial,sans-serif;margin:0 0 8px 0;">'
                 f'<span style="display:inline-block;{ESTILO_SELO_VERDE[tipo]}border-radius:12px;'
@@ -241,7 +240,6 @@ def paragrafo_status(ref, sol):
 
 
 def trocar_paragrafo_status(corpo_html, ref, novo_paragrafo):
-    """Troca o parágrafo que contém '[ref X]' pelo novo"""
     marca = f"[ref {ref}]"
     pos = corpo_html.find(marca)
     if pos < 0:
@@ -254,7 +252,7 @@ def trocar_paragrafo_status(corpo_html, ref, novo_paragrafo):
 
 
 def resumo_email(solicitacoes):
-    """(feitas, total, tem_tratativa_aberta)"""
+    """-> (feitas, total, tem_tratativa_aberta)"""
     tipos = [situacao(s)[0] for s in solicitacoes]
     return tipos.count("ok"), len(tipos), "tratativa" in tipos
 
@@ -264,7 +262,8 @@ def assunto_com_contador(assunto, feitas, total):
 
 
 def categorias_atualizadas(categorias_atuais, feitas, total, tem_tratativa):
-    """Mantém as categorias que a equipe pôs à mão; troca só as do robô."""
+    """Troca só as categorias do robô e preserva as que a equipe pôs à mão."""
+    # Outlook pt-BR separa categorias com ";"
     outras = [c.strip() for c in re.split(r"[;,]", categorias_atuais or "")
               if c.strip() and c.strip() not in CATEGORIAS_DO_ROBO]
     nossas = [CATEGORIA_CONCLUIDO if feitas >= total else CATEGORIA_PENDENTE]
@@ -273,22 +272,26 @@ def categorias_atualizadas(categorias_atuais, feitas, total, tem_tratativa):
     return ", ".join(outras + nossas)
 
 
-# --- Registro (estado\controle_nf.json) ---
 class Registro:
-    """{"solicitacoes": {ref: {...}}, "emails": {codigo: {...}}, "varredura": {conta: iso}} Sempre usado…"""
+    """estado/controle_nf.json. Use sempre via abrir_registro(), que trava entre processos.
+
+    solicitacoes: {ref: dados + nfs + tratativas}
+    emails:       {codigo: destinatario, assunto, refs, precisa_atualizar}
+    varredura:    {conta: até quando os Enviados já foram lidos (iso)}
+    dropbox:      {caminho: mtime já lido}
+    """
 
     def __init__(self, dados=None):
         dados = dados or {}
         self.solicitacoes = dados.get("solicitacoes", {})
         self.emails = dados.get("emails", {})
         self.varredura = dados.get("varredura", {})
-        self.dropbox = dados.get("dropbox", {})   # arquivo do Dropbox -> data de modificação já lida
+        self.dropbox = dados.get("dropbox", {})
 
     def como_dict(self):
         return {"solicitacoes": self.solicitacoes, "emails": self.emails, "varredura": self.varredura,
                 "dropbox": self.dropbox}
 
-    # -- quando o robô de envio manda um consolidado -----------------------
     def registrar_email(self, email, agora):
         refs = []
         for s in email.solicitacoes:
@@ -304,10 +307,10 @@ class Registro:
             "destinatario": email.destinatario.lower(), "assunto": email.assunto, "refs": refs,
             "criado_em": agora.isoformat(timespec="seconds"), "precisa_atualizar": False,
         }
-        # Solicitação nova: a próxima volta do conferente relê os enviados desde a mais antiga em aberto (a…
+        # Força a próxima volta a reler Enviados desde a solicitação aberta mais antiga:
+        # a NF pode ter saído antes do registro deste e-mail.
         self.varredura = {}
 
-    # -- consultas ----------------------------------------------------------
     def abertas(self):
         return {ref: s for ref, s in self.solicitacoes.items() if situacao(s)[0] != "ok"}
 
@@ -316,7 +319,7 @@ class Registro:
         return min(datas) if datas else None
 
     def igualar_gemeas(self):
-        """Mesma solicitação em 2 e-mails (junto e depois separado): NF/tratativa valem pros dois."""
+        """Mesma solicitação em dois e-mails (agrupado e depois separado): NF e tratativa valem pros dois."""
         grupos = {}
         for ref, s in self.solicitacoes.items():
             grupos.setdefault((s.get("aba"), s.get("carimbo"), tuple(s.get("emails", []))), []).append(ref)
@@ -337,9 +340,12 @@ class Registro:
         return any(entry_id in {n.get("entry_id") for n in s["nfs"].values()} or entry_id in s["tratativas"]
                    for s in self.solicitacoes.values())
 
-    # -- quando o conferente acha um e-mail enviado -------------------------
     def aplicar_envio(self, envio, extensoes, ler_texto=None):
-        """`envio`: {"entry_id", "conta", "destinatarios" (set), "assunto", "data" (datetime), "anexos"…"""
+        """Classifica um e-mail enviado como NF ou tratativa de alguma solicitação aberta.
+
+        envio: {entry_id, conta, destinatarios: set, assunto, data: datetime, anexos: [nomes]}
+        -> (ref, "nf" | "tratativa") | None
+        """
         if self.ja_processado(envio["entry_id"]):
             return None
         dia = envio["data"].date().isoformat()
@@ -355,17 +361,17 @@ class Registro:
         if eh_nf:
             candidatas = por_email
             if not candidatas:
-                # Enviou pra outro endereço: casa pelo nome do assunto, só no mesmo hotel.
+                # Enviada pra outro endereço: casa pelo nome do assunto, só no mesmo hotel
                 conta = (envio.get("conta") or "").lower()
                 candidatas = [ref for ref, s in abertas.items()
                               if s.get("email_hotel", "").lower() == conta and nome_bate(nf[1], s.get("nomes", []))]
                 if len(candidatas) > 1:
-                    return None  # ambíguo: melhor não marcar a errada
+                    return None   # ambíguo
             if not candidatas:
                 return None
             ordem = lambda r: (abertas[r].get("data_pedido", ""), r)
             texto = ler_texto() if ler_texto else None
-            if texto is None:   # sem leitor (testes antigos): comportamento antigo
+            if texto is None:
                 ref, resultado, prova = min(candidatas, key=ordem), "confere", ""
             else:
                 avaliadas = {r: conferir_conteudo(abertas[r], texto) for r in candidatas}
@@ -373,9 +379,9 @@ class Registro:
                 if conferem:
                     ref = min(conferem, key=ordem)
                 elif all(a[0] == "nao_confere" for a in avaliadas.values()):
-                    return None     # a nota tem texto e é de OUTRA pessoa/tomador: não é desta solicitação
+                    return None   # nota legível e de outra pessoa
                 else:
-                    ref = min(candidatas, key=ordem)    # não deu pra ler: fica "confira", sem ✅
+                    ref = min(candidatas, key=ordem)   # ilegível: marca como "confira", sem ✅
                 resultado, prova = avaliadas[ref]
             self.solicitacoes[ref]["nfs"].setdefault(nf[0], {**registro_envio, "prova": prova,
                                                             "conferir": resultado != "confere"})
@@ -390,7 +396,6 @@ class Registro:
         return None
 
     def aplicar_nota_dropbox(self, caminho, nf, data, ler_texto, fonte):
-        """Nota achada na pasta do Dropbox (salva por qualquer um dos 4 agentes)"""
         chave = "dropbox:" + caminho
         if self.ja_processado(chave):
             return None
@@ -404,11 +409,11 @@ class Registro:
         conferem = [ref for ref, (res, _) in avaliadas.items() if res == "confere"]
         if not conferem:
             return None
-        # mais de uma bate: fica com a que tem CPF/CNPJ conferido; empate -> a mais antiga
+        # Várias batem: vale a com CPF/CNPJ; sem documento e ambígua, não marca nenhuma
         com_doc = [r for r in conferem if "do tomador confere" in avaliadas[r][1]]
         escolhidas = com_doc or conferem
         if len(escolhidas) > 1 and not com_doc:
-            return None     # só nome/valor, e bate com mais de uma: melhor não marcar a errada
+            return None
         ref = min(escolhidas, key=lambda r: (abertas[r].get("data_pedido", ""), r))
         self.solicitacoes[ref]["nfs"][nf[0]] = {
             "data": data.isoformat(timespec="seconds"), "assunto": os.path.basename(caminho), "entry_id": chave,
@@ -425,7 +430,7 @@ class Registro:
 
 @contextlib.contextmanager
 def abrir_registro(caminho, tentativas=120):
-    """Abre o registro com trava (outro processo espera até ~2 min)"""
+    """Lê, entrega e grava o Registro sob trava de arquivo (espera até `tentativas` segundos)."""
     caminho = str(caminho)
     os.makedirs(os.path.dirname(caminho), exist_ok=True)
     with open(caminho + ".trava", "a+b") as trava:
@@ -451,14 +456,13 @@ def abrir_registro(caminho, tentativas=120):
 
 
 def nfs_sem_prova(registro):
-    """NFs marcadas antes de existir a conferência pelo conteúdo — o conferente relê essas notas."""
-    # só reconfere quem tem os dados da solicitação guardados (CNPJ, valores...) — sem eles, "não achei…
+    """NFs marcadas sem prova de conteúdo, em solicitações que já guardam os dados pra comparar."""
     return [(ref, numero, d["entry_id"]) for ref, sol in registro.solicitacoes.items() if "documentos" in sol
             for numero, d in sol.get("nfs", {}).items() if "prova" not in d]
 
 
 def reconferir(registro, ref, numero, texto):
-    """Relê uma NF já marcada: se a nota for de outra pessoa, desfaz o ✅. Devolve o resultado."""
+    """Desfaz o ✅ se a nota já marcada for de outra pessoa."""
     sol = registro.solicitacoes[ref]
     resultado, prova = conferir_conteudo(sol, texto)
     if resultado == "nao_confere":

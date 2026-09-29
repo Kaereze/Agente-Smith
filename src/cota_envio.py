@@ -1,19 +1,19 @@
-"""Cota do servidor de e-mail (KingHost 250/h): conta os envios da última hora."""
+"""Cota por hora do servidor de e-mail, medida pelos Itens Enviados."""
 import datetime
 import json
 
 JANELA = datetime.timedelta(hours=1)
 HISTORICO = datetime.timedelta(hours=24)
-MAX_ITENS_OLHADOS = 2000   # 24h de envio cabem com folga (limite é 250/h)
+MAX_ITENS_OLHADOS = 2000
 
 
 def _data_outlook(valor):
-    """Contas POP desta rede: SentOn vem com a hora LOCAL marcada como UTC — só tira o fuso."""
+    # Contas POP: SentOn vem com a hora local marcada como UTC
     return valor.replace(tzinfo=None) if getattr(valor, "tzinfo", None) else valor
 
 
 def envios_das_ultimas_24h(pasta_enviados, agora):
-    """[(hora_do_envio, n_destinatarios)] dos Itens Enviados, do mais novo pro mais velho."""
+    """[(quando, n_destinatarios)], do mais novo pro mais velho."""
     itens = pasta_enviados.Items
     itens.Sort("[SentOn]", True)
     envios = []
@@ -23,9 +23,9 @@ def envios_das_ultimas_24h(pasta_enviados, agora):
         try:
             quando = _data_outlook(item.SentOn)
         except Exception:
-            continue   # reunião, relatório de entrega etc.
+            continue   # item sem SentOn (reunião, relatório de entrega)
         if quando > agora + datetime.timedelta(minutes=5):
-            continue   # relógio estranho: ignora
+            continue
         if agora - quando > HISTORICO:
             break
         try:
@@ -37,11 +37,9 @@ def envios_das_ultimas_24h(pasta_enviados, agora):
 
 
 def calcular_cota(envios, limite_por_hora, agora):
-    """Conta pura (testável): quanto foi usado na última hora e quando libera mais."""
     na_janela = sorted((q, n) for q, n in envios if agora - q < JANELA)
     usados = sum(n for _, n in na_janela)
     sobra = max(limite_por_hora - usados, 0)
-    # Quando o envio mais antigo da janela fizer 1 hora, a cota dele volta
     libera = (na_janela[0][0] + JANELA) if na_janela else None
     por_hora = []
     for h in range(23, -1, -1):
@@ -61,14 +59,14 @@ def calcular_cota(envios, limite_por_hora, agora):
 
 
 def medir(namespace, cfg, agora=None):
-    """Mede a cota da conta remetente e devolve o texto (JSON) pra aba Status."""
+    """JSON da cota da conta_remetente, pra aba Status."""
     agora = agora or datetime.datetime.now()
     cota = cfg.get("cota_envio", {})
     remetente = (cfg.get("conta_remetente") or "").strip().lower()
     conta = next((c for c in namespace.Accounts if (c.SmtpAddress or "").strip().lower() == remetente), None)
     if conta is None:
         raise RuntimeError(f"a conta {remetente} não está no Outlook deste PC")
-    pasta = conta.DeliveryStore.GetDefaultFolder(5)   # 5 = Itens Enviados
+    pasta = conta.DeliveryStore.GetDefaultFolder(5)   # olFolderSentMail
     r = calcular_cota(envios_das_ultimas_24h(pasta, agora), int(cota.get("limite_por_hora", 250)), agora)
     r.update(conta=remetente, provedor=cota.get("provedor", ""))
     return json.dumps(r, ensure_ascii=False)

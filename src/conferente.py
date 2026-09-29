@@ -1,4 +1,8 @@
-"""Conferente (roda o dia todo): atende o menu da planilha, marca NF enviada/Tratativa e mede a cota."""
+"""Processo contínuo de cada PC.
+
+Todos: acompanham Itens Enviados e o Dropbox e atualizam selo/tags dos e-mails de solicitação.
+Só o principal: atende os comandos do menu da planilha e publica sinal de vida e cota de envio.
+"""
 import datetime
 import logging
 import msvcrt
@@ -27,11 +31,11 @@ logger = configurar_logging("conferente")
 CAMINHO_REGISTRO = PASTA_ESTADO / "controle_nf.json"
 CLASSE_EMAIL = 43
 MAX_ITENS_POR_CONTA = 3000
-SOBREPOSICAO = datetime.timedelta(minutes=5)   # relê um pouquinho pra trás a cada volta (não custa: é idempotente)
+SOBREPOSICAO = datetime.timedelta(minutes=5)   # relê um pouco pra trás; aplicar é idempotente
 
 
 def _data_outlook(valor):
-    """SentOn/ReceivedTime do Outlook: nas contas POP desta rede ele devolve a hora LOCAL marcada como UTC…"""
+    # Contas POP: SentOn/ReceivedTime vêm com a hora local marcada como UTC
     return valor.replace(tzinfo=None) if getattr(valor, "tzinfo", None) else valor
 
 
@@ -52,7 +56,7 @@ def _enderecos(item):
 
 
 SCRIPT_OCR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Automacoes", "ler_pdf_ocr.ps1")
-_textos_lidos = {}   # EntryID -> texto da nota (não relê o mesmo PDF a cada volta)
+_textos_lidos = {}   # EntryID -> texto
 
 
 def _texto_pdf(caminho):
@@ -64,7 +68,7 @@ def _texto_pdf(caminho):
 
 
 def _texto_ocr(caminho):
-    """PDF que é imagem: OCR que já vem no Windows (Automacoes/ler_pdf_ocr.ps1). Nunca derruba o conferente."""
+    """OCR nativo do Windows via Automacoes/ler_pdf_ocr.ps1, para PDF que é imagem."""
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", SCRIPT_OCR, caminho],
                            capture_output=True, timeout=120, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -75,7 +79,7 @@ def _texto_ocr(caminho):
 
 
 def texto_da_nota(item):
-    """Texto de TODAS as notas anexas (PDF com texto, PDF imagem via OCR, ou XML da NF-e)."""
+    """Texto de todos os anexos PDF/XML do e-mail, em cache por EntryID."""
     chave = item.EntryID
     if chave in _textos_lidos:
         return _textos_lidos[chave]
@@ -98,7 +102,6 @@ def texto_da_nota(item):
 
 
 def _ler_arquivo_de_nota(caminho):
-    """Texto de um arquivo de nota que JÁ ESTÁ numa pasta temporária (PDF, PDF-imagem via OCR, ou XML)."""
     if caminho.lower().endswith(".xml"):
         with open(caminho, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
@@ -109,7 +112,7 @@ def _ler_arquivo_de_nota(caminho):
 
 
 def texto_de_arquivo_dropbox(caminho_original):
-    """Lê uma nota do Dropbox SEM MEXER NELA: copia pra uma pasta temporária do Windows, lê a cópia e…"""
+    """Lê uma cópia temporária: o arquivo original do Dropbox nunca é aberto nem tocado."""
     pasta = tempfile.mkdtemp(prefix="nf_dropbox_")
     try:
         copia = os.path.join(pasta, "nota" + os.path.splitext(caminho_original)[1].lower())
@@ -127,12 +130,12 @@ _proxima_dropbox = 0.0
 
 
 def _nome_da_fonte(pasta):
-    """'...\\PC 2 - CLARA\\Notas Fiscais Hóspedes\\2026 - CLARA' -> 'PC 2 - CLARA'."""
+    """'...\\PC 2 - CLARA\\Notas Fiscais Hóspedes\\2026 - CLARA' -> 'PC 2 - CLARA'"""
     return next((p for p in pasta.replace("/", "\\").split("\\") if p.upper().startswith("PC ")), os.path.basename(pasta))
 
 
 def varrer_dropbox(registro, cfg, agora):
-    """Notas novas nas pastas do Dropbox dos 4 agentes. SÓ LÊ. Devolve quantas solicitações ganharam ✅."""
+    """Somente leitura. -> quantas solicitações ganharam ✅"""
     global _proxima_dropbox
     conf = cfg.get("dropbox_notas") or {}
     if not conf.get("ativo") or time.monotonic() < _proxima_dropbox:
@@ -147,7 +150,7 @@ def varrer_dropbox(registro, cfg, agora):
     for pasta in conf.get("pastas", []):
         fonte = _nome_da_fonte(pasta)
         try:
-            with os.scandir(pasta) as entradas:   # não entra em subpastas
+            with os.scandir(pasta) as entradas:   # sem recursão, de propósito
                 for e in entradas:
                     if not e.is_file() or not e.name.lower().endswith((".pdf", ".xml")):
                         continue
@@ -156,16 +159,16 @@ def varrer_dropbox(registro, cfg, agora):
                         continue
                     marca = modificado.isoformat(timespec="seconds")
                     if registro.dropbox.get(e.path) == marca:
-                        continue   # já lida
+                        continue
                     nf = ler_assunto_nf(os.path.splitext(e.name)[0])
                     if not nf:
-                        registro.dropbox[e.path] = marca   # não é "NF 123 - NOME": ignora de vez
+                        registro.dropbox[e.path] = marca
                         continue
                     novos.append((modificado, e.path, nf, fonte, marca))
         except OSError as e:
             logger.warning(f"⚠️ Não consegui olhar a pasta do Dropbox {pasta} ({e}).")
 
-    novos.sort(reverse=True)   # mais recentes primeiro
+    novos.sort(reverse=True)
     mudancas = 0
     for modificado, caminho, nf, fonte, marca in novos[:MAX_NOTAS_DROPBOX_POR_VOLTA]:
         ref = registro.aplicar_nota_dropbox(caminho, nf, modificado,
@@ -181,7 +184,6 @@ def varrer_dropbox(registro, cfg, agora):
         logger.info(f"📂 Dropbox: faltam {faltam} nota(s) pra ler — continuo na próxima volta.")
     else:
         _proxima_dropbox = time.monotonic() + 60 * int(conf.get("intervalo_minutos", 5))
-    # esquece o que já saiu da janela (não deixa o registro crescer pra sempre)
     corte = limite.isoformat(timespec="seconds")
     for caminho in [c for c, m in registro.dropbox.items() if m < corte]:
         del registro.dropbox[caminho]
@@ -195,9 +197,8 @@ def _anexos(item):
         return []
 
 
-# --- 1 e 2 — Itens Enviados ---
 def varrer_enviados(namespace, registro, cfg, agora):
-    """Aplica no registro os e-mails enviados novos. Devolve quantos mudaram alguma solicitação."""
+    """Aplica os enviados novos de todas as contas. -> quantos mudaram alguma solicitação"""
     mais_antiga = registro.data_mais_antiga_aberta()
     if not mais_antiga:
         return 0
@@ -210,9 +211,9 @@ def varrer_enviados(namespace, registro, cfg, agora):
     for conta in namespace.Accounts:
         smtp = (conta.SmtpAddress or "").strip().lower()
         try:
-            pasta = conta.DeliveryStore.GetDefaultFolder(5)  # Itens Enviados
+            pasta = conta.DeliveryStore.GetDefaultFolder(5)   # olFolderSentMail
             itens = pasta.Items
-            itens.Sort("[SentOn]", True)  # mais recente primeiro
+            itens.Sort("[SentOn]", True)
         except Exception as e:
             logger.warning(f"⚠️ Não consegui abrir Itens Enviados de {smtp}: {e}")
             continue
@@ -256,7 +257,7 @@ def varrer_enviados(namespace, registro, cfg, agora):
 
 
 def reconferir_antigas(namespace, registro):
-    """NFs marcadas antes da conferência pelo conteúdo: relê a nota e confirma (ou desfaz o ✅)."""
+    """Relê notas marcadas antes da conferência por conteúdo existir; desfaz o ✅ se não baterem."""
     mudancas = 0
     for ref, numero, entry_id in nfs_sem_prova(registro):
         try:
@@ -274,7 +275,6 @@ def reconferir_antigas(namespace, registro):
     return mudancas
 
 
-# --- 3 — Editar os e-mails consolidados ---
 def _conta_por_smtp(namespace, smtp):
     for conta in namespace.Accounts:
         if (conta.SmtpAddress or "").strip().lower() == smtp:
@@ -283,7 +283,7 @@ def _conta_por_smtp(namespace, smtp):
 
 
 def _procurar_consolidado(pasta, codigo, profundidade=0):
-    """Procura o consolidado (pelo código do rodapé) na pasta e nas subpastas — a pessoa pode ter movido."""
+    """Busca pelo código do rodapé, incluindo subpastas (a equipe move os e-mails)."""
     try:
         itens = pasta.Items
         itens.Sort("[ReceivedTime]", True)
@@ -319,6 +319,7 @@ def _esta_aberto(outlook, item):
 
 
 def atualizar_consolidados(outlook, namespace, registro):
+    """Reescreve selo, contador do assunto e categorias dos e-mails recebidos marcados pra atualizar."""
     atualizados = 0
     for codigo, dados in registro.emails.items():
         if not dados.get("precisa_atualizar"):
@@ -340,14 +341,14 @@ def atualizar_consolidados(outlook, namespace, registro):
             except Exception:
                 item = None
         if item is None:
-            item = _procurar_consolidado(conta.DeliveryStore.GetDefaultFolder(6), codigo)  # Caixa de Entrada
+            item = _procurar_consolidado(conta.DeliveryStore.GetDefaultFolder(6), codigo)   # olFolderInbox
         if item is None:
             logger.info(f"ℹ️ Ainda não achei o consolidado {codigo} na caixa de {dados['destinatario']} "
                         f"(pode não ter chegado) — tento de novo na próxima volta.")
             continue
         dados["entry_id_recebido"] = item.EntryID
 
-        if _esta_aberto(outlook, item):
+        if _esta_aberto(outlook, item):   # salvar com o inspector aberto gera conflito de versão
             logger.info(f"ℹ️ {codigo} está aberto numa janela — atualizo quando fechar.")
             continue
 
@@ -394,7 +395,7 @@ def _e_email_de_solicitacao(item, remetente_antigo):
 
 
 def marcar_notas_divididas(namespace, cfg, dias=45, so_conta=None):
-    """Tag azul "Nota dividida" nos e-mails de solicitação (robô novo e antigo) que pedem mais de uma nota."""
+    """Categoria "Nota dividida" nos e-mails de solicitação (dos dois robôs) que pedem mais de uma nota."""
     from controle_nf import CATEGORIA_DIVIDIDA, pede_nota_dividida
     remetente_antigo = str(cfg.get("robo_antigo", {}).get("remetente", "redeandrade.notafiscal@gmail.com")).lower()
     desde = datetime.datetime.now() - datetime.timedelta(days=dias)
@@ -429,7 +430,6 @@ def marcar_notas_divididas(namespace, cfg, dias=45, so_conta=None):
     return marcados
 
 
-# --- Laço ---
 def uma_volta(outlook, namespace, cfg, agora=None):
     import controle_nf
     controle_nf.VISUAL = cfg.get("visual_email", "classico")
@@ -446,7 +446,7 @@ def uma_volta(outlook, namespace, cfg, agora=None):
 
 
 def _travar_instancia_unica():
-    """Um conferente por máquina. Devolve o arquivo travado (manter aberto) ou None."""
+    """-> arquivo travado (manter aberto enquanto o processo vive) | None se já há outro."""
     os.makedirs(PASTA_ESTADO, exist_ok=True)
     arquivo = open(PASTA_ESTADO / "_conferente.lock", "a+b")
     try:
@@ -457,9 +457,9 @@ def _travar_instancia_unica():
         return None
 
 
-# --- ⚡ Ativar Claudio — pedido feito pelo menu da planilha (aba Status, B7) ---
-TICK_SEGUNDOS = 10                 # de quanto em quanto tempo olha se tem pedido do menu
-SINAL_ONLINE_SEGUNDOS = 5 * 60     # de quanto em quanto tempo avisa a planilha que está vivo
+# --- Comandos do menu da planilha (aba Status) ---
+TICK_SEGUNDOS = 10
+SINAL_ONLINE_SEGUNDOS = 5 * 60
 PEDIDO_EXPIRA = datetime.timedelta(minutes=30)
 
 
@@ -487,11 +487,10 @@ def _identificar(cfg):
 
 
 class _SoConferente(Exception):
-    """PC conferente: não fala com a aba Status."""
+    pass
 
 
 def publicar_sinal(backend, cfg):
-    """Avisa o menu que o robô está ligado + quais agentes têm e-mail (pra tela mostrar pra onde vai)."""
     from sheets import LINHA_CONFIG, LINHA_ONLINE, config_publica, escrever_linhas_status
     escrever_linhas_status(backend, cfg, {
         LINHA_CONFIG: config_publica(cfg),
@@ -500,7 +499,6 @@ def publicar_sinal(backend, cfg):
 
 
 def publicar_cota(backend, namespace, cfg):
-    """Conta os envios da última hora no Outlook e escreve na aba Status (menu 📊 Cota de Envio)."""
     if backend is None:
         return
     from cota_envio import medir
@@ -516,7 +514,7 @@ def _ler_selecao_status(backend, cfg):
 
 
 class AndamentoNaPlanilha(logging.Handler):
-    """Durante um envio pedido pelo menu, copia as linhas do log do robô pra aba Status (linha "Andamento…"""
+    """Handler de logging que espelha o log numa célula da aba Status (o menu mostra ao vivo)."""
     INTERVALO = 4
     MAX_LINHAS = 150
     IGNORAR = ("urllib3", "google", "gspread", "requests")
@@ -535,7 +533,7 @@ class AndamentoNaPlanilha(logging.Handler):
             self.gravar()
 
     def gravar(self):
-        if self.gravando:   # a própria gravação pode gerar log (nova tentativa): não entra em laço
+        if self.gravando:   # o retry da própria gravação loga: evita recursão
             return
         self.gravando = True
         try:
@@ -543,13 +541,13 @@ class AndamentoNaPlanilha(logging.Handler):
             escrever_linhas_status(self.backend, self.cfg, {self.linha or LINHA_ANDAMENTO: "\n".join(self.linhas)})
             self.ultima_gravacao = time.monotonic()
         except Exception:
-            pass   # mostrar o andamento é extra: nunca atrapalha o envio
+            pass
         finally:
             self.gravando = False
 
 
 def atender_conferencia(backend, cfg, quem):
-    """Menu 🔍 Conferir Cópia dos Hotéis: compara cada planilha de hotel com a Central, com log ao vivo."""
+    """Comando CONFERIR_COPIA."""
     from sheets import LINHA_COMANDO, LINHA_CONFERENCIA, LINHA_RESPOSTA, escrever_linhas_status
     import conferir_copia
     escrever_linhas_status(backend, cfg, {LINHA_COMANDO: "CONFERINDO", LINHA_CONFERENCIA: "",
@@ -569,7 +567,7 @@ def atender_conferencia(backend, cfg, quem):
 
 
 def atender_pedido(backend, cfg):
-    """Pedidos do menu da planilha: ENVIAR (⚡ Ativar Claudio) ou ENVIAR_SEPARADO (Envio Separado)"""
+    """Despacha o comando da aba Status. -> True se havia um comando."""
     from historico import ORIGEM_CLAUDIO, ORIGEM_SEPARADO
     from sheets import LINHA_COMANDO, LINHA_RESPOSTA, LINHA_SELECAO, escrever_linhas_status, ler_comando
     comando, quem, quando = ler_comando(backend, cfg)
@@ -651,17 +649,15 @@ def main():
     while True:
         agora = time.monotonic()
         try:
-            cfg = carregar_config()  # pega mudanças no config.json sem precisar reiniciar
+            cfg = carregar_config()   # hot reload
         except ErroDeConfig as e:
             logger.error(f"❌ {e}")
 
-        # Quem é este PC (contas do Outlook × Cadastro_Hoteis) — ao ligar e a cada 6 h
         if agora >= proxima_identidade:
             _identificar(cfg)
             proxima_identidade = agora + IDENTIDADE_SEGUNDOS
             cfg = carregar_config()
 
-        # Planilha: pedidos do menu + sinal de vida (só no PC principal)
         try:
             if not e_principal(cfg):
                 raise _SoConferente
@@ -672,14 +668,13 @@ def main():
                 publicar_sinal(backend, cfg)
                 proximo_sinal = agora + SINAL_ONLINE_SEGUNDOS
             if atender_pedido(backend, cfg):
-                proxima_conferencia = 0.0  # acabou de enviar: já confere os ✅ em seguida
+                proxima_conferencia = 0.0
         except _SoConferente:
             pass
         except Exception as e:
             logger.warning(f"⚠️ Não consegui falar com a planilha ({e}) — tento de novo em {TICK_SEGUNDOS}s.")
             backend = None
 
-        # Outlook: ✅ / 💬 nos consolidados
         if agora >= proxima_conferencia:
             try:
                 pythoncom.CoInitialize()

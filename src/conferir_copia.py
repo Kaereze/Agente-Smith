@@ -1,5 +1,8 @@
-"""Conferência da cópia: compara a planilha de cada hotel (Drive) com a Central. Só lê.
-Uso: python src\\conferir_copia.py
+"""Auditoria da cópia: compara a planilha de cada hotel com a aba correspondente na Central.
+
+Só lê os hotéis; grava o resultado na aba "Conferência da Cópia".
+
+    python src\\conferir_copia.py
 """
 import datetime
 import os
@@ -30,7 +33,6 @@ OK, NOVIDADE, PROBLEMA = "✔ Igual", "⏳ Novidade ainda não copiada", "✖ Di
 MAX_EXEMPLOS = 3
 
 
-# --- Comparação (regra pura, testável sem Google) ---
 def _linhas_com_dados(linhas):
     return [l for l in linhas[1:] if any(str(v).strip() for v in l)]
 
@@ -41,7 +43,7 @@ def _resumo_linha(l, i_car, i_email, i_nome):
 
 
 def comparar(origem, central, cfg):
-    """origem  = linhas da planilha do hotel (cabeçalho + dados)"""
+    """origem e central: linhas com cabeçalho. -> dict com contagens, faltando, diferenças e TRUE perdido."""
     col = cfg["colunas"]
     r = {"linhas_origem": 0, "linhas_central": 0, "faltando": [], "faltando_quando": [], "so_central": 0,
          "diferencas": [], "true_sumiu": [], "colunas_faltando": []}
@@ -55,11 +57,10 @@ def comparar(origem, central, cfg):
     i_env_c, i_car_c = _achar_coluna(cab_c, col["enviado"]), _achar_coluna(cab_c, col["carimbo"])
     i_mail_c = _achar_coluna(cab_c, col.get("email_hospede", ""))
 
-    # Colunas: cada coluna da planilha do hotel tem que existir na Central (mesmo nome)
     pos_c = {normalizar(c): i for i, c in enumerate(cab_c) if c}
     comparaveis = []
     for i, c in enumerate(cab_o):
-        if not c or i == i_env_o or i == i_car_o:   # data/hora já é conferida no casamento da linha
+        if not c or i == i_env_o or i == i_car_o:   # carimbo já entra na chave de casamento
             continue
         if normalizar(c) in pos_c:
             comparaveis.append((c, i, pos_c[normalizar(c)]))
@@ -71,7 +72,7 @@ def comparar(origem, central, cfg):
     fmt_o = detectar_formato_data((_celula(l, i_car_o) for l in linhas_o), cfg.get("formato_data_planilha", "americano"))
     fmt_c = detectar_formato_data((_celula(l, i_car_c) for l in linhas_c), fmt_o) if i_car_c is not None else fmt_o
 
-    # Casa cada solicitação pela chave (dia, hora, e-mail); repetidas casam na ordem
+    # Chave (dia, hora, e-mail); linha sem hora casa só por dia+e-mail; repetidas casam na ordem
     exatas, soltas, usadas = {}, {}, set()
     if i_car_c is not None:
         for idx, l in enumerate(linhas_c):
@@ -110,7 +111,7 @@ def comparar(origem, central, cfg):
 
 
 def _todas_depois(chaves, ultima_copia):
-    """True se TODAS as solicitações faltando chegaram depois da última cópia (normal: entram na próxima)."""
+    """Tudo que falta chegou depois da última cópia (não é erro: entra na próxima)."""
     if not chaves or ultima_copia is None:
         return False
     for data_iso, hora, _email in chaves:
@@ -124,7 +125,7 @@ def _todas_depois(chaves, ultima_copia):
 
 
 def classificar(r, mudou_depois_da_copia):
-    """(resultado, frase simples) a partir da comparação."""
+    """-> (OK | NOVIDADE | PROBLEMA, frase para a planilha)"""
     problemas = []
     if r["colunas_faltando"]:
         problemas.append(f"coluna(s) da planilha do hotel que não existem na Central: {', '.join(r['colunas_faltando'])}")
@@ -145,7 +146,6 @@ def classificar(r, mudou_depois_da_copia):
     return OK, f"Todas as {r['linhas_origem']} solicitações estão na Central, com os mesmos dados{extra}."
 
 
-# --- Conferência completa (Google) ---
 def conferir(backend=None, cfg=None):
     cfg = cfg or carregar_config()
     chave = caminho_chave_google(cfg)
@@ -197,7 +197,7 @@ def conferir(backend=None, cfg=None):
         else:
             r = comparar(origem, central_linhas, cfg)
             resultado, frase = classificar(r, _todas_depois(r["faltando_quando"], ultima_copia))
-        # Hotel com 2 planilhas: a que ficou de fora não pode ter solicitações que se percam
+        # Hotel com duas planilhas: só a mais recente com dados é copiada; a outra não pode ter pedidos
         for outra, linhas_outra in lidas:
             if outra is not arquivo and linhas_outra and len(_linhas_com_dados(linhas_outra)) > 0:
                 resultado = PROBLEMA
@@ -240,7 +240,7 @@ def _gravar_resultado(backend, cfg, resultados, agora):
 
 
 def rodar_com_trava():
-    """Usa a mesma trava da cópia/envio: assim não confere no meio de uma cópia (daria falso alarme)."""
+    """Mesma trava da cópia: conferir no meio de uma cópia daria falso alarme."""
     from lock_execucao import adquirir_lock, liberar_lock
     if not adquirir_lock():
         return None, "A cópia ou um envio está rodando agora — tente conferir de novo em 2 minutos."

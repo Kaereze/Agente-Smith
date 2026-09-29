@@ -1,12 +1,14 @@
-"""Diário de envios: anota ANTES de enviar — base anti-duplicidade."""
+"""Write-ahead log dos envios: anotado antes do Send, resolvido na execução seguinte.
+
+É o que impede reenvio quando o processo morre entre o Send e a marcação TRUE.
+"""
 import datetime
 import json
 
 from modelos import Hotel, Solicitacao
 from arquivos import salvar_json
 
-# Tempo pra considerar que um e-mail "sumido" realmente não saiu.
-MINUTOS_ATE_DESISTIR = 10
+MINUTOS_ATE_DESISTIR = 10   # sem aparecer em Enviados nem na Caixa de Saída após isso = não saiu
 
 
 class DiarioEnvios:
@@ -46,7 +48,7 @@ class DiarioEnvios:
 
 
 def solicitacoes_da_entrada(entrada):
-    """Recria as solicitações a partir do diário (só o necessário pra marcar TRUE e registrar)."""
+    """Só os campos necessários pra marcar TRUE."""
     resultado = []
     for d in entrada["solicitacoes"]:
         hotel = Hotel(aba=d["aba"], nome=d["hotel"], operador=d["operador"], planilha_id=d["planilha_id"])

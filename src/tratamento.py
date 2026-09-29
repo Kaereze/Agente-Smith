@@ -6,12 +6,12 @@ _PADRAO_DATA_BARRA = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})(\s+\d{1,2}:\d{2}(
 _PADRAO_DATA_ISO = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}:\d{2}(?::\d{2})?))?$")
 _SO_DIGITOS_E_PONTUACAO = re.compile(r"^[\d.\-/\s]+$")
 
-# tipo: (tamanho certo, menor tamanho que ainda é "zero comido")
+# tipo: (tamanho, menor tamanho que ainda consideramos "zeros à esquerda comidos")
 TAMANHOS_DOCUMENTO = {"cpf": (11, 9), "cnpj": (14, 12), "cep": (8, 7)}
 
 
 def detectar_formato_data(valores, padrao="americano"):
-    """Descobre se as datas de uma coluna estão em dia/mês ou mês/dia"""
+    """O primeiro valor com dia > 12 decide; sem nenhum, fica o padrão."""
     for valor in valores:
         m = _PADRAO_DATA_BARRA.match(str(valor).strip())
         if not m:
@@ -25,19 +25,19 @@ def detectar_formato_data(valores, padrao="americano"):
 
 
 def normalizar(texto):
-    """'  Endereço de E-mail ' -> 'endereco de e-mail' — só pra comparar nomes de coluna."""
+    """'  Endereço de E-mail ' -> 'endereco de e-mail'"""
     nfkd = unicodedata.normalize("NFKD", str(texto or ""))
     sem_acento = "".join(c for c in nfkd if not unicodedata.combining(c))
     return " ".join(sem_acento.lower().split())
 
 
 def _tem_palavra(cabecalho_normalizado, palavra):
-    # \b evita falso positivo: "Recepção" contém "cep" mas não é CEP.
+    # \b: "recepcao" contém "cep"
     return re.search(rf"\b{palavra}\b", cabecalho_normalizado) is not None
 
 
 def tipo_documento(cabecalho, colunas_documento=None):
-    """'cpf', 'cnpj', 'cpf_cnpj', 'cep' ou None, olhando o nome da coluna"""
+    """-> 'cpf' | 'cnpj' | 'cpf_cnpj' | 'cep' | None, pelo nome da coluna."""
     c = normalizar(cabecalho)
     for nome, tipo in (colunas_documento or {}).items():
         if normalizar(nome) == c:
@@ -55,12 +55,10 @@ def tipo_documento(cabecalho, colunas_documento=None):
 
 
 def completar_zeros(valor, tipo):
-    """Devolve o documento com os zeros da esquerda"""
     texto = str(valor).strip()
     if not texto:
         return texto
 
-    # A planilha às vezes mostra número grande como 1,2345E+10.
     if "e+" in texto.lower():
         try:
             texto = str(int(float(texto.replace(",", "."))))
@@ -77,7 +75,7 @@ def completar_zeros(valor, tipo):
         tipo = "cpf" if len(digitos) <= 11 else "cnpj"
     tamanho, minimo = TAMANHOS_DOCUMENTO[tipo]
 
-    # Só completa quando falta pouco — o que a planilha "come" são os zeros do começo (CEP de SP começa…
+    # A planilha come só os zeros à esquerda; se falta mais que isso, o valor está errado e fica como veio
     if not (minimo <= len(digitos) <= tamanho):
         return str(valor).strip()
     return digitos.zfill(tamanho)
@@ -108,7 +106,7 @@ def converter_data(valor, formato_planilha="americano"):
 def ler_data(valor, formato_planilha="americano"):
     """'9/3/2026 10:00' (americano) -> date(2026, 9, 3). None se não for data."""
     import datetime
-    texto = converter_data(valor, formato_planilha)  # sempre devolve dd/mm/aaaa quando é data
+    texto = converter_data(valor, formato_planilha)
     m = re.match(r"^(\d{2})/(\d{2})/(\d{4})", texto)
     if not m:
         return None
@@ -127,7 +125,7 @@ def tratar_valor(cabecalho, valor, formato_planilha="americano", colunas_documen
 
 def campos_para_email(cabecalhos, linha, colunas_ocultas, formato_planilha="americano",
                       colunas_documento=None, indices_ocultos=()):
-    """Lista de (campo, valor) que vai na tabela do e-mail, na ordem das colunas — sem vazios e sem…"""
+    """[(campo, valor)] na ordem das colunas, sem vazios e sem as colunas ocultas."""
     ocultas = {normalizar(c) for c in colunas_ocultas}
     campos = []
     for indice, cabecalho in enumerate(cabecalhos):

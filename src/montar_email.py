@@ -1,4 +1,4 @@
-"""Monta o e-mail de cada hotel (assunto + HTML)."""
+"""Assunto e HTML dos e-mails de solicitação. HTML com estilo inline: é o que o Outlook respeita."""
 import datetime
 import uuid
 from html import escape
@@ -8,18 +8,15 @@ from controle_nf import paragrafo_status
 from modelos import EmailMontado
 from tratamento import converter_data, normalizar
 
-# Paleta nova da rede (26/09/2026): o dourado virou verde #00786c; o creme #d5bda1 fica nos detalhes.
-COR_DOURADA = "#00786c"   # barras de cabeçalho das tabelas (nome antigo mantido pra não quebrar nada)
-COR_ESCURA = "#00786c"    # título e faixa com o nome do hotel
+COR_PRIMARIA = "#00786c"
 COR_CREME = "#d5bda1"
-COR_TEXTO_TABELA = "#173f39"   # letra verde-escuro em cima do creme
-COR_BORDA_TABELA = "#bfa27c"   # linha entre as células (creme um pouco mais escuro)
+COR_TEXTO_TABELA = "#173f39"
+COR_BORDA_TABELA = "#bfa27c"
 FONTE = "font-family:Segoe UI,Arial,sans-serif;"
 TAMANHO_MAXIMO_ASSUNTO = 200
 
 
 def ordenar_para_email(solicitacoes):
-    """Hotel em ordem alfabética; dentro do hotel, na ordem da planilha."""
     return sorted(solicitacoes, key=lambda s: (normalizar(s.hotel.nome), s.hotel.aba, s.linha))
 
 
@@ -35,7 +32,7 @@ def _dividir(lista, limite):
 
 
 def _hoteis_em_ordem(solicitacoes):
-    """[(nome_hotel, quantidade)] na ordem em que aparecem."""
+    """-> [(hotel, quantidade)] na ordem de aparição"""
     contagem = {}
     for s in solicitacoes:
         contagem[s.hotel.nome] = contagem.get(s.hotel.nome, 0) + 1
@@ -43,12 +40,12 @@ def _hoteis_em_ordem(solicitacoes):
 
 
 def assunto_individual(s):
-    """'Solicitação NF - RONDONÓPOLIS - Nome do hóspede' (1 solicitação por e-mail)."""
+    """'Solicitação NF - RONDONÓPOLIS - Nome do hóspede'"""
     return f"Solicitação NF - {s.hotel.nome} - {s.nome_titulo}"[:TAMANHO_MAXIMO_ASSUNTO]
 
 
 def montar_assunto(solicitacoes, parte=1, total_partes=1):
-    """'Solicitações NF (12) - Hotel A, Hotel B' — corta a lista de hotéis se ficar longa."""
+    """'Solicitações NF (12) - Hotel A, Hotel B e mais 3'"""
     nomes = [nome for nome, _ in _hoteis_em_ordem(solicitacoes)]
     inicio = f"Solicitações NF ({len(solicitacoes)}) - "
     sufixo = f" [parte {parte}/{total_partes}]" if total_partes > 1 else ""
@@ -76,14 +73,14 @@ def _tabela_solicitacao(s, numero, total_hotel, formato_data):
         )
     return f"""
 <div style="margin:18px 0 26px 0;">
-  <p style="{FONTE}font-size:14px;margin:0 0 4px 0;color:{COR_ESCURA};">
+  <p style="{FONTE}font-size:14px;margin:0 0 4px 0;color:{COR_PRIMARIA};">
     <strong>Solicitação {numero} de {total_hotel} — {escape(s.nome_titulo)}</strong></p>
   {paragrafo_status(s.ref, {"partes": s.partes_esperadas}) if s.ref else ""}
   <p style="{FONTE}font-size:12px;margin:0 0 6px 0;"><strong>Enviado por:</strong> {remetente}</p>
   <table style="border-collapse:collapse;{FONTE}font-size:13px;width:100%;">
-    <thead><tr style="background-color:{COR_DOURADA};color:{COR_CREME};">
-      <th style="padding:8px;text-align:left;border:1px solid {COR_DOURADA};">Campo</th>
-      <th style="padding:8px;text-align:left;border:1px solid {COR_DOURADA};">Valor</th>
+    <thead><tr style="background-color:{COR_PRIMARIA};color:{COR_CREME};">
+      <th style="padding:8px;text-align:left;border:1px solid {COR_PRIMARIA};">Campo</th>
+      <th style="padding:8px;text-align:left;border:1px solid {COR_PRIMARIA};">Valor</th>
     </tr></thead>
     <tbody>{''.join(linhas)}</tbody>
   </table>
@@ -110,7 +107,7 @@ def montar_html(operador, solicitacoes, codigo, parte=1, total_partes=1,
         tabelas = "".join(_tabela_solicitacao(s, i, len(lista_hotel), formato_data)
                           for i, s in enumerate(lista_hotel, start=1))
         blocos.append(
-            f'<h2 style="{FONTE}font-size:17px;color:{COR_CREME};background:{COR_ESCURA};'
+            f'<h2 style="{FONTE}font-size:17px;color:{COR_CREME};background:{COR_PRIMARIA};'
             f'padding:10px 14px;margin:30px 0 0 0;border-left:6px solid {COR_CREME};">'
             f'{escape(hotel_atual)} <span style="font-weight:normal;font-size:13px;">'
             f'({len(lista_hotel)} solicitaç{"ão" if len(lista_hotel) == 1 else "ões"})</span></h2>'
@@ -132,12 +129,12 @@ def montar_html(operador, solicitacoes, codigo, parte=1, total_partes=1,
     titulo_parte = f" — parte {parte} de {total_partes}" if total_partes > 1 else ""
     return f"""<html><body style="{FONTE}color:#222;">
 {faixa_teste}
-<h1 style="{FONTE}font-size:20px;color:{COR_ESCURA};margin:0 0 4px 0;">Solicitações de Nota Fiscal{titulo_parte}</h1>
+<h1 style="{FONTE}font-size:20px;color:{COR_PRIMARIA};margin:0 0 4px 0;">Solicitações de Nota Fiscal{titulo_parte}</h1>
 <p style="{FONTE}font-size:12px;color:#666;margin:0 0 16px 0;">
   Operador: {escape(operador)} · Gerado em {agora.strftime('%d/%m/%Y %H:%M')} · {len(solicitacoes)} solicitação(ões)</p>
 
 <table style="border-collapse:collapse;{FONTE}font-size:13px;min-width:320px;">
-  <thead><tr style="background-color:{COR_DOURADA};color:{COR_CREME};">
+  <thead><tr style="background-color:{COR_PRIMARIA};color:{COR_CREME};">
     <th style="padding:6px 10px;text-align:left;border:1px solid #ddd;">Hotel</th>
     <th style="padding:6px 10px;text-align:right;border:1px solid #ddd;">Solicitações</th>
   </tr></thead>
@@ -152,7 +149,7 @@ def montar_html(operador, solicitacoes, codigo, parte=1, total_partes=1,
 </body></html>"""
 
 
-# --- Visual "verde" (paleta nova da rede: verde #173f39 dominante + creme #d5bda1) Tudo em tabelas e… ---
+# Visual "verde" (config visual_email = "verde"): fundo escuro, tudo em <table> pro Outlook não quebrar o layout
 V, C, V2, C2, LINHA = "#173f39", "#d5bda1", "#1f4b44", "#a8977f", "#2d5b53"
 
 
@@ -255,7 +252,7 @@ def novo_codigo():
 
 
 def montar_emails(solicitacoes, cfg):
-    """Devolve a lista de EmailMontado: um por operador (ou mais, se passar do limite por e-mail)"""
+    """agrupar_email = "solicitacao": um e-mail por solicitação; "hotel": um por operador, em partes."""
     emails = []
     controle_nf.VISUAL = cfg.get("visual_email", "classico")
     montar = montar_html_verde if controle_nf.VISUAL == "verde" else montar_html
@@ -267,7 +264,7 @@ def montar_emails(solicitacoes, cfg):
         for i, parte in enumerate(partes, start=1):
             codigo = novo_codigo()
             for n, s in enumerate(parte, start=1):
-                s.ref = f"{codigo}-{n:02d}"  # o conferente acha a solicitação no e-mail por aqui
+                s.ref = f"{codigo}-{n:02d}"
             assunto = (assunto_individual(parte[0]) if uma_por_email else montar_assunto(parte, i, len(partes)))
             if modo_teste:
                 assunto = "[TESTE] " + assunto

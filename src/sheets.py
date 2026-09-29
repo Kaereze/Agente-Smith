@@ -1,4 +1,4 @@
-"""Google Sheets: Planilha Central (abas de hotel, Status, Log)."""
+"""Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log."""
 import datetime
 import hashlib
 import re
@@ -14,15 +14,14 @@ from tratamento import campos_para_email, detectar_formato_data, ler_data, norma
 logger = configurar_logging(__name__)
 
 ESCOPOS = ["https://www.googleapis.com/auth/spreadsheets"]
-# Modo SIMULACAO: o Google só deixa LER. Qualquer tentativa de gravar é recusada.
-ESCOPOS_SO_LEITURA = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+ESCOPOS_SO_LEITURA = ["https://www.googleapis.com/auth/spreadsheets.readonly"]   # SIMULACAO
 TIMEOUT_GOOGLE_SEGUNDOS = 30
 
-SEPARADOR = chr(31)  # caractere que nunca aparece em resposta de formulário
+SEPARADOR = chr(31)   # nunca aparece numa resposta de formulário
 VALORES_PENDENTE = {"", "false", "falso"}
 VALORES_DESLIGADO = {"false", "falso", "nao", "n", "0", "inativo"}
 
-# Layout da aba Status (coluna A = rótulo, coluna B = valor)
+# Aba Status: A = rótulo, B = valor. As linhas 7+ são o protocolo com apps_script/menu_planilha_central.gs.
 STATUS_ROTULO_A1 = "Robô ligado?"
 STATUS_LINHAS = [
     [STATUS_ROTULO_A1, False],
@@ -31,32 +30,30 @@ STATUS_LINHAS = [
     ["Última tentativa", ""],
     ["Modo", ""],
     ["Máquina", ""],
-    # Conversa com o menu da planilha (apps_script/menu_planilha_central.gs):
-    ["Comando", ""],                          # B7: "ENVIAR" (menu ⚡ Ativar Claudio) / "EM ANDAMENTO"
-    ["Pedido por", ""],                       # B8: "email | 2026-09-24T14:05:00.000Z"
-    ["Resposta do robô", ""],                 # B9
-    ["Última verificação de pendências", ""], # B10 (escrito pelo menu 📋 Verificar Pendências)
-    ["Configuração do robô", ""],             # B11: JSON com agentes/modo (o menu mostra pra onde vai)
-    ["Robô online (último sinal)", ""],       # B12
-    ["Seleção do envio separado", ""],        # B13: "aba | 131, 132 | reenviar" (menu Envio Separado)
-    ["Cota de envio", ""],                    # B14: JSON da cota do servidor (menu 📊 Cota de Envio)
-    ["Andamento do envio (ao vivo)", ""],     # B15: o que o robô está fazendo agora (tela do Claudio mostra)
-    ["Conferência da cópia (ao vivo)", ""],   # B16: log da conferência hotel por hotel (menu 🔍 Conferir Cópia)
+    ["Comando", ""],                          # 7: ENVIAR | ENVIAR_SEPARADO | CONFERIR_COPIA
+    ["Pedido por", ""],                       # 8: "email | ISO-8601"
+    ["Resposta do robô", ""],
+    ["Última verificação de pendências", ""],
+    ["Configuração do robô", ""],             # 11: JSON de config_publica()
+    ["Robô online (último sinal)", ""],
+    ["Seleção do envio separado", ""],        # 13: "aba | 131, 132 | reenviar"
+    ["Cota de envio", ""],                    # 14: JSON de cota_envio.medir()
+    ["Andamento do envio (ao vivo)", ""],
+    ["Conferência da cópia (ao vivo)", ""],
 ]
 LINHA_COMANDO, LINHA_PEDIDO, LINHA_RESPOSTA, LINHA_CONFIG, LINHA_ONLINE, LINHA_SELECAO = 7, 8, 9, 11, 12, 13
 LINHA_COTA, LINHA_ANDAMENTO, LINHA_CONFERENCIA = 14, 15, 16
 
 
 class ErroPlanilha(Exception):
-    """Problema que impede o robô de seguir (aba Hoteis faltando, aba Status de outra pessoa...)."""
+    """Erro que impede a execução de seguir."""
 
 
 def nome_intervalo(aba):
-    """Nome de aba pronto pra API: 'Hotel D'Ávila' -> 'Hotel D''Ávila' entre aspas simples."""
+    """"D'Ávila" -> "'D''Ávila'" (notação A1)."""
     return "'" + str(aba).replace("'", "''") + "'"
 
 
-# --- Camada da API ---
 class BackendGoogle:
     def __init__(self, caminho_chave, somente_leitura=False):
         import gspread
@@ -65,7 +62,6 @@ class BackendGoogle:
         escopos = ESCOPOS_SO_LEITURA if somente_leitura else ESCOPOS
         credenciais = Credentials.from_service_account_file(caminho_chave, scopes=escopos)
         self._cliente = gspread.authorize(credenciais)
-        # Sem isso, uma conexão travada ficaria pendurada pra sempre.
         self._cliente.set_timeout(TIMEOUT_GOOGLE_SEGUNDOS)
         self._planilhas = {}
 
@@ -76,7 +72,8 @@ class BackendGoogle:
         return self._planilhas[planilha_id]
 
     def ler_abas(self, planilha_id, nomes):
-        """Lê várias abas de uma vez"""
+        """Uma chamada pra todas as abas; se falhar, lê uma a uma pra isolar a com problema.
+        -> ({aba: linhas}, {aba: erro})"""
         nomes = list(dict.fromkeys(nomes))
         if not nomes:
             return {}, {}
@@ -108,7 +105,7 @@ class BackendGoogle:
         return [aba.title for aba in com_retry(lambda: self._planilha(planilha_id).worksheets(), e_erro_passageiro_google)]
 
     def escrever(self, planilha_id, atualizacoes):
-        """atualizacoes = [("'Aba'!K5", valor), ...] — tudo numa chamada só."""
+        """atualizacoes = [("'Aba'!K5", valor), ...]"""
         if not atualizacoes:
             return
         planilha = self._planilha(planilha_id)
@@ -123,7 +120,6 @@ class BackendGoogle:
         aba = com_retry(lambda: planilha.add_worksheet(title=nome, rows=20, cols=4), e_erro_passageiro_google)
         com_retry(lambda: aba.update(range_name="A1", values=linhas, value_input_option="USER_ENTERED"),
                   e_erro_passageiro_google)
-        # Caixa de seleção na célula B1 ("Robô ligado?")
         pedido = {"requests": [{"setDataValidation": {
             "range": {"sheetId": aba.id, "startRowIndex": 0, "endRowIndex": 1,
                       "startColumnIndex": 1, "endColumnIndex": 2},
@@ -132,7 +128,6 @@ class BackendGoogle:
         com_retry(lambda: planilha.batch_update(pedido), e_erro_passageiro_google)
 
     def criar_aba_log(self, planilha_id, nome, cabecalho):
-        """Aba 'Log de Envios': cabeçalho verde #173f39 com texto creme #d5bda1, congelado, colunas largas."""
         planilha = self._planilha(planilha_id)
         aba = com_retry(lambda: planilha.add_worksheet(title=nome, rows=1000, cols=len(cabecalho)),
                         e_erro_passageiro_google)
@@ -160,7 +155,6 @@ class BackendGoogle:
         com_retry(lambda: planilha.batch_update({"requests": pedidos}), e_erro_passageiro_google)
 
     def inserir_no_topo(self, planilha_id, aba, linhas):
-        """Insere as linhas logo abaixo do cabeçalho (o mais recente fica em cima)."""
         planilha = self._planilha(planilha_id)
         planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
         com_retry(lambda: planilha.batch_update({"requests": [{"insertDimension": {
@@ -175,9 +169,8 @@ class BackendGoogle:
         com_retry(lambda: planilha_aba.append_rows(linhas, value_input_option="RAW"), e_erro_passageiro_google)
 
 
-# --- Regras de negócio ---
 def _achar_coluna(cabecalhos, nomes_aceitos):
-    """Posição da 1ª coluna cujo nome bate com algum dos aceitos (texto ou lista, na ordem de preferência)."""
+    """nomes_aceitos: str ou lista em ordem de preferência."""
     if isinstance(nomes_aceitos, str):
         nomes_aceitos = [nomes_aceitos]
     alvos = [normalizar(n) for n in nomes_aceitos if str(n).strip()]
@@ -195,12 +188,11 @@ def _celula(linha, indice):
 
 
 def _indice_coluna(letra):
-    """'A' -> 0, 'C' -> 2."""
     return ord(str(letra).strip().upper()) - ord("A")
 
 
 def ler_hoteis(backend, cfg):
-    """Descobre quais abas de respostas existem e pra quem vai cada uma"""
+    """Casa cada aba '(respostas)' da Central com o Cadastro_Hoteis. -> (hoteis, erros)"""
     central = cfg["planilha_central_id"]
     aba_cadastro = cfg["aba_cadastro_hoteis"]
     dados, erros_leitura = backend.ler_abas(central, [aba_cadastro])
@@ -217,7 +209,7 @@ def ler_hoteis(backend, cfg):
     for linha in linhas:
         nome, agente = _celula(linha, i_hotel), _celula(linha, i_agente)
         if not nome or normalizar(agente) in ("agente", "operador", "responsavel"):
-            continue  # linha vazia ou cabeçalho
+            continue
         cadastro.setdefault(normalizar(nome), (nome, agente, _celula(linha, i_email_hotel).lower()))
 
     agentes = {normalizar(k): str(v).strip().lower() for k, v in cfg.get("agentes", {}).items()
@@ -225,9 +217,7 @@ def ler_hoteis(backend, cfg):
     apelidos = {normalizar(k): v for k, v in cfg.get("apelidos_hoteis", {}).items() if not str(k).startswith("_")}
     ignoradas = {normalizar(a) for a in cfg.get("abas_ignoradas", [])}
     marcador = normalizar(cfg.get("marcador_aba_respostas", "(respostas)"))
-    # Em SIMULACAO/TESTE nada vai pro agente de verdade, então agente sem e-mail não impede o teste —…
-    sem_envio_real = cfg["modo"] in ("SIMULACAO", "TESTE")
-    # `somente_hoteis` (teste): os outros hotéis nem entram — nem como erro.
+    sem_envio_real = cfg["modo"] in ("SIMULACAO", "TESTE")   # agente sem e-mail não bloqueia teste
     somente = {normalizar(h) for h in cfg.get("somente_hoteis", []) if str(h).strip()}
 
     hoteis, erros = [], []
@@ -244,7 +234,6 @@ def ler_hoteis(backend, cfg):
         if somente and normalizar(nome) not in somente:
             continue
         if cfg.get("destino_envio", "agente") == "hotel":
-            # Cada hotel recebe as solicitações dele no próprio e-mail (coluna B do Cadastro_Hoteis)
             email = email_hotel
             if "@" not in email:
                 erros.append(f"{titulo}: o hotel '{nome}' não tem e-mail na coluna B do {aba_cadastro}")
@@ -265,7 +254,7 @@ def ler_hoteis(backend, cfg):
 
 
 def assinatura_da_linha(linha, i_enviado):
-    """Resumo curto de TODAS as células da linha, menos a coluna Enviado (que muda)."""
+    """Hash da linha sem a coluna Enviado; diferencia pedidos com mesmo carimbo e e-mail."""
     valores = [str(v).strip() for i, v in enumerate(linha) if i != i_enviado]
     while valores and not valores[-1]:
         valores.pop()
@@ -279,7 +268,6 @@ def nome_do_hotel_pela_aba(nome_aba):
 
 
 def _nome_titulo(cabecalhos, linha, cfg):
-    """Nome que aparece no título de cada solicitação"""
     colunas = cfg["colunas"]
     i_tomador = _achar_coluna(cabecalhos, colunas.get("reserva_no_tomador", ""))
     i_pf = _achar_coluna(cabecalhos, colunas.get("nome_pessoa_fisica", ""))
@@ -290,7 +278,7 @@ def _nome_titulo(cabecalhos, linha, cfg):
 
 
 def _dados_para_conferencia(cabecalhos, linha, cfg):
-    """E-mails de contato, nomes e em quantas partes a NF é dividida."""
+    """-> (emails de contato, nomes, partes da nota dividida)"""
     colunas = cfg["colunas"]
     emails, nomes = [], []
     for i, cab in enumerate(cabecalhos):
@@ -308,12 +296,12 @@ def _dados_para_conferencia(cabecalhos, linha, cfg):
     if normalizar(_celula(linha, i_div)) == "sim":
         i_qtd = _achar_coluna(cabecalhos, colunas.get("dividida_quantas", "Dividida em quantas vezes"))
         digitos = re.sub(r"\D", "", _celula(linha, i_qtd))
-        partes = max(2, int(digitos)) if digitos else 2   # "Sim" sem número: pelo menos 2
+        partes = max(2, int(digitos)) if digitos else 2
     return emails, nomes, partes
 
 
 def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
-    """Transforma as linhas de uma aba em solicitações PENDENTES"""
+    """-> (pendentes, erro). Com incluir_linhas, pega essas linhas mesmo já marcadas TRUE."""
     if not linhas:
         return [], None
     cabecalhos = [str(c).strip() for c in linhas[0]]
@@ -326,11 +314,10 @@ def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
     if i_carimbo is None:
         return [], f"sem a coluna '{colunas['carimbo']}'"
 
-    # Cada aba pode vir num formato de data (Forms = americano; dado colado à mão costuma vir brasileiro)
+    # Forms grava em mês/dia; linhas coladas à mão costumam vir em dia/mês
     formato = detectar_formato_data((_celula(l, i_carimbo) for l in linhas[1:]),
                                     cfg.get("formato_data_planilha", "americano"))
     documentos = cfg.get("colunas_documento", {})
-    # a coluna de e-mail usada em "Enviado por" não se repete dentro da tabela
     esconder = {i_email} if i_email is not None else set()
     pendentes = []
     for numero, linha in enumerate(linhas[1:], start=2):
@@ -365,7 +352,7 @@ def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
 
 
 def ler_pendentes(backend, cfg, hoteis):
-    """Lê todas as abas dos hotéis (uma chamada por planilha) e devolve (solicitacoes_pendentes, erros)"""
+    """-> (pendentes, erros), uma leitura por planilha."""
     por_planilha = {}
     for hotel in hoteis:
         por_planilha.setdefault(hotel.planilha_id, []).append(hotel)
@@ -394,7 +381,7 @@ def ler_pendentes(backend, cfg, hoteis):
 
 
 def marcar_enviados(backend, cfg, solicitacoes):
-    """Marca Enviado = TRUE nas solicitações já confirmadas como enviadas"""
+    """Relê a aba e acha a linha pela chave, não pelo número (a aba pode ter mudado desde a leitura)."""
     colunas = cfg["colunas"]
     por_planilha = {}
     for s in solicitacoes:
@@ -438,7 +425,6 @@ def marcar_enviados(backend, cfg, solicitacoes):
 
 
 def robo_ligado(backend, cfg):
-    """Lê a caixa "Robô ligado?" (célula B1 da aba Status)"""
     central, aba = cfg["planilha_central_id"], cfg["aba_status"]
     dados, erros = backend.ler_abas(central, [aba])
     if aba in erros:
@@ -454,8 +440,7 @@ def robo_ligado(backend, cfg):
 
 
 def gravar_status(backend, cfg, sucesso, resumo, agora=None):
-    """"Batimento cardíaco": data/hora da última execução com sucesso + resumo."""
-    # O apóstrofo força TEXTO: a planilha está em formato americano e leria "05/10/2026" como 10 de maio
+    # Apóstrofo força texto: a planilha é en-US e leria "05/10/2026" como 10 de maio
     agora = "'" + (agora or datetime.datetime.now()).strftime("%d/%m/%Y %H:%M:%S")
     aba = nome_intervalo(cfg["aba_status"])
     atualizacoes = [
@@ -473,7 +458,7 @@ def gravar_status(backend, cfg, sucesso, resumo, agora=None):
 
 
 def registrar_central(backend, cfg, solicitacoes):
-    """Copia as solicitações enviadas pra aba Registros (o Apps Script antigo fazia isso)."""
+    """Espelha as enviadas na aba Registros, como o Apps Script antigo fazia."""
     reg = cfg.get("registro_central", {})
     if not reg.get("ativo") or not solicitacoes:
         return
@@ -489,9 +474,9 @@ def registrar_central(backend, cfg, solicitacoes):
                        f"Os e-mails e o TRUE estão certos — só o registro ficou sem essas linhas.")
 
 
-# --- Conversa com o menu da planilha (⚡ Ativar Claudio) ---
+# --- Protocolo com o menu da planilha ---
 def garantir_rotulos_status(backend, cfg):
-    """Escreve os rótulos novos (A7:A12) numa aba Status criada antes deles existirem."""
+    """Completa os rótulos numa aba Status criada por uma versão antiga."""
     central, aba = cfg["planilha_central_id"], cfg["aba_status"]
     dados, erros = backend.ler_abas(central, [aba])
     linhas = dados.get(aba, [])
@@ -504,7 +489,7 @@ def garantir_rotulos_status(backend, cfg):
 
 
 def ler_comando(backend, cfg):
-    """(comando, quem, quando) da aba Status. `quando` é datetime com fuso, ou None."""
+    """-> (comando, quem, quando: datetime aware | None)"""
     central, aba = cfg["planilha_central_id"], cfg["aba_status"]
     dados, erros = backend.ler_abas(central, [aba])
     linhas = dados.get(aba, [])
@@ -521,14 +506,14 @@ def ler_comando(backend, cfg):
 
 
 def escrever_linhas_status(backend, cfg, valores):
-    """valores = {linha: texto} na coluna B da aba Status (sempre como texto)."""
+    """valores = {linha: texto}, gravados como texto na coluna B."""
     aba = nome_intervalo(cfg["aba_status"])
     backend.escrever(cfg["planilha_central_id"],
                      [(f"{aba}!B{linha}", ("'" + str(v)) if str(v) else "") for linha, v in valores.items()])
 
 
 def config_publica(cfg):
-    """O que o menu da planilha precisa saber do robô (sem chave, sem caminho de arquivo)."""
+    """Subconjunto do config que o menu pode ver (sem caminhos nem chave)."""
     import json
     limpo = lambda d: {k: v for k, v in d.items() if not str(k).startswith("_")}
     return json.dumps({

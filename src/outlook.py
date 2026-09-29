@@ -1,4 +1,4 @@
-"""Outlook: envio pela conta certa e confirmação em Itens Enviados."""
+"""Envio pelo Outlook (COM) e confirmação em Itens Enviados."""
 import time
 
 from log_util import configurar_logging
@@ -7,12 +7,12 @@ logger = configurar_logging(__name__)
 
 PASTA_CAIXA_SAIDA = 4    # olFolderOutbox
 PASTA_ENVIADOS = 5       # olFolderSentMail
-DISPID_SEND_USING_ACCOUNT = 64209  # jeito conhecido de trocar a conta remetente pelo pywin32
+DISPID_SEND_USING_ACCOUNT = 64209  # MailItem.SendUsingAccount não aceita atribuição direta no pywin32
 MAX_ITENS_PROCURADOS = 200
 
 
 class ErroOutlook(Exception):
-    """Outlook não ficou pronto ou a conta remetente não existe."""
+    pass
 
 
 class OutlookNF:
@@ -22,11 +22,9 @@ class OutlookNF:
         self.outlook = None
         self.namespace = None
         self.conta = None
-        self.contas = {}   # {e-mail: conta do Outlook} — pra enviar da própria conta do hotel
+        self.contas = {}
 
-    # -- conexão -------------------------------------------------------------
     def conectar(self):
-        """Tenta até N vezes. Se o Outlook estiver fechado, o próprio Windows abre."""
         import pythoncom
         import win32com.client
 
@@ -66,13 +64,11 @@ class OutlookNF:
                 return conta
         raise ErroOutlook(f"A conta remetente '{desejada}' não está neste Outlook. Contas encontradas: {encontradas}")
 
-    # -- envio ---------------------------------------------------------------
     def conta_para(self, destinatario):
-        """Se a caixa do destinatário (o hotel) está neste Outlook, o e-mail sai DELA pra ela mesma — assim o…"""
+        """A caixa do próprio hotel quando ela está neste Outlook; senão, a conta_remetente."""
         return self.contas.get(str(destinatario or "").strip().lower()) or self.conta
 
     def enviar(self, email):
-        """Entrega o e-mail pro Outlook enviar. Erro sobe pra quem chamou."""
         mail = self.outlook.CreateItem(0)  # olMailItem
         mail.To = email.destinatario
         mail.Subject = email.assunto
@@ -84,14 +80,12 @@ class OutlookNF:
             mail._oleobj_.Invoke(*(DISPID_SEND_USING_ACCOUNT, 0, 8, 0, conta))
         mail.Send()
         try:
-            self.namespace.SendAndReceive(False)  # empurra a Caixa de Saída na hora
+            self.namespace.SendAndReceive(False)
         except Exception:
             pass
 
-    # -- confirmação ---------------------------------------------------------
     def _pastas(self, tipo, destinatario=None):
-        """Pasta da conta que enviou (a do hotel, se estiver aqui) e, por garantia, a da conta_remetente."""
-        # As contas do Outlook (CDispatch) não servem de chave de dict — tira repetida pelo e-mail (achado…
+        # CDispatch não é hashable: deduplica pelo endereço
         pastas, vistas = [], set()
         for conta in (self.conta_para(destinatario), self.conta):
             smtp = str(getattr(conta, "SmtpAddress", "") or "").lower() if conta is not None else ""
@@ -112,10 +106,9 @@ class OutlookNF:
             return False
 
     def esta_nos_enviados(self, codigo, desde=None, destinatario=None):
-        """True se um e-mail com esse código está em Itens Enviados"""
         for pasta in self._pastas(PASTA_ENVIADOS, destinatario):
             itens = pasta.Items
-            itens.Sort("[SentOn]", True)  # mais recente primeiro
+            itens.Sort("[SentOn]", True)
             for i, item in enumerate(itens):
                 if i >= MAX_ITENS_PROCURADOS:
                     break
