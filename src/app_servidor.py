@@ -334,6 +334,14 @@ def criar_handler(estado, cfg, token, ultimo_uso):
 
 
 def abrir_janela():
+    """Abre o app (app_janela.py, pywebview). Sem pywebview instalado, cai pro Edge em modo aplicativo."""
+    try:
+        import webview  # noqa: F401
+        pythonw = PASTA_PROJETO / ".venv" / "Scripts" / "pythonw.exe"
+        subprocess.Popen([str(pythonw), str(PASTA_PROJETO / "src" / "app_janela.py")], cwd=str(PASTA_PROJETO))
+        return
+    except ImportError:
+        pass
     edge = next((p for p in EDGE if os.path.exists(p)), None)
     url = f"http://127.0.0.1:{PORTA}/"
     if edge is None:

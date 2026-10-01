@@ -5,7 +5,7 @@ Remove-Item (Join-Path $desktop "Solicitacoes NF.lnk") -ErrorAction SilentlyCont
 $shell = New-Object -ComObject WScript.Shell
 $atalho = $shell.CreateShortcut((Join-Path $desktop "Painel Notas Fiscais.lnk"))
 $atalho.TargetPath = Join-Path $projeto ".venv\Scripts\pythonw.exe"
-$atalho.Arguments = '"' + (Join-Path $projeto "src\app_servidor.py") + '"'
+$atalho.Arguments = '"' + (Join-Path $projeto "src\app_janela.py") + '"'
 $atalho.WorkingDirectory = $projeto
 $atalho.IconLocation = (Join-Path $projeto "app_ui\icone.ico") + ",0"
 $atalho.Description = "Painel Notas Fiscais - fila de solicitacoes sincronizada pela Planilha Central"
