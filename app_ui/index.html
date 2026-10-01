@@ -71,18 +71,44 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--
 .tabela .zero{color:#5f7a73}
 .alerta-txt{color:#fab219} .ruim-txt{color:#ff8a80}
 .avisos{font-size:12px;color:var(--suave);margin-top:-6px;margin-bottom:12px}
-/* Envio de NF */
-.env-campo{margin-bottom:12px}
-.env-campo label{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--suave);margin-bottom:5px}
-.env-campo input,.env-campo textarea,.env-campo select{width:100%}
-.anexos{display:flex;flex-direction:column;gap:6px}
-.anexo-op{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--card);cursor:pointer;border:1px solid transparent}
-.anexo-op:hover{background:var(--card2)}
-.anexo-op.sel{border-color:var(--creme)}
-.anexo-op .ic{font-size:18px}
-.anexo-op .meta{font-size:11px;color:var(--suave)}
-.de-caixa{padding:9px 12px;border-radius:10px;background:var(--card);font-size:13px}
-.de-caixa.alerta{background:#4d4214;color:#f6e3a3}
+/* Envio de NF (estilo Outlook) */
+.modal.compor{width:min(920px,95vw);max-height:92vh}
+.compor-topo{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--verde);color:#fff;font-size:13px;font-weight:600}
+.compor-topo .compor-quem{flex:1;font-weight:400;opacity:.85}
+.compor-topo .fechar{color:#fff}
+.compor-corpo{overflow:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.compor-cab{display:flex;gap:14px;align-items:stretch}
+.btn-enviar{width:84px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:10px;background:var(--verde2);color:#fff;font-weight:700;font-size:13px}
+.btn-enviar .ic{font-size:22px}
+.btn-enviar:disabled{background:var(--card);color:var(--suave);cursor:not-allowed}
+.campos-cab{flex:1;display:flex;flex-direction:column}
+.linha-cab{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--linha);min-height:38px}
+.linha-cab .rot{width:62px;flex:none;font-size:12px;color:var(--suave)}
+.linha-cab input{flex:1;background:transparent;border:0;border-radius:0;padding:8px 2px;color:var(--texto)}
+.linha-cab input:focus{outline:none;background:#ffffff08}
+.campo-txt{font-size:13px;padding:8px 2px}
+.campo-txt.alerta{color:#f6e3a3}
+.soltar{border:2px dashed var(--linha);border-radius:12px;padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+.soltar:hover,.soltar.sobre{border-color:var(--creme);background:#d5bda112}
+.soltar.tem{border-style:solid}
+.soltar-txt{font-size:13px;color:var(--suave);text-align:center}
+.soltar.tem .soltar-txt{font-size:11px}
+.chips-anexo{display:flex;flex-wrap:wrap;gap:8px}
+.chips-anexo:not(:empty){margin-top:8px}
+.chip-anexo{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 10px;border-radius:8px;background:var(--card2);font-size:12px;cursor:default}
+.chip-anexo .x{background:transparent;padding:0 6px;font-size:15px;color:var(--suave)}
+.chip-anexo .x:hover{color:#ff8a80}
+.sug-linha{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sug{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--card);border:1px dashed var(--linha)}
+.sug.forte{border:1px solid var(--creme)}
+.editor{min-height:190px;background:#fff;color:#1b1b1b;border-radius:8px 8px 0 0;padding:14px 16px;font:14.5px/1.45 Calibri,"Segoe UI",sans-serif;white-space:pre-wrap;outline:none}
+.editor:focus{box-shadow:inset 0 0 0 2px var(--verde2)}
+.editor.curto{min-height:56px}
+.editor:empty::before{content:attr(data-dica);color:#8a8a8a;font-style:italic}
+.compor-corpo>*{flex:none}
+.assinatura{width:100%;height:120px;border:0;background:#fff;border-radius:0 0 8px 8px;margin-top:-10px;padding:0 16px 10px;box-sizing:border-box}
+.compor-rodape{display:flex;align-items:center;gap:10px;padding:10px 18px;border-top:1px solid var(--linha);min-height:44px}
+.compor-rodape .res{font-size:13px;font-weight:600}
 /* Seletor de operador */
 .op{position:relative}
 .op-btn{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid transparent;border-radius:24px;padding:4px 12px 4px 4px;transition:border-color .2s,background .2s}

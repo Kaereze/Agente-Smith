@@ -243,70 +243,103 @@ async function acompanharEnvio(ms) {
   envioTimer = setTimeout(() => acompanharEnvio(ms), ms);
 }
 
-// ---------- Enviar NF ao hóspede ----------
+// ---------- Enviar NF ao hóspede (janela no estilo do Outlook) ----------
 let envNF = null;
 function assuntoDoArquivo(nomeArquivo, nome) {
   const base = (nomeArquivo || "").replace(/\.[^.]+$/, "").replace(/\s+/g, " ").trim();
   if (/^\s*nf-?e?\s*[-:nº°#]*\s*\d+\s*-\s*\S/i.test(base)) return base;
   const num = (base.match(/\d{2,}/) || [""])[0];
-  return `NF ${num} - ${nome.toUpperCase()}`.replace("NF  -", "NF -");
+  return (num ? `NF ${num} - ` : "NF - ") + nome.toUpperCase();
 }
+const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
 async function abrirEnvioNF(chave) {
   if (document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
-  fundo.innerHTML = `<div class="modal"><div class="modal-topo"><div class="anel" id="nf-anel"></div>
-      <div><h3 id="nf-titulo">Enviar NF ao hóspede</h3><div class="sub" id="nf-sub">Carregando…</div></div></div>
+  fundo.innerHTML = `<div class="modal compor">
+    <div class="compor-topo"><span>✉ Nova mensagem · Nota Fiscal</span><span id="nf-sub" class="compor-quem">carregando…</span>
+      <button class="fechar" id="nf-fechar" title="Descartar">×</button></div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
-    <div class="trilha" id="nf-corpo"></div>
-    <div class="modal-rodape"><span class="res" id="nf-res"></span>
-      <span><button id="nf-fechar">Cancelar</button> <button class="creme" id="nf-ir" disabled>Enviar</button></span></div></div>`;
+    <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
+    <div class="compor-rodape"><div class="anel" id="nf-anel" style="width:22px;height:22px;border-width:2px;visibility:hidden"></div>
+      <span class="res" id="nf-res"></span></div></div>`;
   document.body.appendChild(fundo);
   $("nf-fechar").onclick = () => { clearTimeout(envNF?.timer); fundo.remove(); envNF = null; };
   const o = await api(`/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
-  $("nf-anel").style.animationPlayState = "paused";
-  if (o.erro) { $("nf-sub").textContent = o.erro; return; }
-  envNF = { chave, o, anexo: null, arquivo: null, contaDe: o.conta_de };
+  if (o.erro) { $("nf-corpo").innerHTML = `<div class="vazio">${esc(o.erro)}</div>`; return; }
+  envNF = { chave, o, anexos: [], assuntoAuto: true };
   $("nf-sub").textContent = `${o.nome} · ${o.hotel}`;
   const de = o.destino
-    ? `<div class="de-caixa">Sai da caixa <b>${esc(o.conta_de)}</b> — ${o.destino === o.este_pc ? "por este PC" : "pelo PC <b>" + esc(o.destino) + "</b>"}</div>`
-    : `<div class="de-caixa alerta">⚠ ${esc(o.motivo)}<br>Escolha outra caixa deste PC:
-         <select id="nf-conta" style="margin-top:6px">${o.contas_locais.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>`;
+    ? `<div class="campo-txt"><b>${esc(o.conta_de)}</b> <span class="dica">${o.destino === o.este_pc ? "· por este PC" : "· pelo PC " + esc(o.destino)}</span></div>`
+    : `<div class="campo-txt alerta">⚠ ${esc(o.motivo)} Enviar por:
+         <select id="nf-conta">${o.contas_locais.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>`;
   $("nf-corpo").innerHTML = `
-    <div class="env-campo"><label>Nota fiscal (anexo)</label><div class="anexos">
-      ${o.sugestoes.map((a, i) => `<div class="anexo-op" data-nf-sug="${i}"><span class="ic">📄</span>
-        <span><div>${esc(a.nome)}</div><div class="meta">Dropbox · ${esc(a.modificado)}${a.forte ? "" : " · confira se é desta pessoa"}</div></span></div>`).join("")}
-      <label class="anexo-op" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--texto)"><span class="ic">📎</span>
-        <span id="nf-arq-txt">${o.sugestoes.length ? "Outro arquivo do computador…" : "Escolher o arquivo da nota…"}</span>
-        <input type="file" id="nf-arq" accept=".pdf,.xml" hidden></label></div></div>
-    <div class="env-campo"><label>Assunto</label><input id="nf-assunto" placeholder="NF 1212 - NOME DO HÓSPEDE"></div>
-    <div class="env-campo"><label>Para</label><input id="nf-para" list="nf-paras" value="${esc(o.para[0] || "")}">
-      <datalist id="nf-paras">${o.para.map(p => `<option value="${esc(p)}">`).join("")}</datalist></div>
-    <div class="env-campo"><label>De</label>${de}</div>
-    <div class="env-campo"><label>Mensagem</label><textarea id="nf-msg" rows="6">${esc(o.corpo)}</textarea></div>`;
-  $("nf-arq").onchange = e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    envNF.anexo = { tipo: "arquivo" }; envNF.arquivo = f;
-    document.querySelectorAll(".anexo-op").forEach(x => x.classList.remove("sel"));
-    $("nf-arq-txt").textContent = "📎 " + f.name; $("nf-arq-txt").closest(".anexo-op").classList.add("sel");
-    $("nf-assunto").value = assuntoDoArquivo(f.name, o.nome); validarEnvioNF();
-  };
-  ["nf-assunto", "nf-para"].forEach(id => $(id).addEventListener("input", validarEnvioNF));
-  if (o.sugestoes.length && o.sugestoes[0].forte) escolherSugestao(0);   // só pré-seleciona quando o nome bate inteiro
+    <div class="compor-cab">
+      <button class="btn-enviar" id="nf-ir" disabled><span class="ic">➤</span>Enviar</button>
+      <div class="campos-cab">
+        <div class="linha-cab"><span class="rot">De</span>${de}</div>
+        <div class="linha-cab"><span class="rot">Para</span><input id="nf-para" list="nf-paras" value="${esc(o.para[0] || "")}">
+          <datalist id="nf-paras">${o.para.map(p => `<option value="${esc(p)}">`).join("")}</datalist></div>
+        <div class="linha-cab"><span class="rot">Cc</span><input id="nf-cc" placeholder="opcional"></div>
+        <div class="linha-cab"><span class="rot">Assunto</span><input id="nf-assunto" placeholder="NF 1212 - NOME DO HÓSPEDE"></div>
+      </div>
+    </div>
+    <div class="soltar" id="nf-soltar"><input type="file" id="nf-arq" accept=".pdf,.xml" multiple hidden>
+      <div class="soltar-txt">📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)</div>
+      <div class="chips-anexo" id="nf-anexos"></div></div>
+    ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
+      `<button class="sug ${a.forte ? "forte" : ""}" data-nf-sug="${i}" title="${a.forte ? "" : "Confira se é desta pessoa"}">📄 ${esc(a.nome)}${a.forte ? "" : " ⚠"}</button>`).join("")}</div>` : ""}
+    <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
+      data-dica="${o.assinatura_com_mensagem ? "Escreva aqui só se quiser acrescentar algo — a mensagem padrão já vem na assinatura abaixo." : ""}"></div>
+    ${o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
+      <div class="dica">Mensagem padrão e selo da caixa ${esc(o.conta_de)}, como no Outlook (prévia deste PC; sai a do PC que enviar)</div>`
+      : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}`;
+  $("nf-msg").innerText = o.corpo;
+  if (o.assinatura) {
+    const ifr = $("nf-ass");
+    ifr.srcdoc = `<html><body style="margin:0;background:#fff">${o.assinatura}</body></html>`;
+    ifr.onload = () => { try { ifr.style.height = (ifr.contentDocument.body.scrollHeight + 8) + "px"; } catch (e) { ifr.style.height = "230px"; } };
+  }
+  const zona = $("nf-soltar");
+  zona.addEventListener("click", e => { if (!e.target.closest("[data-tirar]")) $("nf-arq").click(); });
+  ["dragenter", "dragover"].forEach(t => zona.addEventListener(t, e => { e.preventDefault(); zona.classList.add("sobre"); }));
+  ["dragleave", "drop"].forEach(t => zona.addEventListener(t, e => { e.preventDefault(); zona.classList.remove("sobre"); }));
+  zona.addEventListener("drop", e => adicionarArquivos(e.dataTransfer.files));
+  $("nf-arq").onchange = e => { adicionarArquivos(e.target.files); e.target.value = ""; };
+  $("nf-assunto").addEventListener("input", () => { envNF.assuntoAuto = !$("nf-assunto").value.trim(); validarEnvioNF(); });
+  $("nf-para").addEventListener("input", validarEnvioNF);
   $("nf-ir").onclick = () => enviarNF();
+  if (o.sugestoes.length && o.sugestoes[0].forte) escolherSugestao(0);   // só quando o nome bate inteiro
+  desenharAnexos();
+}
+
+function adicionarArquivos(lista) {
+  for (const f of lista) {
+    if (!/\.(pdf|xml)$/i.test(f.name)) { toast(`${f.name}: só PDF ou XML`, true); continue; }
+    if (!envNF.anexos.some(a => a.nome === f.name)) envNF.anexos.push({ tipo: "arquivo", nome: f.name, file: f, bytes: f.size });
+  }
+  desenharAnexos();
 }
 
 function escolherSugestao(i) {
   const a = envNF.o.sugestoes[i];
-  envNF.anexo = { tipo: "dropbox", rel: a.rel }; envNF.arquivo = null;
-  document.querySelectorAll(".anexo-op").forEach(x => x.classList.toggle("sel", x.dataset.nfSug === String(i)));
-  $("nf-assunto").value = assuntoDoArquivo(a.nome, envNF.o.nome); validarEnvioNF();
+  if (!envNF.anexos.some(x => x.rel === a.rel)) envNF.anexos.push({ tipo: "dropbox", rel: a.rel, nome: a.nome });
+  desenharAnexos();
+}
+
+function desenharAnexos() {
+  $("nf-anexos").innerHTML = envNF.anexos.map((a, i) =>
+    `<span class="chip-anexo">📄 ${esc(a.nome)}<span class="dica">${a.bytes ? tamanho(a.bytes) : "Dropbox"}</span>
+      <button class="x" data-tirar="${i}" title="Tirar">×</button></span>`).join("");
+  $("nf-soltar").classList.toggle("tem", envNF.anexos.length > 0);
+  if (envNF.assuntoAuto && envNF.anexos.length) $("nf-assunto").value = assuntoDoArquivo(envNF.anexos[0].nome, envNF.o.nome);
+  if (!envNF.anexos.length && envNF.assuntoAuto) $("nf-assunto").value = "";
+  validarEnvioNF();
 }
 
 function validarEnvioNF() {
-  const ok = envNF && envNF.anexo && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
+  const ok = envNF && envNF.anexos.length && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
   $("nf-ir").disabled = !ok;
 }
 
@@ -316,17 +349,17 @@ const lerBase64 = f => new Promise((ok, erro) => {
 });
 
 async function enviarNF(contaForcada) {
-  const anexo = envNF.arquivo ? { tipo: "arquivo", nome: envNF.arquivo.name, b64: await lerBase64(envNF.arquivo) } : envNF.anexo;
-  const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
   $("nf-ir").disabled = true;
-  const r = await api("/api/envio_nf", { chave: envNF.chave, para: $("nf-para").value.trim(), assunto: $("nf-assunto").value.trim(),
-                                          corpo: $("nf-msg").value, anexo, conta_de: conta || undefined });
-  if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo, r.contas_locais); }
-  $("nf-ir").style.display = "none";
-  $("nf-anel").style.animationPlayState = "running"; $("nf-anel").className = "anel";
+  const anexos = await Promise.all(envNF.anexos.map(async a => a.tipo === "arquivo"
+    ? { tipo: "arquivo", nome: a.nome, b64: await lerBase64(a.file) } : { tipo: "dropbox", rel: a.rel, nome: a.nome }));
+  const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
+  const r = await api("/api/envio_nf", { chave: envNF.chave, para: $("nf-para").value.trim(), cc: $("nf-cc").value.trim(),
+                                          assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
+                                          conta_de: conta || undefined });
+  if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo || r.erro, r.contas_locais); }
+  $("nf-anel").className = "anel"; $("nf-anel").textContent = ""; $("nf-anel").style.visibility = "visible";
   $("nf-barra").style.visibility = "visible"; $("nf-barra").classList.remove("fim");
-  $("nf-titulo").textContent = "Enviando NF…";
-  $("nf-res").textContent = r.destino === envNF.o.este_pc ? "Enviando por este PC" : `Pedido entregue ao PC ${r.destino}`;
+  $("nf-res").textContent = r.destino === envNF.o.este_pc ? "Enviando por este PC…" : `Pedido entregue ao PC ${r.destino}…`;
   acompanharNF(r.id);
 }
 
@@ -336,9 +369,8 @@ async function acompanharNF(id) {
   if (!envNF) return;
   if (s.estado === "enviado") {
     $("nf-anel").className = "anel ok"; $("nf-anel").textContent = "✓"; $("nf-barra").classList.add("fim");
-    $("nf-titulo").textContent = "NF enviada ao hóspede";
-    $("nf-res").textContent = `Enviada${s.pc ? " pelo PC " + s.pc : ""}. A NF já ficou marcada no pedido.`;
-    $("nf-fechar").textContent = "Fechar"; carregar(); return;
+    $("nf-res").textContent = `NF enviada ao hóspede${s.pc ? " pelo PC " + s.pc : ""}. Ela já ficou marcada no pedido.`;
+    $("nf-ir").style.display = "none"; carregar(); return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") return mostrarFalhaNF(s.detalhe, s.contas_locais);
   $("nf-res").textContent = s.estado === "enviando" ? `O PC ${s.pc || ""} está enviando…` : `Aguardando o PC ${s.pc || ""}…`;
@@ -346,21 +378,24 @@ async function acompanharNF(id) {
 }
 
 function mostrarFalhaNF(motivo, contas) {
-  $("nf-anel").className = "anel ruim"; $("nf-anel").textContent = "!"; $("nf-barra").style.visibility = "hidden";
-  $("nf-titulo").textContent = "Não deu pra enviar pela caixa do hotel";
-  $("nf-res").innerHTML = `${esc(motivo || "")}` + ((contas || []).length ? `<div style="margin-top:8px">Enviar por outra caixa deste PC:
-    <select id="nf-conta-alt">${contas.map(c => `<option>${esc(c)}</option>`).join("")}</select>
-    <button class="creme" id="nf-alt">Enviar por esta</button></div>` : "");
-  $("nf-ir").style.display = "none";
-  if ($("nf-alt")) $("nf-alt").onclick = () => { $("nf-ir").style.display = ""; enviarNF($("nf-conta-alt").value); };
+  $("nf-anel").className = "anel ruim"; $("nf-anel").textContent = "!"; $("nf-anel").style.visibility = "visible";
+  $("nf-barra").style.visibility = "hidden";
+  $("nf-res").innerHTML = `<b>Não deu pra enviar pela caixa do hotel.</b> ${esc(motivo || "")}` + ((contas || []).length
+    ? ` <span style="white-space:nowrap">Enviar por: <select id="nf-conta-alt">${contas.map(c => `<option>${esc(c)}</option>`).join("")}</select>
+       <button class="creme" id="nf-alt">Enviar por esta</button></span>` : "");
+  if ($("nf-alt")) $("nf-alt").onclick = () => enviarNF($("nf-conta-alt").value);
 }
 
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-envnf],[data-nf-sug]");
+  const b = e.target.closest("[data-envnf],[data-nf-sug],[data-tirar]");
   if (!b) return;
   if (b.dataset.envnf) return abrirEnvioNF(b.dataset.envnf);
-  if (b.dataset.nfSug !== undefined && envNF) escolherSugestao(Number(b.dataset.nfSug));
+  if (!envNF) return;
+  if (b.dataset.nfSug !== undefined) return escolherSugestao(Number(b.dataset.nfSug));
+  if (b.dataset.tirar !== undefined) { e.stopPropagation(); envNF.anexos.splice(Number(b.dataset.tirar), 1); desenharAnexos(); }
 });
+// arquivo solto fora da área de anexo não pode abrir no lugar do Painel
+["dragover", "drop"].forEach(t => window.addEventListener(t, e => { if (!e.target.closest?.("#nf-soltar")) e.preventDefault(); }));
 
 // ---------- Eventos ----------
 document.addEventListener("click", e => {

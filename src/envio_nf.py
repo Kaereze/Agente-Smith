@@ -36,8 +36,117 @@ PC_ONLINE_SEGUNDOS = 180
 SEM_RESPOSTA_SEGUNDOS = 90
 DISPID_SEND_USING_ACCOUNT = 64209
 
-CORPO_PADRAO = ("Olá, {nome}!\n\nSegue em anexo a nota fiscal referente à sua hospedagem no {hotel}.\n\n"
-                "Qualquer dúvida, estamos à disposição.\n\nAtenciosamente,\n{hotel}")
+MENSAGEM_PADRAO = (
+    "Prezado(a) hóspede,\n\n"
+    "Agradecemos por escolher a Rede Andrade para a sua estadia.\n\n"
+    "Conforme solicitado, segue em anexo a Nota Fiscal referente à sua hospedagem.\n\n"
+    "📢 Sua opinião é muito importante para nós!\n"
+    "Gostaríamos de saber como foi sua experiência com o processo de emissão da Nota Fiscal.\n"
+    "A pesquisa é anônima e leva menos de 2 minutos.\n\n"
+    "👉 Clique aqui para avaliar: https://forms.gle/LLkYN3hv2da6svhj7\n\n"
+    "Atenciosamente,")
+
+
+def mensagem_padrao(cfg):
+    return (cfg.get("envio_nf") or {}).get("mensagem") or MENSAGEM_PADRAO
+
+
+def mensagem_html(texto):
+    """Texto digitado -> HTML do e-mail: quebras de linha e links clicáveis."""
+    from html import escape
+    linhas = []
+    for linha in (texto or "").splitlines():
+        linha = escape(linha)
+        linha = re.sub(r"(https?://[^\s<]+)", r'<a href="\1">\1</a>', linha)
+        linhas.append(linha)
+    return ('<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#222">'
+            + "<br>".join(linhas) + "</div>")
+
+
+# ---------- assinatura do Outlook (uma por caixa: "Nome (caixa).htm") ----------
+PASTA_ASSINATURAS = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Signatures"
+
+
+def achar_assinatura(conta, agente="", pasta=None):
+    """A assinatura .htm desta caixa; com várias, a do operador do PC, senão a mais recente."""
+    from tratamento import normalizar
+    pasta = Path(pasta or PASTA_ASSINATURAS)
+    try:
+        candidatas = [p for p in pasta.glob("*.htm") if f"({conta.lower()})" in p.name.lower()]
+    except OSError:
+        return None
+    if not candidatas:
+        return None
+    primeiro = normalizar(agente).split()[0][:4] if normalizar(agente) else ""
+    do_operador = [p for p in candidatas if primeiro and primeiro in normalizar(p.stem)]
+    return max(do_operador or candidatas, key=lambda p: p.stat().st_mtime)
+
+
+def _ler_htm(caminho):
+    bruto = Path(caminho).read_bytes()
+    m = re.search(rb'charset=["\']?([\w-]+)', bruto[:3000], re.I)
+    return bruto.decode(m.group(1).decode() if m else "utf-8", errors="replace")
+
+
+_IMG_SRC = re.compile(r'((?:src|o:href)\s*=\s*)(["\'])([^"\']+?\.(?:png|jpe?g|gif|bmp))\2', re.I)
+
+
+def assinatura_html(caminho):
+    """-> (html da assinatura com as imagens trocadas por cid:, [(arquivo da imagem, cid)])"""
+    from urllib.parse import unquote
+    html = _ler_htm(caminho)
+    corpo = re.search(r"<body[^>]*>(.*)</body>", html, re.S | re.I)
+    html = corpo.group(1) if corpo else html
+    base = Path(caminho).parent
+    imagens = {}
+
+    def trocar(m):
+        arquivo = base / unquote(m.group(3)).replace("/", os.sep)
+        if not arquivo.exists():
+            return m.group(0)
+        cid = imagens.setdefault(str(arquivo), f"assinatura{len(imagens) + 1}")
+        return f"{m.group(1)}{m.group(2)}cid:{cid}{m.group(2)}"
+
+    html = _IMG_SRC.sub(trocar, html)
+    return html, [(Path(a), c) for a, c in imagens.items()]
+
+
+def assinatura_previa(conta, agente=""):
+    """HTML da assinatura com as imagens embutidas (data:), pra mostrar na janela do Painel."""
+    caminho = achar_assinatura(conta, agente)
+    if not caminho:
+        return ""
+    html, imagens = assinatura_html(caminho)
+    for arquivo, cid in imagens:
+        tipo = "jpeg" if arquivo.suffix.lower() in (".jpg", ".jpeg") else arquivo.suffix.lower().lstrip(".")
+        html = html.replace(f"cid:{cid}", f"data:image/{tipo};base64,{base64.b64encode(arquivo.read_bytes()).decode()}")
+    return re.sub(r"<script.*?</script>", "", html, flags=re.S | re.I)
+
+
+def assinatura_tem_mensagem(html):
+    """As assinaturas do time já trazem a mensagem padrão inteira (Prezado... pesquisa... Atenciosamente)."""
+    texto = re.sub(r"<[^>]+>", " ", html or "").lower()
+    return "forms.gle" in texto or "prezado" in texto
+
+
+def _so_letras(texto):
+    return re.sub(r"\W+", "", (texto or "").lower())
+
+
+def corpo_do_email(mensagem, html_assinatura):
+    """Igual ao Outlook: a assinatura da caixa vai inteira; o texto digitado entra acima dela.
+    Se a assinatura já tem a mensagem padrão, o padrão não é repetido; sem assinatura, ele entra."""
+    texto = (mensagem or "").strip()
+    if assinatura_tem_mensagem(html_assinatura):
+        if _so_letras(texto) == _so_letras(MENSAGEM_PADRAO):
+            texto = ""
+    elif not texto:
+        texto = MENSAGEM_PADRAO
+    partes = [mensagem_html(texto) + "<br>"] if texto else []
+    return f"<html><body>{''.join(partes)}{html_assinatura}</body></html>"
+
+
+CORPO_PADRAO = MENSAGEM_PADRAO
 
 
 def agora():
@@ -214,8 +323,12 @@ def contas_do_outlook():
     return [str(c.SmtpAddress or "").strip().lower() for c in ns.Accounts if c.SmtpAddress]
 
 
-def enviar_pelo_outlook(conta_de, para, assunto, corpo, anexo):
-    """Envia saindo da conta `conta_de` deste Outlook. Levanta erro com mensagem legível."""
+PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
+
+
+def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""):
+    """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + assinatura da caixa (imagens
+    embutidas, como o Outlook faz) e os anexos. Levanta erro com mensagem legível."""
     import pythoncom
     import win32com.client
     pythoncom.CoInitialize()
@@ -226,9 +339,19 @@ def enviar_pelo_outlook(conta_de, para, assunto, corpo, anexo):
         raise RuntimeError(f"a caixa {conta_de} não está no Outlook deste PC")
     mail = outlook.CreateItem(0)
     mail.To = para
+    if cc:
+        mail.CC = cc
     mail.Subject = assunto
-    mail.Body = corpo
-    mail.Attachments.Add(str(anexo))
+    html_assinatura, imagens = "", []
+    caminho_ass = achar_assinatura(conta_de, agente)
+    if caminho_ass:
+        html_assinatura, imagens = assinatura_html(caminho_ass)
+    mail.HTMLBody = corpo_do_email(mensagem, html_assinatura)
+    for arquivo, cid in imagens:
+        anexo_img = mail.Attachments.Add(str(arquivo))
+        anexo_img.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, cid)
+    for anexo in anexos:
+        mail.Attachments.Add(str(anexo))
     mail._oleobj_.Invoke(*(DISPID_SEND_USING_ACCOUNT, 0, 8, 0, conta))
     mail.Send()
     try:
@@ -242,33 +365,43 @@ def novo_id():
     return "ENV-" + uuid.uuid4().hex[:10].upper()
 
 
-def montar_pedido(sol, para, assunto, conta_de, anexo, corpo=None):
-    """anexo: {"tipo": "dropbox", "rel": ...} | {"tipo": "planilha", "nome": ...}"""
-    nf = ler_assunto_nf(assunto)
+def numeros_de_nf(assunto, anexos):
+    """NFs do envio: a do assunto e as dos nomes dos arquivos ("NF 1212 - NOME.pdf") — nota dividida tem várias."""
+    numeros = []
+    for texto in [assunto] + [os.path.splitext(a.get("nome", ""))[0] for a in anexos]:
+        nf = ler_assunto_nf(texto or "")
+        if nf and nf[0] not in numeros:
+            numeros.append(nf[0])
+    return numeros
+
+
+def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem):
+    """anexos: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "planilha"|"local", "nome", ...}]"""
     return {"aba": sol["aba"], "carimbo": sol["carimbo"], "email": sol["email"], "hotel": sol["hotel"],
-            "nome": sol["nome"], "para": para, "assunto": assunto, "conta_de": conta_de, "anexo": anexo,
-            "nf": nf[0] if nf else "",
-            "corpo": corpo or CORPO_PADRAO.format(nome=sol["nome"], hotel=sol["hotel"])}
+            "nome": sol["nome"], "para": para, "cc": cc, "assunto": assunto, "conta_de": conta_de,
+            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem}
 
 
-def arquivo_do_pedido(pedido, cfg, linhas_anexos, id_envio):
-    """Caminho local do anexo (cópia temporária quando vem da planilha)."""
-    anexo = pedido["anexo"]
-    if anexo["tipo"] == "local":
-        return Path(anexo["caminho"])
-    if anexo["tipo"] == "dropbox":
-        raiz = raiz_dropbox(cfg)
-        caminho = (raiz / anexo["rel"]) if raiz else Path(anexo["rel"])
-        if not caminho.exists():
-            raise RuntimeError(f"não achei a nota no Dropbox deste PC ({anexo['rel']}) — ele já sincronizou?")
-        return caminho
-    nome, conteudo = juntar_anexo(linhas_anexos, id_envio)
-    if conteudo is None:
-        raise RuntimeError("o anexo não chegou inteiro na planilha")
-    pasta = Path(tempfile.mkdtemp(prefix="nf_envio_"))
-    destino = pasta / os.path.basename(nome or "nota.pdf")
-    destino.write_bytes(conteudo)
-    return destino
+def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
+    """Caminhos locais dos anexos (cópia temporária quando vêm da planilha)."""
+    caminhos = []
+    for i, anexo in enumerate(pedido["anexos"]):
+        if anexo["tipo"] == "local":
+            caminhos.append(Path(anexo["caminho"]))
+        elif anexo["tipo"] == "dropbox":
+            raiz = raiz_dropbox(cfg)
+            caminho = (raiz / anexo["rel"]) if raiz else Path(anexo["rel"])
+            if not caminho.exists():
+                raise RuntimeError(f"não achei a nota no Dropbox deste PC ({anexo['rel']}) — ele já sincronizou?")
+            caminhos.append(caminho)
+        else:
+            nome, conteudo = juntar_anexo(linhas_anexos, f"{id_envio}#{i}")
+            if conteudo is None:
+                raise RuntimeError(f"o anexo {anexo.get('nome', '')} não chegou inteiro na planilha")
+            destino = Path(tempfile.mkdtemp(prefix="nf_envio_")) / os.path.basename(nome or "nota.pdf")
+            destino.write_bytes(conteudo)
+            caminhos.append(destino)
+    return caminhos
 
 
 class ServicoEnvio:
@@ -279,9 +412,10 @@ class ServicoEnvio:
         self.central = cfg["planilha_central_id"]
         self.ao_registrar_nf = ao_registrar_nf        # (pedido, quem) -> grava NF/OBS na aba Tratamento
         # resolvidos na hora da chamada (os testes trocam as funções do módulo)
-        self.enviar = enviar or (lambda *a: enviar_pelo_outlook(*a))
+        self.enviar = enviar or (lambda *a, **k: enviar_pelo_outlook(*a, **k))
         self.ler_contas = ler_contas or (lambda: contas_do_outlook())
         self.relogio = relogio
+        self.agente = ""
         self.contas, self.contas_lidas_em = [], None
         self.fila, self.pcs_linhas, self.publicado_em = {}, [[]], None
         self.locais = {}                               # id -> resultado de envios feitos aqui (resposta imediata)
@@ -290,14 +424,10 @@ class ServicoEnvio:
 
     # chamado a cada volta do laço do Painel, com as abas já lidas no batch da Central
     def tick(self, lidas, agente):
+        self.agente = agente
         self.fila = dobrar_fila(lidas.get(ABA_FILA, [[]]))
         self.pcs_linhas = lidas.get(ABA_PCS, [[]])
-        if self.contas_lidas_em is None or self.relogio() - self.contas_lidas_em > datetime.timedelta(minutes=10):
-            try:
-                self.contas = self.ler_contas()
-            except Exception as e:
-                logger.warning(f"⚠️ Não consegui ler as contas do Outlook ({e})")
-            self.contas_lidas_em = self.relogio()
+        self._ler_contas(datetime.timedelta(minutes=10))
         if self.publicado_em is None or self.relogio() - self.publicado_em > datetime.timedelta(seconds=60):
             self._publicar(agente)
         self.executar_pendentes()
@@ -316,8 +446,17 @@ class ServicoEnvio:
             self.backend.anexar_linhas(self.central, ABA_PCS, [linha])
         self.publicado_em = self.relogio()
 
+    def _ler_contas(self, validade):
+        if self.contas_lidas_em is None or self.relogio() - self.contas_lidas_em > validade:
+            try:
+                self.contas = self.ler_contas()
+            except Exception as e:
+                logger.warning(f"⚠️ Não consegui ler as contas do Outlook ({e})")
+            self.contas_lidas_em = self.relogio()
+
     def destino_para(self, conta_de):
         """-> (pc que envia | None, motivo)"""
+        self._ler_contas(datetime.timedelta(minutes=10))   # janela aberta antes da 1ª volta do laço
         conta_de = (conta_de or "").lower()
         if conta_de in self.contas:
             return self.pc, ""
@@ -327,27 +466,30 @@ class ServicoEnvio:
         return None, (f"Nenhum PC ligado agora tem a caixa {conta_de} no Outlook (o Painel do PC dela precisa"
                       f" estar aberto/rodando).")
 
-    def pedir(self, sol, para, assunto, conta_de, anexo_entrada, quem, corpo=None):
-        """anexo_entrada: {"tipo": "dropbox", "rel"} | {"tipo": "arquivo", "nome", "conteudo": bytes}"""
+    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc=""):
+        """anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "arquivo", "nome", "conteudo": bytes}]"""
         destino, motivo = self.destino_para(conta_de)
         if not destino:
             return {"ok": False, "motivo": motivo, "contas_locais": self.contas}
+        if not anexos_entrada:
+            return {"ok": False, "motivo": "Anexe a nota fiscal."}
+        if sum(len(a.get("conteudo", b"")) for a in anexos_entrada) > MAX_ANEXO_BYTES:
+            return {"ok": False, "motivo": "Os anexos passam de 8 MB."}
         id_envio = novo_id()
-        if anexo_entrada["tipo"] == "arquivo":
-            if len(anexo_entrada["conteudo"]) > MAX_ANEXO_BYTES:
-                return {"ok": False, "motivo": "O anexo passa de 8 MB."}
-            if destino == self.pc:
-                pasta = Path(tempfile.mkdtemp(prefix="nf_envio_"))
-                caminho = pasta / os.path.basename(anexo_entrada["nome"])
-                caminho.write_bytes(anexo_entrada["conteudo"])
-                anexo = {"tipo": "local", "caminho": str(caminho), "nome": anexo_entrada["nome"]}
+        anexos, partes = [], []
+        for i, a in enumerate(anexos_entrada):
+            if a["tipo"] == "dropbox":
+                anexos.append({"tipo": "dropbox", "rel": a["rel"], "nome": a.get("nome") or os.path.basename(a["rel"])})
+            elif destino == self.pc:
+                caminho = Path(tempfile.mkdtemp(prefix="nf_envio_")) / os.path.basename(a["nome"])
+                caminho.write_bytes(a["conteudo"])
+                anexos.append({"tipo": "local", "caminho": str(caminho), "nome": a["nome"]})
             else:
-                self.backend.anexar_linhas(self.central, ABA_ANEXOS,
-                                           partes_do_anexo(id_envio, anexo_entrada["nome"], anexo_entrada["conteudo"]))
-                anexo = {"tipo": "planilha", "nome": anexo_entrada["nome"]}
-        else:
-            anexo = {"tipo": "dropbox", "rel": anexo_entrada["rel"]}
-        pedido = montar_pedido(sol, para, assunto, conta_de, anexo, corpo)
+                partes += partes_do_anexo(f"{id_envio}#{i}", a["nome"], a["conteudo"])
+                anexos.append({"tipo": "planilha", "nome": a["nome"]})
+        if partes:
+            self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
+        pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem or mensagem_padrao(self.cfg))
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
@@ -375,10 +517,11 @@ class ServicoEnvio:
             self.locais[id_envio] = {"estado": "enviando"}
         p = e["pedido"]
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ASSUMIDO, self.pc, e["quem"])])
+        na_planilha = any(a["tipo"] == "planilha" for a in p["anexos"])
         try:
-            anexos = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if p["anexo"]["tipo"] == "planilha" else [[]]
-            arquivo = arquivo_do_pedido(p, self.cfg, anexos, id_envio)
-            self.enviar(p["conta_de"], p["para"], p["assunto"], p["corpo"], arquivo)
+            linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
+            arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
+            self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos, agente=self.agente)
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")
@@ -393,13 +536,13 @@ class ServicoEnvio:
             self.ao_registrar_nf(p, e["quem"])
         except Exception:
             logger.exception("NF enviada, mas não consegui registrar na aba Tratamento")
-        if p["anexo"]["tipo"] == "planilha":
-            self._apagar_anexo(id_envio)
+        if na_planilha:
+            self._apagar_anexos(id_envio)
 
-    def _apagar_anexo(self, id_envio):
+    def _apagar_anexos(self, id_envio):
         from sheets import nome_intervalo
         linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]])
-        alvos = [i for i, l in enumerate(linhas[1:], start=2) if l and str(l[0]) == id_envio]
+        alvos = [i for i, l in enumerate(linhas[1:], start=2) if l and str(l[0]).split("#")[0] == id_envio]
         if alvos:
             self.backend.escrever(self.central, [(f"{nome_intervalo(ABA_ANEXOS)}!E{i}", "") for i in alvos])
 

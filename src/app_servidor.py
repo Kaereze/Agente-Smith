@@ -11,6 +11,7 @@ import datetime
 import json
 import os
 import pickle
+import re
 import secrets
 import socket
 import subprocess
@@ -137,9 +138,8 @@ class Estado:
     def registrar_nf_enviada(self, pedido, quem):
         """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem)."""
         pc, quando = socket.gethostname(), dados.agora()
-        linhas = []
-        if pedido.get("nf"):
-            linhas.append(dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.NF, pedido["nf"]))
+        linhas = [dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.NF, nf)
+                  for nf in pedido.get("nfs", [])]
         linhas.append(dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.OBS,
                                    f"\"{pedido['assunto']}\" enviada ao hóspede ({pedido['para']}) pela caixa {pedido['conta_de']}"))
         self.backend.anexar_linhas(self.central, dados.ABA_TRATAMENTO, linhas)
@@ -152,10 +152,17 @@ class Estado:
         conta = self.cadastro.dados(sol["hotel"]).get("email", "")
         destino, motivo = self.envio_nf.destino_para(conta)
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg)
+        try:
+            assinatura = envio_nf.assinatura_previa(conta, nome_do_agente())
+        except Exception:
+            logger.exception("prévia da assinatura")
+            assinatura = ""
+        com_mensagem = envio_nf.assinatura_tem_mensagem(assinatura)
         return {"para": envio_nf.destinatarios(sol), "conta_de": conta, "destino": destino, "motivo": motivo,
                 "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
                 "nome": sol["nome"], "hotel": sol["hotel"],
-                "corpo": envio_nf.CORPO_PADRAO.format(nome=sol["nome"], hotel=sol["hotel"])}
+                "corpo": "" if com_mensagem else envio_nf.mensagem_padrao(self.cfg),
+                "assinatura": assinatura, "assinatura_com_mensagem": com_mensagem}
 
     def pedir_envio(self, corpo, quem):
         sol = next((s for s in self.solicitacoes if s["chave"] == corpo.get("chave")), None)
@@ -165,14 +172,18 @@ class Estado:
         if "@" not in para or not assunto:
             raise ValueError("preencha o destinatário e o assunto")
         conta = (corpo.get("conta_de") or self.cadastro.dados(sol["hotel"]).get("email", "")).strip().lower()
-        anexo = corpo.get("anexo") or {}
-        if anexo.get("tipo") == "arquivo":
-            import base64
-            anexo = {"tipo": "arquivo", "nome": os.path.basename(anexo.get("nome", "nota.pdf")),
-                     "conteudo": base64.b64decode(anexo.get("b64", ""))}
-        elif anexo.get("tipo") != "dropbox" or not anexo.get("rel"):
-            raise ValueError("escolha a nota fiscal pra anexar")
-        return self.envio_nf.pedir(sol, para, assunto, conta, anexo, quem, corpo.get("corpo"))
+        import base64
+        anexos = []
+        for a in corpo.get("anexos") or []:
+            if a.get("tipo") == "arquivo":
+                anexos.append({"tipo": "arquivo", "nome": os.path.basename(a.get("nome", "nota.pdf")),
+                               "conteudo": base64.b64decode(a.get("b64", ""))})
+            elif a.get("tipo") == "dropbox" and a.get("rel"):
+                anexos.append({"tipo": "dropbox", "rel": a["rel"], "nome": a.get("nome", "")})
+        if not anexos:
+            raise ValueError("anexe a nota fiscal")
+        cc = ";".join(e.strip() for e in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in e)
+        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc)
 
     def situacao_envio(self, id_envio):
         local = self.envio_nf.locais.get(id_envio)
