@@ -383,6 +383,7 @@ def garantir_categorias(namespace):
 
 
 NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
+CONFIRMAR_NFS_SEGUNDOS = 10 * 60
 _ja_olhados = set()
 
 
@@ -646,6 +647,7 @@ def main():
     categorias_ok = False
     backend = None
     proxima_conferencia = proximo_sinal = proxima_identidade = proxima_dividida = 0.0
+    proxima_confirmacao = time.monotonic() + 60
     while True:
         agora = time.monotonic()
         try:
@@ -689,6 +691,15 @@ def main():
                     proxima_dividida = agora + NOTAS_DIVIDIDAS_SEGUNDOS
             except Exception as e:
                 logger.warning(f"⚠️ Volta do conferente falhou ({e}) — tento de novo em {intervalo}s.")
+            if agora >= proxima_confirmacao:
+                # NFs de todas as solicitações da Central -> aba Tratamento (o painel de todos os PCs vê).
+                # Cada PC confere o próprio Outlook; o Dropbox é compartilhado, então só o principal lê.
+                try:
+                    import confirmar_nfs
+                    confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg))
+                except Exception as e:
+                    logger.warning(f"⚠️ Confirmação de NFs falhou ({e}) — tento de novo em 10 min.")
+                proxima_confirmacao = agora + CONFIRMAR_NFS_SEGUNDOS
             try:
                 if e_principal(cfg):
                     publicar_cota(backend, namespace, cfg)

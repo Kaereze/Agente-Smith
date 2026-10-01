@@ -92,7 +92,7 @@ def ler_solicitacoes(aba, hotel, linhas, cfg):
             "carimbo": carimbo, "email": email.lower(), "nome": _nome_titulo(cab, linha, cfg),
             "data": data.isoformat() if data else "",
             "enviado": i_env is not None and normalizar(_celula(linha, i_env)) not in VALORES_PENDENTE,
-            "partes": partes, "emails": emails,
+            "partes": partes, "emails": emails, "nomes": nomes,
             "campos": campos_para_email(cab, linha, cfg.get("colunas_ocultas", []), formato,
                                         cfg.get("colunas_documento", {}), esconder),
         })
