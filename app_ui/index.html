@@ -71,9 +71,28 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--
 .tabela .zero{color:#5f7a73}
 .alerta-txt{color:#fab219} .ruim-txt{color:#ff8a80}
 .avisos{font-size:12px;color:var(--suave);margin-top:-6px;margin-bottom:12px}
-.seletor-op{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:20px;padding:2px 4px 2px 12px;font-size:13px;color:var(--suave)}
-.seletor-op select{background:transparent;border:none;color:var(--texto);font-weight:600;padding:5px 6px;cursor:pointer}
-.seletor-op select option{background:var(--painel)}
+/* Seletor de operador */
+.op{position:relative}
+.op-btn{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid transparent;border-radius:24px;padding:4px 12px 4px 4px;transition:border-color .2s,background .2s}
+.op-btn:hover{border-color:var(--linha);filter:none;background:var(--card2)}
+.op.aberto .op-btn{border-color:var(--creme)}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none;box-shadow:0 0 0 2px #0f2e2a}
+.op-nome{font-weight:600;font-size:13px}
+.op-seta{color:var(--suave);transition:transform .25s cubic-bezier(.3,1.4,.6,1)}
+.op.aberto .op-seta{transform:rotate(180deg);color:var(--creme)}
+.op-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:220px;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:6px;
+  box-shadow:0 18px 40px #0009;z-index:30;opacity:0;transform:translateY(-6px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .16s,transform .2s cubic-bezier(.2,.9,.3,1.2)}
+.op.aberto .op-menu{opacity:1;transform:none;pointer-events:auto}
+.op-menu .rot{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--suave);padding:6px 10px 4px}
+.op-item{display:flex;align-items:center;gap:10px;width:100%;background:transparent;padding:8px 10px;border-radius:10px;text-align:left;opacity:0;transform:translateX(6px)}
+.op.aberto .op-item{animation:opEntra .22s ease forwards}
+.op-item:hover{background:var(--card);filter:none}
+.op-item.sel{background:#1f4b44}
+.op-item .n{flex:1;font-size:13px}
+.op-item .s{font-size:11px;color:var(--suave)}
+.op-item .ok{color:var(--creme);font-weight:700;opacity:0;transform:scale(.4);transition:all .2s}
+.op-item.sel .ok{opacity:1;transform:none}
+@keyframes opEntra{to{opacity:1;transform:none}}
 /* Janela de envio */
 .modal-fundo{position:fixed;inset:0;background:#0009;display:flex;align-items:center;justify-content:center;z-index:20;animation:aparecer .15s}
 .modal{width:min(720px,92vw);max-height:84vh;display:flex;flex-direction:column;background:var(--painel);border:1px solid var(--linha);border-radius:16px;box-shadow:0 20px 60px #000a;overflow:hidden}
@@ -171,8 +190,13 @@ textarea{width:100%;min-height:54px;resize:vertical}
     <div class="esp"></div>
     <button class="creme" id="btn-enviar" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes">Enviar pendentes</button>
     <button id="btn-atualizar" title="Reler a planilha agora">⟳</button>
-    <label class="seletor-op" title="Operador deste PC (aparece pros outros nas ações)">👤
-      <select id="agente-sel"></select></label>
+    <div class="op" id="op">
+      <button class="op-btn" id="op-btn" aria-haspopup="listbox" aria-expanded="false" title="Operador deste PC (aparece pros outros nas ações)">
+        <span class="av" id="op-av">?</span><span class="op-nome" id="op-nome">…</span>
+        <svg class="op-seta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="op-menu" id="op-menu" role="listbox"></div>
+    </div>
   </header>
   <section class="vista" id="v-visao"><div class="rolagem" id="visao"></div></section>
   <section class="vista oculta" id="v-hoteis">
@@ -228,11 +252,7 @@ async function carregar(){
     const j = await api("/api/estado?dias=" + $("dias").value);
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     st = j; intervalo = j.atualizar_segundos || 15;
-    const selOp = $("agente-sel");
-    if (selOp.options.length !== (j.operadores || []).length || selOp.value !== j.agente) {
-      const ops = (j.operadores || []).includes(j.agente) ? j.operadores : [j.agente, ...(j.operadores || [])];
-      selOp.innerHTML = ops.map(o => `<option ${o === j.agente ? "selected" : ""}>${esc(o)}</option>`).join("");
-    }
+    desenharOperador(j.agente, j.operadores || []);
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
       clearTimeout(timer); timer = setTimeout(carregar, 2000); return;
@@ -355,10 +375,41 @@ $("busca").addEventListener("input", desenhar);
 $("dias").addEventListener("change", carregar);
 $("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
 $("btn-enviar").addEventListener("click", () => abrirEnvio());
-$("agente-sel").addEventListener("change", async e => {
-  const r = await api("/api/agente", {nome: e.target.value});
-  if (r.ok) { toast("Operador: " + e.target.value); carregar(); } else toast(r.motivo, true);
+// Seletor de operador: avatar com cor fixa por pessoa
+const COR_OP = {"João": "#3987e5", "Cristian": "#d95926", "Clara": "#199e70", "Bernardo": "#9085e9"};
+const corOp = n => COR_OP[n] || "#5f7a73";
+const inicial = n => (n || "?").trim().charAt(0).toUpperCase();
+let opAtual = "", opLista = [];
+function desenharOperador(atual, lista) {
+  if (atual === opAtual && lista.join() === opLista.join()) return;
+  opAtual = atual; opLista = lista.includes(atual) ? lista : [atual, ...lista];
+  $("op-nome").textContent = atual;
+  $("op-av").textContent = inicial(atual);
+  $("op-av").style.background = corOp(atual);
+  $("op-menu").innerHTML = `<div class="rot">Quem está neste PC</div>` + opLista.map((o, i) =>
+    `<button class="op-item ${o === atual ? "sel" : ""}" role="option" data-op="${esc(o)}" style="animation-delay:${i * 35}ms">
+      <span class="av" style="background:${corOp(o)}">${esc(inicial(o))}</span>
+      <span class="n">${esc(o)}${o === atual ? '<br><span class="s">este PC</span>' : ""}</span><span class="ok">✓</span></button>`).join("");
+}
+function menuOperador(abrir) {
+  const op = $("op"), aberto = abrir ?? !op.classList.contains("aberto");
+  op.classList.toggle("aberto", aberto);
+  $("op-btn").setAttribute("aria-expanded", aberto);
+  if (aberto) op.querySelectorAll(".op-item").forEach(b => { b.style.animation = "none"; b.offsetHeight; b.style.animation = ""; });
+}
+$("op-btn").addEventListener("click", e => { e.stopPropagation(); menuOperador(); });
+$("op-menu").addEventListener("click", async e => {
+  const item = e.target.closest("[data-op]");
+  if (!item) return;
+  e.stopPropagation();
+  const nome = item.dataset.op;
+  menuOperador(false);
+  if (nome === opAtual) return;
+  const r = await api("/api/agente", {nome});
+  if (r.ok) { desenharOperador(nome, opLista); toast("Operador: " + nome); carregar(); } else toast(r.motivo, true);
 });
+document.addEventListener("click", e => { if (!e.target.closest("#op")) menuOperador(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") menuOperador(false); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") { sel = null; desenhar(); } });
 carregar();
 </script>
