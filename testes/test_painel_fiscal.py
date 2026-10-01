@@ -89,6 +89,17 @@ def test_operador_so_com_avisos_ignorados_fica_ok():
     assert cristian["status"] == "OK" and cristian["detalhe"] == "" and cristian["avisos_ignorados"] == 3
 
 
+def test_lacuna_conhecida_nao_gera_aviso():
+    detalhe = "2 dia(s) sem dado nos últimos 30 em 'Agente_Cristian': 27/09/2026, 06/09/2026 — não recuperado"
+    lac = fi.lacunas_por_operador({"*": ["06/09/2026"], "Cristian": ["25/09/2026", "26/09/2026", "27/09/2026"]})
+    assert lac["Clara"] == {D(2026, 9, 6)} and D(2026, 9, 27) in lac["Cristian"]
+    assert fi.filtrar_avisos(detalhe, (), D(2026, 9, 1), lac["Cristian"])[0] == []
+    assert fi.filtrar_avisos(detalhe, (), D(2026, 9, 1), lac["Clara"])[0] == [detalhe]   # 27/09 não é lacuna dela
+    abas = {"Status_Execucao": [["Operador", "Última Atualização", "Status", "Detalhe"], ["Cristian", "", "ATENCAO", detalhe]]}
+    s = fi.saude(abas, [], {}, D(2026, 10, 1), datetime.datetime(2026, 10, 1, 10), (), D(2026, 9, 1), lac)
+    assert next(o for o in s["operadores"] if o["operador"] == "Cristian")["status"] == "OK"
+
+
 def test_tabela_sem_hotel_ignorado():
     t = pm.tabela_hoteis([], [], D(2026, 9, 1), D(2026, 9, 30), D(2026, 9, 30), CAD, ignorar={"SÃO FRANCISCO"})
     assert "SÃO FRANCISCO" not in {l["hotel"] for l in t}

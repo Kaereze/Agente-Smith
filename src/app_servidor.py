@@ -190,7 +190,8 @@ class Estado:
         if not self.fi_id or (not forcar and self.relogio() - self.fi_lido < self.fi_minutos * 60):
             return
         try:
-            fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde, ignorar_hoteis=self.ignorar)
+            fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde, ignorar_hoteis=self.ignorar,
+                                         lacunas_conhecidas=self.cfg.get("painel", {}).get("lacunas_conhecidas", {}))
             with self.lock:
                 self.fi, self.fi_erro = fi, ""
         except Exception as e:

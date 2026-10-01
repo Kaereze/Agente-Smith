@@ -106,10 +106,11 @@ def _datahora(texto):
     return None
 
 
-def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None):
+def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None, datas_conhecidas=()):
     """Tira do Detalhe do Mail Analytics os avisos de hotéis ignorados e os que só citam datas
-    anteriores a `desde`. -> (avisos que ficam, avisos ignorados)"""
+    anteriores a `desde` ou dias sem dado já conhecidos. -> (avisos que ficam, avisos ignorados)"""
     ignorados = {normalizar(h) for h in ignorar_hoteis}
+    conhecidas = set(datas_conhecidas)
     ficam, saem = [], []
     for parte in (p.strip() for p in re.split(r";\s*", detalhe or "")):
         if not parte:
@@ -118,12 +119,18 @@ def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None):
         hoteis_citados = [normalizar(h) for h in m.group(1).split(",")] if m else []
         datas = [_data(d) for d in re.findall(r"\d{2}/\d{2}/\d{4}", parte)]
         so_ignorados = bool(hoteis_citados) and all(h.strip() in ignorados for h in hoteis_citados)
-        so_antigo = bool(desde and datas) and all(d and d < desde for d in datas)
+        so_antigo = bool(datas) and all(d and ((desde and d < desde) or d in conhecidas) for d in datas)
         (saem if so_ignorados or so_antigo else ficam).append(parte)
     return ficam, saem
 
 
-def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=None):
+def lacunas_por_operador(config_lacunas):
+    """{"*": ["06/09/2026"], "Cristian": [...]} -> {operador: {date}}; "*" vale pra todos."""
+    todos = {_data(d) for d in config_lacunas.get("*", [])} - {None}
+    return {op: todos | ({_data(d) for d in config_lacunas.get(op, [])} - {None}) for op in ABA_POR_OPERADOR.values()}
+
+
+def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=None, lacunas=None):
     """Situação de cada operador (como o "Verificar as 4 Máquinas") + o escutar_comando."""
     ontem = hoje - datetime.timedelta(days=1)
     status = {r.get("Operador"): r for r in _tabela(abas.get("Status_Execucao", []))}
@@ -138,7 +145,7 @@ def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=Non
         else:
             situacao = "nao_puxado"
         st = status.get(operador, {})
-        avisos, ignorados = filtrar_avisos(st.get("Detalhe", ""), ignorar_hoteis, desde)
+        avisos, ignorados = filtrar_avisos(st.get("Detalhe", ""), ignorar_hoteis, desde, (lacunas or {}).get(operador, ()))
         estado = st.get("Status", "")
         if estado == "ATENCAO" and not avisos and ignorados:
             estado = "OK"   # só avisos de hotel ignorado / de antes do período do painel
@@ -158,7 +165,7 @@ def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=Non
     return {"operadores": operadores, "escutar_comando": escuta, "ontem": ontem.isoformat()}
 
 
-def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_hoteis=()):
+def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_hoteis=(), lacunas_conhecidas=None):
     """Lê tudo numa chamada só. -> dict com metricas, fins de semana, saúde e avisos.
     Hotéis em ignorar_hoteis ficam fora das métricas e dos avisos."""
     hoje = hoje or datetime.date.today()
@@ -173,7 +180,11 @@ def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_ho
     metricas = [m for m in metricas if normalizar(m["hotel"]) not in ignorados]
     avisos = [a for a in avisos if not any(normalizar(h) in normalizar(a) for h in ignorar_hoteis)]
     somados, guardados = fins_de_semana(abas.get("Log_Eventos", []))
+    lacunas = lacunas_por_operador(lacunas_conhecidas or {})
+    for op, dias in lacunas.items():   # nota no gráfico: o dia está baixo porque não tem dado, não por queda
+        for dia in dias:
+            somados.setdefault((op, dia), "sem dado (conhecido)")
     avisos += [f"Não consegui ler a aba '{a}' do Fiscal Intelligence" for a in erros]
     return {"metricas": metricas, "fins_de_semana": somados, "guardados": guardados,
-            "saude": saude(abas, metricas, guardados, hoje, agora, ignorar_hoteis, desde),
+            "saude": saude(abas, metricas, guardados, hoje, agora, ignorar_hoteis, desde, lacunas),
             "avisos": avisos, "lido_em": agora}

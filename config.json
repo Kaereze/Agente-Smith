@@ -159,7 +159,12 @@
     "fiscal_intelligence_id": "1e78L9EJeYzW_jWOZF5jqKPKu9vmKs1ZBstV_2FLZ_rY",
     "fi_minutos": 5,
     "_ajuda_ignorar_hoteis": "Hotéis que o painel desconsidera (dados e avisos do Mail Analytics) — ex.: hotel ainda sem movimento",
-    "ignorar_hoteis": ["RENASSENÇA"]
+    "ignorar_hoteis": ["RENASSENÇA"],
+    "_ajuda_lacunas_conhecidas": "Dias sem dado já conhecidos e aceitos (não voltam): não geram aviso; \"*\" vale pra todos os operadores",
+    "lacunas_conhecidas": {
+      "*": ["06/09/2026"],
+      "Cristian": ["25/09/2026", "26/09/2026", "27/09/2026"]
+    }
   },
   "_ajuda_somente_hoteis": "Teste: só esses hotéis ([] = todos)",
   "somente_hoteis": [],
