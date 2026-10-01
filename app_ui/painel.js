@@ -179,6 +179,70 @@ async function abrirHotel(nome, silencioso) {
   graficoBarrasH($("idade-hotel"), f.idade.map(i => ({ rotulo: i.faixa, n: i.n })));
 }
 
+// ---------- Enviar pendentes (janela com o andamento ao vivo) ----------
+let envioTimer = null;
+async function abrirEnvio() {
+  if (document.querySelector(".modal-fundo")) return;
+  const fundo = document.createElement("div");
+  fundo.className = "modal-fundo";
+  fundo.innerHTML = `<div class="modal"><div class="modal-topo"><div class="anel" id="env-anel"></div>
+      <div><h3 id="env-titulo">Enviar solicitações pendentes</h3><div class="sub" id="env-sub">Confirme para o robô começar</div></div></div>
+    <div class="barra-prog" id="env-barra" style="visibility:hidden"><i></i></div>
+    <div class="trilha" id="env-trilha"><div class="vazio" style="padding:30px">O robô lê as pendentes da Planilha Central, monta um e-mail
+      por solicitação e envia pra caixa de cada hotel. Nada é enviado ao hóspede.</div></div>
+    <div class="modal-rodape"><span class="res" id="env-res"></span>
+      <span><button id="env-fechar">Cancelar</button> <button class="creme" id="env-ir">Enviar agora</button></span></div></div>`;
+  document.body.appendChild(fundo);
+  $("env-anel").style.animationPlayState = "paused";
+  $("env-fechar").onclick = () => { clearTimeout(envioTimer); fundo.remove(); };
+  $("env-ir").onclick = async () => {
+    $("env-ir").disabled = true;
+    const r = await api("/api/enviar", {});
+    if (!r.ok) { $("env-ir").disabled = false; return toast(r.motivo || "Não deu certo", true); }
+    $("env-ir").style.display = "none";
+    $("env-fechar").textContent = "Fechar (continua em segundo plano)";
+    $("env-anel").style.animationPlayState = "running";
+    $("env-barra").style.visibility = "visible";
+    $("env-titulo").textContent = "Enviando pendentes…";
+    $("env-sub").textContent = r.modo === "local" ? "Rodando neste PC" : "Pedido enviado ao PC principal";
+    $("env-trilha").innerHTML = "";
+    acompanharEnvio(r.modo === "local" ? 700 : 2500);
+  };
+}
+
+async function acompanharEnvio(ms) {
+  const e = await api("/api/envio").catch(() => null);
+  if (!$("env-trilha")) return;   // janela fechada: o envio segue sozinho
+  if (e) {
+    const trilha = $("env-trilha"), noFim = trilha.scrollTop + trilha.clientHeight >= trilha.scrollHeight - 30;
+    const existentes = trilha.children.length;
+    e.linhas.slice(existentes).forEach(l => {
+      const div = document.createElement("div");
+      div.className = "passo" + (l.nivel === "WARNING" ? " aviso" : l.nivel === "ERROR" ? " erro" : "");
+      div.innerHTML = `<span class="m"></span><span class="h">${esc(l.hora)}</span><span class="t">${esc(l.texto)}</span>`;
+      trilha.appendChild(div);
+    });
+    [...trilha.children].forEach((d, i) => {
+      const atual = e.rodando && i === trilha.children.length - 1;
+      d.classList.toggle("atual", atual);
+      d.querySelector(".m").textContent = atual ? "" : "✓";
+    });
+    if (noFim) trilha.scrollTop = trilha.scrollHeight;
+    if (!e.rodando && e.modo) {
+      const ok = e.codigo === 0;
+      $("env-anel").className = "anel " + (ok ? "ok" : "ruim");
+      $("env-anel").textContent = ok ? "✓" : "!";
+      $("env-barra").classList.add("fim");
+      $("env-titulo").textContent = ok ? "Envio concluído" : "Envio terminou com aviso";
+      $("env-res").textContent = e.resumo || "";
+      $("env-fechar").textContent = "Fechar";
+      carregar(); carregarPainel();
+      return;
+    }
+  }
+  envioTimer = setTimeout(() => acompanharEnvio(ms), ms);
+}
+
 // ---------- Eventos ----------
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-vista],[data-p-periodo],[data-p-medida],[data-p-tabela],[data-p-ordem],[data-p-hotel],[data-p-fechar],[data-p-sol],[data-p-ir]");

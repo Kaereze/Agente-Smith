@@ -31,7 +31,8 @@ import fiscal_intelligence
 import painel_metricas as metricas
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
-from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config
+from app_envio import Envio
+from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
 from log_util import configurar_logging
 from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
 from tratamento import normalizar
@@ -228,9 +229,11 @@ class Estado:
                 "comando": s.get("Comando", ""), "resposta": s.get("Resposta do robô", "")}
 
 
-def criar_handler(estado, cfg, token, ultimo_uso):
+def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     pc = socket.gethostname()
     hosts_ok = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
+    envio = envio or Envio(ao_terminar=estado.atualizar)
+    operadores = [k for k in cfg.get("agentes", {}) if not str(k).startswith("_")]
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -277,11 +280,17 @@ def criar_handler(estado, cfg, token, ultimo_uso):
             if url.path == "/api/estado":
                 dias = int(parse_qs(url.query).get("dias", ["45"])[0] or 0)
                 return self._json({
-                    "agente": nome_do_agente(), "pc": pc, "erro": estado.erro,
+                    "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores,
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila(dias),
                 })
+            if url.path == "/api/envio":
+                def ler_status():
+                    aba = cfg["aba_status"]
+                    linhas = estado.backend.ler_abas(estado.central, [aba])[0].get(aba, [])
+                    return {str(l[0]).strip(): (str(l[1]) if len(l) > 1 else "") for l in linhas if l}
+                return self._json(envio.situacao(ler_status))
             q = {k: v[0] for k, v in parse_qs(url.query).items()}
             try:
                 if url.path == "/api/painel":
@@ -308,15 +317,20 @@ def criar_handler(estado, cfg, token, ultimo_uso):
                     return self._json(r)
                 if path == "/api/agente":
                     nome = str(corpo.get("nome", "")).strip()[:40]
-                    if not nome:
-                        return self._json({"ok": False, "motivo": "nome vazio"}, 400)
+                    if nome not in operadores:
+                        return self._json({"ok": False, "motivo": "operador desconhecido"}, 400)
                     salvar_json(CAMINHO_PREFS, {"agente": nome})
                     return self._json({"ok": True})
                 if path == "/api/enviar":
+                    if e_principal(carregar_config()):   # aqui mesmo: rápido e com log direto da memória
+                        if not envio.iniciar_local(nome_do_agente()):
+                            return self._json({"ok": False, "motivo": "Já tem um envio em andamento."})
+                        return self._json({"ok": True, "modo": "local"})
                     quando = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
                     escrever_linhas_status(estado.backend, cfg, {LINHA_COMANDO: "ENVIAR",
-                                                                 LINHA_PEDIDO: f"{nome_do_agente()} (app) | {quando}"})
-                    return self._json({"ok": True})
+                                                                 LINHA_PEDIDO: f"{nome_do_agente()} (Painel) | {quando}"})
+                    envio.iniciar_remoto()
+                    return self._json({"ok": True, "modo": "remoto"})
                 if path == "/api/atualizar":
                     estado.atualizar()
                     estado.atualizar_fi(forcar=True)

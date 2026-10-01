@@ -28,6 +28,7 @@ ORIGEM_SOLICITACAO_NOVA = "Automático (solicitação nova)"
 ORIGEM_MANUAL = "Manual no computador"
 ORIGEM_CLAUDIO = "Botão Ativar Claudio"
 ORIGEM_SEPARADO = "Botão Envio Separado"
+ORIGEM_PAINEL = "Botão Enviar pendentes (Painel)"
 
 
 def texto_simples(erro):
