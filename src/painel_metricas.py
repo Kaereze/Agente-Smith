@@ -70,7 +70,8 @@ def visao_geral(metricas, fila, ini, fim, hoje, fins_de_semana):
     }
 
 
-def tabela_hoteis(metricas, fila, ini, fim, hoje, cadastro):
+def tabela_hoteis(metricas, fila, ini, fim, hoje, cadastro, ignorar=()):
+    ignorar = set(ignorar)
     linhas = {}
 
     def linha(hotel):
@@ -81,7 +82,8 @@ def tabela_hoteis(metricas, fila, ini, fim, hoje, cadastro):
         return linhas[hotel]
 
     for nome in cadastro.nomes():
-        linha(nome)
+        if nome not in ignorar:
+            linha(nome)
     for m in metricas:
         if _no_periodo(m["data"], ini, fim):
             l = linha(m["hotel"])

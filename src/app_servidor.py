@@ -86,6 +86,7 @@ class Estado:
         painel = cfg.get("painel", {})
         self.desde = datetime.date.fromisoformat(painel.get("desde", "2026-09-01"))
         self.fi_id, self.fi_minutos = painel.get("fiscal_intelligence_id", ""), int(painel.get("fi_minutos", 5))
+        self.ignorar = list(painel.get("ignorar_hoteis", []))
         self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
         self.cache_salvo = -1e9
 
@@ -189,7 +190,7 @@ class Estado:
         if not self.fi_id or (not forcar and self.relogio() - self.fi_lido < self.fi_minutos * 60):
             return
         try:
-            fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde)
+            fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde, ignorar_hoteis=self.ignorar)
             with self.lock:
                 self.fi, self.fi_erro = fi, ""
         except Exception as e:
@@ -203,21 +204,28 @@ class Estado:
         fim = min(datetime.date.fromisoformat(fim) if fim else hoje, hoje)
         return ini, max(fim, ini)
 
+    def _ignorados(self):
+        return {self.cadastro.canonico(h) or h for h in self.ignorar}
+
+    def _fila_do_painel(self):
+        ign = self._ignorados()
+        return [s for s in self.fila(desde=self.desde.isoformat()) if s["hotel"] not in ign]
+
     def painel(self, ini, fim):
         ini, fim = self._periodo(ini, fim)
         hoje = datetime.date.today()
-        fila = self.fila(desde=self.desde.isoformat())
+        fila = self._fila_do_painel()
         fi = self.fi or {"metricas": [], "fins_de_semana": {}, "saude": {}, "avisos": []}
         return {"ini": ini.isoformat(), "fim": fim.isoformat(), "desde": self.desde.isoformat(),
                 "visao": metricas.visao_geral(fi["metricas"], fila, ini, fim, hoje, fi["fins_de_semana"]),
-                "hoteis": metricas.tabela_hoteis(fi["metricas"], fila, ini, fim, hoje, self.cadastro),
+                "hoteis": metricas.tabela_hoteis(fi["metricas"], fila, ini, fim, hoje, self.cadastro, self._ignorados()),
                 "saude": fi["saude"], "avisos": fi["avisos"], "fi_erro": self.fi_erro,
                 "fi_lido_em": fi["lido_em"].isoformat(timespec="seconds") if fi.get("lido_em") else ""}
 
     def hotel(self, nome, ini, fim):
         ini, fim = self._periodo(ini, fim)
         fi = self.fi or {"metricas": [], "fins_de_semana": {}}
-        return metricas.ficha_hotel(nome, fi["metricas"], self.fila(desde=self.desde.isoformat()), ini, fim,
+        return metricas.ficha_hotel(nome, fi["metricas"], self._fila_do_painel(), ini, fim,
                                     datetime.date.today(), fi["fins_de_semana"], self.cadastro)
 
     def resumo_status(self):

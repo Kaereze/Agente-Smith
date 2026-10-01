@@ -67,6 +67,33 @@ def test_saude_ontem_e_sinal_do_escutar_comando():
     assert e["online"] is False and e["desatualizado"] is True
 
 
+DETALHE_CRISTIAN = ("1 hotel(is) do cadastro não conectaram hoje: RENASSENÇA — confira o e-mail cadastrado; "
+                    "🚨 Linhas duplicadas encontradas em 'Agente_Cristian' (NÃO apagadas — decisão humana): "
+                    "05/08/2026 | HANGAR (2 linhas); 05/08/2026 | VERNON (2 linhas)")
+
+
+def test_avisos_de_hotel_ignorado_e_de_antes_do_periodo_saem():
+    ficam, saem = fi.filtrar_avisos(DETALHE_CRISTIAN, ["Renassença"], D(2026, 9, 1))
+    assert ficam == [] and len(saem) == 3
+    ficam, _ = fi.filtrar_avisos("1 hotel(is) do cadastro não conectaram hoje: RENASSENÇA, LAPA — x", ["RENASSENÇA"], D(2026, 9, 1))
+    assert len(ficam) == 1   # outro hotel junto: o aviso continua
+    ficam, _ = fi.filtrar_avisos("Outlook travou em 12/09/2026", ["RENASSENÇA"], D(2026, 9, 1))
+    assert ficam == ["Outlook travou em 12/09/2026"]
+
+
+def test_operador_so_com_avisos_ignorados_fica_ok():
+    abas = {"Status_Execucao": [["Operador", "Última Atualização", "Status", "Detalhe"],
+                                ["Cristian", "", "ATENCAO", DETALHE_CRISTIAN]]}
+    s = fi.saude(abas, [], {}, D(2026, 10, 1), datetime.datetime(2026, 10, 1, 10), ["RENASSENÇA"], D(2026, 9, 1))
+    cristian = next(o for o in s["operadores"] if o["operador"] == "Cristian")
+    assert cristian["status"] == "OK" and cristian["detalhe"] == "" and cristian["avisos_ignorados"] == 3
+
+
+def test_tabela_sem_hotel_ignorado():
+    t = pm.tabela_hoteis([], [], D(2026, 9, 1), D(2026, 9, 30), D(2026, 9, 30), CAD, ignorar={"SÃO FRANCISCO"})
+    assert "SÃO FRANCISCO" not in {l["hotel"] for l in t}
+
+
 def _sol(hotel, data, situacao):
     return {"chave": hotel + data + situacao, "hotel": hotel, "data": data, "situacao": situacao, "nome": "x", "dono": ""}
 

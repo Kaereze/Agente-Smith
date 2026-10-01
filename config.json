@@ -157,7 +157,9 @@
   "painel": {
     "desde": "2026-09-01",
     "fiscal_intelligence_id": "1e78L9EJeYzW_jWOZF5jqKPKu9vmKs1ZBstV_2FLZ_rY",
-    "fi_minutos": 5
+    "fi_minutos": 5,
+    "_ajuda_ignorar_hoteis": "Hotéis que o painel desconsidera (dados e avisos do Mail Analytics) — ex.: hotel ainda sem movimento",
+    "ignorar_hoteis": ["RENASSENÇA"]
   },
   "_ajuda_somente_hoteis": "Teste: só esses hotéis ([] = todos)",
   "somente_hoteis": [],

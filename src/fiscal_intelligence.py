@@ -106,7 +106,24 @@ def _datahora(texto):
     return None
 
 
-def saude(abas, metricas, guardados, hoje, lido_em):
+def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None):
+    """Tira do Detalhe do Mail Analytics os avisos de hotéis ignorados e os que só citam datas
+    anteriores a `desde`. -> (avisos que ficam, avisos ignorados)"""
+    ignorados = {normalizar(h) for h in ignorar_hoteis}
+    ficam, saem = [], []
+    for parte in (p.strip() for p in re.split(r";\s*", detalhe or "")):
+        if not parte:
+            continue
+        m = re.search(r"conectaram hoje:\s*([^—]+)", parte)
+        hoteis_citados = [normalizar(h) for h in m.group(1).split(",")] if m else []
+        datas = [_data(d) for d in re.findall(r"\d{2}/\d{2}/\d{4}", parte)]
+        so_ignorados = bool(hoteis_citados) and all(h.strip() in ignorados for h in hoteis_citados)
+        so_antigo = bool(desde and datas) and all(d and d < desde for d in datas)
+        (saem if so_ignorados or so_antigo else ficam).append(parte)
+    return ficam, saem
+
+
+def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=None):
     """Situação de cada operador (como o "Verificar as 4 Máquinas") + o escutar_comando."""
     ontem = hoje - datetime.timedelta(days=1)
     status = {r.get("Operador"): r for r in _tabela(abas.get("Status_Execucao", []))}
@@ -121,8 +138,12 @@ def saude(abas, metricas, guardados, hoje, lido_em):
         else:
             situacao = "nao_puxado"
         st = status.get(operador, {})
+        avisos, ignorados = filtrar_avisos(st.get("Detalhe", ""), ignorar_hoteis, desde)
+        estado = st.get("Status", "")
+        if estado == "ATENCAO" and not avisos and ignorados:
+            estado = "OK"   # só avisos de hotel ignorado / de antes do período do painel
         operadores.append({"operador": operador, "ontem": situacao, "domingo": str(guardados.get((operador, ontem), "")),
-                           "status": st.get("Status", ""), "detalhe": st.get("Detalhe", ""),
+                           "status": estado, "detalhe": "; ".join(avisos), "avisos_ignorados": len(ignorados),
                            "ultima_execucao": ultimas.get(operador, "")})
 
     painel = abas.get("Painel_Controle", [])
@@ -137,8 +158,9 @@ def saude(abas, metricas, guardados, hoje, lido_em):
     return {"operadores": operadores, "escutar_comando": escuta, "ontem": ontem.isoformat()}
 
 
-def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None):
-    """Lê tudo numa chamada só. -> dict com metricas, fins de semana, saúde e avisos."""
+def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_hoteis=()):
+    """Lê tudo numa chamada só. -> dict com metricas, fins de semana, saúde e avisos.
+    Hotéis em ignorar_hoteis ficam fora das métricas e dos avisos."""
     hoje = hoje or datetime.date.today()
     agora = agora or datetime.datetime.now()
     abas, erros = backend.ler_abas(planilha_id, list(ABA_POR_OPERADOR) + ABAS_FIXAS)
@@ -147,7 +169,11 @@ def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None):
         regs, av = ler_metricas(abas.get(aba, []), operador, cadastro, desde)
         metricas += regs
         avisos += av
+    ignorados = {normalizar(h) for h in ignorar_hoteis}
+    metricas = [m for m in metricas if normalizar(m["hotel"]) not in ignorados]
+    avisos = [a for a in avisos if not any(normalizar(h) in normalizar(a) for h in ignorar_hoteis)]
     somados, guardados = fins_de_semana(abas.get("Log_Eventos", []))
     avisos += [f"Não consegui ler a aba '{a}' do Fiscal Intelligence" for a in erros]
     return {"metricas": metricas, "fins_de_semana": somados, "guardados": guardados,
-            "saude": saude(abas, metricas, guardados, hoje, agora), "avisos": avisos, "lido_em": agora}
+            "saude": saude(abas, metricas, guardados, hoje, agora, ignorar_hoteis, desde),
+            "avisos": avisos, "lido_em": agora}

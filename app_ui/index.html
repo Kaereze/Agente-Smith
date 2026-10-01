@@ -226,7 +226,7 @@ function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.classNam
 async function carregar(){
   try {
     const j = await api("/api/estado?dias=" + $("dias").value);
-    if (j.erro === "não autorizado") { toast("Sessão expirada — feche e abra o app de novo.", true); return; }
+    if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     st = j; intervalo = j.atualizar_segundos || 15;
     const selOp = $("agente-sel");
     if (selOp.options.length !== (j.operadores || []).length || selOp.value !== j.agente) {
