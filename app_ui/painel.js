@@ -62,12 +62,15 @@ function saudeHtml(d) {
     const cls = o.ontem === "nao_puxado" ? "ruim" : o.status === "ATENCAO" ? "alerta" : "bom";
     const ontem = o.ontem === "puxado" ? "dados de ontem puxados" : o.ontem === "guardado"
       ? `ontem guardado pra somar em ${dataBr(o.domingo)}` : "dados de ontem NÃO chegaram";
+    // ATENÇÃO: o motivo (1º aviso do Mail Analytics) aparece no cartão; o texto completo fica no tooltip
+    const motivo = o.status === "ATENCAO" && o.detalhe ? o.detalhe.split(/;\s*/)[0].split(" — ")[0] : "";
     cards.push(card(cls, `${cls === "bom" ? "✔" : cls === "alerta" ? "⚠" : "✖"} ${o.operador}`,
-      `${ontem} · ${o.ultima_execucao || "nunca rodou"}`, o.detalhe));
+      `${ontem} · ${o.ultima_execucao || "nunca rodou"}`, o.detalhe, motivo));
   }
   return `<div class="saude">${cards.join("")}</div>`;
-  function card(cls, titulo, linha, dica) {
-    return `<div class="c ${cls}" title="${esc(dica || linha)}"><b>${esc(titulo)}</b><span>${esc(linha)}</span></div>`;
+  function card(cls, titulo, linha, dica, motivo) {
+    return `<div class="c ${cls}" title="${esc(dica || linha)}"><b>${esc(titulo)}</b><span>${esc(linha)}</span>` +
+           (motivo ? `<span class="motivo">${esc(motivo)}</span>` : "") + `</div>`;
   }
 }
 
