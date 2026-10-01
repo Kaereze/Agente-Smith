@@ -148,6 +148,10 @@
     ],
     "intervalo_minutos": 5
   },
+  "_ajuda_app": "Painel Notas Fiscais (app local): de quantos em quantos segundos relê a planilha",
+  "app": {
+    "atualizar_segundos": 15
+  },
   "_ajuda_somente_hoteis": "Teste: só esses hotéis ([] = todos)",
   "somente_hoteis": [],
   "_ajuda_registro_central": "Cópia das enviadas pra aba Registros (planilha precisa estar compartilhada)",

@@ -9,7 +9,7 @@ $PY_URL = "https://www.python.org/ftp/python/$PY_VERSAO/python-$PY_VERSAO-amd64.
 $pasta = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $env:PYTHONIOENCODING = "utf-8"
 
-function Passo($n, $texto) { Write-Host ""; Write-Host "[$n/8] $texto" -ForegroundColor Cyan }
+function Passo($n, $texto) { Write-Host ""; Write-Host "[$n/9] $texto" -ForegroundColor Cyan }
 function Ok($texto) { Write-Host "   OK  $texto" -ForegroundColor Green }
 function Aviso($texto) { Write-Host "   --  $texto" -ForegroundColor Yellow }
 function Falha($texto) { Write-Host "   !!  $texto" -ForegroundColor Red; Read-Host "Aperte Enter pra fechar"; exit 1 }
@@ -163,6 +163,11 @@ if ($papel -eq "principal") {
 } else {
     Aviso "Pulado: este PC e conferente. Copia e envio rodam so no PC principal."
 }
+
+# 9. App (atalho na Area de Trabalho, todo PC)
+Passo 9 "Painel Notas Fiscais"
+& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\criar_atalho_app.ps1") | Out-Null
+Ok "Atalho 'Painel Notas Fiscais' na Area de Trabalho"
 
 Write-Host ""
 Write-Host "PRONTO. Pasta: $pasta  |  Papel: $papel" -ForegroundColor Green

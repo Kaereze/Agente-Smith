@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Notas Fiscais</title>
+<style>
+:root{
+  --fundo:#0f2e2a; --painel:#163d38; --card:#1c4842; --card2:#225249; --linha:#2d5b53;
+  --texto:#efe4d4; --suave:#b9a98f; --creme:#d5bda1; --verde:#00786c; --verde2:#00a28f;
+  --amarelo:#e0b84f; --laranja:#d9853b; --azul:#5b9bd5; --vermelho:#d9534f; --ok:#3fb27f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--fundo);color:var(--texto);font:14px "Segoe UI",system-ui,sans-serif}
+button{font:inherit;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;background:var(--card2);color:var(--texto)}
+button:hover{filter:brightness(1.15)}
+button.prim{background:var(--verde);color:#fff}
+button.creme{background:var(--creme);color:#173f39;font-weight:600}
+button.perigo{background:#5a2b2b}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,textarea,select{font:inherit;color:var(--texto);background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--verde2)}
+.app{display:grid;grid-template-columns:240px 1fr;grid-template-rows:56px 1fr;height:100vh}
+header{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--painel);border-bottom:1px solid var(--linha)}
+.marca{font-weight:700;font-size:16px;letter-spacing:.3px}
+.marca span{color:var(--creme)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--card);font-size:12px;color:var(--suave)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--suave)}
+.dot.on{background:var(--ok)} .dot.off{background:var(--vermelho)} .dot.warn{background:var(--amarelo)}
+.esp{flex:1}
+.agente{cursor:pointer}
+aside{background:var(--painel);border-right:1px solid var(--linha);padding:14px 10px;overflow-y:auto}
+aside h4{margin:14px 8px 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--suave)}
+.filtro{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--texto)}
+.filtro:hover{background:var(--card)}
+.filtro.sel{background:var(--verde);color:#fff}
+.filtro .n{font-size:12px;opacity:.8}
+main{display:grid;grid-template-columns:1fr 0;overflow:hidden;transition:grid-template-columns .2s}
+main.detalhe-aberto{grid-template-columns:1fr 440px}
+.lista-wrap{display:flex;flex-direction:column;overflow:hidden;padding:14px 18px}
+.barra{display:flex;gap:10px;margin-bottom:12px}
+.barra input{flex:1}
+.lista{overflow-y:auto;flex:1;padding-right:4px}
+.item{display:grid;grid-template-columns:92px 1fr 150px 130px;gap:12px;align-items:center;padding:10px 12px;margin-bottom:6px;background:var(--card);border-radius:10px;cursor:pointer;border-left:4px solid transparent}
+.item:hover{background:var(--card2)}
+.item.sel{outline:1px solid var(--creme)}
+.item .data{font-size:12px;color:var(--suave)}
+.item .nome{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .hotel{font-size:12px;color:var(--suave)}
+.item .dono{font-size:12px;color:var(--creme);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.s-aguardando_envio{background:#3b4a47;color:var(--suave)} .b-aguardando_envio{border-left-color:#5f6f6b}
+.s-na_fila{background:var(--amarelo);color:#2b2205} .b-na_fila{border-left-color:var(--amarelo)}
+.s-em_tratamento{background:var(--azul);color:#06192b} .b-em_tratamento{border-left-color:var(--azul)}
+.s-tratativa{background:var(--laranja);color:#2a1503} .b-tratativa{border-left-color:var(--laranja)}
+.s-nf_parcial{background:#8f7bd1;color:#160d33} .b-nf_parcial{border-left-color:#8f7bd1}
+.s-concluida{background:var(--ok);color:#06231a} .b-concluida{border-left-color:var(--ok)}
+.tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;font-size:10px;background:#244f6e;color:#cfe6ff}
+.vazio{padding:40px;text-align:center;color:var(--suave)}
+.detalhe{background:var(--painel);border-left:1px solid var(--linha);overflow-y:auto;padding:18px}
+.detalhe h2{margin:0 0 2px;font-size:18px}
+.detalhe .sub{color:var(--suave);font-size:12px;margin-bottom:12px}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.bloco{background:var(--card);border-radius:10px;padding:12px;margin-bottom:12px}
+.bloco h5{margin:0 0 8px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--suave)}
+.campos{width:100%;border-collapse:collapse;font-size:13px}
+.campos td{padding:5px 6px;border-top:1px solid var(--linha);vertical-align:top}
+.campos td:first-child{color:var(--suave);width:42%}
+.linha-form{display:flex;gap:8px;margin-top:8px}
+.linha-form input{flex:1}
+textarea{width:100%;min-height:54px;resize:vertical}
+.hist{font-size:12px;color:var(--suave)}
+.hist div{padding:4px 0;border-top:1px solid var(--linha)}
+.hist b{color:var(--texto);font-weight:600}
+.fechar{float:right;background:transparent;font-size:18px;padding:0 6px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--creme);color:#173f39;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:0 6px 24px #0007;display:none;z-index:9}
+.toast.erro{background:var(--vermelho);color:#fff}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--linha);border-radius:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="marca">Painel <span>Notas Fiscais</span></div>
+    <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
+    <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
+    <div class="esp"></div>
+    <button class="creme" id="btn-enviar" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes">Enviar pendentes</button>
+    <button id="btn-atualizar" title="Reler a planilha agora">⟳</button>
+    <span class="pill agente" id="agente" title="Clique pra trocar o nome">👤 <span id="agente-txt">…</span></span>
+  </header>
+  <aside>
+    <h4>Situação</h4>
+    <div id="f-situacao"></div>
+    <h4>Período</h4>
+    <div style="padding:0 6px"><select id="dias" style="width:100%">
+      <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option>
+      <option value="45" selected>Últimos 45 dias</option><option value="90">Últimos 90 dias</option>
+      <option value="0">Tudo</option></select></div>
+    <h4>Hotéis</h4>
+    <div id="f-hotel"></div>
+  </aside>
+  <main id="main">
+    <div class="lista-wrap">
+      <div class="barra"><input id="busca" placeholder="Buscar por nome, e-mail, CPF/CNPJ, hotel…"></div>
+      <div class="lista" id="lista"></div>
+    </div>
+    <div class="detalhe" id="detalhe"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const TOKEN = "__TOKEN__";
+const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Na fila", em_tratamento:"Em tratamento",
+               tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida"};
+const ORDEM_FILTROS = ["todas","minhas","na_fila","em_tratamento","tratativa","nf_parcial","aguardando_envio","concluida"];
+let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", sel = null, timer = null, intervalo = 15;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dataBr = iso => iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4) : "";
+const quando = iso => { if(!iso) return ""; const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); };
+
+async function api(path, corpo){
+  const r = await fetch(path, {method: corpo ? "POST" : "GET", headers:{"X-Token":TOKEN,"Content-Type":"application/json"},
+                               body: corpo ? JSON.stringify(corpo) : undefined});
+  const j = await r.json().catch(() => ({ok:false, motivo:"resposta inválida"}));
+  if (!r.ok && j.ok === undefined) j.ok = false;
+  return j;
+}
+function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.className = "toast" + (erro ? " erro" : ""); t.style.display = "block";
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", erro ? 5000 : 2500); }
+
+async function carregar(){
+  try {
+    const j = await api("/api/estado?dias=" + $("dias").value);
+    if (j.erro === "não autorizado") { toast("Sessão expirada — feche e abra o app de novo.", true); return; }
+    st = j; intervalo = j.atualizar_segundos || 15;
+    $("agente-txt").textContent = j.agente;
+    if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
+      $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
+      clearTimeout(timer); timer = setTimeout(carregar, 2000); return;
+    }
+    const ok = !j.erro;
+    $("sync-dot").className = "dot " + (ok ? "on" : "off");
+    $("sync-txt").textContent = ok ? "sincronizado " + quando(j.atualizado_em) : "sem conexão com a planilha";
+    const s = j.status || {};
+    $("robo-dot").className = "dot " + (s.ligado ? "on" : "off");
+    $("robo-txt").textContent = "robô " + (s.ligado ? "ligado" : "desligado") + (s.comando ? " · " + s.comando.toLowerCase() : "");
+    $("robo").title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "");
+    desenhar();
+  } catch(e) {
+    $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
+  }
+  clearTimeout(timer); timer = setTimeout(carregar, intervalo * 1000);
+}
+
+function passa(s, f){
+  if (f === "todas") return true;
+  if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
+  return s.situacao === f;
+}
+function texto(s){ return (s.nome+" "+s.email+" "+s.hotel+" "+s.carimbo+" "+s.nfs.join(" ")+" "+s.campos.map(c=>c[1]).join(" ")).toLowerCase(); }
+
+function desenhar(){
+  const fila = st.fila, busca = $("busca").value.trim().toLowerCase();
+  const porHotel = hotel ? fila.filter(s => s.hotel === hotel) : fila;
+  $("f-situacao").innerHTML = ORDEM_FILTROS.map(f => {
+    const n = porHotel.filter(s => passa(s, f)).length;
+    const nome = f === "todas" ? "Todas" : f === "minhas" ? "Minhas" : NOMES[f];
+    return `<div class="filtro ${f===filtro?"sel":""}" data-f="${f}"><span>${nome}</span><span class="n">${n}</span></div>`;
+  }).join("");
+  const hoteis = {};
+  fila.filter(s => passa(s, filtro)).forEach(s => hoteis[s.hotel] = (hoteis[s.hotel]||0) + 1);
+  $("f-hotel").innerHTML = `<div class="filtro ${!hotel?"sel":""}" data-h=""><span>Todos</span><span class="n">${Object.values(hoteis).reduce((a,b)=>a+b,0)}</span></div>` +
+    Object.keys(hoteis).sort().map(h => `<div class="filtro ${h===hotel?"sel":""}" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]}</span></div>`).join("");
+
+  let lista = porHotel.filter(s => passa(s, filtro));
+  if (busca) lista = lista.filter(s => texto(s).includes(busca));
+  $("lista").innerHTML = lista.length ? lista.slice(0, 600).map(s => `
+    <div class="item b-${s.situacao} ${sel===s.chave?"sel":""}" data-k="${esc(s.chave)}">
+      <div class="data">${dataBr(s.data)}<br>linha ${s.linha}</div>
+      <div><div class="nome">${esc(s.nome)}${s.dividida?'<span class="tag">dividida</span>':""}</div><div class="hotel">${esc(s.hotel)} · ${esc(s.email)}</div></div>
+      <div class="dono">${s.dono ? "👤 " + esc(s.dono) : ""}${s.nfs.length ? "<br>NF " + esc(s.nfs.join(", ")) : ""}</div>
+      <div style="text-align:right"><span class="badge s-${s.situacao}">${NOMES[s.situacao]}</span></div>
+    </div>`).join("") : `<div class="vazio">Nada aqui. 🎉</div>`;
+  desenharDetalhe();
+}
+
+function desenharDetalhe(){
+  const s = st.fila.find(x => x.chave === sel);
+  $("main").classList.toggle("detalhe-aberto", !!s);
+  if (!s) { $("detalhe").innerHTML = ""; return; }
+  const meu = s.dono === st.agente, livre = !s.dono;
+  $("detalhe").innerHTML = `
+    <button class="fechar" id="d-fechar">×</button>
+    <h2>${esc(s.nome)}</h2>
+    <div class="sub">${esc(s.hotel)} · linha ${s.linha} · pedido em ${esc(s.carimbo)}</div>
+    <span class="badge s-${s.situacao}">${NOMES[s.situacao]}</span>
+    ${s.dono ? `<span class="pill" style="margin-left:6px">👤 ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
+    <div class="acoes">
+      ${livre ? `<button class="prim" data-a="ASSUMIR">Assumir</button>` : ""}
+      ${meu ? `<button data-a="LIBERAR">Liberar</button>` : ""}
+      ${!livre && !meu ? `<button class="perigo" data-a="LIBERAR" data-v="forcar" title="Tira de ${esc(s.dono)}">Liberar à força</button>` : ""}
+      <button data-copiar="1">Copiar dados</button>
+      <button data-a="DIVIDIDA" data-v="${s.dividida ? "nao" : "sim"}">${s.dividida ? "Não é dividida" : "Nota dividida"}</button>
+    </div>
+    <div class="bloco"><h5>Nota fiscal ${s.partes > 1 || s.dividida ? `(dividida em ${Math.max(s.partes, 2)})` : ""}</h5>
+      ${s.nfs.length ? s.nfs.map(n => `<span class="badge s-concluida" style="margin:0 6px 6px 0">NF ${esc(n)}${s.nfs_conferente.includes(n) ? " · conferente" : ""}
+        ${s.nfs_conferente.includes(n) ? "" : `<a href="#" data-desfaz="${esc(n)}" style="color:#06231a;margin-left:4px">×</a>`}</span>`).join("") : `<div class="hist">Nenhuma NF ainda.</div>`}
+      <div class="linha-form"><input id="d-nf" placeholder="Número da NF emitida"><button class="prim" id="d-nf-ok">Marcar NF</button></div>
+    </div>
+    <div class="bloco"><h5>Tratativa / observação</h5>
+      <textarea id="d-txt" placeholder="Ex.: pedi o CNPJ correto por e-mail"></textarea>
+      <div class="linha-form" style="justify-content:flex-end"><button data-txt="OBS">Anotar</button><button class="creme" data-txt="TRATATIVA">Registrar tratativa</button></div>
+    </div>
+    <div class="bloco"><h5>Dados do formulário</h5>
+      <table class="campos"><tr><td>E-mail do hóspede</td><td>${esc(s.email)}</td></tr>${s.campos.map(c => `<tr><td>${esc(c[0])}</td><td>${esc(c[1])}</td></tr>`).join("")}</table>
+    </div>
+    <div class="bloco"><h5>Histórico</h5><div class="hist">${s.historico.length ? s.historico.slice().reverse().map(h =>
+      `<div><b>${esc(h.agente)}</b> · ${esc(rotulo(h))} <span style="float:right">${quando(h.quando)}</span></div>`).join("") : "Sem ações ainda."}</div></div>`;
+}
+function rotulo(h){
+  const m = {ASSUMIR:"assumiu", LIBERAR: h.valor === "forcar" ? "liberou à força" : "liberou", NF:"marcou NF " + h.valor,
+             DESFAZER_NF:"desfez NF " + h.valor, TRATATIVA:"tratativa: " + h.valor, OBS:"anotou: " + h.valor,
+             DIVIDIDA: h.valor === "sim" ? "marcou nota dividida" : "tirou nota dividida"};
+  return m[h.acao] || h.acao;
+}
+
+async function acao(a, valor){
+  const s = st.fila.find(x => x.chave === sel); if (!s) return;
+  document.querySelectorAll("#detalhe button").forEach(b => b.disabled = true);
+  const r = await api("/api/acao", {chave: s.chave, acao: a, valor: valor || ""});
+  if (r.ok) toast("Feito ✔"); else toast(r.motivo || "Não deu certo", true);
+  await carregar();
+}
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-f],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
+  if (!t) return;
+  if (t.dataset.f) { filtro = t.dataset.f; return desenhar(); }
+  if (t.dataset.h !== undefined && t.classList.contains("filtro")) { hotel = t.dataset.h; return desenhar(); }
+  if (t.dataset.k) { sel = t.dataset.k; return desenhar(); }
+  if (t.id === "d-fechar") { sel = null; return desenhar(); }
+  if (t.dataset.a) {
+    if (t.dataset.v === "forcar" && !confirm("Tirar esta solicitação de quem está tratando?")) return;
+    return acao(t.dataset.a, t.dataset.v);
+  }
+  if (t.id === "d-nf-ok") { const n = $("d-nf").value.trim().replace(/\D/g, ""); if (!n) return toast("Digite o número da NF", true); return acao("NF", n); }
+  if (t.dataset.desfaz) { e.preventDefault(); if (confirm("Desfazer a NF " + t.dataset.desfaz + "?")) return acao("DESFAZER_NF", t.dataset.desfaz); return; }
+  if (t.dataset.txt) { const v = $("d-txt").value.trim(); if (!v) return toast("Escreva o texto primeiro", true); return acao(t.dataset.txt, v); }
+  if (t.dataset.copiar) {
+    const s = st.fila.find(x => x.chave === sel);
+    await navigator.clipboard.writeText([`Hotel: ${s.hotel}`, `E-mail: ${s.email}`, ...s.campos.map(c => `${c[0]}: ${c[1]}`)].join("\n"));
+    toast("Dados copiados");
+  }
+});
+$("busca").addEventListener("input", desenhar);
+$("dias").addEventListener("change", carregar);
+$("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
+$("btn-enviar").addEventListener("click", async () => {
+  if (!confirm("Pedir ao robô para enviar agora as solicitações pendentes?")) return;
+  const r = await api("/api/enviar", {}); toast(r.ok ? "Pedido enviado ao robô" : (r.motivo || "Falhou"), !r.ok); carregar();
+});
+$("agente").addEventListener("click", async () => {
+  const nome = prompt("Seu nome (aparece pros outros agentes):", st.agente); if (!nome) return;
+  const r = await api("/api/agente", {nome}); if (r.ok) carregar(); else toast(r.motivo, true);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") { sel = null; desenhar(); } });
+carregar();
+</script>
+</body>
+</html>
