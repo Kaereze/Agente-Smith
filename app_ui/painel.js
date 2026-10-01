@@ -243,6 +243,125 @@ async function acompanharEnvio(ms) {
   envioTimer = setTimeout(() => acompanharEnvio(ms), ms);
 }
 
+// ---------- Enviar NF ao hóspede ----------
+let envNF = null;
+function assuntoDoArquivo(nomeArquivo, nome) {
+  const base = (nomeArquivo || "").replace(/\.[^.]+$/, "").replace(/\s+/g, " ").trim();
+  if (/^\s*nf-?e?\s*[-:nº°#]*\s*\d+\s*-\s*\S/i.test(base)) return base;
+  const num = (base.match(/\d{2,}/) || [""])[0];
+  return `NF ${num} - ${nome.toUpperCase()}`.replace("NF  -", "NF -");
+}
+
+async function abrirEnvioNF(chave) {
+  if (document.querySelector(".modal-fundo")) return;
+  const fundo = document.createElement("div");
+  fundo.className = "modal-fundo";
+  fundo.innerHTML = `<div class="modal"><div class="modal-topo"><div class="anel" id="nf-anel"></div>
+      <div><h3 id="nf-titulo">Enviar NF ao hóspede</h3><div class="sub" id="nf-sub">Carregando…</div></div></div>
+    <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
+    <div class="trilha" id="nf-corpo"></div>
+    <div class="modal-rodape"><span class="res" id="nf-res"></span>
+      <span><button id="nf-fechar">Cancelar</button> <button class="creme" id="nf-ir" disabled>Enviar</button></span></div></div>`;
+  document.body.appendChild(fundo);
+  $("nf-fechar").onclick = () => { clearTimeout(envNF?.timer); fundo.remove(); envNF = null; };
+  const o = await api(`/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
+  $("nf-anel").style.animationPlayState = "paused";
+  if (o.erro) { $("nf-sub").textContent = o.erro; return; }
+  envNF = { chave, o, anexo: null, arquivo: null, contaDe: o.conta_de };
+  $("nf-sub").textContent = `${o.nome} · ${o.hotel}`;
+  const de = o.destino
+    ? `<div class="de-caixa">Sai da caixa <b>${esc(o.conta_de)}</b> — ${o.destino === o.este_pc ? "por este PC" : "pelo PC <b>" + esc(o.destino) + "</b>"}</div>`
+    : `<div class="de-caixa alerta">⚠ ${esc(o.motivo)}<br>Escolha outra caixa deste PC:
+         <select id="nf-conta" style="margin-top:6px">${o.contas_locais.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>`;
+  $("nf-corpo").innerHTML = `
+    <div class="env-campo"><label>Nota fiscal (anexo)</label><div class="anexos">
+      ${o.sugestoes.map((a, i) => `<div class="anexo-op" data-nf-sug="${i}"><span class="ic">📄</span>
+        <span><div>${esc(a.nome)}</div><div class="meta">Dropbox · ${esc(a.modificado)}${a.forte ? "" : " · confira se é desta pessoa"}</div></span></div>`).join("")}
+      <label class="anexo-op" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--texto)"><span class="ic">📎</span>
+        <span id="nf-arq-txt">${o.sugestoes.length ? "Outro arquivo do computador…" : "Escolher o arquivo da nota…"}</span>
+        <input type="file" id="nf-arq" accept=".pdf,.xml" hidden></label></div></div>
+    <div class="env-campo"><label>Assunto</label><input id="nf-assunto" placeholder="NF 1212 - NOME DO HÓSPEDE"></div>
+    <div class="env-campo"><label>Para</label><input id="nf-para" list="nf-paras" value="${esc(o.para[0] || "")}">
+      <datalist id="nf-paras">${o.para.map(p => `<option value="${esc(p)}">`).join("")}</datalist></div>
+    <div class="env-campo"><label>De</label>${de}</div>
+    <div class="env-campo"><label>Mensagem</label><textarea id="nf-msg" rows="6">${esc(o.corpo)}</textarea></div>`;
+  $("nf-arq").onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    envNF.anexo = { tipo: "arquivo" }; envNF.arquivo = f;
+    document.querySelectorAll(".anexo-op").forEach(x => x.classList.remove("sel"));
+    $("nf-arq-txt").textContent = "📎 " + f.name; $("nf-arq-txt").closest(".anexo-op").classList.add("sel");
+    $("nf-assunto").value = assuntoDoArquivo(f.name, o.nome); validarEnvioNF();
+  };
+  ["nf-assunto", "nf-para"].forEach(id => $(id).addEventListener("input", validarEnvioNF));
+  if (o.sugestoes.length && o.sugestoes[0].forte) escolherSugestao(0);   // só pré-seleciona quando o nome bate inteiro
+  $("nf-ir").onclick = () => enviarNF();
+}
+
+function escolherSugestao(i) {
+  const a = envNF.o.sugestoes[i];
+  envNF.anexo = { tipo: "dropbox", rel: a.rel }; envNF.arquivo = null;
+  document.querySelectorAll(".anexo-op").forEach(x => x.classList.toggle("sel", x.dataset.nfSug === String(i)));
+  $("nf-assunto").value = assuntoDoArquivo(a.nome, envNF.o.nome); validarEnvioNF();
+}
+
+function validarEnvioNF() {
+  const ok = envNF && envNF.anexo && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
+  $("nf-ir").disabled = !ok;
+}
+
+const lerBase64 = f => new Promise((ok, erro) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = erro; r.readAsDataURL(f);
+});
+
+async function enviarNF(contaForcada) {
+  const anexo = envNF.arquivo ? { tipo: "arquivo", nome: envNF.arquivo.name, b64: await lerBase64(envNF.arquivo) } : envNF.anexo;
+  const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
+  $("nf-ir").disabled = true;
+  const r = await api("/api/envio_nf", { chave: envNF.chave, para: $("nf-para").value.trim(), assunto: $("nf-assunto").value.trim(),
+                                          corpo: $("nf-msg").value, anexo, conta_de: conta || undefined });
+  if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo, r.contas_locais); }
+  $("nf-ir").style.display = "none";
+  $("nf-anel").style.animationPlayState = "running"; $("nf-anel").className = "anel";
+  $("nf-barra").style.visibility = "visible"; $("nf-barra").classList.remove("fim");
+  $("nf-titulo").textContent = "Enviando NF…";
+  $("nf-res").textContent = r.destino === envNF.o.este_pc ? "Enviando por este PC" : `Pedido entregue ao PC ${r.destino}`;
+  acompanharNF(r.id);
+}
+
+async function acompanharNF(id) {
+  if (!envNF) return;
+  const s = await api(`/api/envio_nf/status?id=${id}`).catch(() => ({ estado: "aguardando" }));
+  if (!envNF) return;
+  if (s.estado === "enviado") {
+    $("nf-anel").className = "anel ok"; $("nf-anel").textContent = "✓"; $("nf-barra").classList.add("fim");
+    $("nf-titulo").textContent = "NF enviada ao hóspede";
+    $("nf-res").textContent = `Enviada${s.pc ? " pelo PC " + s.pc : ""}. A NF já ficou marcada no pedido.`;
+    $("nf-fechar").textContent = "Fechar"; carregar(); return;
+  }
+  if (s.estado === "falhou" || s.estado === "sem_resposta") return mostrarFalhaNF(s.detalhe, s.contas_locais);
+  $("nf-res").textContent = s.estado === "enviando" ? `O PC ${s.pc || ""} está enviando…` : `Aguardando o PC ${s.pc || ""}…`;
+  envNF.timer = setTimeout(() => acompanharNF(id), 2000);
+}
+
+function mostrarFalhaNF(motivo, contas) {
+  $("nf-anel").className = "anel ruim"; $("nf-anel").textContent = "!"; $("nf-barra").style.visibility = "hidden";
+  $("nf-titulo").textContent = "Não deu pra enviar pela caixa do hotel";
+  $("nf-res").innerHTML = `${esc(motivo || "")}` + ((contas || []).length ? `<div style="margin-top:8px">Enviar por outra caixa deste PC:
+    <select id="nf-conta-alt">${contas.map(c => `<option>${esc(c)}</option>`).join("")}</select>
+    <button class="creme" id="nf-alt">Enviar por esta</button></div>` : "");
+  $("nf-ir").style.display = "none";
+  if ($("nf-alt")) $("nf-alt").onclick = () => { $("nf-ir").style.display = ""; enviarNF($("nf-conta-alt").value); };
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-envnf],[data-nf-sug]");
+  if (!b) return;
+  if (b.dataset.envnf) return abrirEnvioNF(b.dataset.envnf);
+  if (b.dataset.nfSug !== undefined && envNF) escolherSugestao(Number(b.dataset.nfSug));
+});
+
 // ---------- Eventos ----------
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-vista],[data-p-periodo],[data-p-medida],[data-p-tabela],[data-p-ordem],[data-p-hotel],[data-p-fechar],[data-p-sol],[data-p-ir]");

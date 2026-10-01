@@ -71,6 +71,18 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--
 .tabela .zero{color:#5f7a73}
 .alerta-txt{color:#fab219} .ruim-txt{color:#ff8a80}
 .avisos{font-size:12px;color:var(--suave);margin-top:-6px;margin-bottom:12px}
+/* Envio de NF */
+.env-campo{margin-bottom:12px}
+.env-campo label{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--suave);margin-bottom:5px}
+.env-campo input,.env-campo textarea,.env-campo select{width:100%}
+.anexos{display:flex;flex-direction:column;gap:6px}
+.anexo-op{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--card);cursor:pointer;border:1px solid transparent}
+.anexo-op:hover{background:var(--card2)}
+.anexo-op.sel{border-color:var(--creme)}
+.anexo-op .ic{font-size:18px}
+.anexo-op .meta{font-size:11px;color:var(--suave)}
+.de-caixa{padding:9px 12px;border-radius:10px;background:var(--card);font-size:13px}
+.de-caixa.alerta{background:#4d4214;color:#f6e3a3}
 /* Seletor de operador */
 .op{position:relative}
 .op-btn{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid transparent;border-radius:24px;padding:4px 12px 4px 4px;transition:border-color .2s,background .2s}
@@ -376,6 +388,10 @@ function desenharDetalhe(){
       ${s.nfs.length ? s.nfs.map(n => `<span class="badge s-concluida" style="margin:0 6px 6px 0">NF ${esc(n)}${s.nfs_conferente.includes(n) ? " · conferente" : ""}
         ${s.nfs_conferente.includes(n) ? "" : `<a href="#" data-desfaz="${esc(n)}" style="color:#06231a;margin-left:4px">×</a>`}</span>`).join("") : `<div class="hist">Nenhuma NF ainda.</div>`}
       <div class="linha-form"><input id="d-nf" placeholder="Número da NF emitida"><button class="prim" id="d-nf-ok">Marcar NF</button></div>
+    </div>
+    <div class="bloco"><h5>Enviar NF ao hóspede</h5>
+      <div class="hist" style="margin-bottom:8px">Anexe a nota e envie por e-mail, saindo da caixa do hotel.</div>
+      <button class="prim" data-envnf="${esc(s.chave)}">✉ Enviar NF por e-mail</button>
     </div>
     <div class="bloco"><h5>Tratativa / observação</h5>
       <textarea id="d-txt" placeholder="Ex.: pedi o CNPJ correto por e-mail"></textarea>

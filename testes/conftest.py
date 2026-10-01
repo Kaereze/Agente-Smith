@@ -173,4 +173,12 @@ def pastas_temporarias(tmp_path, monkeypatch):
     return tmp_path
 
 
+@pytest.fixture(autouse=True)
+def sem_outlook_no_envio_nf(monkeypatch):
+    """O serviço de envio de NF do Painel nunca toca o Outlook de verdade nos testes."""
+    import envio_nf
+    monkeypatch.setattr(envio_nf, "contas_do_outlook", lambda: [])
+    monkeypatch.setattr(envio_nf, "enviar_pelo_outlook", lambda *a: (_ for _ in ()).throw(RuntimeError("Outlook real bloqueado no teste")))
+
+
 AGORA = datetime.datetime(2026, 9, 24, 10, 0, 0)

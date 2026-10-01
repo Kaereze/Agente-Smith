@@ -27,6 +27,7 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
+import envio_nf
 import fiscal_intelligence
 import painel_metricas as metricas
 from arquivos import salvar_json
@@ -75,8 +76,9 @@ def nome_do_agente():
 class Estado:
     """Cache em memória da Central. Uma leitura (batch) por atualização, pra caber na cota da API."""
 
-    def __init__(self, backend, cfg, relogio=time.monotonic):
+    def __init__(self, backend, cfg, relogio=time.monotonic, servico_envio=None):
         self.backend, self.cfg, self.relogio = backend, cfg, relogio
+        self.envio_nf = servico_envio or envio_nf.ServicoEnvio(backend, cfg, socket.gethostname(), self.registrar_nf_enviada)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
@@ -101,8 +103,10 @@ class Estado:
                                            self.cfg.get("cadastro_colunas"))
             self.abas_hotel = {a: self.cadastro.canonico(nome_do_hotel_pela_aba(a)) or nome_do_hotel_pela_aba(a)
                                for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
-            if dados.ABA_TRATAMENTO not in todas:
-                self.backend.criar_aba_log(self.central, dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO)
+            for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
+                             (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS)):
+                if aba not in todas:
+                    self.backend.criar_aba_log(self.central, aba, cab)
             self.abas_lidas_em = self.relogio()
         return self.abas_hotel
 
@@ -110,7 +114,8 @@ class Estado:
         try:
             abas = self._abas()
             status_aba = self.cfg["aba_status"]
-            lidas, erros = self.backend.ler_abas(self.central, list(abas) + [dados.ABA_TRATAMENTO, status_aba])
+            lidas, erros = self.backend.ler_abas(self.central, list(abas) + [dados.ABA_TRATAMENTO, status_aba,
+                                                                              envio_nf.ABA_FILA, envio_nf.ABA_PCS])
             solicitacoes = []
             for aba, hotel in abas.items():
                 solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
@@ -123,6 +128,58 @@ class Estado:
         except Exception as e:
             logger.warning(f"⚠️ Não consegui ler a planilha ({e})")
             self.erro = str(e)[:200]
+            return
+        try:
+            self.envio_nf.tick(lidas, nome_do_agente())
+        except Exception:
+            logger.exception("fila de envio de NF")
+
+    def registrar_nf_enviada(self, pedido, quem):
+        """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem)."""
+        pc, quando = socket.gethostname(), dados.agora()
+        linhas = []
+        if pedido.get("nf"):
+            linhas.append(dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.NF, pedido["nf"]))
+        linhas.append(dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.OBS,
+                                   f"\"{pedido['assunto']}\" enviada ao hóspede ({pedido['para']}) pela caixa {pedido['conta_de']}"))
+        self.backend.anexar_linhas(self.central, dados.ABA_TRATAMENTO, linhas)
+        self.reler_tratamento()
+
+    def opcoes_envio(self, chave_sol):
+        sol = next((s for s in self.solicitacoes if s["chave"] == chave_sol), None)
+        if sol is None:
+            raise KeyError("solicitação não encontrada")
+        conta = self.cadastro.dados(sol["hotel"]).get("email", "")
+        destino, motivo = self.envio_nf.destino_para(conta)
+        sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg)
+        return {"para": envio_nf.destinatarios(sol), "conta_de": conta, "destino": destino, "motivo": motivo,
+                "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
+                "nome": sol["nome"], "hotel": sol["hotel"],
+                "corpo": envio_nf.CORPO_PADRAO.format(nome=sol["nome"], hotel=sol["hotel"])}
+
+    def pedir_envio(self, corpo, quem):
+        sol = next((s for s in self.solicitacoes if s["chave"] == corpo.get("chave")), None)
+        if sol is None:
+            raise KeyError("solicitação não encontrada")
+        para, assunto = str(corpo.get("para", "")).strip(), str(corpo.get("assunto", "")).strip()
+        if "@" not in para or not assunto:
+            raise ValueError("preencha o destinatário e o assunto")
+        conta = (corpo.get("conta_de") or self.cadastro.dados(sol["hotel"]).get("email", "")).strip().lower()
+        anexo = corpo.get("anexo") or {}
+        if anexo.get("tipo") == "arquivo":
+            import base64
+            anexo = {"tipo": "arquivo", "nome": os.path.basename(anexo.get("nome", "nota.pdf")),
+                     "conteudo": base64.b64decode(anexo.get("b64", ""))}
+        elif anexo.get("tipo") != "dropbox" or not anexo.get("rel"):
+            raise ValueError("escolha a nota fiscal pra anexar")
+        return self.envio_nf.pedir(sol, para, assunto, conta, anexo, quem, corpo.get("corpo"))
+
+    def situacao_envio(self, id_envio):
+        local = self.envio_nf.locais.get(id_envio)
+        if local and local["estado"] != "enviando":
+            return local
+        fresca = envio_nf.dobrar_fila(self.backend.ler_abas(self.central, [envio_nf.ABA_FILA])[0].get(envio_nf.ABA_FILA, [[]]))
+        return self.envio_nf.situacao(id_envio, fresca)
 
     def reler_tratamento(self):
         lidas, _ = self.backend.ler_abas(self.central, [dados.ABA_TRATAMENTO])
@@ -302,10 +359,16 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self._json(envio.situacao(ler_status))
             q = {k: v[0] for k, v in parse_qs(url.query).items()}
             try:
+                if url.path == "/api/envio_nf/opcoes":
+                    return self._json(estado.opcoes_envio(q.get("chave", "")))
+                if url.path == "/api/envio_nf/status":
+                    return self._json(estado.situacao_envio(q.get("id", "")))
                 if url.path == "/api/painel":
                     return self._json(estado.painel(q.get("ini"), q.get("fim")))
                 if url.path == "/api/hotel":
                     return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
+            except KeyError as e:
+                return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
                 return self._json({"erro": f"parâmetro inválido: {e}"}, 400)
             return self._json({"erro": "não encontrado"}, 404)
@@ -340,6 +403,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                                                                  LINHA_PEDIDO: f"{nome_do_agente()} (Painel) | {quando}"})
                     envio.iniciar_remoto()
                     return self._json({"ok": True, "modo": "remoto"})
+                if path == "/api/envio_nf":
+                    return self._json(estado.pedir_envio(corpo, nome_do_agente()))
                 if path == "/api/atualizar":
                     estado.atualizar()
                     estado.atualizar_fi(forcar=True)
