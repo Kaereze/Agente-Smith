@@ -207,6 +207,8 @@ textarea{width:100%;min-height:54px;resize:vertical}
   <aside>
     <h4>Situação</h4>
     <div id="f-situacao"></div>
+    <h4>E-mail ao hotel</h4>
+    <div id="f-envio"></div>
     <h4>Período</h4>
     <div style="padding:0 6px"><select id="dias" style="width:100%">
       <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option>
@@ -230,7 +232,8 @@ const TOKEN = "__TOKEN__";
 const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Na fila", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida"};
 const ORDEM_FILTROS = ["todas","minhas","na_fila","em_tratamento","tratativa","nf_parcial","aguardando_envio","concluida"];
-let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", sel = null, timer = null, intervalo = 15;
+let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", envio = "todos", sel = null, timer = null, intervalo = 15;
+const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -279,7 +282,12 @@ function passa(s, f){
 function texto(s){ return (s.nome+" "+s.email+" "+s.hotel+" "+s.carimbo+" "+s.nfs.join(" ")+" "+s.campos.map(c=>c[1]).join(" ")).toLowerCase(); }
 
 function desenhar(){
-  const fila = st.fila, busca = $("busca").value.trim().toLowerCase();
+  const busca = $("busca").value.trim().toLowerCase();
+  // contagem do "E-mail ao hotel" respeita hotel e situação; os outros grupos respeitam o filtro de e-mail
+  const semEnvio = st.fila.filter(s => (!hotel || s.hotel === hotel) && passa(s, filtro));
+  $("f-envio").innerHTML = Object.entries(ENVIO).map(([k, [nome, ok]]) =>
+    `<div class="filtro ${k===envio?"sel":""}" data-e="${k}"><span>${nome}</span><span class="n">${semEnvio.filter(ok).length}</span></div>`).join("");
+  const fila = st.fila.filter(ENVIO[envio][1]);
   const porHotel = hotel ? fila.filter(s => s.hotel === hotel) : fila;
   $("f-situacao").innerHTML = ORDEM_FILTROS.map(f => {
     const n = porHotel.filter(s => passa(s, f)).length;
@@ -311,7 +319,8 @@ function desenharDetalhe(){
   $("detalhe").innerHTML = `
     <button class="fechar" id="d-fechar">×</button>
     <h2>${esc(s.nome)}</h2>
-    <div class="sub">${esc(s.hotel)} · linha ${s.linha} · pedido em ${esc(s.carimbo)}</div>
+    <div class="sub">${esc(s.hotel)} · linha ${s.linha} · pedido em ${esc(s.carimbo)}<br>
+      ${s.enviado ? "✉ E-mail já enviado ao hotel" : "✉ E-mail ainda não enviado ao hotel"}</div>
     <span class="badge s-${s.situacao}">${NOMES[s.situacao]}</span>
     ${s.dono ? `<span class="pill" style="margin-left:6px">👤 ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
     <div class="acoes">
@@ -352,9 +361,10 @@ async function acao(a, valor){
 }
 
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-f],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-f],[data-e],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
   if (!t) return;
   if (t.dataset.f) { filtro = t.dataset.f; return desenhar(); }
+  if (t.dataset.e) { envio = t.dataset.e; return desenhar(); }
   if (t.dataset.h !== undefined && t.classList.contains("filtro")) { hotel = t.dataset.h; return desenhar(); }
   if (t.dataset.k) { sel = t.dataset.k; return desenhar(); }
   if (t.id === "d-fechar") { sel = null; return desenhar(); }
