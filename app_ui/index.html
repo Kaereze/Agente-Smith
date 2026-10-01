@@ -129,6 +129,21 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--
 .agente{cursor:pointer}
 aside{background:var(--painel);border-right:1px solid var(--linha);padding:14px 10px;overflow-y:auto}
 aside h4{margin:14px 8px 6px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--suave)}
+.grupo{margin-bottom:6px}
+.g-tit{display:flex;justify-content:space-between;align-items:center;width:100%;background:transparent;padding:10px 10px 6px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--suave);border-radius:6px}
+.g-tit:hover{color:var(--texto);filter:none}
+.g-seta{transition:transform .2s;font-size:12px}
+.grupo.fechado .g-seta{transform:rotate(-90deg)}
+.g-corpo{overflow:hidden;animation:abrirGrupo .18s ease}
+.grupo.fechado .g-corpo{display:none}
+@keyframes abrirGrupo{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 8px 6px}
+.chip{background:var(--card);color:var(--suave);font-size:12px;padding:5px 10px;border-radius:14px;display:inline-flex;align-items:center;gap:5px}
+.chip:hover{color:var(--texto);filter:none;background:var(--card2)}
+.chip.sel{background:var(--verde);color:#fff}
+.chip .n{font-size:11px;opacity:.75}
+.busca-lat{width:calc(100% - 16px);margin:2px 8px 6px;padding:6px 10px;font-size:12px}
+.filtro.vazio-n{opacity:.45}
 .filtro{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--texto)}
 .filtro:hover{background:var(--card)}
 .filtro.sel{background:var(--verde);color:#fff}
@@ -205,17 +220,14 @@ textarea{width:100%;min-height:54px;resize:vertical}
   </section>
   <section class="vista oculta" id="v-fila">
   <aside>
-    <h4>Situação</h4>
-    <div id="f-situacao"></div>
-    <h4>E-mail ao hotel</h4>
-    <div id="f-envio"></div>
-    <h4>Período</h4>
-    <div style="padding:0 6px"><select id="dias" style="width:100%">
-      <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option>
-      <option value="45" selected>Últimos 45 dias</option><option value="90">Últimos 90 dias</option>
-      <option value="0">Tudo</option></select></div>
-    <h4>Hotéis</h4>
-    <div id="f-hotel"></div>
+    <div class="grupo" data-g="situacao"><button class="g-tit">Situação<span class="g-seta">▾</span></button>
+      <div class="g-corpo" id="f-situacao"></div></div>
+    <div class="grupo" data-g="envio"><button class="g-tit">E-mail ao hotel<span class="g-seta">▾</span></button>
+      <div class="g-corpo"><div class="chips" id="f-envio"></div></div></div>
+    <div class="grupo" data-g="periodo"><button class="g-tit">Período<span class="g-seta">▾</span></button>
+      <div class="g-corpo"><div class="chips" id="f-periodo"></div><input type="hidden" id="dias" value="45"></div></div>
+    <div class="grupo" data-g="hoteis"><button class="g-tit">Hotéis<span class="g-seta">▾</span></button>
+      <div class="g-corpo"><input class="busca-lat" id="busca-hotel-fila" placeholder="Buscar hotel…"><div id="f-hotel"></div></div></div>
   </aside>
   <main id="main">
     <div class="lista-wrap">
@@ -234,6 +246,7 @@ const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Na fila", em_tratam
 const ORDEM_FILTROS = ["todas","minhas","na_fila","em_tratamento","tratativa","nf_parcial","aguardando_envio","concluida"];
 let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", envio = "todos", sel = null, timer = null, intervalo = 15;
 const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
+const PERIODOS_FILA = [["7", "7 dias"], ["15", "15 dias"], ["45", "45 dias"], ["90", "90 dias"], ["0", "Tudo"]];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -286,18 +299,27 @@ function desenhar(){
   // contagem do "E-mail ao hotel" respeita hotel e situação; os outros grupos respeitam o filtro de e-mail
   const semEnvio = st.fila.filter(s => (!hotel || s.hotel === hotel) && passa(s, filtro));
   $("f-envio").innerHTML = Object.entries(ENVIO).map(([k, [nome, ok]]) =>
-    `<div class="filtro ${k===envio?"sel":""}" data-e="${k}"><span>${nome}</span><span class="n">${semEnvio.filter(ok).length}</span></div>`).join("");
+    `<button class="chip ${k===envio?"sel":""}" data-e="${k}">${nome}<span class="n">${semEnvio.filter(ok).length}</span></button>`).join("");
+  $("f-periodo").innerHTML = PERIODOS_FILA.map(([v, nome]) =>
+    `<button class="chip ${v===$("dias").value?"sel":""}" data-dias="${v}">${nome}</button>`).join("");
   const fila = st.fila.filter(ENVIO[envio][1]);
   const porHotel = hotel ? fila.filter(s => s.hotel === hotel) : fila;
+  // Situação: some o que está zerado (o selecionado fica sempre)
   $("f-situacao").innerHTML = ORDEM_FILTROS.map(f => {
     const n = porHotel.filter(s => passa(s, f)).length;
+    if (!n && f !== filtro && f !== "todas") return "";
     const nome = f === "todas" ? "Todas" : f === "minhas" ? "Minhas" : NOMES[f];
-    return `<div class="filtro ${f===filtro?"sel":""}" data-f="${f}"><span>${nome}</span><span class="n">${n}</span></div>`;
+    return `<div class="filtro ${f===filtro?"sel":""} ${n?"":"vazio-n"}" data-f="${f}"><span>${nome}</span><span class="n">${n}</span></div>`;
   }).join("");
-  const hoteis = {};
+  // Hotéis: mais pendências primeiro, com busca
+  const hoteis = {}, buscaHotel = $("busca-hotel-fila").value.trim().toLowerCase();
   fila.filter(s => passa(s, filtro)).forEach(s => hoteis[s.hotel] = (hoteis[s.hotel]||0) + 1);
-  $("f-hotel").innerHTML = `<div class="filtro ${!hotel?"sel":""}" data-h=""><span>Todos</span><span class="n">${Object.values(hoteis).reduce((a,b)=>a+b,0)}</span></div>` +
-    Object.keys(hoteis).sort().map(h => `<div class="filtro ${h===hotel?"sel":""}" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]}</span></div>`).join("");
+  const nomesHotel = Object.keys(hoteis).filter(h => !buscaHotel || h.toLowerCase().includes(buscaHotel))
+    .sort((a, b) => hoteis[b] - hoteis[a] || a.localeCompare(b));
+  if (hotel && !nomesHotel.includes(hotel)) nomesHotel.unshift(hotel);
+  $("f-hotel").innerHTML = (buscaHotel ? "" : `<div class="filtro ${!hotel?"sel":""}" data-h=""><span>Todos</span><span class="n">${Object.values(hoteis).reduce((a,b)=>a+b,0)}</span></div>`) +
+    nomesHotel.map(h => `<div class="filtro ${h===hotel?"sel":""}" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]||0}</span></div>`).join("") +
+    (buscaHotel && !nomesHotel.length ? `<div class="hist" style="padding:6px 10px">Nenhum hotel com esse nome</div>` : "");
 
   let lista = porHotel.filter(s => passa(s, filtro));
   if (busca) lista = lista.filter(s => texto(s).includes(busca));
@@ -361,10 +383,11 @@ async function acao(a, valor){
 }
 
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-f],[data-e],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-f],[data-e],[data-dias],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
   if (!t) return;
   if (t.dataset.f) { filtro = t.dataset.f; return desenhar(); }
   if (t.dataset.e) { envio = t.dataset.e; return desenhar(); }
+  if (t.dataset.dias) { $("dias").value = t.dataset.dias; desenhar(); return carregar(); }
   if (t.dataset.h !== undefined && t.classList.contains("filtro")) { hotel = t.dataset.h; return desenhar(); }
   if (t.dataset.k) { sel = t.dataset.k; return desenhar(); }
   if (t.id === "d-fechar") { sel = null; return desenhar(); }
@@ -382,7 +405,19 @@ document.addEventListener("click", async e => {
   }
 });
 $("busca").addEventListener("input", desenhar);
-$("dias").addEventListener("change", carregar);
+$("busca-hotel-fila").addEventListener("input", desenhar);
+// Grupos da lateral abrem/fecham; o estado fica guardado neste PC
+const GRUPOS_KEY = "painel.gruposFechados";
+let gruposFechados = [];
+try { gruposFechados = JSON.parse(localStorage.getItem(GRUPOS_KEY) || "[]"); } catch (e) {}
+document.querySelectorAll(".grupo").forEach(g => {
+  g.classList.toggle("fechado", gruposFechados.includes(g.dataset.g));
+  g.querySelector(".g-tit").addEventListener("click", () => {
+    g.classList.toggle("fechado");
+    gruposFechados = [...document.querySelectorAll(".grupo.fechado")].map(x => x.dataset.g);
+    try { localStorage.setItem(GRUPOS_KEY, JSON.stringify(gruposFechados)); } catch (e) {}
+  });
+});
 $("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
 $("btn-enviar").addEventListener("click", () => abrirEnvio());
 // Seletor de operador: avatar com cor fixa por pessoa

@@ -382,6 +382,10 @@ def porta_livre():
 
 def main():
     sem_janela = "--sem-janela" in sys.argv
+    if sem_janela:   # religado logo após matar o anterior: a porta pode levar uns segundos pra soltar
+        limite = time.monotonic() + 10
+        while not porta_livre() and time.monotonic() < limite:
+            time.sleep(0.5)
     if not porta_livre():
         if not sem_janela:
             abrir_janela()
