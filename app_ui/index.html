@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel Notas Fiscais</title>
+<link rel="icon" type="image/png" href="/icone.png">
 <style>
 :root{
   --fundo:#0f2e2a; --painel:#163d38; --card:#1c4842; --card2:#225249; --linha:#2d5b53;
@@ -20,8 +21,57 @@ button.perigo{background:#5a2b2b}
 button:disabled{opacity:.45;cursor:default;filter:none}
 input,textarea,select{font:inherit;color:var(--texto);background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--verde2)}
-.app{display:grid;grid-template-columns:240px 1fr;grid-template-rows:56px 1fr;height:100vh}
-header{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--painel);border-bottom:1px solid var(--linha)}
+.app{display:grid;grid-template-rows:56px 1fr;height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--painel);border-bottom:1px solid var(--linha)}
+.vista{min-height:0;overflow:hidden}
+.vista.oculta{display:none!important}
+#v-fila{display:grid;grid-template-columns:240px 1fr}
+.abas{display:flex;gap:4px;margin-left:10px}
+.abas button{background:transparent;color:var(--suave);padding:8px 14px;border-radius:8px}
+.abas button.sel{background:var(--card);color:var(--texto);font-weight:600}
+/* Visão geral / Hotéis */
+.rolagem{height:100%;overflow-y:auto;padding:18px 22px 40px}
+.filtros{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filtros .titulo{font-size:18px;font-weight:700;margin-right:auto}
+.seg{display:inline-flex;background:var(--card);border-radius:8px;padding:3px}
+.seg button{background:transparent;padding:6px 12px;font-size:13px;color:var(--suave)}
+.seg button.sel{background:var(--verde);color:#fff}
+.filtros input[type=date]{padding:5px 8px;font-size:13px;color-scheme:dark}
+.saude{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.saude .c{background:var(--card);border-radius:10px;padding:10px 12px;border-left:4px solid var(--linha)}
+.saude .c b{display:block;font-size:13px;margin-bottom:3px}
+.saude .c span{font-size:12px;color:var(--suave);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saude .bom{border-left-color:#0ca30c} .saude .alerta{border-left-color:#fab219} .saude .ruim{border-left-color:#d03b3b}
+.kpis{display:grid;grid-template-columns:1.3fr repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--card);border-radius:12px;padding:14px 16px}
+.kpi .r{font-size:12px;color:var(--suave)}
+.kpi .v{font-size:28px;font-weight:650;margin-top:4px}
+.kpi .s{font-size:12px;color:var(--suave);margin-top:2px}
+.kpi.hero{grid-row:span 2;display:flex;flex-direction:column;justify-content:center}
+.kpi.hero .v{font-size:56px;line-height:1}
+.cartao{background:#0f2e2a;border:1px solid var(--linha);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.cartao h3{margin:0;font-size:14px}
+.cartao .sub{font-size:12px;color:var(--suave);margin:2px 0 10px}
+.cartao-topo{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.cartao-topo > div:first-child{margin-right:auto}
+.grade2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.viz-leg{display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:12px;color:var(--suave)}
+.viz-chave{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.viz-dica{position:absolute;display:none;pointer-events:none;background:#163d38;border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12px;min-width:160px;box-shadow:0 6px 18px #0006;z-index:3}
+.viz-dica div{margin-top:3px}
+.viz-nota{color:var(--creme);font-size:11px;max-width:240px}
+.link{background:none;padding:0;color:var(--creme);text-decoration:underline;font-size:12px}
+.tabela{width:100%;border-collapse:collapse;font-size:13px}
+.tabela th{text-align:left;font-size:11px;font-weight:600;color:var(--suave);padding:8px;border-bottom:1px solid var(--linha);cursor:pointer;white-space:nowrap;position:sticky;top:0;background:#0f2e2a}
+.tabela th.num,.tabela td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tabela td{padding:7px 8px;border-bottom:1px solid #1d3d38}
+.tabela tbody tr{cursor:pointer}
+.tabela tbody tr:hover{background:var(--card)}
+.tabela .zero{color:#5f7a73}
+.alerta-txt{color:#fab219} .ruim-txt{color:#ff8a80}
+.avisos{font-size:12px;color:var(--suave);margin-top:-6px;margin-bottom:12px}
+#v-hoteis{display:grid;grid-template-columns:1fr 0;transition:grid-template-columns .2s}
+#v-hoteis.ficha-aberta{grid-template-columns:1fr 480px}
 .marca{font-weight:700;font-size:16px;letter-spacing:.3px}
 .marca span{color:var(--creme)}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--card);font-size:12px;color:var(--suave)}
@@ -81,7 +131,12 @@ textarea{width:100%;min-height:54px;resize:vertical}
 <body>
 <div class="app">
   <header>
-    <div class="marca">Painel <span>Notas Fiscais</span></div>
+    <img src="/icone.png" alt="" width="30" height="30"><div class="marca">Painel <span>Notas Fiscais</span></div>
+    <nav class="abas" id="abas">
+      <button data-vista="visao" class="sel">Visão geral</button>
+      <button data-vista="fila">Solicitações</button>
+      <button data-vista="hoteis">Hotéis</button>
+    </nav>
     <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
     <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
     <div class="esp"></div>
@@ -89,6 +144,12 @@ textarea{width:100%;min-height:54px;resize:vertical}
     <button id="btn-atualizar" title="Reler a planilha agora">⟳</button>
     <span class="pill agente" id="agente" title="Clique pra trocar o nome">👤 <span id="agente-txt">…</span></span>
   </header>
+  <section class="vista" id="v-visao"><div class="rolagem" id="visao"></div></section>
+  <section class="vista oculta" id="v-hoteis">
+    <div class="rolagem" id="hoteis"></div>
+    <div class="detalhe" id="ficha-hotel"></div>
+  </section>
+  <section class="vista oculta" id="v-fila">
   <aside>
     <h4>Situação</h4>
     <div id="f-situacao"></div>
@@ -107,6 +168,7 @@ textarea{width:100%;min-height:54px;resize:vertical}
     </div>
     <div class="detalhe" id="detalhe"></div>
   </main>
+  </section>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -269,5 +331,7 @@ $("agente").addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") { sel = null; desenhar(); } });
 carregar();
 </script>
+<script src="/graficos.js"></script>
+<script src="/painel.js"></script>
 </body>
 </html>

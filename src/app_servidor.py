@@ -25,7 +25,10 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
+import fiscal_intelligence
+import painel_metricas as metricas
 from arquivos import salvar_json
+from hoteis import CadastroHoteis
 from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config
 from log_util import configurar_logging
 from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
@@ -37,6 +40,12 @@ PORTA = 8765
 PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = PASTA_ESTADO / "app.json"
 FECHAR_SEM_USO_SEGUNDOS = 3 * 60
+ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
+    "/icone.png": ("icone.png", "image/png"),
+    "/favicon.ico": ("icone.ico", "image/x-icon"),
+    "/graficos.js": ("graficos.js", "text/javascript; charset=utf-8"),
+    "/painel.js": ("painel.js", "text/javascript; charset=utf-8"),
+}
 EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"]
 
@@ -67,14 +76,23 @@ class Estado:
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
         self.solicitacoes, self.estados, self.status = [], {}, {}
         self.atualizado_em, self.erro = None, ""
+        self.cadastro = CadastroHoteis([])
+        painel = cfg.get("painel", {})
+        self.desde = datetime.date.fromisoformat(painel.get("desde", "2026-09-01"))
+        self.fi_id, self.fi_minutos = painel.get("fiscal_intelligence_id", ""), int(painel.get("fi_minutos", 5))
+        self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
             marcador = normalizar(self.cfg.get("marcador_aba_respostas", "(respostas)"))
             ignoradas = {normalizar(a) for a in self.cfg.get("abas_ignoradas", [])}
             todas = self.backend.listar_abas(self.central)
-            self.abas_hotel = {a: nome_do_hotel_pela_aba(a) for a in todas
-                               if marcador in normalizar(a) and normalizar(a) not in ignoradas}
+            aba_cad = self.cfg["aba_cadastro_hoteis"]
+            cad, _ = self.backend.ler_abas(self.central, [aba_cad])
+            self.cadastro = CadastroHoteis(cad.get(aba_cad, []), self.cfg.get("apelidos_hoteis", {}),
+                                           self.cfg.get("cadastro_colunas"))
+            self.abas_hotel = {a: self.cadastro.canonico(nome_do_hotel_pela_aba(a)) or nome_do_hotel_pela_aba(a)
+                               for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
             if dados.ABA_TRATAMENTO not in todas:
                 self.backend.criar_aba_log(self.central, dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO)
             self.abas_lidas_em = self.relogio()
@@ -121,14 +139,51 @@ class Estado:
                 return {"ok": False, "motivo": f"{dono} assumiu um instante antes de você."}
         return {"ok": True}
 
-    def fila(self, dias):
-        desde = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat() if dias else None
+    def fila(self, dias=None, desde=None):
+        if dias:
+            desde = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat()
         try:
             controle = json.load(open(PASTA_ESTADO / "controle_nf.json", encoding="utf-8"))
         except (FileNotFoundError, ValueError):
             controle = {}
         with self.lock:
             return dados.montar_fila(self.solicitacoes, self.estados, dados.nfs_do_controle(controle), desde)
+
+    def atualizar_fi(self, forcar=False):
+        """Fiscal Intelligence: o Mail Analytics grava 1x por dia, então reler a cada poucos minutos sobra."""
+        if not self.fi_id or (not forcar and self.relogio() - self.fi_lido < self.fi_minutos * 60):
+            return
+        try:
+            fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde)
+            with self.lock:
+                self.fi, self.fi_erro = fi, ""
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui ler o Fiscal Intelligence ({e})")
+            self.fi_erro = str(e)[:200]
+        self.fi_lido = self.relogio()
+
+    def _periodo(self, ini, fim):
+        hoje = datetime.date.today()
+        ini = max(datetime.date.fromisoformat(ini) if ini else hoje.replace(day=1), self.desde)
+        fim = min(datetime.date.fromisoformat(fim) if fim else hoje, hoje)
+        return ini, max(fim, ini)
+
+    def painel(self, ini, fim):
+        ini, fim = self._periodo(ini, fim)
+        hoje = datetime.date.today()
+        fila = self.fila(desde=self.desde.isoformat())
+        fi = self.fi or {"metricas": [], "fins_de_semana": {}, "saude": {}, "avisos": []}
+        return {"ini": ini.isoformat(), "fim": fim.isoformat(), "desde": self.desde.isoformat(),
+                "visao": metricas.visao_geral(fi["metricas"], fila, ini, fim, hoje, fi["fins_de_semana"]),
+                "hoteis": metricas.tabela_hoteis(fi["metricas"], fila, ini, fim, hoje, self.cadastro),
+                "saude": fi["saude"], "avisos": fi["avisos"], "fi_erro": self.fi_erro,
+                "fi_lido_em": fi["lido_em"].isoformat(timespec="seconds") if fi.get("lido_em") else ""}
+
+    def hotel(self, nome, ini, fim):
+        ini, fim = self._periodo(ini, fim)
+        fi = self.fi or {"metricas": [], "fins_de_semana": {}}
+        return metricas.ficha_hotel(nome, fi["metricas"], self.fila(desde=self.desde.isoformat()), ini, fim,
+                                    datetime.date.today(), fi["fins_de_semana"], self.cadastro)
 
     def resumo_status(self):
         s = self.status
@@ -173,6 +228,16 @@ def criar_handler(estado, cfg, token, ultimo_uso):
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)
+            estatico = ESTATICOS.get(url.path)
+            if estatico:
+                arquivo, tipo = estatico
+                corpo = (PASTA_UI / arquivo).read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", tipo)
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Content-Length", str(len(corpo)))
+                self.end_headers()
+                return self.wfile.write(corpo)
             if not self._autorizado():
                 return self._json({"erro": "não autorizado"}, 403)
             if url.path == "/api/estado":
@@ -183,6 +248,14 @@ def criar_handler(estado, cfg, token, ultimo_uso):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila(dias),
                 })
+            q = {k: v[0] for k, v in parse_qs(url.query).items()}
+            try:
+                if url.path == "/api/painel":
+                    return self._json(estado.painel(q.get("ini"), q.get("fim")))
+                if url.path == "/api/hotel":
+                    return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
+            except ValueError as e:
+                return self._json({"erro": f"parâmetro inválido: {e}"}, 400)
             return self._json({"erro": "não encontrado"}, 404)
 
         def do_POST(self):
@@ -212,6 +285,7 @@ def criar_handler(estado, cfg, token, ultimo_uso):
                     return self._json({"ok": True})
                 if path == "/api/atualizar":
                     estado.atualizar()
+                    estado.atualizar_fi(forcar=True)
                     return self._json({"ok": not estado.erro, "motivo": estado.erro})
             except KeyError as e:
                 return self._json({"ok": False, "motivo": str(e).strip("'\"")}, 409)
@@ -259,6 +333,7 @@ def main():
     def laco():   # primeira leitura já aqui: a janela abre sem esperar a planilha
         while True:
             estado.atualizar()
+            estado.atualizar_fi()
             time.sleep(intervalo)
             if not sem_janela and time.monotonic() - ultimo_uso[0] > FECHAR_SEM_USO_SEGUNDOS:
                 logger.info("App fechado (janela sem uso) — encerrando o servidor.")

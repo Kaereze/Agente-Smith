@@ -152,6 +152,12 @@
   "app": {
     "atualizar_segundos": 15
   },
+  "_ajuda_painel": "Visão geral/Hotéis: dados a partir de 'desde'; Fiscal Intelligence (Mail Analytics) só é lido, a cada fi_minutos",
+  "painel": {
+    "desde": "2026-09-01",
+    "fiscal_intelligence_id": "1e78L9EJeYzW_jWOZF5jqKPKu9vmKs1ZBstV_2FLZ_rY",
+    "fi_minutos": 5
+  },
   "_ajuda_somente_hoteis": "Teste: só esses hotéis ([] = todos)",
   "somente_hoteis": [],
   "_ajuda_registro_central": "Cópia das enviadas pra aba Registros (planilha precisa estar compartilhada)",
