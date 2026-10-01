@@ -144,6 +144,11 @@ aside h4{margin:14px 8px 6px;font-size:11px;letter-spacing:1.5px;text-transform:
 .chip .n{font-size:11px;opacity:.75}
 .busca-lat{width:calc(100% - 16px);margin:2px 8px 6px;padding:6px 10px;font-size:12px}
 .filtro.vazio-n{opacity:.45}
+.hotel-atual{border:1px solid var(--linha)}
+.hotel-atual .seta{display:inline-block;margin-left:6px;transition:transform .2s}
+.hotel-atual.aberta .seta{transform:rotate(180deg)}
+.hotel-lista{display:none;margin-top:6px;animation:abrirGrupo .18s ease}
+.hotel-lista.aberta{display:block}
 .filtro{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--texto)}
 .filtro:hover{background:var(--card)}
 .filtro.sel{background:var(--verde);color:#fff}
@@ -227,7 +232,8 @@ textarea{width:100%;min-height:54px;resize:vertical}
     <div class="grupo" data-g="periodo"><button class="g-tit">Período<span class="g-seta">▾</span></button>
       <div class="g-corpo"><div class="chips" id="f-periodo"></div><input type="hidden" id="dias" value="45"></div></div>
     <div class="grupo" data-g="hoteis"><button class="g-tit">Hotéis<span class="g-seta">▾</span></button>
-      <div class="g-corpo"><input class="busca-lat" id="busca-hotel-fila" placeholder="Buscar hotel…"><div id="f-hotel"></div></div></div>
+      <div class="g-corpo"><div id="f-hotel-atual"></div>
+        <div class="hotel-lista" id="hotel-lista"><input class="busca-lat" id="busca-hotel-fila" placeholder="Buscar hotel…"><div id="f-hotel"></div></div></div></div>
   </aside>
   <main id="main">
     <div class="lista-wrap">
@@ -244,7 +250,7 @@ const TOKEN = "__TOKEN__";
 const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Na fila", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida"};
 const ORDEM_FILTROS = ["todas","minhas","na_fila","em_tratamento","tratativa","nf_parcial","aguardando_envio","concluida"];
-let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", envio = "todos", sel = null, timer = null, intervalo = 15;
+let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", envio = "todos", listaHoteis = false, sel = null, timer = null, intervalo = 15;
 const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
 const PERIODOS_FILA = [["7", "7 dias"], ["15", "15 dias"], ["45", "45 dias"], ["90", "90 dias"], ["0", "Tudo"]];
 
@@ -316,9 +322,13 @@ function desenhar(){
   fila.filter(s => passa(s, filtro)).forEach(s => hoteis[s.hotel] = (hoteis[s.hotel]||0) + 1);
   const nomesHotel = Object.keys(hoteis).filter(h => !buscaHotel || h.toLowerCase().includes(buscaHotel))
     .sort((a, b) => hoteis[b] - hoteis[a] || a.localeCompare(b));
-  if (hotel && !nomesHotel.includes(hotel)) nomesHotel.unshift(hotel);
-  $("f-hotel").innerHTML = (buscaHotel ? "" : `<div class="filtro ${!hotel?"sel":""}" data-h=""><span>Todos</span><span class="n">${Object.values(hoteis).reduce((a,b)=>a+b,0)}</span></div>`) +
-    nomesHotel.map(h => `<div class="filtro ${h===hotel?"sel":""}" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]||0}</span></div>`).join("") +
+  // Fechado: só o hotel escolhido; clicando nele abre a busca e a lista embaixo
+  const total = Object.values(hoteis).reduce((a, b) => a + b, 0);
+  $("f-hotel-atual").innerHTML = `<div class="filtro sel hotel-atual ${listaHoteis ? "aberta" : ""}" data-hlista="1">
+    <span>${esc(hotel || "Todos os hotéis")}</span><span class="n">${hotel ? (hoteis[hotel] || 0) : total}<span class="seta">▾</span></span></div>`;
+  $("hotel-lista").classList.toggle("aberta", listaHoteis);
+  $("f-hotel").innerHTML = (buscaHotel || !hotel ? "" : `<div class="filtro" data-h=""><span>Todos os hotéis</span><span class="n">${total}</span></div>`) +
+    nomesHotel.filter(h => h !== hotel).map(h => `<div class="filtro" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]||0}</span></div>`).join("") +
     (buscaHotel && !nomesHotel.length ? `<div class="hist" style="padding:6px 10px">Nenhum hotel com esse nome</div>` : "");
 
   let lista = porHotel.filter(s => passa(s, filtro));
@@ -383,12 +393,19 @@ async function acao(a, valor){
 }
 
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-f],[data-e],[data-dias],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-f],[data-e],[data-dias],[data-hlista],[data-h],[data-k],[data-a],[data-txt],[data-desfaz],[data-copiar],#d-fechar,#d-nf-ok");
   if (!t) return;
   if (t.dataset.f) { filtro = t.dataset.f; return desenhar(); }
   if (t.dataset.e) { envio = t.dataset.e; return desenhar(); }
   if (t.dataset.dias) { $("dias").value = t.dataset.dias; desenhar(); return carregar(); }
-  if (t.dataset.h !== undefined && t.classList.contains("filtro")) { hotel = t.dataset.h; return desenhar(); }
+  if (t.dataset.hlista) {
+    listaHoteis = !listaHoteis; desenhar();
+    if (listaHoteis) $("busca-hotel-fila").focus();
+    return;
+  }
+  if (t.dataset.h !== undefined && t.classList.contains("filtro")) {
+    hotel = t.dataset.h; listaHoteis = false; $("busca-hotel-fila").value = ""; return desenhar();
+  }
   if (t.dataset.k) { sel = t.dataset.k; return desenhar(); }
   if (t.id === "d-fechar") { sel = null; return desenhar(); }
   if (t.dataset.a) {
