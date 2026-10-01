@@ -166,8 +166,12 @@ if ($papel -eq "principal") {
 
 # 9. App (atalho na Area de Trabalho, todo PC)
 Passo 9 "Painel Notas Fiscais"
+Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
+    Where-Object { $_.CommandLine -like "*$pasta*app_servidor*" } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -Confirm:$false }
+& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_painel.ps1") | Out-Null
 & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\criar_atalho_app.ps1") | Out-Null
-Ok "Atalho 'Painel Notas Fiscais' na Area de Trabalho"
+Ok "Painel em segundo plano (tarefa SolicitacoesNF_Painel) + atalho na Area de Trabalho"
 
 Write-Host ""
 Write-Host "PRONTO. Pasta: $pasta  |  Papel: $papel" -ForegroundColor Green

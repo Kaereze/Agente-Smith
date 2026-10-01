@@ -125,6 +125,27 @@ def test_fila_mostra_nf_e_dono(cfg, planilha):
     assert item["dono"] == "Clara" and item["nfs"] == ["700"] and item["situacao"] == d.CONCLUIDA
 
 
+def test_cache_em_disco_reabre_com_os_dados(cfg, planilha, tmp_path, monkeypatch):
+    import app_servidor
+    monkeypatch.setattr(app_servidor, "CAMINHO_CACHE", tmp_path / "painel_cache.pkl")
+    e = Estado(planilha, cfg)
+    e.atualizar()
+    e.registrar("Clara", "PC", e.solicitacoes[0]["chave"], d.ASSUMIR)
+    e.salvar_cache(forcar=True)
+    novo = Estado(planilha, cfg)            # PC reiniciado: nada lido ainda
+    assert novo.carregar_cache() is True
+    assert len(novo.solicitacoes) == 5 and novo.atualizado_em == e.atualizado_em
+    assert next(s for s in novo.fila(0) if s["chave"] == e.solicitacoes[0]["chave"])["dono"] == "Clara"
+
+
+def test_cache_corrompido_e_ignorado(cfg, planilha, tmp_path, monkeypatch):
+    import app_servidor
+    caminho = tmp_path / "painel_cache.pkl"
+    caminho.write_bytes(b"lixo")
+    monkeypatch.setattr(app_servidor, "CAMINHO_CACHE", caminho)
+    assert Estado(planilha, cfg).carregar_cache() is False
+
+
 def test_falha_de_leitura_nao_derruba(cfg, planilha):
     e = Estado(planilha, cfg)
     planilha.listar_abas = lambda _id: (_ for _ in ()).throw(RuntimeError("503"))

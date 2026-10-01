@@ -148,9 +148,10 @@
     ],
     "intervalo_minutos": 5
   },
-  "_ajuda_app": "Painel Notas Fiscais (app local): de quantos em quantos segundos relê a planilha",
+  "_ajuda_app": "Painel (roda em segundo plano): relê a planilha a cada atualizar_segundos com a janela aberta e a cada atualizar_segundos_fundo com ela fechada",
   "app": {
-    "atualizar_segundos": 15
+    "atualizar_segundos": 15,
+    "atualizar_segundos_fundo": 60
   },
   "_ajuda_painel": "Visão geral/Hotéis: dados a partir de 'desde'; Fiscal Intelligence (Mail Analytics) só é lido, a cada fi_minutos",
   "painel": {

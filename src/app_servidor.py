@@ -1,14 +1,16 @@
 """Painel Notas Fiscais: servidor HTTP só em 127.0.0.1 + janela do Edge em modo aplicativo.
 
-    python src\\app_servidor.py            abre a janela (ou reaproveita a que já está rodando)
-    python src\\app_servidor.py --sem-janela
+    python src\\app_servidor.py --sem-janela   servidor em segundo plano (tarefa SolicitacoesNF_Painel, no logon)
+    python src\\app_servidor.py                abre a janela; liga o servidor antes se ele não estiver rodando
 
-Todos os PCs leem e gravam a mesma Planilha Central; o que muda num aparece nos outros
-na próxima atualização (app.atualizar_segundos no config).
+O servidor fica no ar enquanto o PC estiver ligado e mantém os dados atualizados, então a
+janela abre já carregada. O último estado também vai pro disco (painel_cache.pkl) pra
+sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 """
 import datetime
 import json
 import os
+import pickle
 import secrets
 import socket
 import subprocess
@@ -39,7 +41,10 @@ logger = configurar_logging("app")
 PORTA = 8765
 PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = PASTA_ESTADO / "app.json"
-FECHAR_SEM_USO_SEGUNDOS = 3 * 60
+JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
+CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
+SALVAR_CACHE_SEGUNDOS = 120
+VERSAO_CACHE = 1
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
@@ -81,6 +86,7 @@ class Estado:
         self.desde = datetime.date.fromisoformat(painel.get("desde", "2026-09-01"))
         self.fi_id, self.fi_minutos = painel.get("fiscal_intelligence_id", ""), int(painel.get("fi_minutos", 5))
         self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
+        self.cache_salvo = -1e9
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -148,6 +154,34 @@ class Estado:
             controle = {}
         with self.lock:
             return dados.montar_fila(self.solicitacoes, self.estados, dados.nfs_do_controle(controle), desde)
+
+    def salvar_cache(self, forcar=False):
+        """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
+        if not self.atualizado_em or (not forcar and self.relogio() - self.cache_salvo < SALVAR_CACHE_SEGUNDOS):
+            return
+        with self.lock:
+            dados_cache = {"versao": VERSAO_CACHE, "solicitacoes": self.solicitacoes, "estados": self.estados,
+                           "status": self.status, "atualizado_em": self.atualizado_em, "fi": self.fi,
+                           "cadastro": self.cadastro, "abas_hotel": self.abas_hotel}
+        try:
+            CAMINHO_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            temporario = CAMINHO_CACHE.with_suffix(".tmp")
+            temporario.write_bytes(pickle.dumps(dados_cache, protocol=pickle.HIGHEST_PROTOCOL))
+            os.replace(temporario, CAMINHO_CACHE)
+            self.cache_salvo = self.relogio()
+        except OSError as e:
+            logger.warning(f"⚠️ Não consegui salvar o cache do painel ({e})")
+
+    def carregar_cache(self):
+        try:
+            c = pickle.loads(CAMINHO_CACHE.read_bytes())
+        except (FileNotFoundError, OSError, pickle.UnpicklingError, EOFError, AttributeError, ImportError):
+            return False
+        if c.get("versao") != VERSAO_CACHE:
+            return False
+        self.solicitacoes, self.estados, self.status = c["solicitacoes"], c["estados"], c["status"]
+        self.atualizado_em, self.fi, self.cadastro, self.abas_hotel = c["atualizado_em"], c["fi"], c["cadastro"], c["abas_hotel"]
+        return True
 
     def atualizar_fi(self, forcar=False):
         """Fiscal Intelligence: o Mail Analytics grava 1x por dia, então reler a cada poucos minutos sobra."""
@@ -325,20 +359,26 @@ def main():
     from sheets import BackendGoogle
     cfg = carregar_config()
     estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
+    if estado.carregar_cache():
+        logger.info(f"📦 Último estado carregado do disco ({estado.atualizado_em:%d/%m %H:%M}) — atualizando em seguida.")
     token = secrets.token_urlsafe(24)
-    ultimo_uso = [time.monotonic()]
+    ultimo_uso = [-1e9]
     servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))
-    intervalo = int(cfg.get("app", {}).get("atualizar_segundos", 15))
+    app = cfg.get("app", {})
+    em_uso, em_fundo = int(app.get("atualizar_segundos", 15)), int(app.get("atualizar_segundos_fundo", 60))
 
-    def laco():   # primeira leitura já aqui: a janela abre sem esperar a planilha
+    def laco():
+        """Fica rodando enquanto o PC estiver ligado. Janela aberta: relê rápido; fechada: devagar (cota da API)."""
         while True:
             estado.atualizar()
             estado.atualizar_fi()
-            time.sleep(intervalo)
-            if not sem_janela and time.monotonic() - ultimo_uso[0] > FECHAR_SEM_USO_SEGUNDOS:
-                logger.info("App fechado (janela sem uso) — encerrando o servidor.")
-                servidor.shutdown()
-                return
+            estado.salvar_cache()
+            inicio = time.monotonic()
+            while True:
+                aberta = time.monotonic() - ultimo_uso[0] < JANELA_ABERTA_SEGUNDOS
+                if time.monotonic() - inicio >= (em_uso if aberta else em_fundo):
+                    break
+                time.sleep(1)
 
     threading.Thread(target=laco, daemon=True).start()
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
