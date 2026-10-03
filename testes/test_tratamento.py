@@ -96,3 +96,12 @@ def test_pc_do_agente_principal_vira_principal_sozinho(tmp_path, monkeypatch):
     assert config.carregar_config(cfg_arq)["papel"] == "conferente"
     (tmp_path / "maquina.json").write_text('{"agente": "João", "conflito": "trocou"}', encoding="utf-8")
     assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+
+
+def test_pastas_do_dropbox_seguem_o_usuario_de_cada_pc(tmp_path, monkeypatch):
+    import config
+    monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "nao_existe.json")
+    monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
+    monkeypatch.setenv("USERPROFILE", r"C:\Users\Cristian")
+    pastas = config.carregar_config()["dropbox_notas"]["pastas"]
+    assert pastas and all(p.startswith(r"C:\Users\Cristian\REDE ANDRADE Dropbox") for p in pastas)

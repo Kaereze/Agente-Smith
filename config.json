@@ -137,14 +137,14 @@
     ],
     "dias_maximos": 45
   },
-  "_ajuda_dropbox_notas": "Pastas do Dropbox com as NFs (só leitura)",
+  "_ajuda_dropbox_notas": "Pastas do Dropbox com as NFs (só leitura); %USERPROFILE% = pasta do usuário de cada PC. Dropbox em outro lugar: sobrescreva no config.local.json",
   "dropbox_notas": {
     "ativo": true,
     "pastas": [
-      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 1 - JOÃO\\2026 - JOÃO",
-      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 2 - CLARA\\Notas Fiscais Hóspedes\\2026 - CLARA",
-      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 3 - CRISTIAN\\2026 - CRISTIAN",
-      "C:\\Users\\Usuário\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 4 - BERNARDO\\2026"
+      "%USERPROFILE%\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 1 - JOÃO\\2026 - JOÃO",
+      "%USERPROFILE%\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 2 - CLARA\\Notas Fiscais Hóspedes\\2026 - CLARA",
+      "%USERPROFILE%\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 3 - CRISTIAN\\2026 - CRISTIAN",
+      "%USERPROFILE%\\REDE ANDRADE Dropbox\\Guilherme Heisler\\FINANCEIRO ANDRADE HOTEIS\\Financeiro sede\\Notas Fiscais Hóspedes\\PC 4 - BERNARDO\\2026"
     ],
     "intervalo_minutos": 5
   },

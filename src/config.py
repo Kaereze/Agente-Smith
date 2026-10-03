@@ -29,6 +29,9 @@ def carregar_config(caminho=CAMINHO_CONFIG):
                            f"Confira vírgulas e aspas perto dessa linha.")
     if Path(caminho) == CAMINHO_CONFIG:
         _mesclar(cfg, _ler_local())
+    dropbox = cfg.get("dropbox_notas") or {}
+    if dropbox.get("pastas"):   # %USERPROFILE% vira a pasta do usuário de cada PC
+        dropbox["pastas"] = [os.path.expandvars(p) for p in dropbox["pastas"]]
     if "papel" not in cfg:
         cfg["papel"] = _papel_pela_identidade(cfg)
     validar_config(cfg)
