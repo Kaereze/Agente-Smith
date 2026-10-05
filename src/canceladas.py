@@ -13,6 +13,7 @@ import json
 import os
 import re
 
+from arquivos import so_na_nuvem
 from tratamento import normalizar
 
 CANCELADA, SUBSTITUIDA = "cancelada", "substituida"
@@ -112,7 +113,10 @@ def varrer(pastas, cache):
                 vistos.add(caminho)
                 guardado = cache.get(caminho)
                 if not guardado or guardado[0] != mtime:
-                    cache[caminho] = guardado = [mtime, *ler_prestador(caminho)]
+                    if so_na_nuvem(caminho):   # abrir baixaria o PDF pro PC: fica pra quando estiver baixado
+                        guardado = [mtime, "", ""]
+                    else:
+                        cache[caminho] = guardado = [mtime, *ler_prestador(caminho)]
                 m = re.search(r"(\d+)\s*-\s*([^-]+)", re.sub(r"\.(pdf|xml)$", "", resto, flags=re.I))
                 achados.append({"caminho": caminho, "tipo": tipo, "data": datetime.date.fromtimestamp(mtime),
                                 "nf": m.group(1) if m else "", "hospede": m.group(2).strip() if m else resto,

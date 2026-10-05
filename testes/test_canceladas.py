@@ -74,3 +74,13 @@ def test_metricas_usam_os_renomeados_e_nao_o_mail_analytics():
         def dados(self, h): return {"agente": "Clara"}
     braz = pm.tabela_hoteis(mail, [], D(2026, 9, 1), D(2026, 9, 30), D(2026, 9, 30), Cad(), (), canc)[0]
     assert (braz["canceladas"], braz["substituidas"], braz["taxa_cancelamento"]) == (1, 1, 20)
+
+
+def test_arquivo_so_na_nuvem_nao_e_aberto(tmp_path, monkeypatch):
+    (tmp_path / "(CANCELADA) NF 10 - ANA LIMA - 1.pdf").write_bytes(b"x")
+    abertos = []
+    monkeypatch.setattr(cn, "so_na_nuvem", lambda c: True)
+    monkeypatch.setattr(cn, "ler_prestador", lambda c: abertos.append(c) or ("", ""))
+    cache = {}
+    achados = cn.varrer([str(tmp_path)], cache)
+    assert len(achados) == 1 and abertos == [] and cache == {}   # sem cache: lê quando baixar

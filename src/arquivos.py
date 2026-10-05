@@ -21,3 +21,15 @@ def salvar_json(caminho, dados, indent=1):
             if tentativa == TENTATIVAS - 1:
                 raise
             time.sleep(0.5 * (tentativa + 1))
+
+
+# Arquivo "somente online" do Dropbox: abrir faz o Dropbox baixar e guardar no PC.
+_SO_NA_NUVEM = 0x1000 | 0x40000 | 0x400000   # OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS
+
+
+def so_na_nuvem(caminho):
+    """True se o arquivo ainda não foi baixado — lê-lo puxaria o arquivo inteiro pro disco."""
+    try:
+        return bool(getattr(os.stat(caminho), "st_file_attributes", 0) & _SO_NA_NUVEM)
+    except OSError:
+        return False

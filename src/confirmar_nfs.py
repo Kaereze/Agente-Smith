@@ -30,7 +30,7 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
-from arquivos import salvar_json
+from arquivos import salvar_json, so_na_nuvem
 from config import PASTA_ESTADO, caminho_chave_google, carregar_config
 from controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
@@ -272,6 +272,8 @@ def varrer_dropbox(indice, cfg, limite, vistos, textos):
                 continue
             nf = ler_assunto_nf(os.path.splitext(e.name)[0])
             candidatas = indice.por_nome(nf[1]) if nf else set()
+            if candidatas and so_na_nuvem(e.path):
+                continue   # não baixa: confere quando o arquivo estiver no PC (ou pelo e-mail enviado)
             if candidatas:   # só lê o PDF se o nome do arquivo casa com alguém aberto
                 lidos += 1
                 chave = f"{e.path}|{marca}"
