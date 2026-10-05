@@ -99,9 +99,17 @@ def ler_solicitacoes(aba, hotel, linhas, cfg):
     return saida
 
 
+def partes_esperadas(sol, est):
+    """Quantas NFs fecham o pedido: "Não é dividida" (ou o hóspede pediu nota única) = 1, mesmo
+    que o formulário diga dividida; "Nota dividida" sem número = 2."""
+    if est.get("dividida") is False:
+        return 1
+    return max(int(sol.get("partes") or 1), 2 if est.get("dividida") else 1)
+
+
 def situacao(sol, est, nfs_conferente=()):
     nfs = list(dict.fromkeys(list(est["nfs"]) + list(nfs_conferente)))
-    partes = max(int(sol.get("partes") or 1), 2 if est.get("dividida") else 1)
+    partes = partes_esperadas(sol, est)
     if nfs and len(nfs) >= partes:
         return CONCLUIDA
     if nfs:
@@ -126,6 +134,8 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
                      "nfs": list(dict.fromkeys(est["nfs"] + list(conf))), "nfs_conferente": list(conf),
                      "tratativas": est["tratativas"], "obs": est["obs"],
                      "dividida": est["dividida"] if est["dividida"] is not None else s["partes"] > 1,
+                     "partes": partes_esperadas(s, est),
+                     "nota_unica": next((o["texto"] for o in est["obs"] if o["texto"].startswith("Hóspede aceita nota única:")), ""),
                      "historico": est["historico"], "situacao": situacao(s, est, conf)})
     fila.sort(key=lambda x: (x["data"], x["carimbo"]), reverse=True)
     return fila

@@ -55,6 +55,21 @@ def tem_anexo_nf(nomes_arquivos, extensoes):
     return any(os.path.splitext(str(n).lower())[1] in extensoes for n in nomes_arquivos)
 
 
+def numeros_do_envio(numero_assunto, nomes_anexos):
+    """NFs que um e-mail leva: os números dos anexos "NF 123 - NOME.pdf" (nota dividida = 2 anexos);
+    sem número no nome, o do assunto. Cada PDF a mais sem número vira "123 (2º anexo)" — o PDF e o
+    XML da mesma nota contam uma vez só."""
+    nos_anexos = []
+    for nome in nomes_anexos:
+        nf = ler_assunto_nf(os.path.splitext(str(nome))[0])
+        if nf and nf[0] not in nos_anexos:
+            nos_anexos.append(nf[0])
+    numeros = nos_anexos or [numero_assunto]
+    pdfs = sum(1 for n in nomes_anexos if str(n).lower().endswith(".pdf"))
+    numeros += [f"{numero_assunto} ({i}º anexo)" for i in range(len(numeros) + 1, pdfs + 1)]
+    return numeros
+
+
 def _tokens(nome):
     return {t for t in normalizar(nome).split() if len(t) >= 3}
 
@@ -65,6 +80,14 @@ def nome_bate(nome_assunto, nomes_solicitacao):
     if not procurados:
         return False
     return any(procurados <= _tokens(n) for n in nomes_solicitacao)
+
+
+def nome_parecido(nome_assunto, nomes_solicitacao):
+    """Nome do assunto dentro de um nome do pedido, ou 2+ palavras em comum ("MARIA CLEUZA CARVALHO"
+    x "Maria Cleuza Carvalho da Cruz")."""
+    procurados = _tokens(nome_assunto)
+    return bool(procurados) and any(procurados <= _tokens(n) or len(procurados & _tokens(n)) >= 2
+                                    for n in nomes_solicitacao)
 
 
 # --- Conteúdo da nota (texto do PDF ou OCR do Windows) ---
@@ -357,6 +380,33 @@ class Registro:
         eh_nf = nf is not None and tem_anexo_nf(envio["anexos"], extensoes)
         registro_envio = {"data": envio["data"].isoformat(timespec="seconds"), "assunto": envio["assunto"],
                           "entry_id": envio["entry_id"]}
+
+        if eh_nf and por_email:
+            # Pedido do usuário (05/10/2026): "se o email estiver com o anexo da nota pode concluir".
+            # Enviada ao e-mail de quem pediu, com a NF anexada = emitida, mesmo com o PDF ilegível
+            # (nota escaneada que o OCR lê torta). Com o nome do assunto batendo, nem abre o PDF.
+            # Só recusa a nota legível de OUTRO tomador com outro nome no assunto (caso NF 801:
+            # e-mail de empresa usado por vários hóspedes).
+            ordem = lambda r: (abertas[r].get("data_pedido", ""), r)
+            pelo_nome = [r for r in por_email if nome_parecido(nf[1], abertas[r].get("nomes", []))]
+            prova = "enviada ao e-mail do pedido com a NF anexada"
+            if len(pelo_nome) == 1:
+                ref = pelo_nome[0]
+            else:
+                texto = ler_texto() if ler_texto else ""
+                avaliadas = {r: conferir_conteudo(abertas[r], texto) for r in por_email} if texto else {}
+                conferem = [r for r, (res, _) in avaliadas.items() if res == "confere"]
+                if conferem:
+                    ref = min(conferem, key=ordem)
+                    prova = f"{avaliadas[ref][1]} · {prova}"
+                elif avaliadas and all(res == "nao_confere" for res, _ in avaliadas.values()) and not pelo_nome:
+                    return None   # nota legível de outra pessoa
+                else:
+                    ref = min(pelo_nome or por_email, key=ordem)
+            for numero in numeros_do_envio(nf[0], envio["anexos"]):
+                self.solicitacoes[ref]["nfs"].setdefault(numero, {**registro_envio, "prova": prova, "conferir": False})
+            self._marcar_para_atualizar(ref)
+            return ref, "nf"
 
         if eh_nf:
             candidatas = por_email

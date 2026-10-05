@@ -63,10 +63,19 @@ def test_email_de_nf_para_o_hospede_confirma():
     assert [(n) for _, n, _ in c._novas_nfs(reg, set())] == ["700"]
 
 
-def test_nf_ilegivel_nao_e_publicada():
+def test_nf_enviada_ao_email_do_pedido_e_publicada_mesmo_ilegivel():
     s = sol()
     reg = c.registro_da_central([s], {}, "2026-08-01")
     reg.aplicar_envio({"entry_id": "E1", "conta": "nf@barra.com", "destinatarios": {"maria@x.com"},
+                       "assunto": "NF 700 - MARIA SOUZA LIMA", "data": datetime.datetime(2026, 9, 26),
+                       "anexos": ["NF 700.pdf"]}, ["pdf"], ler_texto=lambda: "")
+    assert [n for _, n, _ in c._novas_nfs(reg, set())] == ["700"]
+
+
+def test_nf_enviada_pra_outro_email_e_ilegivel_nao_e_publicada():
+    s = sol()
+    reg = c.registro_da_central([s], {}, "2026-08-01")
+    reg.aplicar_envio({"entry_id": "E1", "conta": "nf@barra.com", "destinatarios": {"outro@y.com"},
                        "assunto": "NF 700 - MARIA SOUZA LIMA", "data": datetime.datetime(2026, 9, 26),
                        "anexos": ["NF 700.pdf"]}, ["pdf"], ler_texto=lambda: "")
     assert c._novas_nfs(reg, set()) == []
@@ -90,3 +99,24 @@ def test_nf_achada_no_sub_registro_aparece_no_registro_completo():
     idx.sub(idx.por_nome("MARIA SOUZA LIMA")).aplicar_nota_dropbox(
         "X:\\NF 643 - MARIA SOUZA LIMA.pdf", ("643", "MARIA SOUZA LIMA"), datetime.datetime(2026, 9, 26), lambda: NOTA, "PC 1")
     assert [n for _, n, _ in c._novas_nfs(reg, set())] == ["643"]
+
+
+def test_frases_de_nota_unica():
+    for frase in ("Pode ser uma nota só, obrigado", "pode ser 1 nota", "só uma nota está ótimo",
+                  "Pode colocar o valor total em uma nota", "não precisa dividir mais", "uma única nota por favor",
+                  "pode ser tudo junto", "Prefiro nota única"):
+        assert c.frase_de_nota_unica(frase), frase
+    for frase in ("Preciso de uma nota fiscal da hospedagem", "Gostaria de uma nota dividida em duas",
+                  "a nota veio errada", ""):
+        assert c.frase_de_nota_unica(frase) is None, frase
+
+
+def test_nota_unica_pedida_no_formulario_tira_a_divisao():
+    s = sol()
+    reg = c.registro_da_central([s], {}, "2026-08-01")
+    k = s["chave"]
+    reg.solicitacoes[k]["partes"] = 2
+    reg.solicitacoes[k]["nfs"]["700"] = {"data": "", "entry_id": "E1"}
+    campos = {k: [("Nota Dividida", "Sim"), ("Descrição específica", "Se não der pra dividir, pode ser uma nota só")]}
+    achados = c.pedidos_de_nota_unica(None, c._parciais(reg), campos)
+    assert k in achados and "uma nota só" in achados[k][0] and achados[k][1] == "no formulário"

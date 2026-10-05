@@ -10,10 +10,15 @@ conteúdo da nota batendo com a solicitação. Só NF confirmada vira evento; as
     python src\\confirmar_nfs.py                 prévia, não grava
     python src\\confirmar_nfs.py --gravar
     python src\\confirmar_nfs.py --sem-email | --sem-dropbox
+    python src\\confirmar_nfs.py --desde=2026-01-01 --rever --sem-ocr     conferência do ano (rápida)
+
+--rever confere de novo e-mails/notas já vistos (ex.: os recusados antes da regra de 05/10/2026);
+--sem-ocr não lê PDF escaneado (o OCR leva segundos por nota).
 """
 import datetime
 import json
 import os
+import re
 import socket
 import sys
 import types
@@ -36,6 +41,7 @@ logger = configurar_logging("confirmar_nfs")
 CAMINHO_VISTOS = PASTA_ESTADO / "confirmar_nfs.json"
 CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
 AGENTE = "Robô"
+PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
 MAX_ITENS_POR_CONTA = 3000
 
 
@@ -74,7 +80,7 @@ def registro_da_central(solicitacoes, estados, desde):
             "carimbo": s["carimbo"], "data_pedido": s["data"], "nome": s["nome"],
             "emails": list(dict.fromkeys([s["email"]] + s["emails"])) if s["email"] else s["emails"],
             "nomes": list(dict.fromkeys([s["nome"]] + s.get("nomes", []))),
-            "partes": max(s["partes"], 2 if est.get("dividida") else 1),
+            "partes": dados.partes_esperadas(s, est),
             "nfs": {n: {"data": "", "entry_id": "app"} for n in est["nfs"]}, "tratativas": {},
             **provas_da_solicitacao(types.SimpleNamespace(campos=s["campos"])),
         }
@@ -114,6 +120,78 @@ class Indice:
         return r
 
 
+# Hóspede que pediu nota dividida mas aceita uma só (pedido do usuário, 05/10/2026). "uma nota" sozinho
+# não serve: quase todo pedido diz "preciso de uma nota fiscal".
+_NOTA_UNICA = re.compile(
+    r"(?:s[oó]|somente|apenas)\s+(?:uma|1)\s+(?:[uú]nica\s+)?nota"
+    r"|(?:uma|1)\s+[uú]nica\s+nota|nota\s+[uú]nica"
+    r"|pode\s+ser\s+(?:s[oó]\s+)?(?:uma|1)\s+(?:s[oó]\s+)?nota"
+    r"|(?:uma|1)\s+nota\s+s[oó]\b"
+    r"|valor\s+(?:total|todo|integral|inteiro)\s+(?:em|numa|na)\s+(?:uma|1|[uú]nica|mesma)?\s*nota"
+    r"|n[aã]o\s+(?:precisa|precisamos|preciso|é\s+necess[aá]rio)\s+(?:mais\s+)?(?:dividir|separar)"
+    r"|(?:pode|podem)\s+(?:juntar|unir|ser\s+(?:tudo\s+)?junt[oa]s?)"
+    r"|tudo\s+(?:em|numa)\s+(?:uma|1)\s+(?:s[oó]\s+)?nota", re.IGNORECASE)
+
+
+def frase_de_nota_unica(texto):
+    """Trecho em que o hóspede aceita uma nota só, ou None."""
+    texto = re.sub(r"\s+", " ", texto or "")
+    m = _NOTA_UNICA.search(texto)
+    if not m:
+        return None
+    return texto[max(0, m.start() - 40):m.end() + 40].strip()
+
+
+def _parciais(reg):
+    """Divididas com alguma NF e ainda faltando nota: as que podem ter virado nota única."""
+    saida = {}
+    for k, s in reg.solicitacoes.items():
+        validas = [n for n, d in s["nfs"].items() if not d.get("conferir")]
+        if s.get("partes", 1) > 1 and 0 < len(validas) < s["partes"]:
+            saida[k] = s
+    return saida
+
+
+def pedidos_de_nota_unica(namespace, parciais, campos_por_chave):
+    """{chave: (frase, origem)} — procura no formulário e nos e-mails que o hóspede mandou pra caixa do
+    hotel (só as caixas deste PC)."""
+    achados = {}
+    contas = {}
+    if namespace is not None:
+        for conta in namespace.Accounts:
+            contas[(conta.SmtpAddress or "").strip().lower()] = conta
+    for k, s in parciais.items():
+        for rotulo, valor in campos_por_chave.get(k, []):
+            if "dividid" in rotulo.lower():
+                continue
+            frase = frase_de_nota_unica(str(valor))
+            if frase:
+                achados[k] = (frase, "no formulário")
+                break
+        if k in achados or s.get("email_hotel", "").lower() not in contas:
+            continue
+        try:
+            caixa = contas[s["email_hotel"].lower()].DeliveryStore.GetDefaultFolder(6)   # olFolderInbox
+        except Exception as e:
+            logger.debug(f"caixa de entrada de {s['email_hotel']}: {e}")
+            continue
+        desde = datetime.date.fromisoformat(s["data_pedido"]).strftime("%d/%m/%Y")
+        for email in s.get("emails", []):
+            try:
+                itens = caixa.Items.Restrict(f"[ReceivedTime] >= '{desde} 00:00'").Restrict(
+                    f"[SenderEmailAddress] = '{email.replace(chr(39), '')}'")
+                for item in itens:
+                    frase = frase_de_nota_unica(f"{item.Subject or ''} {(item.Body or '')[:4000]}")
+                    if frase:
+                        achados[k] = (frase, f"no e-mail do hóspede de {item.ReceivedTime:%d/%m/%Y}")
+                        break
+            except Exception as e:
+                logger.debug(f"e-mails de {email}: {e}")
+            if k in achados:
+                break
+    return achados
+
+
 def _novas_nfs(reg, antes):
     """[(chave, numero, prova)] confirmadas nesta rodada."""
     saida = []
@@ -130,7 +208,7 @@ def _itens_de_nf(pasta, limite):
     return itens.Restrict("@SQL=\"urn:schemas:httpmail:subject\" LIKE '%NF%'")
 
 
-def varrer_emails(namespace, indice, cfg, limite, vistos, textos):
+def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_ITENS_POR_CONTA):
     from conferente import _anexos, _data_outlook, _enderecos, texto_da_nota
     extensoes = cfg["conferencia"]["extensoes_anexo_nf"]
     lidos = 0
@@ -143,7 +221,7 @@ def varrer_emails(namespace, indice, cfg, limite, vistos, textos):
             continue
         da_conta = 0
         for i, item in enumerate(itens):
-            if i >= MAX_ITENS_POR_CONTA:
+            if max_itens and i >= max_itens:
                 break
             try:
                 if getattr(item, "Class", 43) != 43:
@@ -204,10 +282,11 @@ def varrer_dropbox(indice, cfg, limite, vistos, textos):
     return lidos
 
 
-def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, agora=None):
+def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, agora=None, desde=None, rever=False,
+              ocr=True):
     agora = agora or datetime.datetime.now()
     dias = int(cfg["conferencia"]["dias_maximos"])
-    desde = (agora.date() - datetime.timedelta(days=dias)).isoformat()
+    desde = desde or (agora.date() - datetime.timedelta(days=dias)).isoformat()
     limite = datetime.datetime.fromisoformat(desde) - datetime.timedelta(days=1)
 
     hoteis, _ = ler_hoteis(backend, dict(cfg, somente_hoteis=[]))
@@ -227,13 +306,21 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
     except (FileNotFoundError, ValueError):
         guardado = {}
     vistos_email, vistos_dropbox = set(guardado.get("emails", [])), guardado.get("dropbox", {})
+    if rever:
+        vistos_email, vistos_dropbox = set(), {}
     textos = CacheTextos()
+    import conferente
+    ocr_original = conferente._texto_ocr
+    if not ocr:
+        conferente._texto_ocr = lambda caminho: ""
 
     try:
         indice = Indice(reg)
-        lidos_email = varrer_emails(namespace, indice, cfg, limite, vistos_email, textos) if namespace is not None else 0
+        lidos_email = varrer_emails(namespace, indice, cfg, limite, vistos_email, textos,
+                                    None if rever else MAX_ITENS_POR_CONTA) if namespace is not None else 0
         lidos_dropbox = varrer_dropbox(indice, cfg, limite, vistos_dropbox, textos) if usar_dropbox else 0
     finally:   # o cache vale mesmo na prévia e mesmo se parar no meio: a próxima rodada não relê
+        conferente._texto_ocr = ocr_original
         corte = limite.isoformat(timespec="seconds")
         textos.salvar({k for k in textos.dados if "|" not in k or k.rsplit("|", 1)[1] >= corte} if usar_dropbox
                       else set(textos.dados))
@@ -250,6 +337,15 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.NF, numero))
         linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.OBS,
                                    f"NF {numero} confirmada automaticamente: {prova}"))
+    unicas = pedidos_de_nota_unica(namespace, _parciais(reg), {k: por_chave[k]["campos"] for k in _parciais(reg)})
+    for k, (frase, origem) in unicas.items():
+        s = por_chave[k]
+        logger.info(f"1️⃣ Nota única pedida · {s['hotel']} · {s['nome']} — “{frase}” ({origem})")
+        linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.DIVIDIDA, "nao"))
+        linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.OBS,
+                                   f"{PREFIXO_NOTA_UNICA} “{frase}” ({origem})"))
+    if unicas:
+        achadas = achadas + [(k, "nota única", f"“{frase}” ({origem})") for k, (frase, origem) in unicas.items()]
     if gravar:
         if linhas:
             backend.anexar_linhas(cfg["planilha_central_id"], dados.ABA_TRATAMENTO, linhas)
@@ -271,8 +367,10 @@ if __name__ == "__main__":
     cfg = carregar_config()
     gravar = "--gravar" in sys.argv
     ns = None if "--sem-email" in sys.argv else win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    desde = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--desde=")), None)
     achadas = confirmar(BackendGoogle(caminho_chave_google(cfg)), cfg, ns,
-                        usar_dropbox="--sem-dropbox" not in sys.argv, gravar=gravar)
+                        usar_dropbox="--sem-dropbox" not in sys.argv, gravar=gravar, desde=desde,
+                        rever="--rever" in sys.argv, ocr="--sem-ocr" not in sys.argv)
     print(("\nGRAVADO" if gravar else "\nPRÉVIA — nada gravado") + f": {len(achadas)} NF(s) confirmada(s)")
     for s, numero, prova in achadas:
         print(f"  NF {numero:>6} | {s['hotel'][:18]:18} | {s['nome'][:32]:32} | {prova[:90]}")

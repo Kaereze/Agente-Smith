@@ -79,11 +79,35 @@ def test_nota_de_outra_pessoa_pro_mesmo_email_nao_da_check():
     assert situacao(r.solicitacoes["NF-A-01"])[0] == "aguardando"
 
 
-def test_nota_ilegivel_nao_conta_como_concluida():
+def test_nota_ilegivel_enviada_ao_email_do_pedido_conclui():
+    """[05/10/2026] "se o email estiver com o anexo da nota pode concluir" — mesmo sem ler o PDF."""
     r = _registro(_sol([("CNPJ Tomador", "26295687000123")]))
     r.aplicar_envio(_envio(), ["pdf"], ler_texto=lambda: "")
     tipo, texto = situacao(r.solicitacoes["NF-A-01"])
-    assert tipo == "conferir" and "confira" in texto
+    assert tipo == "ok" and "enviada ao e-mail do pedido" in texto
+
+
+def test_nome_do_assunto_batendo_conclui_sem_abrir_o_pdf():
+    """Caso real Maria Cleuza (NF 973, Ondina, 03/09/2026): PDF escaneado, OCR leu o CPF torto."""
+    r = _registro(_sol([("CPF Tomador", "17556066568")], nomes=("Maria Cleuza Carvalho da Cruz",)))
+    envio = {**_envio(), "assunto": "NF 973 - MARIA CLEUZA CARVALHO - 66479",
+             "anexos": ["NF 973 - MARIA CLEUZA CARVALHO - 66479.pdf"]}
+    abriu = []
+    assert r.aplicar_envio(envio, ["pdf"], ler_texto=lambda: abriu.append(1) or "lixo") == ("NF-A-01", "nf")
+    assert abriu == [] and list(r.solicitacoes["NF-A-01"]["nfs"]) == ["973"]
+
+
+def test_dividida_com_dois_anexos_registra_as_duas_notas():
+    r = _registro(_sol([], nomes=("Maria Cleuza Carvalho da Cruz",)))
+    r.solicitacoes["NF-A-01"]["partes"] = 2
+    envio = {**_envio(), "assunto": "NF 973 - MARIA CLEUZA",
+             "anexos": ["NF 973 - MARIA CLEUZA.pdf", "NF 973 - MARIA CLEUZA.xml", "NF 974 - MARIA CLEUZA.pdf"]}
+    r.aplicar_envio(envio, ["pdf", "xml"])
+    assert sorted(r.solicitacoes["NF-A-01"]["nfs"]) == ["973", "974"]
+    assert situacao(r.solicitacoes["NF-A-01"])[0] == "ok"
+    r2 = _registro(_sol([], nomes=("Maria Cleuza Carvalho da Cruz",)))
+    r2.aplicar_envio({**envio, "anexos": ["nota1.pdf", "nota2.pdf"]}, ["pdf"])
+    assert sorted(r2.solicitacoes["NF-A-01"]["nfs"]) == ["973", "973 (2º anexo)"]
 
 
 def test_check_antigo_e_reconferido():
