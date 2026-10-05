@@ -106,9 +106,13 @@ def _datahora(texto):
     return None
 
 
-def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None, datas_conhecidas=()):
+_SOMA_INCOMPLETA = re.compile(r"Fim de semana de .+ somado SEM", re.I)
+
+
+def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None, datas_conhecidas=(), soma_fim_de_semana=True):
     """Tira do Detalhe do Mail Analytics os avisos de hotéis ignorados e os que só citam datas
-    anteriores a `desde` ou dias sem dado já conhecidos. -> (avisos que ficam, avisos ignorados)"""
+    anteriores a `desde` ou dias sem dado já conhecidos; pra quem não soma o fim de semana, tira
+    também o "somado SEM sábado". -> (avisos que ficam, avisos ignorados)"""
     ignorados = {normalizar(h) for h in ignorar_hoteis}
     conhecidas = set(datas_conhecidas)
     ficam, saem = [], []
@@ -120,7 +124,8 @@ def filtrar_avisos(detalhe, ignorar_hoteis=(), desde=None, datas_conhecidas=()):
         datas = [_data(d) for d in re.findall(r"\d{2}/\d{2}/\d{4}", parte)]
         so_ignorados = bool(hoteis_citados) and all(h.strip() in ignorados for h in hoteis_citados)
         so_antigo = bool(datas) and all(d and ((desde and d < desde) or d in conhecidas) for d in datas)
-        (saem if so_ignorados or so_antigo else ficam).append(parte)
+        soma_que_nao_existe = not soma_fim_de_semana and bool(_SOMA_INCOMPLETA.search(parte))
+        (saem if so_ignorados or so_antigo or soma_que_nao_existe else ficam).append(parte)
     return ficam, saem
 
 
@@ -130,22 +135,28 @@ def lacunas_por_operador(config_lacunas):
     return {op: todos | ({_data(d) for d in config_lacunas.get(op, [])} - {None}) for op in ABA_POR_OPERADOR.values()}
 
 
-def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=None, lacunas=None):
-    """Situação de cada operador (como o "Verificar as 4 Máquinas") + o escutar_comando."""
+def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=None, lacunas=None, somam_fim_de_semana=None):
+    """Situação de cada operador (como o "Verificar as 4 Máquinas") + o escutar_comando.
+    somam_fim_de_semana: quem soma sáb+dom na segunda (None = todos); pros outros o fim de semana
+    é dia a mais: sem dado não é falha e não há soma pra cobrar."""
     ontem = hoje - datetime.timedelta(days=1)
     status = {r.get("Operador"): r for r in _tabela(abas.get("Status_Execucao", []))}
     ultimas = {r.get("Operador"): r.get("Última Execução Bem-Sucedida", "") for r in _tabela(abas.get("Status_Operadores", []))}
     com_dado = {(m["operador"], m["data"]) for m in metricas}
     operadores = []
     for operador in ABA_POR_OPERADOR.values():
+        soma = somam_fim_de_semana is None or operador in somam_fim_de_semana
         if (operador, ontem) in com_dado:
             situacao = "puxado"
         elif (operador, ontem) in guardados:
             situacao = "guardado"
+        elif not soma and ontem.weekday() >= 5:
+            situacao = "fim_de_semana"
         else:
             situacao = "nao_puxado"
         st = status.get(operador, {})
-        avisos, ignorados = filtrar_avisos(st.get("Detalhe", ""), ignorar_hoteis, desde, (lacunas or {}).get(operador, ()))
+        avisos, ignorados = filtrar_avisos(st.get("Detalhe", ""), ignorar_hoteis, desde,
+                                           (lacunas or {}).get(operador, ()), soma)
         estado = st.get("Status", "")
         if estado == "ATENCAO" and not avisos and ignorados:
             estado = "OK"   # só avisos de hotel ignorado / de antes do período do painel
@@ -165,7 +176,8 @@ def saude(abas, metricas, guardados, hoje, lido_em, ignorar_hoteis=(), desde=Non
     return {"operadores": operadores, "escutar_comando": escuta, "ontem": ontem.isoformat()}
 
 
-def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_hoteis=(), lacunas_conhecidas=None):
+def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_hoteis=(), lacunas_conhecidas=None,
+        somam_fim_de_semana=None):
     """Lê tudo numa chamada só. -> dict com metricas, fins de semana, saúde e avisos.
     Hotéis em ignorar_hoteis ficam fora das métricas e dos avisos."""
     hoje = hoje or datetime.date.today()
@@ -186,5 +198,5 @@ def ler(backend, planilha_id, cadastro, desde, hoje=None, agora=None, ignorar_ho
             somados.setdefault((op, dia), "sem dado (conhecido)")
     avisos += [f"Não consegui ler a aba '{a}' do Fiscal Intelligence" for a in erros]
     return {"metricas": metricas, "fins_de_semana": somados, "guardados": guardados,
-            "saude": saude(abas, metricas, guardados, hoje, agora, ignorar_hoteis, desde, lacunas),
+            "saude": saude(abas, metricas, guardados, hoje, agora, ignorar_hoteis, desde, lacunas, somam_fim_de_semana),
             "avisos": avisos, "lido_em": agora}

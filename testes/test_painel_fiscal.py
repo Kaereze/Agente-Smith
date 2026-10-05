@@ -134,3 +134,26 @@ def test_serie_marca_domingo_somado():
     s = pm.serie_diaria([_met("CRICIÚMA", D(2026, 9, 20), nfs=5)], [], D(2026, 9, 19), D(2026, 9, 20),
                         {("João", D(2026, 9, 20)): "sex 18/09 + sáb 19/09 + dom 20/09"})
     assert s[0]["fim_de_semana"] == [] and s[1]["fim_de_semana"] == ["João: sex 18/09 + sáb 19/09 + dom 20/09"]
+
+
+AVISO_SOMA = ("⚠️ Fim de semana de 04/10/2026 somado SEM sábado 03/10 (dia não contado nesta máquina) em 18 hotel(is). "
+              "Pra completar: python src\main.py --data=2026-10-03")
+
+
+def test_quem_nao_soma_fim_de_semana_nao_recebe_aviso_de_soma_incompleta():
+    abas = {"Status_Execucao": [["Operador", "Última Atualização", "Status", "Detalhe"],
+                                ["Clara", "", "ATENCAO", AVISO_SOMA], ["João", "", "ATENCAO", AVISO_SOMA]]}
+    s = fi.saude(abas, [], {}, D(2026, 10, 5), datetime.datetime(2026, 10, 5, 10), (), D(2026, 9, 1), None,
+                 ["João", "Cristian"])
+    por = {o["operador"]: o for o in s["operadores"]}
+    assert por["Clara"]["status"] == "OK" and por["Clara"]["detalhe"] == ""
+    assert por["João"]["status"] == "ATENCAO" and "somado SEM" in por["João"]["detalhe"]   # pra quem soma, vale
+
+
+def test_fim_de_semana_sem_dado_e_dia_a_mais_pra_quem_nao_soma():
+    domingo_seguinte = D(2026, 10, 5)   # segunda: ontem foi domingo
+    s = fi.saude({}, [], {}, domingo_seguinte, datetime.datetime(2026, 10, 5, 10), somam_fim_de_semana=["João", "Cristian"])
+    por = {o["operador"]: o for o in s["operadores"]}
+    assert por["Bernardo"]["ontem"] == "fim_de_semana" and por["Cristian"]["ontem"] == "nao_puxado"
+    terca = fi.saude({}, [], {}, D(2026, 10, 7), datetime.datetime(2026, 10, 7, 10), somam_fim_de_semana=["João"])
+    assert {o["operador"]: o["ontem"] for o in terca["operadores"]}["Bernardo"] == "nao_puxado"   # dia útil cobra

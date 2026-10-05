@@ -259,7 +259,8 @@ class Estado:
             return
         try:
             fi = fiscal_intelligence.ler(self.backend, self.fi_id, self.cadastro, self.desde, ignorar_hoteis=self.ignorar,
-                                         lacunas_conhecidas=self.cfg.get("painel", {}).get("lacunas_conhecidas", {}))
+                                         lacunas_conhecidas=self.cfg.get("painel", {}).get("lacunas_conhecidas", {}),
+                                         somam_fim_de_semana=self.cfg.get("painel", {}).get("somam_fim_de_semana"))
             with self.lock:
                 self.fi, self.fi_erro = fi, ""
         except Exception as e:

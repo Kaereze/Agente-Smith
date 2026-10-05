@@ -61,7 +61,8 @@ function saudeHtml(d) {
   for (const o of s.operadores || []) {
     const cls = o.ontem === "nao_puxado" ? "ruim" : o.status === "ATENCAO" ? "alerta" : "bom";
     const ontem = o.ontem === "puxado" ? "dados de ontem puxados" : o.ontem === "guardado"
-      ? `ontem guardado pra somar em ${dataBr(o.domingo)}` : "dados de ontem NÃO chegaram";
+      ? `ontem guardado pra somar em ${dataBr(o.domingo)}` : o.ontem === "fim_de_semana"
+      ? "fim de semana sem expediente (só entra se trabalhar)" : "dados de ontem NÃO chegaram";
     // ATENÇÃO: o motivo (1º aviso do Mail Analytics) aparece no cartão; o texto completo fica no tooltip
     const motivo = o.status === "ATENCAO" && o.detalhe ? o.detalhe.split(/;\s*/)[0].split(" — ")[0] : "";
     cards.push(card(cls, `${cls === "bom" ? "✔" : cls === "alerta" ? "⚠" : "✖"} ${o.operador}`,
