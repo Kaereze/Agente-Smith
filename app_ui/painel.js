@@ -3,7 +3,7 @@ const PERIODOS = [["mes", "Este mês"], ["7", "Últimos 7 dias"], ["30", "Últim
 const MEDIDAS = {
   nf: { nome: "Solicitações × NFs", chaves: [{ k: "solicitacoes", nome: "Solicitações recebidas" }, { k: "nfs", nome: "NFs emitidas" }] },
   email: { nome: "E-mails", chaves: [{ k: "recebidos", nome: "E-mails recebidos" }, { k: "enviados", nome: "E-mails enviados" }] },
-  outros: { nome: "Ligações × Cancelamentos", chaves: [{ k: "ligacoes", nome: "Ligações" }, { k: "cancelamentos", nome: "Cancel./Subst." }] },
+  outros: { nome: "Ligações × Canceladas/Substituídas", chaves: [{ k: "ligacoes", nome: "Ligações" }, { k: "cancelamentos", nome: "Canceladas/subst." }] },
 };
 let pn = { vista: "visao", periodo: "30", ini: "", fim: "", medida: "nf", tabela: false, dados: null,
            ordem: { campo: "pendentes", desc: true }, buscaHotel: "", hotelAberto: null, ficha: null, timer: null };
@@ -90,8 +90,9 @@ function desenharVisao() {
       <div class="kpi"><div class="r">Com NF emitida</div><div class="v">${n(k.concluidas)}</div>
         <div class="s">${k.taxa_atendimento == null ? "—" : k.taxa_atendimento + "% das solicitações"}</div></div>
       <div class="kpi"><div class="r">NFs emitidas (Mail Analytics)</div><div class="v">${n(k.nfs)}</div><div class="s">contadas nos e-mails</div></div>
-      <div class="kpi"><div class="r">Cancelamentos/substituições</div><div class="v">${n(k.cancelamentos)}</div>
-        <div class="s">${k.nfs ? Math.round(100 * k.cancelamentos / k.nfs) + "% das NFs" : "—"}</div></div>
+      <div class="kpi" title="Arquivos renomeados (CANCELADA)/(SUBSTITUIDA) na pasta de notas do Dropbox, pela data de modificação">
+        <div class="r">Canceladas/substituídas</div><div class="v">${n(k.cancelamentos)}</div>
+        <div class="s">${n(k.canceladas)} canceladas · ${n(k.substituidas)} substituídas${k.nfs ? " · " + Math.round(100 * k.cancelamentos / k.nfs) + "% das NFs" : ""}</div></div>
       <div class="kpi"><div class="r">E-mails recebidos</div><div class="v">${n(k.recebidos)}</div></div>
       <div class="kpi"><div class="r">E-mails enviados</div><div class="v">${n(k.enviados)}</div></div>
       <div class="kpi"><div class="r">Ligações</div><div class="v">${n(k.ligacoes)}</div></div>
@@ -123,7 +124,7 @@ function desenharVisao() {
 // ---------- Hotéis ----------
 const COLS = [["hotel", "Hotel"], ["agente", "Agente"], ["solicitacoes", "Solicitações", 1], ["concluidas", "Com NF", 1],
   ["taxa_atendimento", "Atendimento", 1, "%"], ["pendentes", "Pendentes", 1], ["mais_antigo", "Mais antigo", 1, " d"],
-  ["nfs", "NFs (MA)", 1], ["cancelamentos", "Cancel./Subst.", 1], ["taxa_cancelamento", "Cancel. %", 1, "%"],
+  ["nfs", "NFs (MA)", 1], ["canceladas", "Canceladas", 1], ["substituidas", "Substituídas", 1], ["taxa_cancelamento", "Canc.+Subst. %", 1, "%"],
   ["recebidos", "E-mails rec.", 1], ["enviados", "E-mails env.", 1], ["ligacoes", "Ligações", 1]];
 
 function desenharHoteis() {
@@ -147,7 +148,7 @@ function desenharHoteis() {
         : (c === "mais_antigo" && v > 7) ? "alerta-txt" : "";
       return `<td class="num ${cls}">${v == null ? "—" : v.toLocaleString("pt-BR") + (suf || "")}</td>`;
     }).join("")}</tr>`).join("")}</tbody></table></div>
-    <div class="avisos">${linhas.length} hotéis · NFs (MA) e cancelamentos vêm do Mail Analytics; solicitações e pendentes, da Planilha Central${d.avisos.length ? " · " + esc(d.avisos.join(" · ")) : ""}</div>`;
+    <div class="avisos">${linhas.length} hotéis · NFs (MA) vêm do Mail Analytics; canceladas e substituídas, dos arquivos renomeados no Dropbox; solicitações e pendentes, da Planilha Central${d.avisos.length ? " · " + esc(d.avisos.join(" · ")) : ""}</div>`;
   if (foco) { const i = $("busca-hotel"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
 
@@ -164,7 +165,8 @@ async function abrirHotel(nome, silencioso) {
     <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
       <div class="kpi"><div class="r">Pendentes</div><div class="v">${n(f.pendentes.length)}</div></div>
       <div class="kpi"><div class="r">NFs (MA)</div><div class="v">${n(t.nfs)}</div></div>
-      <div class="kpi"><div class="r">Cancel./Subst.</div><div class="v">${n(t.cancelamentos)}</div></div>
+      <div class="kpi" title="${n(t.canceladas)} canceladas · ${n(t.substituidas)} substituídas (arquivos renomeados no Dropbox)">
+        <div class="r">Canceladas/subst.</div><div class="v">${n(t.cancelamentos)}</div></div>
       <div class="kpi"><div class="r">E-mails rec.</div><div class="v">${n(t.recebidos)}</div></div>
       <div class="kpi"><div class="r">E-mails env.</div><div class="v">${n(t.enviados)}</div></div>
       <div class="kpi"><div class="r">Ligações</div><div class="v">${n(t.ligacoes)}</div></div>

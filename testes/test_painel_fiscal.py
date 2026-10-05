@@ -124,7 +124,8 @@ def test_visao_geral_e_tabela_de_hoteis():
     assert v["kpis"]["nfs"] == 4 and len(v["serie"]) == 6
     assert {i["faixa"]: i["n"] for i in v["idade"]}["16–30 dias"] == 1
     assert v["top_pendentes"][0] == {"hotel": "CRICIÚMA", "n": 2}
-    t = {l["hotel"]: l for l in pm.tabela_hoteis(metr, fila, D(2026, 9, 25), D(2026, 9, 30), hoje, CAD)}
+    renomeadas = [{"data": D(2026, 9, 29), "hotel": "CRICIÚMA", "tipo": "substituida"}]   # o "1" do Mail Analytics não conta
+    t = {l["hotel"]: l for l in pm.tabela_hoteis(metr, fila, D(2026, 9, 25), D(2026, 9, 30), hoje, CAD, (), renomeadas)}
     assert t["CRICIÚMA"]["pendentes"] == 2 and t["CRICIÚMA"]["mais_antigo"] == 20
     assert t["CRICIÚMA"]["taxa_cancelamento"] == 25 and t["CRICIÚMA"]["agente"] == "Cristian"
     assert t["GOIÂNIA CENTRO"]["solicitacoes"] == 0   # hotel do cadastro aparece mesmo sem dado

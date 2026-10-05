@@ -160,6 +160,8 @@
     "fi_minutos": 5,
     "_ajuda_somam_fim_de_semana": "Quem soma sábado+domingo na segunda (Mail Analytics). Os outros: fim de semana é dia a mais — só entra se trabalharem, sem aviso de soma",
     "somam_fim_de_semana": ["João", "Cristian"],
+    "_ajuda_cnpj_hoteis": "Canceladas/substituídas: CNPJ do prestador -> hotel, pros CNPJs cuja razão social não tem o nome do hotel (ex.: RF HOTEIS LTDA). Os outros o Painel descobre sozinho",
+    "cnpj_hoteis": {},
     "_ajuda_ignorar_hoteis": "Hotéis que o painel desconsidera (dados e avisos do Mail Analytics) — ex.: hotel ainda sem movimento",
     "ignorar_hoteis": ["RENASSENÇA"],
     "_ajuda_lacunas_conhecidas": "Dias sem dado já conhecidos e aceitos (não voltam): não geram aviso; \"*\" vale pra todos os operadores",

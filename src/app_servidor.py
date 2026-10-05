@@ -28,6 +28,7 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
+import canceladas
 import envio_nf
 import fiscal_intelligence
 import painel_metricas as metricas
@@ -46,6 +47,8 @@ PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = PASTA_ESTADO / "app.json"
 JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
 CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
+CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
+CANCELADAS_MINUTOS = 10
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
@@ -91,6 +94,7 @@ class Estado:
         self.fi_id, self.fi_minutos = painel.get("fiscal_intelligence_id", ""), int(painel.get("fi_minutos", 5))
         self.ignorar = list(painel.get("ignorar_hoteis", []))
         self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
+        self.canceladas, self.canceladas_lidas, self.lendo_canceladas = [], -1e9, False
         self.cache_salvo = -1e9
 
     def _abas(self):
@@ -268,6 +272,32 @@ class Estado:
             self.fi_erro = str(e)[:200]
         self.fi_lido = self.relogio()
 
+    def atualizar_canceladas(self):
+        """Arquivos (CANCELADA)/(SUBSTITUIDA) do Dropbox: a 1ª leitura dos PDFs leva minutos, então roda
+        numa thread e as telas usam a última lista pronta."""
+        if self.lendo_canceladas or self.relogio() - self.canceladas_lidas < CANCELADAS_MINUTOS * 60:
+            return
+        self.lendo_canceladas = True
+
+        def ler():
+            try:
+                pastas = (self.cfg.get("dropbox_notas") or {}).get("pastas", [])
+                cache = canceladas.ler_cache(CAMINHO_CANCELADAS)
+                arquivos = canceladas.varrer(pastas, cache)
+                canceladas.salvar_cache(CAMINHO_CANCELADAS, cache)
+                with self.lock:
+                    nomes, sols = list(self.cadastro.nomes()), list(self.solicitacoes)
+                canceladas.atribuir_hoteis(arquivos, nomes, sols, self.cfg.get("apelidos_hoteis", {}),
+                                           self.cfg.get("painel", {}).get("cnpj_hoteis", {}))
+                with self.lock:
+                    self.canceladas = arquivos
+            except Exception:
+                logger.exception("canceladas/substituídas do Dropbox")
+            finally:
+                self.canceladas_lidas, self.lendo_canceladas = self.relogio(), False
+
+        threading.Thread(target=ler, daemon=True).start()
+
     def _periodo(self, ini, fim):
         hoje = datetime.date.today()
         ini = max(datetime.date.fromisoformat(ini) if ini else hoje.replace(day=1), self.desde)
@@ -287,8 +317,9 @@ class Estado:
         fila = self._fila_do_painel()
         fi = self.fi or {"metricas": [], "fins_de_semana": {}, "saude": {}, "avisos": []}
         return {"ini": ini.isoformat(), "fim": fim.isoformat(), "desde": self.desde.isoformat(),
-                "visao": metricas.visao_geral(fi["metricas"], fila, ini, fim, hoje, fi["fins_de_semana"]),
-                "hoteis": metricas.tabela_hoteis(fi["metricas"], fila, ini, fim, hoje, self.cadastro, self._ignorados()),
+                "visao": metricas.visao_geral(fi["metricas"], fila, ini, fim, hoje, fi["fins_de_semana"], self.canceladas),
+                "hoteis": metricas.tabela_hoteis(fi["metricas"], fila, ini, fim, hoje, self.cadastro, self._ignorados(),
+                                                 self.canceladas),
                 "saude": fi["saude"], "avisos": fi["avisos"], "fi_erro": self.fi_erro,
                 "fi_lido_em": fi["lido_em"].isoformat(timespec="seconds") if fi.get("lido_em") else ""}
 
@@ -296,7 +327,7 @@ class Estado:
         ini, fim = self._periodo(ini, fim)
         fi = self.fi or {"metricas": [], "fins_de_semana": {}}
         return metricas.ficha_hotel(nome, fi["metricas"], self._fila_do_painel(), ini, fim,
-                                    datetime.date.today(), fi["fins_de_semana"], self.cadastro)
+                                    datetime.date.today(), fi["fins_de_semana"], self.cadastro, self.canceladas)
 
     def resumo_status(self):
         s = self.status
@@ -484,6 +515,7 @@ def main():
         while True:
             estado.atualizar()
             estado.atualizar_fi()
+            estado.atualizar_canceladas()
             estado.salvar_cache()
             inicio = time.monotonic()
             while True:
