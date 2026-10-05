@@ -96,6 +96,9 @@ def test_pc_do_agente_principal_vira_principal_sozinho(tmp_path, monkeypatch):
     assert config.carregar_config(cfg_arq)["papel"] == "conferente"
     (tmp_path / "maquina.json").write_text('{"agente": "João", "conflito": "trocou"}', encoding="utf-8")
     assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+    # maquina.json copiado do PC do João pra outro PC: nunca vira principal
+    (tmp_path / "maquina.json").write_text('{"agente": "João", "pc": "DESKTOP-DO-JOAO"}', encoding="utf-8")
+    assert config.carregar_config(cfg_arq)["papel"] == "conferente"
 
 
 def test_pastas_do_dropbox_seguem_o_usuario_de_cada_pc(tmp_path, monkeypatch):
