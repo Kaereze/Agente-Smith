@@ -162,6 +162,7 @@
     "somam_fim_de_semana": ["João", "Cristian"],
     "_ajuda_cnpj_hoteis": "Canceladas/substituídas: CNPJ do prestador -> hotel, pros CNPJs cuja razão social não tem o nome do hotel (ex.: RF HOTEIS LTDA). Os outros o Painel descobre sozinho",
     "cnpj_hoteis": {
+      "21.391.113/0001-35": "CECOMTUR",
       "43.238.281/0001-28": "L GINN",
       "39.265.789/0001-48": "BRAZ",
       "03.347.101/0001-21": "CENTER PREMIUM",
