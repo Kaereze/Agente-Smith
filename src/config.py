@@ -44,6 +44,9 @@ def _papel_pela_identidade(cfg):
             maquina = json.load(f)
     except (FileNotFoundError, ValueError):
         return "conferente"
+    import socket
+    if maquina.get("pc") and maquina["pc"].lower() != socket.gethostname().lower():
+        return "conferente"   # maquina.json de outro PC: na dúvida, nunca principal
     agente, principal = maquina.get("agente"), cfg.get("agente_principal")
     if agente and principal and not maquina.get("conflito") and _norm(agente) == _norm(principal):
         return "principal"

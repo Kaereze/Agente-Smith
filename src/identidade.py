@@ -5,6 +5,7 @@
 import datetime
 import json
 import os
+import socket
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -55,7 +56,7 @@ def resolver(contas, cadastro):
 
 
 def detectar(cfg, namespace, backend):
-    """Detecta, compara com estado/maquina.json e grava o resultado."""
+    """Detecta e grava em estado/maquina.json; com voto claro, as contas do Outlook vencem o arquivo."""
     contas = [str(getattr(c, "SmtpAddress", "") or "") for c in namespace.Accounts]
     aba = cfg["aba_cadastro_hoteis"]
     linhas = backend.ler_abas(cfg["planilha_central_id"], [aba])[0].get(aba, [])
@@ -65,29 +66,34 @@ def detectar(cfg, namespace, backend):
                 for l in linhas if l and normalizar(l[i_a] if len(l) > i_a else "") not in ("", "agente", "operador")]
     agente, confianca, motivo, retentavel = resolver(contas, cadastro)
     anterior = ler()
+    pc = socket.gethostname()
     agora = datetime.datetime.now().isoformat(timespec="seconds")
     if agente is None:
         logger.warning(f"⚠️ Não consegui identificar este PC: {motivo}")
         if retentavel or anterior:
             return anterior or {}
-        dados = {"agente": None, "motivo": motivo, "quando": agora}
-    elif anterior.get("agente") and anterior["agente"] != agente:
-        motivo = f"este PC era '{anterior['agente']}' e agora parece '{agente}' — apague estado\\maquina.json se a troca for de propósito"
-        logger.error(f"🚨 CONFLITO DE IDENTIDADE: {motivo}")
-        dados = {**anterior, "conflito": motivo, "quando": agora}
+        dados = {"agente": None, "motivo": motivo, "pc": pc, "quando": agora}
     else:
-        dados = {"agente": agente, "confianca": confianca, "contas": len(contas), "quando": agora}
-        if not anterior.get("agente"):
+        # maquina.json copiado de outro PC (ou troca de operador): o voto claro das contas manda
+        if anterior.get("agente") and anterior["agente"] != agente:
+            logger.warning(f"🔄 Identidade corrigida: estado\\maquina.json dizia '{anterior['agente']}', "
+                           f"mas as contas do Outlook são do(a) '{agente}' ({confianca}%).")
+        elif not anterior.get("agente"):
             logger.info(f"🆕 Este PC é do(a) {agente} ({confianca}% de confiança).")
+        dados = {"agente": agente, "confianca": confianca, "contas": len(contas), "pc": pc, "quando": agora}
     salvar_json(CAMINHO_MAQUINA, dados)
     return dados
 
 
 def ler():
+    """maquina.json deste PC; o de outro PC (pasta estado\\ copiada) conta como inexistente."""
     try:
-        return json.load(open(CAMINHO_MAQUINA, encoding="utf-8"))
+        dados = json.load(open(CAMINHO_MAQUINA, encoding="utf-8"))
     except (FileNotFoundError, ValueError):
         return {}
+    if dados.get("pc") and dados["pc"].lower() != socket.gethostname().lower():
+        return {}
+    return dados
 
 
 if __name__ == "__main__":
