@@ -31,10 +31,81 @@ async function carregarPainel() {
 function trocarVista(v) {
   pn.vista = v;
   document.querySelectorAll("#abas button").forEach(b => b.classList.toggle("sel", b.dataset.vista === v));
-  for (const id of ["visao", "fila", "hoteis"]) $("v-" + id).classList.toggle("oculta", id !== v);
+  for (const id of ["visao", "fila", "hoteis", "atividade"]) $("v-" + id).classList.toggle("oculta", id !== v);
   if (v === "visao") desenharVisao();
   if (v === "hoteis") desenharHoteis();
+  clearTimeout(at.timer);
+  if (v === "atividade") carregarAtividade();
 }
+
+// ---------- Atividade: o que os robôs de todos os PCs fizeram ----------
+const TIPOS_ATIV = {NOVA_SOLICITACAO: "Pedido novo", EMAIL_RECEBIDO: "E-mail recebido", NF_ENVIADA: "NF enviada",
+  NF_DROPBOX: "NF no Dropbox", TRATATIVA: "Tratativa", NOTA_UNICA: "Nota única", OUTLOOK_FECHADO: "Outlook fechado",
+  OUTLOOK_ABERTO: "Outlook aberto", ATUALIZADO: "Atualizado", FALHA: "Falha"};
+const FILTROS_ATIV = [["", "Tudo"], ["NOVA_SOLICITACAO", "Pedidos novos"], ["NF_ENVIADA,NF_DROPBOX", "NFs"],
+  ["TRATATIVA", "Tratativas"], ["EMAIL_RECEBIDO", "E-mails recebidos"], ["OUTLOOK_FECHADO,OUTLOOK_ABERTO", "Outlook"],
+  ["ATUALIZADO", "Atualizações"]];
+let at = { dados: null, filtro: "", pc: "", timer: null };
+
+async function carregarAtividade() {
+  const j = await api("/api/atividade").catch(() => null);
+  if (j && !j.erro) { at.dados = j; desenharAtividade(); }
+  clearTimeout(at.timer);
+  if (pn.vista === "atividade") at.timer = setTimeout(carregarAtividade, 20000);
+}
+
+function haQuanto(iso) {
+  if (!iso) return "nunca";
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  return min < 1 ? "agora" : min < 60 ? `há ${min} min` : min < 1440 ? `há ${Math.round(min / 60)} h` : `há ${Math.round(min / 1440)} d`;
+}
+
+function desenharAtividade() {
+  const d = at.dados, el = $("atividade");
+  if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
+  const cards = d.pcs.map(p => {
+    const cls = !p.online ? "off" : p.outlook === "fechado" ? "ruim" : (p.conferencia_atrasada || p.versao !== d.versao) ? "alerta" : "";
+    const antigo = !p.versao;   // PC com o código de antes desta página: não publica Outlook nem versão
+    const versao = antigo ? `<span class="ruim-txt">código antigo — atualize este PC</span>`
+      : p.versao === d.versao ? "igual a este PC" : `<span class="ruim-txt">diferente deste PC (${esc(d.versao)})</span>`;
+    return `<div class="pc-card ${cls}"><b>${esc(p.agente || "?")}</b> · ${esc(p.pc)}${p.pc === d.este_pc ? " (este PC)" : ""}<br>
+      <span class="linha">${p.online ? "🟢 online" : "⚫ desligado"} · visto ${haQuanto(p.visto.replace(" ", "T"))} · ${p.caixas} caixas · ${esc(p.papel || "")}</span><br>
+      Outlook: ${antigo ? "sem informação" : p.outlook === "aberto" ? "aberto" : `<span class="ruim-txt">${esc(p.outlook || "?")}</span>`}<br>
+      Conferência: ${antigo ? "sem informação" : p.conferencia_atrasada ? `<span class="ruim-txt">parada (${haQuanto(p.conferencia)})</span>`
+        : p.conferencia ? haQuanto(p.conferencia) : "aguardando a primeira volta"}
+        ${p.conferencia_resumo ? ` · ${esc(p.conferencia_resumo)}` : ""}<br>
+      Versão: ${antigo ? "" : esc(p.versao) + " · "}${versao}<br>
+      ${p.online ? `<button data-at-atualizar="${esc(p.pc)}">Atualizar este PC</button>` : ""}</div>`;
+  }).join("");
+  const tipos = at.filtro ? at.filtro.split(",") : null;
+  const evs = d.eventos.filter(e => (!tipos || tipos.includes(e.tipo)) && (!at.pc || e.pc === at.pc));
+  const pcsLista = [...new Set(d.eventos.map(e => e.pc))].sort();
+  el.innerHTML = `<div class="titulo-pagina"><h2>Atividade dos robôs</h2>
+      <span class="dica">${d.pcs.filter(p => p.online).length} PC(s) online · atualiza sozinho a cada 20 s ·
+        este PC na versão ${esc(d.versao)}${d.atualizacao.motivo ? " · " + esc(d.atualizacao.motivo) : ""}</span>
+      <button data-at-atualizar="TODOS" title="Cada PC puxa a versão nova do GitHub e reinicia">Atualizar todos os PCs</button></div>
+    <div class="pcs-grade">${cards || `<div class="vazio">Nenhum PC publicou ainda.</div>`}</div>
+    <div class="ativ-filtros">${FILTROS_ATIV.map(([v, n]) => `<button class="chip ${at.filtro === v ? "sel" : ""}" data-at-filtro="${v}">${n}</button>`).join("")}
+      <select id="at-pc"><option value="">Todos os PCs</option>${pcsLista.map(p => `<option ${p === at.pc ? "selected" : ""}>${esc(p)}</option>`).join("")}</select></div>
+    <table class="ativ-tab"><tbody>${evs.slice(0, 300).map(e => `<tr>
+      <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
+      <td><span class="tipo t-${esc(e.tipo)}">${esc(TIPOS_ATIV[e.tipo] || e.tipo)}</span></td>
+      <td>${esc(e.agente || "")}<div class="dica">${esc(e.pc)}</div></td>
+      <td>${esc(e.hotel || "")}<div class="dica">${esc(e.pedido || "")}</div></td>
+      <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table>`;
+  const sel = $("at-pc");
+  if (sel) sel.onchange = () => { at.pc = sel.value; desenharAtividade(); };
+}
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-at-filtro],[data-at-atualizar]");
+  if (!b) return;
+  if (b.dataset.atFiltro !== undefined) { at.filtro = b.dataset.atFiltro; return desenharAtividade(); }
+  const para = b.dataset.atAtualizar;
+  if (!confirm(para === "TODOS" ? "Pedir pra TODOS os PCs puxarem a versão nova do GitHub e reiniciarem?" : `Pedir pro PC ${para} atualizar e reiniciar?`)) return;
+  const r = await api("/api/comando", { para, comando: "atualizar" });
+  toast(r.ok ? "Pedido enviado — o PC responde em até 1 minuto (veja a lista abaixo)." : (r.motivo || r.erro || "falhou"), !r.ok);
+});
 
 // ---------- Visão geral ----------
 function filtrosHtml(titulo) {

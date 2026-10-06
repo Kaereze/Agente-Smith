@@ -163,6 +163,15 @@ class BackendGoogle:
         com_retry(lambda: planilha.values_update(f"{nome_intervalo(aba)}!A2", params={"valueInputOption": "RAW"},
                                                  body={"values": linhas}), e_erro_passageiro_google)
 
+    def garantir_colunas(self, planilha_id, aba, cabecalho):
+        """Aba criada com menos colunas (ex.: PCs_Painel de 4 pra 8): aumenta a grade e reescreve o cabeçalho."""
+        planilha_aba = com_retry(lambda: self._planilha(planilha_id).worksheet(aba), e_erro_passageiro_google)
+        if planilha_aba.col_count < len(cabecalho):
+            com_retry(lambda: planilha_aba.add_cols(len(cabecalho) - planilha_aba.col_count), e_erro_passageiro_google)
+        if planilha_aba.row_values(1)[:len(cabecalho)] != cabecalho:
+            com_retry(lambda: planilha_aba.update(range_name="A1", values=[cabecalho], value_input_option="RAW"),
+                      e_erro_passageiro_google)
+
     def anexar_linhas(self, planilha_id, aba, linhas):
         planilha = self._planilha(planilha_id)
         planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)

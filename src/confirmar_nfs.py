@@ -16,6 +16,7 @@ conteúdo da nota batendo com a solicitação. Só NF confirmada vira evento; as
 --sem-ocr não lê PDF escaneado (o OCR leva segundos por nota).
 """
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -39,6 +40,9 @@ from sheets import ler_hoteis
 logger = configurar_logging("confirmar_nfs")
 
 CAMINHO_VISTOS = PASTA_ESTADO / "confirmar_nfs.json"
+CAMINHO_STATUS = PASTA_ESTADO / "confirmar_status.json"   # última volta (o Painel publica pros outros PCs)
+RECEBIDOS_DIAS = 2
+MAX_ATIVIDADES_POR_TIPO = 25   # acima disso vira uma linha de resumo (ex.: conferência do ano)
 CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
 AGENTE = "Robô"
 PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
@@ -202,20 +206,32 @@ def _novas_nfs(reg, antes):
     return saida
 
 
-def _itens_de_nf(pasta, limite):
-    """Só os itens do período com "NF" no assunto; o filtro roda dentro do Outlook, não item a item."""
-    itens = pasta.Items.Restrict(f"[SentOn] >= '{limite:%d/%m/%Y %H:%M}'")
-    return itens.Restrict("@SQL=\"urn:schemas:httpmail:subject\" LIKE '%NF%'")
+def _novas_tratativas(reg, antes):
+    """[(chave, entry_id, {data, assunto})] — e-mails sem NF mandados ao hóspede nesta rodada."""
+    return [(k, entry, d) for k, s in reg.solicitacoes.items() for entry, d in s["tratativas"].items()
+            if (k, entry) not in antes]
+
+
+def marca_do_email(entry_id):
+    """Marca curta e fixa do e-mail no texto da tratativa: a mesma mensagem nunca vira duas."""
+    return "#" + hashlib.sha1(entry_id.encode("utf-8", "replace")).hexdigest()[:8]
+
+
+def _itens_enviados(pasta, limite):
+    """Todos os enviados do período (com ou sem "NF" no assunto: pergunta ao hóspede é tratativa)."""
+    return pasta.Items.Restrict(f"[SentOn] >= '{limite:%d/%m/%Y %H:%M}'")
 
 
 def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_ITENS_POR_CONTA):
+    """Itens Enviados das caixas deste PC: e-mail com NF anexada conclui o pedido; qualquer outro
+    e-mail mandado ao endereço de um pedido aberto é tratativa (pedido do usuário, 06/10/2026)."""
     from conferente import _anexos, _data_outlook, _enderecos, texto_da_nota
     extensoes = cfg["conferencia"]["extensoes_anexo_nf"]
     lidos = 0
     for conta in namespace.Accounts:
         smtp = (conta.SmtpAddress or "").strip().lower()
         try:
-            itens = _itens_de_nf(conta.DeliveryStore.GetDefaultFolder(5), limite)   # olFolderSentMail
+            itens = _itens_enviados(conta.DeliveryStore.GetDefaultFolder(5), limite)   # olFolderSentMail
         except Exception as e:
             logger.warning(f"⚠️ Não abri Itens Enviados de {smtp}: {e}")
             continue
@@ -231,11 +247,10 @@ def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_
                     continue
                 vistos.add(entry)
                 nf = ler_assunto_nf(item.Subject or "")
-                if not nf:
-                    continue
-                da_conta += 1
                 destinatarios = _enderecos(item)
-                candidatas = indice.para_email(destinatarios, smtp, nf[1])
+                if nf:
+                    da_conta += 1
+                candidatas = indice.para_email(destinatarios, smtp, nf[1] if nf else "")
                 if not candidatas:
                     continue
                 indice.sub(candidatas).aplicar_envio(
@@ -248,6 +263,58 @@ def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_
             logger.info(f"   📨 {smtp}: {da_conta} e-mail(s) de NF novo(s)")
         lidos += da_conta
     return lidos
+
+
+def _remetente(item):
+    endereco = str(getattr(item, "SenderEmailAddress", "") or "").strip().lower()
+    if "@" in endereco:
+        return endereco
+    try:
+        return item.Sender.GetExchangeUser().PrimarySmtpAddress.lower()
+    except Exception:
+        return endereco
+
+
+def varrer_recebidos(namespace, indice, vistos, dias=RECEBIDOS_DIAS):
+    """E-mails que hóspedes de pedidos abertos mandaram pras caixas deste PC (últimos `dias`).
+    -> [(chave, conta, assunto, quando)] dos ainda não vistos."""
+    from conferente import _data_outlook
+    desde = datetime.datetime.now() - datetime.timedelta(days=dias)
+    achados = []
+    for conta in namespace.Accounts:
+        smtp = (conta.SmtpAddress or "").strip().lower()
+        try:
+            itens = conta.DeliveryStore.GetDefaultFolder(6).Items.Restrict(f"[ReceivedTime] >= '{desde:%d/%m/%Y %H:%M}'")
+        except Exception as e:
+            logger.debug(f"caixa de entrada de {smtp}: {e}")
+            continue
+        for item in itens:
+            try:
+                if getattr(item, "Class", 43) != 43 or item.EntryID in vistos:
+                    continue
+                vistos.add(item.EntryID)
+                refs = indice.por_email.get(_remetente(item), set())
+                for ref in refs:
+                    achados.append((ref, smtp, str(item.Subject or ""), _data_outlook(item.ReceivedTime)))
+            except Exception as e:
+                logger.debug(f"item ilegível na entrada de {smtp}: {e}")
+    return achados
+
+
+def _agente_deste_pc():
+    try:
+        import identidade
+        return identidade.ler().get("agente") or ""
+    except Exception:
+        return ""
+
+
+def _atividades(tipo, itens, montar, agente):
+    """Uma linha por item; muitos de uma vez (conferência do ano) viram uma linha de resumo."""
+    import atividade
+    if len(itens) > MAX_ATIVIDADES_POR_TIPO:
+        return [atividade.linha(tipo, detalhe=f"{len(itens)} de uma vez (conferência em lote)", agente=agente)]
+    return [atividade.linha(tipo, *montar(i), agente=agente) for i in itens]
 
 
 def varrer_dropbox(indice, cfg, limite, vistos, textos):
@@ -305,6 +372,7 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
     estados = dados.dobrar_eventos(lidas.get(dados.ABA_TRATAMENTO, [[]]))
     reg = registro_da_central(solicitacoes, estados, desde)
     antes = {(k, n) for k, s in reg.solicitacoes.items() for n in s["nfs"]}
+    antes_trat = {(k, e) for k, s in reg.solicitacoes.items() for e in s["tratativas"]}
     logger.info(f"🔎 {len(reg.solicitacoes)} solicitação(ões) sem NF confirmada desde {desde}")
 
     try:
@@ -312,8 +380,10 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
     except (FileNotFoundError, ValueError):
         guardado = {}
     vistos_email, vistos_dropbox = set(guardado.get("emails", [])), guardado.get("dropbox", {})
+    vistos_recebidos = set(guardado.get("recebidos", []))
     if rever:
         vistos_email, vistos_dropbox = set(), {}
+    recebidos = []
     textos = CacheTextos()
     import conferente
     ocr_original = conferente._texto_ocr
@@ -325,6 +395,8 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         lidos_email = varrer_emails(namespace, indice, cfg, limite, vistos_email, textos,
                                     None if rever else MAX_ITENS_POR_CONTA) if namespace is not None else 0
         lidos_dropbox = varrer_dropbox(indice, cfg, limite, vistos_dropbox, textos) if usar_dropbox else 0
+        if namespace is not None:
+            recebidos = varrer_recebidos(namespace, indice, vistos_recebidos)
     finally:   # o cache vale mesmo na prévia e mesmo se parar no meio: a próxima rodada não relê
         conferente._texto_ocr = ocr_original
         corte = limite.isoformat(timespec="seconds")
@@ -350,13 +422,46 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.DIVIDIDA, "nao"))
         linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.OBS,
                                    f"{PREFIXO_NOTA_UNICA} “{frase}” ({origem})"))
+    # Tratativas: e-mail sem NF ao hóspede (pergunta, pedido de dados...). A marca do e-mail no texto
+    # impede repetir a mesma mensagem (ex.: numa conferência com --rever).
+    ja_registradas = {k: " ".join(t["texto"] for t in estados.get(k, {}).get("tratativas", [])) for k in reg.solicitacoes}
+    tratativas = []
+    for k, entry, d in _novas_tratativas(reg, antes_trat):
+        marca = marca_do_email(entry)
+        if marca in ja_registradas.get(k, ""):
+            continue
+        s = por_chave[k]
+        quando = d.get("data", "")[:16].replace("T", " ")
+        linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.TRATATIVA,
+                                   f"E-mail ao hóspede em {quando}: {d.get('assunto', '')[:90]} [{marca}]"))
+        tratativas.append((s, d))
     if unicas:
         achadas = achadas + [(k, "nota única", f"“{frase}” ({origem})") for k, (frase, origem) in unicas.items()]
+
+    import atividade
+    agente = _agente_deste_pc()
+    atividades = []
+    nfs_email = [(por_chave[k], n, p) for k, n, p in achadas if n != "nota única" and "e-mail" in p]
+    nfs_dropbox = [(por_chave[k], n, p) for k, n, p in achadas if n != "nota única" and "e-mail" not in p]
+    atividades += _atividades(atividade.NF_ENVIADA, nfs_email, lambda x: (x[0]["hotel"], x[0]["nome"], f"NF {x[1]} · {x[2]}"), agente)
+    atividades += _atividades(atividade.NF_DROPBOX, nfs_dropbox, lambda x: (x[0]["hotel"], x[0]["nome"], f"NF {x[1]} · {x[2]}"), agente)
+    atividades += _atividades(atividade.TRATATIVA, tratativas,
+                              lambda x: (x[0]["hotel"], x[0]["nome"], f"e-mail sem nota: {x[1].get('assunto', '')}"), agente)
+    atividades += _atividades(atividade.EMAIL_RECEBIDO, [(por_chave[r], c, a) for r, c, a, _ in recebidos if r in por_chave],
+                              lambda x: (x[0]["hotel"], x[0]["nome"], f"de {x[0]['email']} para {x[1]}: {x[2]}"), agente)
+    atividades += _atividades(atividade.NOTA_UNICA, [(por_chave[k], f) for k, (f, _) in unicas.items()],
+                              lambda x: (x[0]["hotel"], x[0]["nome"], f"hóspede aceita nota única: “{x[1]}”"), agente)
     if gravar:
         if linhas:
             backend.anexar_linhas(cfg["planilha_central_id"], dados.ABA_TRATAMENTO, linhas)
+        atividade.registrar(backend, cfg["planilha_central_id"], atividades)
         salvar_json(CAMINHO_VISTOS, {"emails": sorted(vistos_email),
-                                     "dropbox": {p: m for p, m in vistos_dropbox.items() if m >= corte}})
+                                     "dropbox": {p: m for p, m in vistos_dropbox.items() if m >= corte},
+                                     "recebidos": sorted(vistos_recebidos)[-20000:]})
+        salvar_json(CAMINHO_STATUS, {"quando": agora.isoformat(timespec="seconds"),
+                                     "contas": len(list(namespace.Accounts)) if namespace is not None else 0,
+                                     "nfs": len(nfs_email) + len(nfs_dropbox), "tratativas": len(tratativas),
+                                     "recebidos": len(recebidos)})
     return [(por_chave[k], numero, prova) for k, numero, prova in achadas]
 
 

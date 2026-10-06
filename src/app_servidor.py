@@ -28,8 +28,11 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
+import atividade
+import atualizador
 import canceladas
 import envio_nf
+import rede_pcs
 import fiscal_intelligence
 import painel_metricas as metricas
 from arquivos import salvar_json
@@ -49,6 +52,9 @@ JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido h�
 CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
 CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
 CANCELADAS_MINUTOS = 10
+VERIFICAR_ATUALIZACAO_MINUTOS = 15
+CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
+ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
@@ -96,6 +102,14 @@ class Estado:
         self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
         self.canceladas, self.canceladas_lidas, self.lendo_canceladas = [], -1e9, False
         self.cache_salvo = -1e9
+        # rede de PCs: Outlook, versão, pedidos novos, comandos e atualização automática
+        self.versao = atualizador.versao()
+        self.outlook, self.chaves_vistas, self.versao_registrada = None, None, False
+        self.atualizacao = {"verificado_em": "", "motivo": "", "atras": 0}
+        self.proxima_verificacao = time.monotonic() + 120
+        self.comandos_em_execucao = set()
+        self.atividade_cache = ([], -1e9)
+        self.envio_nf.extras = self._extras_pc
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -109,9 +123,15 @@ class Estado:
             self.abas_hotel = {a: self.cadastro.canonico(nome_do_hotel_pela_aba(a)) or nome_do_hotel_pela_aba(a)
                                for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
             for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
-                             (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS)):
+                             (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS),
+                             (atividade.ABA, atividade.CABECALHO), (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS)):
                 if aba not in todas:
                     self.backend.criar_aba_log(self.central, aba, cab)
+            if hasattr(self.backend, "garantir_colunas"):
+                try:
+                    self.backend.garantir_colunas(self.central, envio_nf.ABA_PCS, envio_nf.CAB_PCS)
+                except Exception as e:
+                    logger.warning(f"⚠️ Não consegui aumentar as colunas de {envio_nf.ABA_PCS} ({e})")
             self.abas_lidas_em = self.relogio()
         return self.abas_hotel
 
@@ -120,7 +140,8 @@ class Estado:
             abas = self._abas()
             status_aba = self.cfg["aba_status"]
             lidas, erros = self.backend.ler_abas(self.central, list(abas) + [dados.ABA_TRATAMENTO, status_aba,
-                                                                              envio_nf.ABA_FILA, envio_nf.ABA_PCS])
+                                                                              envio_nf.ABA_FILA, envio_nf.ABA_PCS,
+                                                                              rede_pcs.ABA_COMANDOS])
             solicitacoes = []
             for aba, hotel in abas.items():
                 solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
@@ -138,6 +159,97 @@ class Estado:
             self.envio_nf.tick(lidas, nome_do_agente())
         except Exception:
             logger.exception("fila de envio de NF")
+        try:
+            self._rede(lidas, solicitacoes)
+        except Exception:
+            logger.exception("rede de PCs")
+
+    # ---------- rede de PCs ----------
+    def _extras_pc(self):
+        """Colunas E-H da linha deste PC em PCs_Painel."""
+        outlook = {True: "aberto", False: "fechado"}.get(self.outlook, "?")
+        return [outlook, self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia()]
+
+    def _rede(self, lidas, solicitacoes):
+        pc, agente = socket.gethostname(), nome_do_agente()
+        linhas = []
+        if not self.versao_registrada:   # 1ª volta depois de ligar: registra se a versão mudou
+            try:
+                anterior = CAMINHO_VERSAO.read_text(encoding="utf-8").strip()
+            except OSError:
+                anterior = ""
+            if anterior and anterior != self.versao:
+                linhas.append(atividade.linha(atividade.ATUALIZADO, detalhe=f"de {anterior} para {self.versao}", agente=agente))
+            CAMINHO_VERSAO.write_text(self.versao, encoding="utf-8")
+            self.versao_registrada = True
+        aberto = rede_pcs.outlook_aberto()
+        if aberto is not None and aberto != self.outlook:
+            if self.outlook is not None or not aberto:
+                tipo = atividade.OUTLOOK_ABERTO if aberto else atividade.OUTLOOK_FECHADO
+                linhas.append(atividade.linha(tipo, detalhe="o robô deste PC " + ("voltou a ler" if aberto else "parou de ler")
+                                              + " os e-mails das caixas daqui", agente=agente))
+            self.outlook = aberto
+        # Pedido novo na planilha: só o principal registra (os outros veriam o mesmo e repetiriam)
+        chaves = {s["chave"]: s for s in solicitacoes}
+        if self.chaves_vistas is not None and e_principal(self.cfg):
+            novas = [chaves[k] for k in chaves.keys() - self.chaves_vistas]
+            linhas += [atividade.linha(atividade.NOVA_SOLICITACAO, s["hotel"], s["nome"],
+                                       f"pedido de {s['carimbo']} · {s['email']}", agente="Robô") for s in novas[:30]]
+            if len(novas) > 30:
+                linhas.append(atividade.linha(atividade.NOVA_SOLICITACAO, detalhe=f"+{len(novas) - 30} pedidos novos", agente="Robô"))
+        self.chaves_vistas = set(chaves)
+        for id_c, comando, por in rede_pcs.pendentes(lidas.get(rede_pcs.ABA_COMANDOS, []), pc):
+            if id_c not in self.comandos_em_execucao:
+                self.comandos_em_execucao.add(id_c)
+                threading.Thread(target=self._executar_comando, args=(id_c, comando, por), daemon=True).start()
+        if self.cfg.get("painel", {}).get("atualizar_sozinho", True) and time.monotonic() >= self.proxima_verificacao:
+            self.proxima_verificacao = time.monotonic() + VERIFICAR_ATUALIZACAO_MINUTOS * 60
+            threading.Thread(target=self._verificar_atualizacao, args=(True,), daemon=True).start()
+        atividade.registrar(self.backend, self.central, linhas)
+
+    def _verificar_atualizacao(self, automatica, pedido_por=""):
+        s = atualizador.situacao()
+        motivo = atualizador.motivo_para_nao(s)
+        self.atualizacao = {"verificado_em": datetime.datetime.now().isoformat(timespec="seconds"),
+                            "motivo": motivo, "atras": s["atras"]}
+        if atualizador.pode_atualizar(s):
+            quem = "automática" if automatica else f"pedida por {pedido_por}"
+            atividade.registrar(self.backend, self.central, [atividade.linha(
+                atividade.ATUALIZADO, detalhe=f"atualização {quem}: {s['atras']} commit(s) novo(s) do GitHub", agente=nome_do_agente())])
+            atualizador.atualizar()
+            return "atualizando"
+        return motivo
+
+    def _executar_comando(self, id_c, comando, por):
+        try:
+            texto = self._verificar_atualizacao(False, por) if comando == "atualizar" else "comando desconhecido"
+        except Exception as e:
+            texto = f"falhou: {e}"
+        try:
+            self.backend.anexar_linhas(self.central, rede_pcs.ABA_COMANDOS,
+                                       [rede_pcs.resposta(id_c, socket.gethostname(), comando, texto or "ok")])
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui responder o comando {id_c} ({e})")
+
+    def pedir_comando(self, para, comando, por):
+        if comando not in rede_pcs.COMANDOS:
+            raise ValueError("comando desconhecido")
+        pcs = {p["pc"].lower() for p in rede_pcs.ler_pcs(self.envio_nf.pcs_linhas)}
+        if para != "TODOS" and para.lower() not in pcs:
+            raise ValueError("PC desconhecido")
+        self.backend.anexar_linhas(self.central, rede_pcs.ABA_COMANDOS, [rede_pcs.pedido(para, comando, por)])
+        return {"ok": True}
+
+    def pcs(self):
+        return rede_pcs.ler_pcs(self.envio_nf.pcs_linhas)
+
+    def atividade_resumo(self):
+        linhas, lido = self.atividade_cache
+        if time.monotonic() - lido > ATIVIDADE_CACHE_SEGUNDOS:
+            linhas = self.backend.ler_abas(self.central, [atividade.ABA])[0].get(atividade.ABA, [])
+            self.atividade_cache = (linhas, time.monotonic())
+        return {"pcs": self.pcs(), "eventos": atividade.ler(linhas, 400), "este_pc": socket.gethostname(),
+                "versao": self.versao, "atualizacao": self.atualizacao}
 
     def registrar_nf_enviada(self, pedido, quem):
         """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem)."""
@@ -405,7 +517,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores,
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
-                    "status": estado.resumo_status(), "fila": estado.fila(dias),
+                    "status": estado.resumo_status(), "fila": estado.fila(dias), "pcs": estado.pcs(),
                 })
             if url.path == "/api/envio":
                 def ler_status():
@@ -423,6 +535,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.painel(q.get("ini"), q.get("fim")))
                 if url.path == "/api/hotel":
                     return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
+                if url.path == "/api/atividade":
+                    return self._json(estado.atividade_resumo())
             except KeyError as e:
                 return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
@@ -461,6 +575,9 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json({"ok": True, "modo": "remoto"})
                 if path == "/api/envio_nf":
                     return self._json(estado.pedir_envio(corpo, nome_do_agente()))
+                if path == "/api/comando":
+                    return self._json(estado.pedir_comando(str(corpo.get("para", "")), str(corpo.get("comando", "")),
+                                                           f"{nome_do_agente()} ({pc})"))
                 if path == "/api/atualizar":
                     estado.atualizar()
                     estado.atualizar_fi(forcar=True)

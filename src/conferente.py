@@ -383,7 +383,7 @@ def garantir_categorias(namespace):
 
 
 NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
-CONFIRMAR_NFS_SEGUNDOS = 10 * 60
+CONFIRMAR_NFS_SEGUNDOS = 2 * 60   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
 _ja_olhados = set()
 
 

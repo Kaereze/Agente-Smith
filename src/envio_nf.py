@@ -27,7 +27,7 @@ CAB_FILA = ["Quando", "ID", "Evento", "PC", "Quem", "Dados (JSON)"]
 ABA_ANEXOS = "Envios_NF_Anexos"
 CAB_ANEXOS = ["ID", "Parte", "Total", "Nome", "Base64"]
 ABA_PCS = "PCs_Painel"
-CAB_PCS = ["PC", "Agente", "Contas", "Visto em"]
+CAB_PCS = ["PC", "Agente", "Contas", "Visto em", "Outlook", "Versão", "Papel", "Última conferência"]
 
 PEDIDO, ASSUMIDO, ENVIADO, FALHOU = "PEDIDO", "ASSUMIDO", "ENVIADO", "FALHOU"
 TAMANHO_PARTE = 45_000            # limite de célula do Sheets é 50 mil caracteres
@@ -532,11 +532,12 @@ class ServicoEnvio:
             logger.debug("listagem do Dropbox falhou", exc_info=True)
 
     def _publicar(self, agente):
-        linha = [self.pc, agente, ",".join(self.contas), _iso(self.relogio())]
+        extras = getattr(self, "extras", None)
+        linha = [self.pc, agente, ",".join(self.contas), _iso(self.relogio())] + (list(extras()) if extras else [])
         idx = next((i for i, l in enumerate(self.pcs_linhas[1:], start=2) if l and str(l[0]) == self.pc), None)
         from sheets import nome_intervalo
         if idx:
-            self.backend.escrever(self.central, [(f"{nome_intervalo(ABA_PCS)}!{c}{idx}", v) for c, v in zip("ABCD", linha)])
+            self.backend.escrever(self.central, [(f"{nome_intervalo(ABA_PCS)}!{c}{idx}", v) for c, v in zip("ABCDEFGH", linha)])
         else:
             self.backend.anexar_linhas(self.central, ABA_PCS, [linha])
         self.publicado_em = self.relogio()

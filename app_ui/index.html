@@ -112,6 +112,21 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--
 .selos{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .selo-op{font-size:12px;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--linha)}
 .selo-op.sel{background:var(--creme);color:#1b1b1b;border-color:var(--creme);font-weight:700}
+.pill.clicavel{cursor:pointer}
+header .pill,#abas button{white-space:nowrap}
+.pcs-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:16px}
+.pc-card{background:var(--card);border-radius:12px;padding:12px 14px;border-left:4px solid #0ca30c;font-size:12.5px;line-height:1.55}
+.pc-card.alerta{border-left-color:#e0b43c}.pc-card.ruim{border-left-color:#d03b3b}.pc-card.off{border-left-color:#6b6b6b;opacity:.75}
+.pc-card b{font-size:14px}.pc-card .linha{color:var(--suave)}.pc-card .ruim-txt{color:#ff8a80;font-weight:600}
+.pc-card button{margin-top:6px;font-size:11.5px;padding:4px 10px}
+.ativ-filtros{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 10px}
+.ativ-tab{width:100%;border-collapse:collapse;font-size:12.5px}
+.ativ-tab td{padding:6px 8px;border-bottom:1px solid var(--linha);vertical-align:top}
+.ativ-tab td.q{white-space:nowrap;color:var(--suave)}
+.tipo{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.t-NF_ENVIADA,.t-NF_DROPBOX{background:#0ca30c33;color:#7be07b}.t-TRATATIVA{background:#e0b43c33;color:#f3d27a}
+.t-EMAIL_RECEBIDO{background:#3c8ee033;color:#9cc7f5}.t-NOVA_SOLICITACAO{background:#d5bda133;color:var(--creme)}
+.t-OUTLOOK_FECHADO,.t-FALHA{background:#d03b3b44;color:#ff8a80}.t-OUTLOOK_ABERTO,.t-ATUALIZADO,.t-NOTA_UNICA{background:#8f7bd133;color:#c9bdf3}
 .compor-rodape{display:flex;align-items:center;gap:10px;padding:10px 18px;border-top:1px solid var(--linha);min-height:44px}
 .compor-rodape .res{font-size:13px;font-weight:600}
 /* Seletor de operador */
@@ -249,9 +264,11 @@ textarea{width:100%;min-height:54px;resize:vertical}
       <button data-vista="visao" class="sel">Visão geral</button>
       <button data-vista="fila">Solicitações</button>
       <button data-vista="hoteis">Hotéis</button>
+      <button data-vista="atividade">Atividade</button>
     </nav>
     <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
     <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
+    <span class="pill clicavel" id="pcs" data-vista="atividade" title="PCs da equipe"><span class="dot" id="pcs-dot"></span><span id="pcs-txt">PCs</span></span>
     <div class="esp"></div>
     <button class="creme" id="btn-enviar" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes">Enviar pendentes</button>
     <button id="btn-atualizar" title="Reler a planilha agora">⟳</button>
@@ -264,6 +281,7 @@ textarea{width:100%;min-height:54px;resize:vertical}
     </div>
   </header>
   <section class="vista" id="v-visao"><div class="rolagem" id="visao"></div></section>
+  <section class="vista oculta" id="v-atividade"><div class="rolagem" id="atividade"></div></section>
   <section class="vista oculta" id="v-hoteis">
     <div class="rolagem" id="hoteis"></div>
     <div class="detalhe" id="ficha-hotel"></div>
@@ -314,6 +332,18 @@ async function api(path, corpo){
 function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.className = "toast" + (erro ? " erro" : ""); t.style.display = "block";
   clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", erro ? 5000 : 2500); }
 
+// Cabeçalho: PCs da equipe — Outlook fechado ou conferente parado em algum PC acende o aviso
+function desenharPcsCabecalho(pcs) {
+  const on = pcs.filter(p => p.online);
+  const fechados = on.filter(p => p.outlook === "fechado"), parados = on.filter(p => p.conferencia_atrasada);
+  const nome = p => p.agente || p.pc;
+  let txt = `${on.length} PC${on.length === 1 ? "" : "s"} online`, cls = "on";
+  if (fechados.length) { txt = "Outlook fechado: " + fechados.map(nome).join(", "); cls = "off"; }
+  else if (parados.length) { txt = "conferência parada: " + parados.map(nome).join(", "); cls = "off"; }
+  $("pcs-dot").className = "dot " + cls; $("pcs-txt").textContent = txt;
+  $("pcs").title = pcs.map(p => `${nome(p)} (${p.pc}): ${p.online ? "online" : "desligado"} · Outlook ${p.outlook || "?"} · versão ${p.versao || "?"}`).join("\n");
+}
+
 async function carregar(){
   try {
     const j = await api("/api/estado?dias=" + $("dias").value);
@@ -331,6 +361,7 @@ async function carregar(){
     $("robo-dot").className = "dot " + (s.ligado ? "on" : "off");
     $("robo-txt").textContent = "robô " + (s.ligado ? "ligado" : "desligado") + (s.comando ? " · " + s.comando.toLowerCase() : "");
     $("robo").title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "");
+    desenharPcsCabecalho(j.pcs || []);
     desenhar();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
