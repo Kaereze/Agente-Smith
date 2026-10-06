@@ -273,7 +273,11 @@ def varrer_dropbox(indice, cfg, limite, vistos, textos):
             nf = ler_assunto_nf(os.path.splitext(e.name)[0])
             candidatas = indice.por_nome(nf[1]) if nf else set()
             if candidatas and so_na_nuvem(e.path):
-                continue   # não baixa: confere quando o arquivo estiver no PC (ou pelo e-mail enviado)
+                # não baixa o PDF: casa pelo nome do arquivo na pasta do agente
+                if indice.sub(candidatas).aplicar_nota_pelo_nome(e.path, nf, modificado, fonte):
+                    lidos += 1
+                vistos[e.path] = marca
+                continue
             if candidatas:   # só lê o PDF se o nome do arquivo casa com alguém aberto
                 lidos += 1
                 chave = f"{e.path}|{marca}"

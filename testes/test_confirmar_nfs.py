@@ -120,3 +120,18 @@ def test_nota_unica_pedida_no_formulario_tira_a_divisao():
     campos = {k: [("Nota Dividida", "Sim"), ("Descrição específica", "Se não der pra dividir, pode ser uma nota só")]}
     achados = c.pedidos_de_nota_unica(None, c._parciais(reg), campos)
     assert k in achados and "uma nota só" in achados[k][0] and achados[k][1] == "no formulário"
+
+
+def test_nota_so_na_nuvem_casa_pelo_nome_do_arquivo():
+    s1 = sol(data="2026-09-10")
+    s2 = sol(nome="Maria Souza Lima", email="outra@x.com", aba="B", data="2026-09-20")
+    reg = c.registro_da_central([s1, s2], {}, "2026-08-01")
+    ref = reg.aplicar_nota_pelo_nome("X:\\PC 1\\NF 900 - MARIA SOUZA LIMA - 1.pdf", ("900", "MARIA SOUZA LIMA"),
+                                     datetime.datetime(2026, 9, 22), "PC 1 - JOÃO")
+    assert ref == s2["chave"]    # mesmo nome nos dois: vale o pedido mais perto da data da nota
+    assert reg.aplicar_nota_pelo_nome("X:\\NF 901 - MARIA - 1.pdf", ("901", "MARIA"),
+                                      datetime.datetime(2026, 9, 22), "PC 1") is None   # 1 palavra não basta
+    assert reg.aplicar_nota_pelo_nome("X:\\NF 902 - ANA COSTA.pdf", ("902", "ANA COSTA"),
+                                      datetime.datetime(2026, 9, 22), "PC 1") is None
+    assert reg.aplicar_nota_pelo_nome("X:\\NF 903 - MARIA SOUZA LIMA.pdf", ("903", "MARIA SOUZA LIMA"),
+                                      datetime.datetime(2027, 1, 30), "PC 1") is None   # longe demais do pedido

@@ -472,6 +472,36 @@ class Registro:
         self._marcar_para_atualizar(ref)
         return ref
 
+    def aplicar_nota_pelo_nome(self, caminho, nf, data, fonte, dias_max=60):
+        """Nota da pasta do agente que está só na nuvem (lê-la baixaria o PDF): casa pelo NOME do arquivo.
+        Pedido do usuário (06/10/2026): "dentro das pastas deles tem todas NF emitidas por eles mesmos".
+        Vale quando o nome da nota e o do pedido contêm um ao outro (2+ palavras) e a nota foi salva até
+        `dias_max` dias depois do pedido; com mais de um pedido assim, o mais perto da data da nota."""
+        chave = "dropbox:" + caminho
+        if self.ja_processado(chave):
+            return None
+        alvo = _tokens(nf[1])
+        if len(alvo) < 2:
+            return None
+        dia = data.date()
+        casam = []
+        for ref, s in self.abertas().items():
+            if nf[0] in s.get("nfs", {}) or not s.get("data_pedido"):
+                continue
+            atraso = (dia - datetime.date.fromisoformat(s["data_pedido"])).days
+            if 0 <= atraso <= dias_max and any(alvo <= _tokens(n) or (len(_tokens(n)) >= 2 and _tokens(n) <= alvo)
+                                               for n in s.get("nomes", [])):
+                casam.append((atraso, ref))
+        if not casam:
+            return None
+        ref = min(casam)[1]
+        self.solicitacoes[ref]["nfs"][nf[0]] = {
+            "data": data.isoformat(timespec="seconds"), "assunto": os.path.basename(caminho), "entry_id": chave,
+            "prova": f"nome da nota na pasta do agente ({fonte}) bate com o pedido", "conferir": False,
+        }
+        self._marcar_para_atualizar(ref)
+        return ref
+
     def _marcar_para_atualizar(self, ref):
         codigo = self.solicitacoes[ref]["codigo"]
         if codigo in self.emails:
