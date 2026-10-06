@@ -292,7 +292,7 @@ async function abrirEnvioNF(chave) {
       <div class="soltar-txt">📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)</div>
       <div class="chips-anexo" id="nf-anexos"></div></div>
     ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
-      `<button class="sug ${a.forte ? "forte" : ""}" data-nf-sug="${i}" title="${a.forte ? "" : "Confira se é desta pessoa"}">📄 ${esc(a.nome)}${a.forte ? "" : " ⚠"}</button>`).join("")}</div>` : ""}
+      `<button class="sug forte" data-nf-sug="${i}" title="${esc(a.prova || "")}">📄 ${esc(a.nome)}</button>`).join("")}</div>` : ""}
     <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
       data-dica="${o.assinatura_com_mensagem ? "Escreva aqui só se quiser acrescentar algo — a mensagem padrão já vem na assinatura abaixo." : ""}"></div>
     ${o.selos.length ? `<div class="selo-previa"><img id="nf-selo-img" alt="Selo"></div>
@@ -320,7 +320,7 @@ async function abrirEnvioNF(chave) {
   $("nf-assunto").addEventListener("input", () => { envNF.assuntoAuto = !$("nf-assunto").value.trim(); validarEnvioNF(); });
   $("nf-para").addEventListener("input", validarEnvioNF);
   $("nf-ir").onclick = () => enviarNF();
-  if (o.sugestoes.length && o.sugestoes[0].forte) escolherSugestao(0);   // só quando o nome bate inteiro
+  if (o.sugestoes.length === 1) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada
   desenharAnexos();
 }
 

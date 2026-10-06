@@ -281,21 +281,69 @@ def listar_notas_dropbox(cfg, forcar=False):
     return _LISTAGEM["itens"]
 
 
-def sugestoes_dropbox(sol, cfg, limite=6):
-    """NFs das pastas do Dropbox cujo nome bate com o hóspede/tomador: melhor encaixe e mais novas primeiro."""
+_TEXTOS_SUGESTAO = {}   # (caminho, mtime) -> texto do PDF
+CANDIDATAS_SUGESTAO = 8
+JANELA_SUGESTAO_DIAS = (-3, 90)   # nota salva de 3 dias antes a 90 depois do pedido
+
+
+def _texto_da_nota_rapido(caminho, mtime):
+    """Texto do PDF (cópia temporária; sem OCR, que leva segundos por nota)."""
+    chave = (caminho, mtime)
+    if chave not in _TEXTOS_SUGESTAO:
+        import shutil
+        pasta = tempfile.mkdtemp(prefix="nf_sug_")
+        try:
+            copia = os.path.join(pasta, "nota" + os.path.splitext(caminho)[1].lower())
+            shutil.copyfile(caminho, copia)
+            if copia.endswith(".xml"):
+                texto = open(copia, encoding="utf-8", errors="replace").read()
+            else:
+                from pypdf import PdfReader
+                texto = "\n".join((p.extract_text() or "") for p in PdfReader(copia).pages[:3])
+        except Exception:
+            texto = ""
+        finally:
+            shutil.rmtree(pasta, ignore_errors=True)
+        _TEXTOS_SUGESTAO[chave] = texto
+    return _TEXTOS_SUGESTAO[chave]
+
+
+def sugestoes_dropbox(sol, cfg, limite=6, ler_texto=None):
+    """NFs do Dropbox que SÃO deste pedido (pedido do usuário, 06/10/2026: nada de "possível" nota).
+    O nome do arquivo escolhe as candidatas; fica só a que foi salva perto do pedido e cujo PDF confere
+    com ele (CPF/CNPJ do tomador, ou nome + datas/valor — a mesma conferência do robô). Nota escaneada,
+    sem texto, não aparece."""
+    import types
+    from controle_nf import conferir_conteudo, provas_da_solicitacao
+    ler_texto = ler_texto or _texto_da_nota_rapido
     raiz = raiz_dropbox(cfg)
-    nomes = [sol.get("nome", "")] + list(sol.get("nomes", []))
+    nomes = [n for n in [sol.get("nome", "")] + list(sol.get("nomes", [])) if n]
     alvos = [t for t in (_palavras(n) for n in nomes) if t]
     primeiros = {_primeira_palavra(n) for n in nomes} - {""}
-    achadas = []
+    try:
+        dia_pedido = datetime.date.fromisoformat(sol.get("data") or "")
+    except ValueError:
+        dia_pedido = None
+    candidatas = []
     for nome, caminho, mtime, nf in listar_notas_dropbox(cfg):
         nota = _nota(_palavras(nf[1]), alvos, primeiros)
-        if nota:
-            achadas.append({"nome": nome, "nf": nf[0], "modificado": mtime, "nota": nota, "forte": nota == 3,
+        if not nota:
+            continue
+        if dia_pedido:
+            atraso = (datetime.date.fromtimestamp(mtime) - dia_pedido).days
+            if not JANELA_SUGESTAO_DIAS[0] <= atraso <= JANELA_SUGESTAO_DIAS[1]:
+                continue
+        candidatas.append((nota, mtime, nome, caminho, nf))
+    candidatas.sort(key=lambda c: (-c[0], -c[1]))
+    alvo = {"nomes": nomes, "data_pedido": sol.get("data", ""),
+            **provas_da_solicitacao(types.SimpleNamespace(campos=sol.get("campos", [])))}
+    achadas = []
+    for nota, mtime, nome, caminho, nf in candidatas[:CANDIDATAS_SUGESTAO]:
+        resultado, prova = conferir_conteudo(alvo, ler_texto(caminho, mtime))
+        if resultado == "confere":
+            achadas.append({"nome": nome, "nf": nf[0], "forte": True, "nota": nota, "prova": prova,
+                            "modificado": datetime.datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M"),
                             "rel": os.path.relpath(caminho, raiz) if raiz else caminho})
-    achadas.sort(key=lambda a: (-a["nota"], -a["modificado"]))
-    for a in achadas:
-        a["modificado"] = datetime.datetime.fromtimestamp(a["modificado"]).strftime("%d/%m/%Y %H:%M")
     return achadas[:limite]
 
 

@@ -1,3 +1,4 @@
+import os
 import datetime
 import time
 
@@ -50,18 +51,31 @@ def test_assunto_e_destinatarios():
     assert en.destinatarios(SOL) == ["hospede@x.com", "financeiro@fh.com"]
 
 
-def test_sugestao_ignora_palavras_comuns(tmp_path, cfg):
+def test_sugestao_so_mostra_nota_que_confere_com_o_pedido(tmp_path, cfg):
+    """[06/10/2026] "não tenha nenhuma possível nota fiscal": só a que o PDF confirma."""
+    import datetime as dt
+    import time as tm
     for nome in ("NF 1561 - MAICON FERNANDO DOS SANTOS - 1.pdf", "NF 900 - CHARLES MACARIO - 2.pdf",
                  "NF 901 - CHARLES MACARIO DOS SANTOS FILHO - 3.pdf", "NF 4371 - JUNIOR SANTOS - 4.pdf",
-                 "NF 375 - CHARLES - 5.pdf"):
+                 "NF 375 - CHARLES - 5.pdf", "NF 902 - CHARLES MACARIO DOS SANTOS FILHO - 6.pdf"):
         (tmp_path / nome).write_bytes(b"x")
-    sol = dict(SOL, nome="Charles Macario dos Santos Filho", nomes=[])
-    en.listar_notas_dropbox(dict(cfg, dropbox_notas={"pastas": [str(tmp_path)]}), forcar=True)
-    sug = {a["nome"]: a for a in en.sugestoes_dropbox(sol, dict(cfg, dropbox_notas={"pastas": [str(tmp_path)]}))}
-    assert "NF 1561 - MAICON FERNANDO DOS SANTOS - 1.pdf" not in sug
-    assert "NF 4371 - JUNIOR SANTOS - 4.pdf" not in sug               # só "SANTOS" não basta
-    assert sug["NF 901 - CHARLES MACARIO DOS SANTOS FILHO - 3.pdf"]["forte"]
-    assert not sug["NF 375 - CHARLES - 5.pdf"]["forte"]                # primeiro nome: aparece, mas sem pré-seleção
+    velho = tm.mktime(dt.datetime(2025, 1, 10).timetuple())
+    os.utime(tmp_path / "NF 902 - CHARLES MACARIO DOS SANTOS FILHO - 6.pdf", (velho, velho))   # estadia antiga
+    sol = dict(SOL, nome="Charles Macario dos Santos Filho", nomes=[], data=dt.date.today().isoformat(),
+               campos=[("CPF Tomador", "012.345.678-90")])
+    corpo = (" PREFEITURA MUNICIPAL NOTA FISCAL DE SERVIÇOS ELETRÔNICA PRESTADOR REDE ANDRADE HOTEL LTDA "
+             "DISCRIMINAÇÃO DOS SERVIÇOS HOSPEDAGEM DIÁRIAS VALOR TOTAL DA NOTA ") * 2
+    textos = {"3.pdf": "TOMADOR CHARLES MACARIO DOS SANTOS FILHO CPF 012.345.678-90" + corpo,
+              "2.pdf": "TOMADOR CHARLES MACARIO CPF 999.888.777-66" + corpo, "6.pdf": "CPF 012.345.678-90" + corpo}
+    lidos = []
+    def ler(caminho, mtime):
+        lidos.append(os.path.basename(caminho))
+        return next((v for k, v in textos.items() if caminho.endswith(k)), "")
+    c = dict(cfg, dropbox_notas={"pastas": [str(tmp_path)]})
+    en.listar_notas_dropbox(c, forcar=True)
+    sug = [a["nome"] for a in en.sugestoes_dropbox(sol, c, ler_texto=ler)]
+    assert sug == ["NF 901 - CHARLES MACARIO DOS SANTOS FILHO - 3.pdf"]
+    assert not any("MAICON" in n or "JUNIOR" in n or "- 6.pdf" in n for n in lidos)   # nem abre essas
 
 
 def test_anexo_em_partes_volta_igual():
