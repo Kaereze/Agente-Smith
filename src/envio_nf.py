@@ -51,6 +51,32 @@ def mensagem_padrao(cfg):
     return (cfg.get("envio_nf") or {}).get("mensagem") or MENSAGEM_PADRAO
 
 
+def versao_do_codigo():
+    """Commit curto em que este PC está, pra dar pra ver quem ficou pra trás.
+
+    Lê o .git direto, em vez de chamar o git: a tarefa roda sem console e nem todo PC
+    tem o executável no PATH. Qualquer falha devolve "", que só deixa a coluna vazia.
+    """
+    git = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".git")
+    try:
+        with open(os.path.join(git, "HEAD"), encoding="utf-8") as f:
+            cabeca = f.read().strip()
+        if not cabeca.startswith("ref:"):
+            return cabeca[:7]                      # HEAD solto, sem branch
+        ref = cabeca[4:].strip()
+        solto = os.path.join(git, *ref.split("/"))
+        if os.path.exists(solto):
+            with open(solto, encoding="utf-8") as f:
+                return f.read().strip()[:7]
+        with open(os.path.join(git, "packed-refs"), encoding="utf-8") as f:
+            for linha in f:                        # ref empacotada depois de um gc
+                if linha.rstrip().endswith(" " + ref):
+                    return linha.split()[0][:7]
+    except (OSError, IndexError, UnicodeDecodeError):
+        pass
+    return ""
+
+
 def mensagem_html(texto):
     """Texto digitado -> HTML do e-mail: quebras de linha e links clicáveis."""
     from html import escape

@@ -1106,39 +1106,58 @@ Get-Content logs\solicitacoes_nf.log -Tail 40 -Encoding UTF8
 
 ## 20. Pendências
 
-Situação em **03/10/2026**.
+Situação em **06/10/2026**.
 
-### Para os outros PCs funcionarem igual ao do João
+### Já resolvido (era pendência em 03/10)
 
-1. **Subir o código para o GitHub.** O PC do João tem commits que **ainda não estão no GitHub**.
-   Rode `git push` antes de instalar ou atualizar qualquer PC pelo GitHub.
-2. **Instalar ou atualizar o Painel novo nos outros PCs** (Clara, Cristian, Bernardo) com o
-   `INSTALAR_OU_ATUALIZAR.bat`. Hoje **só o PC do João** aparece na aba `PCs_Painel`. Por isso:
-   - os outros PCs ainda não têm o Painel atualizado;
-   - **não dá para enviar NF pela caixa de um hotel que está em outro PC** (ex.: Novo Vernon, que está em
-     outro PC). O Painel oferece uma caixa deste PC no lugar.
-3. **Repositório privado.** Decidir como os outros PCs pegam o código:
-   - pelo **pendrive** (seção 5.2, não precisa de nada no GitHub);
-   - ou **convidar cada operador como colaborador** (seção 5.3).
-4. **Caminho do Dropbox em cada PC.** O `config.json` já usa `%USERPROFILE%`, então serve para qualquer
-   usuário do Windows. Mas a parte `Guilherme Heisler\FINANCEIRO ANDRADE HOTEIS\...` precisa ser **igual** no
-   Dropbox de cada PC. Faça o teste 7 da seção 10. Se num PC for diferente, use o `config.local.json` (seção 8.3).
-5. **Outlook clássico e uma assinatura por caixa** em cada PC (seção 4). O e-mail da NF sai com a assinatura do PC que envia.
-6. **WebView2 nos PCs com Windows 10** (seção 4, item 10). Sem ele a janela do Painel não abre.
+- **Código no GitHub.** Está tudo lá. Os quatro operadores trabalham por **branch com o nome de cada um**
+  (`clara`, `Bernardo`, `Christian`), e o que é aprovado entra na `main`. Não precisou mais de pendrive.
+- **Os quatro PCs com o Painel ligado.** João, Clara, Cristian e Bernardo aparecem na aba `PCs_Painel`,
+  cada um publicando as próprias caixas. Com isso **já dá para enviar NF pela caixa de um hotel que está
+  em outro PC**, que era a maior limitação de antes.
+- **Identidade do PC.** O `estado\maquina.json` passou a gravar o **nome do PC**. Um arquivo copiado de
+  outra máquina não vale mais, e o PC se reconhece sozinho pelas caixas do Outlook (seção 6.10).
+- **Classificação dos e-mails.** O `src\organizador_emails.py` lê a caixa de entrada e marca cada
+  solicitação com as categorias do Outlook (`⏳ NF pendente`, `✅ NF concluído`, `💬 Tratativa`,
+  `Nota dividida`, `⚠️ Faltando dados`, `🔁 Duplicada`, `📨 Fora do padrão`). Ele **não cria pasta
+  nenhuma** e preserva as categorias que a equipe marcou à mão. As caixas saem do cruzamento entre o
+  Outlook do PC e o `Cadastro_Hoteis`, então o mesmo arquivo roda em qualquer máquina.
 
-### Sincronia automática (ainda não existe; proposta)
+### Ainda em aberto
 
-7. Hoje cada PC só fica na versão nova quando alguém roda o `INSTALAR_OU_ATUALIZAR.bat` nele (seção 12).
-   Nada avisa se um PC ficou para trás. Duas melhorias possíveis:
-   - **Aviso de PC desatualizado:** cada Painel grava a versão do código na aba `PCs_Painel`, e a faixa de
-     saúde do Painel mostra "PC do Cristian desatualizado".
-   - **Atualização automática:** uma tarefa diária em cada PC pega a versão nova do GitHub e reinicia o
-     conferente e o Painel sozinha. Exige que todos os PCs tenham acesso ao GitHub (pendência 3).
+1. **Outlook clássico e uma assinatura por caixa** em cada PC (seção 4). O e-mail da NF sai com a
+   assinatura do PC que envia. **Confira em cada máquina**: não dá para verificar isso de fora.
+2. **WebView2 nos PCs com Windows 10** (seção 4, item 10). Sem ele a janela do Painel não abre.
+3. **Caminho do Dropbox em cada PC.** O `config.json` usa `%USERPROFILE%`, então serve para qualquer
+   usuário do Windows, mas a parte `Guilherme Heisler\FINANCEIRO ANDRADE HOTEIS\...` precisa ser igual
+   em todos. No PC da Clara as quatro pastas abrem. Faça o teste 7 da seção 10 nos outros.
+4. **Três caixas do Outlook fora do `Cadastro_Hoteis`:**
 
-### Outras pendências já conhecidas
+   | Caixa | Está no Outlook de | Situação |
+   |---|---|---|
+   | `notafiscal@redeandradepousadajeri.com.br` | João | O cadastro tem `JERI` e `VILA JERI`, com outros endereços |
+   | `notafiscal@redeandradepalace.com.br` | Cristian | Não existe no cadastro |
+   | `notafiscal@redeandradecampogrande.com.br` | Bernardo | Não existe no cadastro |
 
-8. Há um e-mail de teste **"[TESTE] NF 0000 - TESTE DO PAINEL"** na caixa do Ondina, que pode ser apagado.
-9. Recomendado apagar o `credentials.json` da pasta do Dropbox `RELATORIOS\Mail Analitycs`
+   **Não há formulário ativo para nenhuma das três** — nenhuma solicitação de hóspede chega por elas,
+   então nada está sendo perdido hoje. Decida se é hotel novo que falta cadastrar, ou caixa antiga que
+   pode sair do Outlook. Enquanto estiverem fora do cadastro, o robô não envia o consolidado para elas
+   e o organizador não classifica os e-mails delas.
+
+5. **Sincronia automática** (proposta, não existe). Hoje cada PC só fica na versão nova quando alguém
+   atualiza. Nada avisa se um PC ficou para trás. Duas melhorias possíveis:
+   - **Aviso de PC desatualizado:** cada Painel grava a versão do código na aba `PCs_Painel`, e a faixa
+     de saúde mostra "PC do Cristian desatualizado".
+   - **Atualização automática:** uma tarefa diária pega a versão nova do GitHub e reinicia o conferente
+     e o Painel sozinha.
+6. **PC que reinicia e fica na tela de login para de trabalhar.** As tarefas rodam como usuário logado
+   (exigência do Outlook), e não há logon automático. Enquanto ninguém entra na conta, o conferente não
+   marca NF e o Painel some da aba `PCs_Painel` — e aí os outros PCs não conseguem enviar NF por aquelas
+   caixas. **Bloquear a tela com `Win+L` não causa isso**: a sessão continua e tudo segue rodando. O que
+   derruba é sair da conta, desligar ou reiniciar. No PC da Clara o Windows registrou 6 desligamentos
+   inesperados entre agosto e outubro de 2026, então vale combinar quem religa cada máquina.
+7. Há um e-mail de teste **"[TESTE] NF 0000 - TESTE DO PAINEL"** na caixa do Ondina, que pode ser apagado.
+8. Recomendado apagar o `credentials.json` da pasta do Dropbox `RELATORIOS\Mail Analitycs`
    (o robô não mexe nessa pasta).
-10. **Migrar o Mail Analytics para dentro do Painel:** planejado, ainda não começou. Até lá o Painel só
-    **lê** o Fiscal Intelligence. A pasta `Desktop\Mail Analitycs` nunca é alterada pelo robô.
+9. **Migrar o Mail Analytics para dentro do Painel:** planejado, ainda não começou. Até lá o Painel só
+   **lê** o Fiscal Intelligence. A pasta `Desktop\Mail Analitycs` nunca é alterada pelo robô.

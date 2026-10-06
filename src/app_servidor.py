@@ -103,7 +103,7 @@ class Estado:
         self.canceladas, self.canceladas_lidas, self.lendo_canceladas = [], -1e9, False
         self.cache_salvo = -1e9
         # rede de PCs: Outlook, versão, pedidos novos, comandos e atualização automática
-        self.versao = atualizador.versao()
+        self.versao = envio_nf.versao_do_codigo() or atualizador.versao()   # lê o .git: nem todo PC tem git no PATH
         self.outlook, self.chaves_vistas, self.versao_registrada = None, None, False
         self.atualizacao = {"verificado_em": "", "motivo": "", "atras": 0}
         self.proxima_verificacao = time.monotonic() + 120
