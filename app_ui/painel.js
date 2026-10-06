@@ -295,11 +295,18 @@ async function abrirEnvioNF(chave) {
       `<button class="sug ${a.forte ? "forte" : ""}" data-nf-sug="${i}" title="${a.forte ? "" : "Confira se é desta pessoa"}">📄 ${esc(a.nome)}${a.forte ? "" : " ⚠"}</button>`).join("")}</div>` : ""}
     <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
       data-dica="${o.assinatura_com_mensagem ? "Escreva aqui só se quiser acrescentar algo — a mensagem padrão já vem na assinatura abaixo." : ""}"></div>
-    ${o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
+    ${o.selos.length ? `<div class="selo-previa"><img id="nf-selo-img" alt="Selo"></div>
+      <div class="selos"><span class="dica">Assinatura:</span>${o.selos.map(s =>
+        `<button class="selo-op" data-nf-selo="${esc(s.id)}">${esc(s.nome)}</button>`).join("")}</div>`
+    : o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
       <div class="dica">Mensagem padrão e selo da caixa ${esc(o.conta_de)}, como no Outlook (prévia deste PC; sai a do PC que enviar)</div>`
       : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}`;
   $("nf-msg").innerText = o.corpo;
-  if (o.assinatura) {
+  if (o.selos.length) {
+    let salvo = null;
+    try { salvo = localStorage.getItem("selo_nf"); } catch (e) { }
+    escolherSelo(o.selos.some(s => s.id === salvo) ? salvo : o.selo || o.selos[0].id);
+  } else if (o.assinatura) {
     const ifr = $("nf-ass");
     ifr.srcdoc = `<html><body style="margin:0;background:#fff">${o.assinatura}</body></html>`;
     ifr.onload = () => { try { ifr.style.height = (ifr.contentDocument.body.scrollHeight + 8) + "px"; } catch (e) { ifr.style.height = "230px"; } };
@@ -315,6 +322,13 @@ async function abrirEnvioNF(chave) {
   $("nf-ir").onclick = () => enviarNF();
   if (o.sugestoes.length && o.sugestoes[0].forte) escolherSugestao(0);   // só quando o nome bate inteiro
   desenharAnexos();
+}
+
+function escolherSelo(id) {
+  envNF.selo = id;
+  $("nf-selo-img").src = `/assinaturas/${encodeURIComponent(id)}.png`;
+  document.querySelectorAll("[data-nf-selo]").forEach(b => b.classList.toggle("sel", b.dataset.nfSelo === id));
+  try { localStorage.setItem("selo_nf", id); } catch (e) { }
 }
 
 function adicionarArquivos(lista) {
@@ -358,7 +372,7 @@ async function enviarNF(contaForcada) {
   const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
   const r = await api("/api/envio_nf", { chave: envNF.chave, para: $("nf-para").value.trim(), cc: $("nf-cc").value.trim(),
                                           assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
-                                          conta_de: conta || undefined });
+                                          conta_de: conta || undefined, selo: envNF.selo || undefined });
   if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo || r.erro, r.contas_locais); }
   $("nf-anel").className = "anel"; $("nf-anel").textContent = ""; $("nf-anel").style.visibility = "visible";
   $("nf-barra").style.visibility = "visible"; $("nf-barra").classList.remove("fim");
@@ -390,11 +404,12 @@ function mostrarFalhaNF(motivo, contas) {
 }
 
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-envnf],[data-nf-sug],[data-tirar]");
+  const b = e.target.closest("[data-envnf],[data-nf-sug],[data-tirar],[data-nf-selo]");
   if (!b) return;
   if (b.dataset.envnf) return abrirEnvioNF(b.dataset.envnf);
   if (!envNF) return;
   if (b.dataset.nfSug !== undefined) return escolherSugestao(Number(b.dataset.nfSug));
+  if (b.dataset.nfSelo) return escolherSelo(b.dataset.nfSelo);
   if (b.dataset.tirar !== undefined) { e.stopPropagation(); envNF.anexos.splice(Number(b.dataset.tirar), 1); desenharAnexos(); }
 });
 // arquivo solto fora da área de anexo não pode abrir no lugar do Painel

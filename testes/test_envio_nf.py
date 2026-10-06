@@ -27,7 +27,7 @@ def _ler(planilha):
 
 
 def _servico(planilha, cfg, pc, contas, enviados, relogio, registradas=None, falhar=False):
-    def enviar(conta_de, para, cc, assunto, mensagem, anexos, agente=""):
+    def enviar(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo=""):
         if falhar:
             raise RuntimeError("Outlook fechado")
         enviados.append((pc, conta_de, para, assunto, b"".join(open(a, "rb").read() for a in anexos)))
@@ -204,3 +204,17 @@ def test_assinatura_com_a_mensagem_padrao_nao_repete_o_texto():
 def test_sem_assinatura_a_mensagem_padrao_entra():
     html = en.corpo_do_email("", "")
     assert "Prezado(a) hóspede" in html and 'href="https://forms.gle/LLkYN3hv2da6svhj7"' in html
+
+
+def test_selos_da_pasta_na_ordem_da_equipe_e_do_operador():
+    lista = [s["id"] for s in en.selos()]
+    assert lista[:4] == ["joao", "cristian", "clara", "bernardo"]
+    assert en.selos()[0]["nome"] == "João"
+    assert en.selo_do_agente("Cristian") == "cristian" and en.selo_do_agente("Fulano") == "joao"
+    assert en.caminho_selo("clara") and en.caminho_selo("../config") is None and en.caminho_selo("") is None
+
+
+def test_corpo_com_selo_leva_a_mensagem_padrao_e_a_imagem():
+    html = en.corpo_com_selo("")
+    assert "Prezado(a) hóspede" in html and "Atenciosamente," in html and f'cid:{en.CID_SELO}' in html
+    assert "Segue também o XML" in en.corpo_com_selo("Segue também o XML")

@@ -149,6 +149,48 @@ def corpo_do_email(mensagem, html_assinatura):
 CORPO_PADRAO = MENSAGEM_PADRAO
 
 
+# ---------- selos pré-salvos (app_ui/assinaturas/<nome>.png) ----------
+# Pedido do usuário (06/10/2026): a mensagem é sempre a mesma, só muda o selo de quem envia.
+# Trocar/incluir um selo = pôr o PNG na pasta (o nome do arquivo é o do operador).
+PASTA_SELOS = Path(__file__).resolve().parent.parent / "app_ui" / "assinaturas"
+NOMES_SELOS = {"joao": "João"}
+ORDEM_SELOS = ["joao", "cristian", "clara", "bernardo"]
+CID_SELO = "selo_nf"
+LARGURA_SELO = 460
+
+
+def selos():
+    """[{"id": "joao", "nome": "João"}] dos PNGs da pasta, na ordem da equipe."""
+    try:
+        ids = [p.stem.lower() for p in PASTA_SELOS.glob("*.png")]
+    except OSError:
+        return []
+    ids.sort(key=lambda i: (ORDEM_SELOS.index(i) if i in ORDEM_SELOS else 99, i))
+    return [{"id": i, "nome": NOMES_SELOS.get(i, i.title())} for i in ids]
+
+
+def caminho_selo(selo_id):
+    if not selo_id or not str(selo_id).isalnum():
+        return None
+    caminho = PASTA_SELOS / f"{str(selo_id).lower()}.png"
+    return caminho if caminho.exists() else None
+
+
+def selo_do_agente(agente):
+    """Selo do operador deste PC ("João" -> "joao"), senão o primeiro."""
+    from tratamento import normalizar
+    primeiro = normalizar(agente).split()[0] if normalizar(agente) else ""
+    lista = selos()
+    return next((s["id"] for s in lista if s["id"] == primeiro), lista[0]["id"] if lista else "")
+
+
+def corpo_com_selo(mensagem):
+    """Mensagem (padrão quando vazia, termina em "Atenciosamente,") + o selo embutido por cid."""
+    texto = (mensagem or "").strip() or MENSAGEM_PADRAO
+    return (f'<html><body>{mensagem_html(texto)}<br>'
+            f'<img src="cid:{CID_SELO}" width="{LARGURA_SELO}" alt="Andrade Hotéis"></body></html>')
+
+
 def agora():
     return datetime.datetime.now()
 
@@ -326,9 +368,9 @@ def contas_do_outlook():
 PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
 
 
-def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""):
-    """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + assinatura da caixa (imagens
-    embutidas, como o Outlook faz) e os anexos. Levanta erro com mensagem legível."""
+def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo=""):
+    """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
+    a assinatura da caixa no Outlook), imagens embutidas, e os anexos. Levanta erro legível."""
     import pythoncom
     import win32com.client
     pythoncom.CoInitialize()
@@ -343,10 +385,15 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
         mail.CC = cc
     mail.Subject = assunto
     html_assinatura, imagens = "", []
-    caminho_ass = achar_assinatura(conta_de, agente)
-    if caminho_ass:
-        html_assinatura, imagens = assinatura_html(caminho_ass)
-    mail.HTMLBody = corpo_do_email(mensagem, html_assinatura)
+    arquivo_selo = caminho_selo(selo)
+    if arquivo_selo:
+        mail.HTMLBody = corpo_com_selo(mensagem)
+        imagens = [(arquivo_selo, CID_SELO)]
+    else:
+        caminho_ass = achar_assinatura(conta_de, agente)
+        if caminho_ass:
+            html_assinatura, imagens = assinatura_html(caminho_ass)
+        mail.HTMLBody = corpo_do_email(mensagem, html_assinatura)
     for arquivo, cid in imagens:
         anexo_img = mail.Attachments.Add(str(arquivo))
         anexo_img.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, cid)
@@ -375,11 +422,11 @@ def numeros_de_nf(assunto, anexos):
     return numeros
 
 
-def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem):
+def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem, selo=""):
     """anexos: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "planilha"|"local", "nome", ...}]"""
     return {"aba": sol["aba"], "carimbo": sol["carimbo"], "email": sol["email"], "hotel": sol["hotel"],
             "nome": sol["nome"], "para": para, "cc": cc, "assunto": assunto, "conta_de": conta_de,
-            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem}
+            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem, "selo": selo}
 
 
 def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
@@ -466,7 +513,7 @@ class ServicoEnvio:
         return None, (f"Nenhum PC ligado agora tem a caixa {conta_de} no Outlook (o Painel do PC dela precisa"
                       f" estar aberto/rodando).")
 
-    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc=""):
+    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo=""):
         """anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "arquivo", "nome", "conteudo": bytes}]"""
         destino, motivo = self.destino_para(conta_de)
         if not destino:
@@ -489,7 +536,7 @@ class ServicoEnvio:
                 anexos.append({"tipo": "planilha", "nome": a["nome"]})
         if partes:
             self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
-        pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem or mensagem_padrao(self.cfg))
+        pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem or mensagem_padrao(self.cfg), selo)
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
@@ -521,7 +568,8 @@ class ServicoEnvio:
         try:
             linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
             arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
-            self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos, agente=self.agente)
+            self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
+                        agente=self.agente, selo=p.get("selo", ""))
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")

@@ -162,11 +162,13 @@ class Estado:
             logger.exception("prévia da assinatura")
             assinatura = ""
         com_mensagem = envio_nf.assinatura_tem_mensagem(assinatura)
+        selos = envio_nf.selos()
         return {"para": envio_nf.destinatarios(sol), "conta_de": conta, "destino": destino, "motivo": motivo,
                 "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
                 "nome": sol["nome"], "hotel": sol["hotel"],
-                "corpo": "" if com_mensagem else envio_nf.mensagem_padrao(self.cfg),
-                "assinatura": assinatura, "assinatura_com_mensagem": com_mensagem}
+                "corpo": envio_nf.mensagem_padrao(self.cfg) if selos or not com_mensagem else "",
+                "assinatura": assinatura, "assinatura_com_mensagem": com_mensagem and not selos,
+                "selos": selos, "selo": envio_nf.selo_do_agente(nome_do_agente())}
 
     def pedir_envio(self, corpo, quem):
         sol = next((s for s in self.solicitacoes if s["chave"] == corpo.get("chave")), None)
@@ -187,7 +189,9 @@ class Estado:
         if not anexos:
             raise ValueError("anexe a nota fiscal")
         cc = ";".join(e.strip() for e in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in e)
-        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc)
+        selo = str(corpo.get("selo") or "")
+        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
+                                   selo if envio_nf.caminho_selo(selo) else "")
 
     def situacao_envio(self, id_envio):
         local = self.envio_nf.locais.get(id_envio)
@@ -371,6 +375,15 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 corpo = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(corpo)))
+                self.end_headers()
+                return self.wfile.write(corpo)
+            selo = re.fullmatch(r"/assinaturas/([a-z0-9]+)\.png", url.path)
+            if selo and envio_nf.caminho_selo(selo.group(1)):
+                corpo = envio_nf.caminho_selo(selo.group(1)).read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Cache-Control", "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)
