@@ -43,6 +43,9 @@ CAMINHO_VISTOS = PASTA_ESTADO / "confirmar_nfs.json"
 CAMINHO_STATUS = PASTA_ESTADO / "confirmar_status.json"   # última volta (o Painel publica pros outros PCs)
 RECEBIDOS_DIAS = 2
 MAX_ATIVIDADES_POR_TIPO = 25   # acima disso vira uma linha de resumo (ex.: conferência do ano)
+# Sobe quando a regra muda e e-mails já vistos precisam ser lidos de novo: na 1ª volta depois de atualizar,
+# cada PC relê os enviados sozinho. 2 = tratativas e NF anexada em assunto fora do padrão (07/10/2026).
+VERSAO_REGRAS = 2
 CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
 AGENTE = "Robô"
 PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
@@ -381,6 +384,9 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         guardado = {}
     vistos_email, vistos_dropbox = set(guardado.get("emails", [])), guardado.get("dropbox", {})
     vistos_recebidos = set(guardado.get("recebidos", []))
+    if guardado.get("versao_regras", 1) < VERSAO_REGRAS:
+        logger.info(f"🔁 Regras novas (v{VERSAO_REGRAS}): relendo os e-mails já vistos uma vez.")
+        rever = True
     if rever:
         vistos_email, vistos_dropbox = set(), {}
     recebidos = []
@@ -455,7 +461,7 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         if linhas:
             backend.anexar_linhas(cfg["planilha_central_id"], dados.ABA_TRATAMENTO, linhas)
         atividade.registrar(backend, cfg["planilha_central_id"], atividades)
-        salvar_json(CAMINHO_VISTOS, {"emails": sorted(vistos_email),
+        salvar_json(CAMINHO_VISTOS, {"versao_regras": VERSAO_REGRAS, "emails": sorted(vistos_email),
                                      "dropbox": {p: m for p, m in vistos_dropbox.items() if m >= corte},
                                      "recebidos": sorted(vistos_recebidos)[-20000:]})
         salvar_json(CAMINHO_STATUS, {"quando": agora.isoformat(timespec="seconds"),

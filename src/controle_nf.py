@@ -380,6 +380,13 @@ class Registro:
         eh_nf = nf is not None and tem_anexo_nf(envio["anexos"], extensoes)
         registro_envio = {"data": envio["data"].isoformat(timespec="seconds"), "assunto": envio["assunto"],
                           "entry_id": envio["entry_id"]}
+        if not eh_nf and por_email:
+            # NF anexada num e-mail de assunto fora do padrão ("ENC: Solicitação NF - Luxor" com
+            # "NF 6481 - DANILO COSTA VIEIRA.pdf"). Só conclui se o nome do PDF for de quem pediu ou
+            # o conteúdo conferir: encaminhamento costuma levar a NF de OUTRA pessoa.
+            ref = self._nf_do_anexo(envio, abertas, por_email, ler_texto, registro_envio)
+            if ref:
+                return ref, "nf"
 
         if eh_nf and por_email:
             # Pedido do usuário (05/10/2026): "se o email estiver com o anexo da nota pode concluir".
@@ -444,6 +451,29 @@ class Registro:
             self._marcar_para_atualizar(ref)
             return ref, "tratativa"
         return None
+
+    def _nf_do_anexo(self, envio, abertas, por_email, ler_texto, registro_envio):
+        anexos_nf = [(a, ler_assunto_nf(os.path.splitext(str(a))[0])) for a in envio["anexos"]
+                     if str(a).lower().endswith((".pdf", ".xml"))]
+        anexos_nf = [(a, nf) for a, nf in anexos_nf if nf]
+        if not anexos_nf:
+            return None
+        ordem = lambda r: (abertas[r].get("data_pedido", ""), r)
+        pelo_nome = [r for r in por_email if any(nome_parecido(nf[1], abertas[r].get("nomes", [])) for _, nf in anexos_nf)]
+        prova = "NF anexada (nome do PDF confere) enviada ao e-mail do pedido"
+        if pelo_nome:
+            ref = min(pelo_nome, key=ordem)
+        else:
+            texto = ler_texto() if ler_texto else ""
+            conferem = [r for r in por_email if texto and conferir_conteudo(abertas[r], texto)[0] == "confere"]
+            if not conferem:
+                return None
+            ref = min(conferem, key=ordem)
+            prova = f"{conferir_conteudo(abertas[ref], texto)[1]} · NF anexada enviada ao e-mail do pedido"
+        for numero in numeros_do_envio(anexos_nf[0][1][0], [a for a, _ in anexos_nf]):
+            self.solicitacoes[ref]["nfs"].setdefault(numero, {**registro_envio, "prova": prova, "conferir": False})
+        self._marcar_para_atualizar(ref)
+        return ref
 
     def aplicar_nota_dropbox(self, caminho, nf, data, ler_texto, fonte):
         chave = "dropbox:" + caminho

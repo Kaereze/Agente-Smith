@@ -209,3 +209,18 @@ def test_pediu_so_consumo_e_a_nota_e_de_diaria_e_estacionamento():
            "servicos": ["consumo"]}
     texto = ("NOTA FISCAL " * 20) + " CNPJ 12.345.678/0001-90 " + BLOCO_1202
     assert conferir_conteudo(sol, texto)[0] == "nao_confere"
+
+
+def test_nf_anexada_com_assunto_fora_do_padrao_so_conclui_se_for_de_quem_pediu():
+    """Caso real (07/10/2026): "ENC: Solicitação NF - Luxor" com "NF 6481 - DANILO COSTA VIEIRA.pdf" é dele;
+    "ENC: Solicitação NF - São Francisco" com "NF 582 - WESLEY KORDIAK.pdf" num pedido da Regiane não é."""
+    r = _registro(_sol([], nomes=("Danilo Costa Vieira",)))
+    envio = {**_envio(), "assunto": "ENC: Solicitação NF - Luxor - Danilo Costa",
+             "anexos": ["NF 6481 - DANILO COSTA VIEIRA - 96187.pdf", "image001.png"]}
+    assert r.aplicar_envio(envio, ["pdf"]) == ("NF-A-01", "nf")
+    assert list(r.solicitacoes["NF-A-01"]["nfs"]) == ["6481"]
+    r2 = _registro(_sol([], nomes=("Regiane Cristina de Oliveira",)))
+    outro = {**_envio(), "assunto": "ENC: Solicitação NF - São Francisco - Regiane",
+             "anexos": ["NF 582 - WESLEY KORDIAK - 59767.pdf"]}
+    assert r2.aplicar_envio(outro, ["pdf"], ler_texto=lambda: "") == ("NF-A-01", "tratativa")
+    assert r2.solicitacoes["NF-A-01"]["nfs"] == {}
