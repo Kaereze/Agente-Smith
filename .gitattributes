@@ -1,0 +1,3 @@
+# .bat com final de linha do Windows em todo PC (cmd erra os rotulos com LF)
+*.bat text eol=crlf
+*.cmd text eol=crlf

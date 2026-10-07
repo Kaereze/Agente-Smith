@@ -817,6 +817,21 @@ Manda para o GitHub. Se pedir login, entre com a conta Kaereze.
 5. Nos passos 7 a 9 ele **reinicia o conferente e o Painel** já na versão nova.
 6. Confira o `Versao: xxxxxxx` que ele mostra: **tem que ser o mesmo do seu commit**.
 
+### Atualização rápida: `ATUALIZAR_PAINEL.bat` (só código, PC já instalado)
+
+Para o dia a dia, depois do push. Duplo clique em **`ATUALIZAR_PAINEL.bat`** (na pasta `Solicitacoes NF`). Ele:
+
+1. acha a pasta do projeto sozinho (funciona até copiado para outro lugar, como a Área de Trabalho);
+2. baixa a `main` do GitHub e aplica neste PC, mesmo que o PC esteja na branch do operador;
+3. confere as bibliotecas do `.venv` (`pip install -r requirements.txt`);
+4. reinicia o conferente e o Painel (`Automacoeseiniciar_servicos.ps1`) e espera o Painel responder;
+5. mostra `PRONTO. Versao neste PC: xxxxxxx (GitHub: xxxxxxx)`: os dois números têm que ser iguais.
+
+Ele **nunca apaga** o que foi alterado à mão no PC: se a versão nova mexer no mesmo arquivo, para, lista os arquivos
+e não aplica nada. Pelo Remote Control, rode `ATUALIZAR_PAINEL.bat --sem-pausa` (não espera tecla no fim).
+O resultado fica em `logstualizacao.log`. Se faltar Git, `.venv` ou as tarefas, ele manda rodar o
+`INSTALAR_OU_ATUALIZAR.bat` (instalação completa).
+
 ### Atualizar pelo pendrive em vez do GitHub
 
 1. Depois do commit, rode `Bat\gerar_pacote_pendrive.bat` no PC onde alterou. Ele atualiza o pendrive.

@@ -64,5 +64,5 @@ Passo a passo completo (instalar, conferir, manter todos os PCs na mesma versão
 pendências): **[INSTALACAO_E_PENDENCIAS.md](INSTALACAO_E_PENDENCIAS.md)**.
 
 Resumo: Outlook clássico aberto → duplo clique em **`INSTALAR_OU_ATUALIZAR.bat`** (do pendrive gerado por
-`Bat\gerar_pacote_pendrive.bat` ou de um `git clone`) → cola a chave do Google se pedir. O mesmo `.bat`
-atualiza o PC depois de cada mudança.
+`Bat\gerar_pacote_pendrive.bat` ou de um `git clone`) → cola a chave do Google se pedir. Depois de cada
+mudança, **`ATUALIZAR_PAINEL.bat`** baixa a versão do GitHub e reinicia o Painel sozinho.
