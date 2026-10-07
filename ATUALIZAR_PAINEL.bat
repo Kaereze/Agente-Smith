@@ -9,7 +9,7 @@ setlocal EnableExtensions
 if /i "%~1"=="--copia" goto :principal
 set "COPIA=%TEMP%\atualizar_painel_nf.bat"
 :: tudo numa linha so: o cmd ja leu a linha inteira antes do git trocar o arquivo original
-copy /y "%~f0" "%COPIA%" >nul & call "%COPIA%" --copia "%~dp0" %1 & exit /b
+copy /y "%~f0" "%COPIA%" >nul & call "%COPIA%" --copia "%~dp0" %1 & if errorlevel 1 (exit /b 1) else (exit /b 0)
 
 :principal
 set "ORIGEM=%~2"
@@ -68,6 +68,9 @@ echo        GitHub (main): %NOVA%
 
 :: ---------- 4. aplicar ----------
 echo [4/6] Aplicando neste PC...
+:: PC antigo com este .bat copiado pra pasta (ainda sem ele no git): sai da frente, a versao do GitHub o substitui
+"%GIT%" ls-files --error-unmatch ATUALIZAR_PAINEL.bat >nul 2>nul
+if errorlevel 1 if exist "ATUALIZAR_PAINEL.bat" del /f /q "ATUALIZAR_PAINEL.bat"
 "%GIT%" merge-base --is-ancestor HEAD origin/main
 if errorlevel 1 goto :tem_commits_proprios
 :: so pra frente: o caso normal
