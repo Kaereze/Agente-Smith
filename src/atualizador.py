@@ -4,8 +4,9 @@ dar push, e os outros ficarem em sincronia).
 O Painel de cada PC pergunta ao GitHub de tempos em tempos (e quando alguém aperta "Atualizar" na
 página Atividade). Só atualiza quando dá pra ir pra frente sem conflito: nada alterado à mão neste
 PC e nenhum commit local que o GitHub não tenha (o PC de quem programa nunca é atualizado por cima).
-A atualização em si roda num PowerShell separado (Automacoes/atualizar_sozinho.ps1), porque ela
-reinicia este próprio Painel.
+O git pull e as bibliotecas rodam aqui, esperando o resultado (o erro, se houver, volta pra quem
+pediu e aparece na página Atividade). Só o reinício roda num PowerShell solto
+(Automacoes/reiniciar_servicos.ps1), porque ele derruba este próprio Painel.
 """
 import subprocess
 import sys
@@ -16,7 +17,8 @@ from log_util import configurar_logging
 logger = configurar_logging(__name__)
 
 PASTA = Path(__file__).resolve().parent.parent
-SCRIPT = PASTA / "Automacoes" / "atualizar_sozinho.ps1"
+SCRIPT_REINICIO = PASTA / "Automacoes" / "reiniciar_servicos.ps1"
+_SAIR_DO_JOB = 0x01000000   # CREATE_BREAKAWAY_FROM_JOB: a tarefa agendada não leva o script junto ao cair
 _SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -65,11 +67,28 @@ def motivo_para_nao(s):
 
 
 def atualizar():
-    """Dispara o atualizar_sozinho.ps1 desligado deste processo (ele reinicia o Painel)."""
+    """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu)"""
+    antes = versao()
+    try:
+        _git("pull", "--ff-only", timeout=300)
+    except Exception as e:
+        logger.warning(f"⚠️ git pull falhou: {e}")
+        return False, f"git pull falhou: {e}"
+    python = PASTA / ".venv" / "Scripts" / "python.exe"
+    try:
+        subprocess.run([str(python), "-m", "pip", "install", "-q", "--disable-pip-version-check", "-r",
+                        str(PASTA / "requirements.txt")], cwd=str(PASTA), timeout=600, capture_output=True,
+                       creationflags=_SEM_JANELA)
+    except Exception as e:
+        logger.warning(f"⚠️ pip install falhou ({e}) — sigo com as bibliotecas que já estão aí")
     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | _SEM_JANELA
-    subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT)],
-                     cwd=str(PASTA), creationflags=flags, close_fds=True)
-    logger.info("🔄 Atualização disparada (git pull + reinício do conferente e do Painel).")
+    comando = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT_REINICIO)]
+    try:
+        subprocess.Popen(comando, cwd=str(PASTA), creationflags=flags | _SAIR_DO_JOB, close_fds=True)
+    except OSError:   # a tarefa não deixa sair do job: vai sem, a repetição de 10 min da tarefa religa
+        subprocess.Popen(comando, cwd=str(PASTA), creationflags=flags, close_fds=True)
+    logger.info(f"🔄 Atualizado de {antes} para {versao()} — reiniciando conferente e Painel.")
+    return True, f"atualizado de {antes} para {versao()}, reiniciando"
 
 
 if __name__ == "__main__":

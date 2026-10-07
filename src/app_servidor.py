@@ -220,10 +220,11 @@ class Estado:
                             "motivo": motivo, "atras": s["atras"]}
         if atualizador.pode_atualizar(s):
             quem = "automática" if automatica else f"pedida por {pedido_por}"
+            ok, texto = atualizador.atualizar()
             atividade.registrar(self.backend, self.central, [atividade.linha(
-                atividade.ATUALIZADO, detalhe=f"atualização {quem}: {s['atras']} commit(s) novo(s) do GitHub", agente=nome_do_agente())])
-            atualizador.atualizar()
-            return "atualizando"
+                atividade.ATUALIZADO if ok else atividade.FALHA,
+                detalhe=f"atualização {quem} ({s['atras']} commit(s) novo(s)): {texto}", agente=nome_do_agente())])
+            return texto
         return motivo
 
     def _executar_comando(self, id_c, comando, por):
