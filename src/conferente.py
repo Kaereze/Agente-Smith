@@ -383,6 +383,7 @@ def garantir_categorias(namespace):
 
 
 NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
+ESPELHO_EMAILS_SEGUNDOS = 2 * 60   # aba E-mails do Painel: pendentes das caixas deste PC
 CONFIRMAR_NFS_SEGUNDOS = 2 * 60   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
 _ja_olhados = set()
 
@@ -648,6 +649,7 @@ def main():
     backend = None
     proxima_conferencia = proximo_sinal = proxima_identidade = proxima_dividida = 0.0
     proxima_confirmacao = time.monotonic() + 60
+    proximo_espelho, espelho = time.monotonic() + 30, None
     while True:
         agora = time.monotonic()
         try:
@@ -700,6 +702,17 @@ def main():
                 except Exception as e:
                     logger.warning(f"⚠️ Confirmação de NFs falhou ({e}) — tento de novo em 10 min.")
                 proxima_confirmacao = agora + CONFIRMAR_NFS_SEGUNDOS
+            if agora >= proximo_espelho:
+                # E-mails de hóspedes sem resposta das caixas daqui -> aba Emails_<PC> (o Painel de todos vê)
+                try:
+                    import espelho_emails
+                    if espelho is None:
+                        espelho = espelho_emails.Espelho(BackendGoogle(caminho_chave_google(cfg)), cfg)
+                    espelho.volta(namespace)
+                except Exception as e:
+                    logger.warning(f"⚠️ Espelho de e-mails falhou ({e}) — tento de novo em 2 min.")
+                    espelho = None
+                proximo_espelho = agora + ESPELHO_EMAILS_SEGUNDOS
             try:
                 if e_principal(cfg):
                     publicar_cota(backend, namespace, cfg)

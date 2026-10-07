@@ -327,12 +327,12 @@ function assuntoDoArquivo(nomeArquivo, nome) {
 }
 const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
-async function abrirEnvioNF(chave) {
+async function abrirEnvioNF(chave, resp = null) {
   if (document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
   fundo.innerHTML = `<div class="modal compor">
-    <div class="compor-topo"><span>✉ Nova mensagem · Nota Fiscal</span><span id="nf-sub" class="compor-quem">carregando…</span>
+    <div class="compor-topo"><span>${resp ? "↩ Resposta ao hóspede" : "✉ Nova mensagem · Nota Fiscal"}</span><span id="nf-sub" class="compor-quem">carregando…</span>
       <button class="fechar" id="nf-fechar" title="Descartar">×</button></div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
     <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
@@ -340,9 +340,9 @@ async function abrirEnvioNF(chave) {
       <span class="res" id="nf-res"></span></div></div>`;
   document.body.appendChild(fundo);
   $("nf-fechar").onclick = () => { clearTimeout(envNF?.timer); fundo.remove(); envNF = null; };
-  const o = await api(`/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
+  const o = await api(resp ? `/api/email/opcoes?id=${encodeURIComponent(resp.id)}` : `/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
   if (o.erro) { $("nf-corpo").innerHTML = `<div class="vazio">${esc(o.erro)}</div>`; return; }
-  envNF = { chave, o, anexos: [], assuntoAuto: true };
+  envNF = { chave, resp, o, anexos: [], assuntoAuto: !resp };
   $("nf-sub").textContent = `${o.nome} · ${o.hotel}`;
   const de = o.destino
     ? `<div class="campo-txt"><b>${esc(o.conta_de)}</b> <span class="dica">${o.destino === o.este_pc ? "· por este PC" : "· pelo PC " + esc(o.destino)}</span></div>`
@@ -360,7 +360,7 @@ async function abrirEnvioNF(chave) {
       </div>
     </div>
     <div class="soltar" id="nf-soltar"><input type="file" id="nf-arq" accept=".pdf,.xml" multiple hidden>
-      <div class="soltar-txt">📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)</div>
+      <div class="soltar-txt">📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)${resp ? " · opcional numa resposta" : ""}</div>
       <div class="chips-anexo" id="nf-anexos"></div></div>
     ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
       `<button class="sug forte" data-nf-sug="${i}" title="${esc(a.prova || "")}">📄 ${esc(a.nome)}</button>`).join("")}</div>` : ""}
@@ -372,7 +372,8 @@ async function abrirEnvioNF(chave) {
     : o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
       <div class="dica">Mensagem padrão e selo da caixa ${esc(o.conta_de)}, como no Outlook (prévia deste PC; sai a do PC que enviar)</div>`
       : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}`;
-  $("nf-msg").innerText = o.corpo;
+  $("nf-msg").innerText = resp && resp.comNF ? o.corpo_nf : o.corpo;
+  if (resp) { $("nf-assunto").value = o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
   if (o.selos.length) {
     let salvo = null;
     try { salvo = localStorage.getItem("selo_nf"); } catch (e) { }
@@ -427,7 +428,8 @@ function desenharAnexos() {
 }
 
 function validarEnvioNF() {
-  const ok = envNF && envNF.anexos.length && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
+  const conteudo = envNF && (envNF.anexos.length || (envNF.resp && $("nf-msg").innerText.trim()));
+  const ok = envNF && conteudo && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
   $("nf-ir").disabled = !ok;
 }
 
@@ -441,9 +443,10 @@ async function enviarNF(contaForcada) {
   const anexos = await Promise.all(envNF.anexos.map(async a => a.tipo === "arquivo"
     ? { tipo: "arquivo", nome: a.nome, b64: await lerBase64(a.file) } : { tipo: "dropbox", rel: a.rel, nome: a.nome }));
   const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
-  const r = await api("/api/envio_nf", { chave: envNF.chave, para: $("nf-para").value.trim(), cc: $("nf-cc").value.trim(),
-                                          assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
-                                          conta_de: conta || undefined, selo: envNF.selo || undefined });
+  const r = await api(envNF.resp ? "/api/email/responder" : "/api/envio_nf", {
+    chave: envNF.chave || undefined, id: envNF.resp ? envNF.resp.id : undefined, para: $("nf-para").value.trim(),
+    cc: $("nf-cc").value.trim(), assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
+    conta_de: conta || undefined, selo: envNF.selo || undefined });
   if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo || r.erro, r.contas_locais); }
   $("nf-anel").className = "anel"; $("nf-anel").textContent = ""; $("nf-anel").style.visibility = "visible";
   $("nf-barra").style.visibility = "visible"; $("nf-barra").classList.remove("fim");
@@ -457,7 +460,9 @@ async function acompanharNF(id) {
   if (!envNF) return;
   if (s.estado === "enviado") {
     $("nf-anel").className = "anel ok"; $("nf-anel").textContent = "✓"; $("nf-barra").classList.add("fim");
-    $("nf-res").textContent = `NF enviada ao hóspede${s.pc ? " pelo PC " + s.pc : ""}. Ela já ficou marcada no pedido.`;
+    $("nf-res").textContent = envNF.resp
+      ? `Resposta enviada${s.pc ? " pelo PC " + s.pc : ""}. O e-mail sai da lista na próxima volta do robô (até 2 min).`
+      : `NF enviada ao hóspede${s.pc ? " pelo PC " + s.pc : ""}. Ela já ficou marcada no pedido.`;
     $("nf-ir").style.display = "none"; carregar(); return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") return mostrarFalhaNF(s.detalhe, s.contas_locais);

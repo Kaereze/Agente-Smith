@@ -406,10 +406,9 @@ def pcs_online(linhas_pcs, agora_=None, segundos=PC_ONLINE_SEGUNDOS):
     for l in linhas_pcs[1:]:
         l = list(l) + [""] * (4 - len(l))
         pc, _agente, lista, visto = (str(v) for v in l[:4])
-        try:
-            if agora_ - datetime.datetime.fromisoformat(visto) > datetime.timedelta(seconds=segundos):
-                continue
-        except ValueError:
+        from rede_pcs import _data   # a planilha devolve "2026-10-07 9:10:19" (sem o zero da hora)
+        quando = _data(visto)
+        if quando is None or agora_ - quando > datetime.timedelta(seconds=segundos):
             continue
         for c in lista.split(","):
             if c.strip():
@@ -442,7 +441,7 @@ def contas_do_outlook():
 PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
 
 
-def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo=""):
+def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a=""):
     """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
     a assinatura da caixa no Outlook), imagens embutidas, e os anexos. Levanta erro legível."""
     import pythoncom
@@ -453,7 +452,14 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     conta = next((c for c in ns.Accounts if str(c.SmtpAddress or "").strip().lower() == conta_de.lower()), None)
     if conta is None:
         raise RuntimeError(f"a caixa {conta_de} não está no Outlook deste PC")
-    mail = outlook.CreateItem(0)
+    original = None
+    if responder_a:   # resposta de verdade (mesma conversa), com o histórico do Outlook embaixo
+        try:
+            original = ns.GetItemFromID(responder_a)
+        except Exception:
+            original = None
+    mail = original.Reply() if original is not None else outlook.CreateItem(0)
+    historico = mail.HTMLBody if original is not None else ""
     mail.To = para
     if cc:
         mail.CC = cc
@@ -463,6 +469,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     if arquivo_selo:
         mail.HTMLBody = corpo_com_selo(mensagem)
         imagens = [(arquivo_selo, CID_SELO)]
+        if historico:
+            mail.HTMLBody = re.sub(r"</body>\s*</html>\s*$", "", mail.HTMLBody) + "<br>" + historico
     else:
         caminho_ass = achar_assinatura(conta_de, agente)
         if caminho_ass:
@@ -496,11 +504,12 @@ def numeros_de_nf(assunto, anexos):
     return numeros
 
 
-def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem, selo=""):
+def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem, selo="", responder=""):
     """anexos: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "planilha"|"local", "nome", ...}]"""
     return {"aba": sol["aba"], "carimbo": sol["carimbo"], "email": sol["email"], "hotel": sol["hotel"],
             "nome": sol["nome"], "para": para, "cc": cc, "assunto": assunto, "conta_de": conta_de,
-            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem, "selo": selo}
+            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem, "selo": selo,
+            "responder": responder}
 
 
 def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
@@ -588,12 +597,13 @@ class ServicoEnvio:
         return None, (f"Nenhum PC ligado agora tem a caixa {conta_de} no Outlook (o Painel do PC dela precisa"
                       f" estar aberto/rodando).")
 
-    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo=""):
+    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder=""):
+        """responder: id do e-mail da aba E-mails (espelho_emails) — sai como resposta, anexo opcional."""
         """anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "arquivo", "nome", "conteudo": bytes}]"""
         destino, motivo = self.destino_para(conta_de)
         if not destino:
             return {"ok": False, "motivo": motivo, "contas_locais": self.contas}
-        if not anexos_entrada:
+        if not anexos_entrada and not responder:
             return {"ok": False, "motivo": "Anexe a nota fiscal."}
         if sum(len(a.get("conteudo", b"")) for a in anexos_entrada) > MAX_ANEXO_BYTES:
             return {"ok": False, "motivo": "Os anexos passam de 8 MB."}
@@ -611,7 +621,8 @@ class ServicoEnvio:
                 anexos.append({"tipo": "planilha", "nome": a["nome"]})
         if partes:
             self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
-        pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem or mensagem_padrao(self.cfg), selo)
+        pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos,
+                               mensagem if responder else (mensagem or mensagem_padrao(self.cfg)), selo, responder)
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
@@ -643,8 +654,12 @@ class ServicoEnvio:
         try:
             linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
             arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
+            extra = {}
+            if p.get("responder"):
+                import espelho_emails
+                extra["responder_a"] = espelho_emails.entry_do_email(p["responder"])
             self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
-                        agente=self.agente, selo=p.get("selo", ""))
+                        agente=self.agente, selo=p.get("selo", ""), **extra)
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")

@@ -163,6 +163,21 @@ class BackendGoogle:
         com_retry(lambda: planilha.values_update(f"{nome_intervalo(aba)}!A2", params={"valueInputOption": "RAW"},
                                                  body={"values": linhas}), e_erro_passageiro_google)
 
+    def substituir_aba(self, planilha_id, aba, linhas):
+        """Reescreve a aba inteira (cria se faltar) — pra abas de passagem, como o espelho de e-mails."""
+        import gspread
+        planilha = self._planilha(planilha_id)
+        try:
+            planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
+        except gspread.exceptions.WorksheetNotFound:
+            planilha_aba = com_retry(lambda: planilha.add_worksheet(title=aba, rows=max(len(linhas) + 50, 100),
+                                                                    cols=len(linhas[0])), e_erro_passageiro_google)
+        if planilha_aba.row_count < len(linhas):
+            com_retry(lambda: planilha_aba.add_rows(len(linhas) - planilha_aba.row_count + 50), e_erro_passageiro_google)
+        com_retry(lambda: planilha_aba.clear(), e_erro_passageiro_google)
+        com_retry(lambda: planilha_aba.update(range_name="A1", values=linhas, value_input_option="RAW"),
+                  e_erro_passageiro_google)
+
     def garantir_colunas(self, planilha_id, aba, cabecalho):
         """Aba criada com menos colunas (ex.: PCs_Painel de 4 pra 8): aumenta a grade e reescreve o cabeçalho."""
         planilha_aba = com_retry(lambda: self._planilha(planilha_id).worksheet(aba), e_erro_passageiro_google)

@@ -57,3 +57,16 @@ def test_email_sem_nota_ao_hospede_vira_tratativa():
     novas = c._novas_tratativas(reg, antes)
     assert [(k, e) for k, e, _ in novas] == [(s["chave"], "E9")]
     assert c.marca_do_email("E9") == c.marca_do_email("E9") and c.marca_do_email("E9").startswith("#")
+
+
+def test_horario_sem_zero_que_a_planilha_devolve():
+    linhas = [["PC", "Agente", "Contas", "Visto em"], ["PC-A", "João", "a@x", "2026-10-06 9:59:30"],
+              ["PC-B", "Clara", "b@x", "06/10/2026 07:59:30"]]
+    pcs = {p["pc"]: p for p in r.ler_pcs(linhas, datetime.datetime(2026, 10, 6, 10, 0, 0))}
+    assert pcs["PC-A"]["online"] and not pcs["PC-B"]["online"]
+
+
+def test_envio_de_nf_acha_o_pc_mesmo_com_hora_sem_zero():
+    import envio_nf
+    linhas = [envio_nf.CAB_PCS, ["PC-A", "João", "nf@hotel.com", "2026-10-06 9:59:30"]]
+    assert envio_nf.pcs_online(linhas, datetime.datetime(2026, 10, 6, 10, 0, 0)) == {"nf@hotel.com": "PC-A"}

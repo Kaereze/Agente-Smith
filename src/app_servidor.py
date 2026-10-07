@@ -32,6 +32,7 @@ import atividade
 import atualizador
 import canceladas
 import envio_nf
+import espelho_emails
 import rede_pcs
 import fiscal_intelligence
 import painel_metricas as metricas
@@ -110,6 +111,7 @@ class Estado:
         self.comandos_em_execucao = set()
         self.atividade_cache = ([], -1e9)
         self.envio_nf.extras = self._extras_pc
+        self.abas_emails, self.emails = [], []
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -122,6 +124,7 @@ class Estado:
                                            self.cfg.get("cadastro_colunas"))
             self.abas_hotel = {a: self.cadastro.canonico(nome_do_hotel_pela_aba(a)) or nome_do_hotel_pela_aba(a)
                                for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
+            self.abas_emails = [a for a in todas if a.startswith(espelho_emails.PREFIXO_ABA)]
             for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
                              (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS),
                              (atividade.ABA, atividade.CABECALHO), (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS)):
@@ -141,14 +144,16 @@ class Estado:
             status_aba = self.cfg["aba_status"]
             lidas, erros = self.backend.ler_abas(self.central, list(abas) + [dados.ABA_TRATAMENTO, status_aba,
                                                                               envio_nf.ABA_FILA, envio_nf.ABA_PCS,
-                                                                              rede_pcs.ABA_COMANDOS])
+                                                                              rede_pcs.ABA_COMANDOS] + self.abas_emails)
             solicitacoes = []
             for aba, hotel in abas.items():
                 solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
             status = {str(l[0]).strip(): (str(l[1]) if len(l) > 1 else "") for l in lidas.get(status_aba, []) if l}
+            emails = [e for aba in self.abas_emails for e in espelho_emails.ler_aba(lidas.get(aba, []))]
             with self.lock:
                 self.solicitacoes = solicitacoes
                 self.estados = dados.dobrar_eventos(lidas.get(dados.ABA_TRATAMENTO, [[]]))
+                self.emails = emails
                 self.status = status
                 self.atualizado_em, self.erro = dados.agora(), ""
         except Exception as e:
@@ -252,7 +257,10 @@ class Estado:
                 "versao": self.versao, "atualizacao": self.atualizacao}
 
     def registrar_nf_enviada(self, pedido, quem):
-        """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem)."""
+        """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem). Resposta a um e-mail
+        de quem não tem pedido pelo formulário não tem onde registrar."""
+        if not pedido.get("aba"):
+            return
         pc, quando = socket.gethostname(), dados.agora()
         linhas = [dados.evento(quando, quem, pc, pedido["aba"], pedido["carimbo"], pedido["email"], dados.NF, nf)
                   for nf in pedido.get("nfs", [])]
@@ -260,6 +268,64 @@ class Estado:
                                    f"\"{pedido['assunto']}\" enviada ao hóspede ({pedido['para']}) pela caixa {pedido['conta_de']}"))
         self.backend.anexar_linhas(self.central, dados.ABA_TRATAMENTO, linhas)
         self.reler_tratamento()
+
+    # ---------- aba E-mails ----------
+    def _solicitacao_do_email(self, de):
+        """Pedido do formulário mais recente desse mesmo e-mail (se houver)."""
+        de = (de or "").lower()
+        candidatas = [s for s in self.solicitacoes if de and de in {x.lower() for x in [s["email"]] + s.get("emails", [])}]
+        return max(candidatas, key=lambda s: (s["data"], s["carimbo"]), default=None)
+
+    def lista_emails(self):
+        pcs = {p["pc"]: p for p in self.pcs()}
+        saida = []
+        for e in self.emails:
+            sol = self._solicitacao_do_email(e["de"])
+            dono = pcs.get(e["pc"], {})
+            saida.append({**e, "pc_online": bool(dono.get("online")), "agente_pc": dono.get("agente", ""),
+                          "solicitacao": {"chave": sol["chave"], "hotel": sol["hotel"], "data": sol["data"]} if sol else None})
+        return sorted(saida, key=lambda e: e["recebido"], reverse=True)
+
+    def _email(self, id_email):
+        e = next((x for x in self.emails if x["id"] == id_email), None)
+        if e is None:
+            raise KeyError("e-mail não está mais na lista (pode ter sido respondido)")
+        return e
+
+    def opcoes_email(self, id_email):
+        e = self._email(id_email)
+        destino, motivo = self.envio_nf.destino_para(e["caixa"])
+        sol = self._solicitacao_do_email(e["de"])
+        sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg) if sol else []
+        assunto = e["assunto"] if e["assunto"].lower().startswith(("re:", "res:")) else "RE: " + e["assunto"]
+        return {"para": [e["de"]], "conta_de": e["caixa"], "destino": destino, "motivo": motivo,
+                "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
+                "nome": e["nome"] or e["de"], "hotel": e["hotel"], "assunto": assunto, "corpo": "",
+                "corpo_nf": envio_nf.mensagem_padrao(self.cfg), "assinatura": "", "assinatura_com_mensagem": False,
+                "selos": envio_nf.selos(), "selo": envio_nf.selo_do_agente(nome_do_agente()), "email": e,
+                "solicitacao": sol["chave"] if sol else ""}
+
+    def responder_email(self, corpo, quem):
+        e = self._email(str(corpo.get("id", "")))
+        sol = self._solicitacao_do_email(e["de"]) or {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"],
+                                                       "nome": e["nome"] or e["de"]}
+        para, assunto = str(corpo.get("para", "")).strip(), str(corpo.get("assunto", "")).strip()
+        if "@" not in para or not assunto:
+            raise ValueError("preencha o destinatário e o assunto")
+        import base64
+        anexos = []
+        for a in corpo.get("anexos") or []:
+            if a.get("tipo") == "arquivo":
+                anexos.append({"tipo": "arquivo", "nome": os.path.basename(a.get("nome", "nota.pdf")),
+                               "conteudo": base64.b64decode(a.get("b64", ""))})
+            elif a.get("tipo") == "dropbox" and a.get("rel"):
+                anexos.append({"tipo": "dropbox", "rel": a["rel"], "nome": a.get("nome", "")})
+        if not anexos and not str(corpo.get("corpo", "")).strip():
+            raise ValueError("escreva a resposta ou anexe a nota")
+        cc = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in x)
+        selo = str(corpo.get("selo") or "")
+        return self.envio_nf.pedir(sol, para, assunto, e["caixa"], anexos, quem, str(corpo.get("corpo", "")), cc,
+                                   selo if envio_nf.caminho_selo(selo) else "", responder=e["id"])
 
     def opcoes_envio(self, chave_sol):
         sol = next((s for s in self.solicitacoes if s["chave"] == chave_sol), None)
@@ -537,6 +603,10 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
                 if url.path == "/api/atividade":
                     return self._json(estado.atividade_resumo())
+                if url.path == "/api/emails":
+                    return self._json({"emails": estado.lista_emails(), "este_pc": pc})
+                if url.path == "/api/email/opcoes":
+                    return self._json(estado.opcoes_email(q.get("id", "")))
             except KeyError as e:
                 return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
@@ -575,6 +645,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json({"ok": True, "modo": "remoto"})
                 if path == "/api/envio_nf":
                     return self._json(estado.pedir_envio(corpo, nome_do_agente()))
+                if path == "/api/email/responder":
+                    return self._json(estado.responder_email(corpo, nome_do_agente()))
                 if path == "/api/comando":
                     return self._json(estado.pedir_comando(str(corpo.get("para", "")), str(corpo.get("comando", "")),
                                                            f"{nome_do_agente()} ({pc})"))

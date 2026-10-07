@@ -33,10 +33,19 @@ def resposta(id_comando, pc, comando, texto, quando=None):
 
 
 def _data(texto):
+    """Aceita o que a planilha devolve: "2026-10-07T09:10:19", "2026-10-07 9:10:19" (o Sheets tira o zero da
+    hora ao reformatar) e "07/10/2026 09:10:19"."""
+    texto = str(texto).strip()[:19]
     try:
-        return datetime.datetime.fromisoformat(str(texto).strip()[:19])
+        return datetime.datetime.fromisoformat(texto)
     except ValueError:
-        return None
+        pass
+    for formato in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.datetime.strptime(texto, formato)
+        except ValueError:
+            continue
+    return None
 
 
 def pendentes(linhas, pc, agora=None):
@@ -84,7 +93,7 @@ def ler_pcs(linhas, agora=None):
         if not l or not str(l[0]).strip():
             continue
         l = [str(v).strip() for v in l] + [""] * 8
-        visto = _data(l[3].replace(" ", "T"))
+        visto = _data(l[3])
         online = bool(visto and (agora - visto).total_seconds() < PC_ONLINE_SEGUNDOS)
         conf_quando, _, conf_resumo = l[7].partition("|")
         conf_dt = _data(conf_quando)

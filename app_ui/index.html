@@ -253,6 +253,13 @@ textarea{width:100%;min-height:54px;resize:vertical}
 .fechar{float:right;background:transparent;font-size:18px;padding:0 6px}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--creme);color:#173f39;padding:10px 18px;border-radius:10px;font-weight:600;box-shadow:0 6px 24px #0007;display:none;z-index:9}
 .toast.erro{background:var(--vermelho);color:#fff}
+.modo-lista{display:flex;gap:4px;margin-right:8px;flex:none}
+.modo-lista button{padding:8px 14px;border-radius:10px;background:var(--card);font-size:13px}
+.modo-lista button.sel{background:var(--verde);color:#fff;font-weight:700}
+.modo-lista .n{margin-left:6px;font-size:11px;opacity:.85}
+.barra{display:flex;align-items:center}
+.email-corpo{white-space:pre-wrap;background:var(--card);border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13.5px;line-height:1.5;max-height:60vh;overflow:auto}
+.erro-txt{color:#ff8a80}
 ::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:var(--linha);border-radius:6px}
 </style>
 </head>
@@ -300,7 +307,7 @@ textarea{width:100%;min-height:54px;resize:vertical}
   </aside>
   <main id="main">
     <div class="lista-wrap">
-      <div class="barra"><input id="busca" placeholder="Buscar por nome, e-mail, CPF/CNPJ, hotel…"></div>
+      <div class="barra"><div class="modo-lista" id="modo-lista"></div><input id="busca" placeholder="Buscar por nome, e-mail, CPF/CNPJ, hotel…"></div>
       <div class="lista" id="lista"></div>
     </div>
     <div class="detalhe" id="detalhe"></div>
@@ -313,7 +320,9 @@ const TOKEN = "__TOKEN__";
 const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Na fila", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida"};
 const ORDEM_FILTROS = ["todas","minhas","na_fila","em_tratamento","tratativa","nf_parcial","aguardando_envio","concluida"];
-let st = {fila:[], agente:"", status:{}}, filtro = "na_fila", hotel = "", envio = "todos", listaHoteis = false, sel = null, timer = null, intervalo = 15;
+let st = {fila:[], agente:"", status:{}, emails:[]}, filtro = "na_fila", hotel = "", envio = "todos", listaHoteis = false, sel = null, timer = null, intervalo = 15;
+// Aba E-mails: o que os hóspedes escrevem direto nas caixas dos hotéis (espelho dos robôs de todos os PCs)
+let modoLista = "form", emailSel = null;
 const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
 const PERIODOS_FILA = [["7", "7 dias"], ["15", "15 dias"], ["45", "45 dias"], ["90", "90 dias"], ["0", "Tudo"]];
 
@@ -362,6 +371,7 @@ async function carregar(){
     $("robo-txt").textContent = "robô " + (s.ligado ? "ligado" : "desligado") + (s.comando ? " · " + s.comando.toLowerCase() : "");
     $("robo").title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "");
     desenharPcsCabecalho(j.pcs || []);
+    try { const em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}
     desenhar();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
@@ -388,6 +398,9 @@ const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s
 
 function desenhar(){
   const busca = $("busca").value.trim().toLowerCase();
+  const nEmails = st.emails.filter(e => !hotel || e.hotel.split(" / ").includes(hotel)).length;
+  $("modo-lista").innerHTML = `<button class="${modoLista === "form" ? "sel" : ""}" data-modo="form">Formulário</button>` +
+    `<button class="${modoLista === "emails" ? "sel" : ""}" data-modo="emails">E-mails<span class="n">${nEmails}</span></button>`;
   // contagem do "E-mail ao hotel" respeita hotel e situação; os outros grupos respeitam o filtro de e-mail
   const semEnvio = st.fila.filter(s => (!hotel || s.hotel === hotel) && passa(s, filtro));
   $("f-envio").innerHTML = Object.entries(ENVIO).map(([k, [nome, ok]]) =>
@@ -417,6 +430,7 @@ function desenhar(){
     nomesHotel.filter(h => h !== hotel).map(h => `<div class="filtro" data-h="${esc(h)}"><span>${esc(h)}</span><span class="n">${hoteis[h]||0}</span></div>`).join("") +
     (buscaHotel && !nomesHotel.length ? `<div class="hist" style="padding:6px 10px">Nenhum hotel com esse nome</div>` : "");
 
+  if (modoLista === "emails") return desenharEmails(busca);
   let lista = porHotel.filter(s => passa(s, filtro));
   if (busca) lista = lista.filter(s => texto(s).includes(busca));
   $("lista").innerHTML = lista.length ? lista.slice(0, 600).map(s => `
@@ -429,7 +443,42 @@ function desenhar(){
   desenharDetalhe();
 }
 
+function quandoBr(iso) { return iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)} ${iso.slice(11, 16)}` : ""; }
+
+function desenharEmails(busca) {
+  let lista = st.emails.filter(e => !hotel || e.hotel.split(" / ").includes(hotel));
+  if (busca) lista = lista.filter(e => (e.nome + " " + e.de + " " + e.assunto + " " + e.hotel + " " + e.texto).toLowerCase().includes(busca));
+  $("lista").innerHTML = lista.length ? lista.slice(0, 600).map(e => `
+    <div class="item b-na_fila ${emailSel === e.id ? "sel" : ""}" data-em="${esc(e.id)}">
+      <div class="data">${quandoBr(e.recebido)}</div>
+      <div><div class="nome">${esc(e.nome || e.de)}${e.anexos.length ? `<span class="tag">📎 ${e.anexos.length}</span>` : ""}${e.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</div>
+        <div class="hotel">${esc(e.hotel)} · ${esc(e.assunto || "(sem assunto)")}</div></div>
+      <div class="dono">${e.pc === st.este_pc ? "" : "💻 " + esc(e.agente_pc || e.pc)}${e.pc_online ? "" : '<br><span class="erro-txt">PC desligado</span>'}</div>
+      <div style="text-align:right"><span class="badge s-na_fila">Sem resposta</span></div>
+    </div>`).join("") : `<div class="vazio">Nenhum e-mail de hóspede sem resposta. 🎉</div>`;
+  desenharDetalheEmail();
+}
+
+function desenharDetalheEmail() {
+  const e = st.emails.find(x => x.id === emailSel);
+  $("main").classList.toggle("detalhe-aberto", !!e);
+  if (!e) { $("detalhe").innerHTML = ""; return; }
+  $("detalhe").innerHTML = `
+    <button class="fechar" id="d-fechar">×</button>
+    <h2>${esc(e.assunto || "(sem assunto)")}</h2>
+    <div class="sub">de <b>${esc(e.nome || "")}</b> &lt;${esc(e.de)}&gt;<br>para ${esc(e.caixa)} · ${esc(e.hotel)}<br>
+      chegou ${quandoBr(e.recebido)} · caixa no PC ${esc(e.agente_pc || e.pc)}${e.pc_online ? "" : ' <span class="erro-txt">(desligado: a resposta sai quando ele ligar)</span>'}</div>
+    <div class="acoes">
+      <button class="prim" data-resp="${esc(e.id)}">↩ Responder</button>
+      <button class="creme" data-resp-nf="${esc(e.id)}">✉ Responder com a NF</button>
+      ${e.solicitacao ? `<button data-ver-pedido="${esc(e.solicitacao.chave)}">Ver pedido do formulário (${dataBr(e.solicitacao.data)})</button>` : ""}
+    </div>
+    ${e.anexos.length ? `<div class="sub">📎 ${e.anexos.map(esc).join(" · ")}</div>` : ""}
+    <div class="email-corpo">${esc(e.texto || "(sem texto)")}</div>`;
+}
+
 function desenharDetalhe(){
+  if (modoLista === "emails") return desenharDetalheEmail();
   const s = st.fila.find(x => x.chave === sel);
   $("main").classList.toggle("detalhe-aberto", !!s);
   if (!s) { $("detalhe").innerHTML = ""; return; }
@@ -515,6 +564,17 @@ $("busca").addEventListener("input", desenhar);
 $("busca-hotel-fila").addEventListener("input", desenhar);
 // Grupos da lateral abrem/fecham; o estado fica guardado neste PC
 const GRUPOS_KEY = "painel.gruposFechados";
+document.addEventListener("click", e => {
+  if (modoLista === "emails" && e.target.closest("#d-fechar")) { emailSel = null; return desenhar(); }
+  const t = e.target.closest("[data-modo],[data-em],[data-resp],[data-resp-nf],[data-ver-pedido]");
+  if (!t) return;
+  if (t.dataset.modo) { modoLista = t.dataset.modo; emailSel = null; sel = null; return desenhar(); }
+  if (t.dataset.em) { emailSel = t.dataset.em; return desenhar(); }
+  if (t.dataset.resp) return abrirEnvioNF(null, { id: t.dataset.resp, comNF: false });
+  if (t.dataset.respNf) return abrirEnvioNF(null, { id: t.dataset.respNf, comNF: true });
+  if (t.dataset.verPedido) { modoLista = "form"; filtro = "todas"; sel = t.dataset.verPedido; emailSel = null; return desenhar(); }
+});
+
 let gruposFechados = [];
 try { gruposFechados = JSON.parse(localStorage.getItem(GRUPOS_KEY) || "[]"); } catch (e) {}
 document.querySelectorAll(".grupo").forEach(g => {
