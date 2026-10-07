@@ -30,6 +30,7 @@ garantir_utf8()
 import app_dados as dados
 import atividade
 import atualizador
+import avisos_windows
 import canceladas
 import envio_nf
 import espelho_emails
@@ -112,6 +113,7 @@ class Estado:
         self.atividade_cache = ([], -1e9)
         self.envio_nf.extras = self._extras_pc
         self.abas_emails, self.emails = [], []
+        self.avisos = avisos_windows.Avisos()
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -212,6 +214,10 @@ class Estado:
             self.proxima_verificacao = time.monotonic() + VERIFICAR_ATUALIZACAO_MINUTOS * 60
             threading.Thread(target=self._verificar_atualizacao, args=(True,), daemon=True).start()
         atividade.registrar(self.backend, self.central, linhas)
+        # Aviso do Windows: PC desligou, Outlook fechou ou conferência parou (principal: todos; os outros: só ele)
+        for titulo, texto in self.avisos.mudancas(self.pcs(), pc, e_principal(self.cfg),
+                                                  cfg_avisos=self.cfg.get("painel", {}).get("avisos")):
+            avisos_windows.mostrar(titulo, texto)
 
     def _verificar_atualizacao(self, automatica, pedido_por=""):
         s = atualizador.situacao()

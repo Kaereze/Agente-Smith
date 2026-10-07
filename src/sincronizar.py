@@ -17,6 +17,7 @@ from console_utf8 import garantir_utf8
 
 garantir_utf8()
 
+from arquivos import salvar_json
 from config import PASTA_ESTADO, carregar_config, caminho_chave_google, e_principal
 from log_util import configurar_logging
 from rede_util import com_retry, e_erro_passageiro_google
@@ -172,7 +173,7 @@ def listar_pasta(caminho_chave, pasta_id):
     while True:
         r = s.get("https://www.googleapis.com/drive/v3/files", timeout=30, params={
             "q": f"'{pasta_id}' in parents and trashed=false and mimeType='{MIME_PLANILHA}'",
-            "pageSize": 1000, "pageToken": token, "fields": "nextPageToken, files(id,name,modifiedTime)"})
+            "pageSize": 1000, "pageToken": token, "fields": "nextPageToken, files(id,name,modifiedTime,version)"})
         r.raise_for_status()
         j = r.json()
         arquivos += j.get("files", [])
@@ -230,7 +231,21 @@ def mapear_fontes(backend, cfg, chave):
             "abas_central": abas_central, "destino_do_hotel": destino_do_hotel}
 
 
-def sincronizar(gravar=False):
+VERSOES = "sincronizacao_versoes.json"
+COMPLETA_HORAS = 3   # leitura de todas as planilhas, mesmo sem mudança de versão (rede de segurança)
+
+
+def hoteis_que_mudaram(por_hotel, versoes, completa):
+    """Hotéis com alguma planilha cuja versão no Drive mudou desde a última cópia. O Drive não mexe no
+    modifiedTime quando o Forms grava resposta, mas a "version" sobe a cada alteração (ela vem na mesma
+    listagem da pasta, que não gasta a cota de leitura das planilhas)."""
+    if completa:
+        return dict(por_hotel)
+    return {h: lista for h, lista in por_hotel.items()
+            if any(not a.get("version") or versoes.get(a["id"]) != a["version"] for a in lista)}
+
+
+def sincronizar(gravar=False, completa=None):
     cfg = carregar_config()
     chave = caminho_chave_google(cfg)
     from sheets import BackendGoogle
@@ -246,21 +261,32 @@ def sincronizar(gravar=False):
     except FileNotFoundError:
         marcas = {}
     chaves_enviadas = chaves_da_lista_ja_enviadas(PASTA_ESTADO / "ja_enviadas.json")
+    try:
+        guardado = json.load(open(PASTA_ESTADO / VERSOES, encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        guardado = {}
+    versoes, ultima_completa = guardado.get("versoes", {}), guardado.get("ultima_completa", "")
+    if completa is None:
+        completa = not ultima_completa or datetime.datetime.now() - datetime.datetime.fromisoformat(ultima_completa)             >= datetime.timedelta(hours=COMPLETA_HORAS)
+    a_ler = hoteis_que_mudaram(por_hotel, versoes, completa)
+    lidas_agora = {}
 
     relatorio, copia_de_seguranca = [], {}
     inicio_copia = datetime.datetime.now()
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
         arquivo_backup = PASTA_ESTADO / f"backup_central_{inicio_copia:%Y%m%d_%H%M%S}.json"
-    dados_central, _ = backend.ler_abas(central, [destino_do_hotel[h] for h in por_hotel if h in destino_do_hotel])
-    for hotel, lista in sorted(por_hotel.items()):
-        # Lê sempre: o Drive não atualiza modifiedTime quando o Forms grava uma resposta,
-        # então não dá pra pular planilha "sem mudança". A aba só é regravada se mudou.
+    dados_central, _ = backend.ler_abas(central, [destino_do_hotel[h] for h in a_ler if h in destino_do_hotel])
+    for hotel in sorted(set(por_hotel) - set(a_ler)):
+        relatorio.append({"hotel": hotel, "situacao": "sem mudança no Drive — não lida"})
+    for hotel, lista in sorted(a_ler.items()):
+        # Só os hotéis com versão nova no Drive (ou todos, na leitura completa). A aba só é regravada se mudou.
         lidas = []
         for a in sorted(lista, key=lambda x: x["modifiedTime"], reverse=True):
             time.sleep(PAUSA_ENTRE_LEITURAS)
             aba_origem, linhas = _ler_planilha_hotel(cliente, a, cfg)
             lidas.append((a, aba_origem, linhas))
+        lidas_agora.update({a["id"]: a.get("version", "") for a in lista})
         com_dados = [x for x in lidas if len(x[2]) > 1]
         if not com_dados:
             relatorio.append({"hotel": hotel, "situacao": "planilha do hotel vazia — nada copiado"})
@@ -285,6 +311,9 @@ def sincronizar(gravar=False):
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
         json.dump(marcas, open(estado, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        salvar_json(PASTA_ESTADO / VERSOES, {"versoes": {**versoes, **lidas_agora},
+                                             "ultima_completa": inicio_copia.isoformat(timespec="seconds") if completa
+                                             else ultima_completa})
         open(PASTA_ESTADO / "ultima_copia.txt", "w", encoding="utf-8").write(inicio_copia.isoformat(timespec="seconds"))
         robo_antigo.registrar_atividade(PASTA_ESTADO / "robo_antigo.json",
                                         {r["hotel"]: r.get("ultimo_antigo") for r in relatorio if "linhas" in r})
@@ -353,8 +382,10 @@ def rodar_agendado():
         inicio = time.time()
         relatorio, sem_hotel, _ = sincronizar(gravar=True)
         copiados = [r for r in relatorio if r.get("mudou")]
+        pulados = len([r for r in relatorio if r.get("situacao", "").startswith("sem mudança no Drive")])
         logger.info(f"🔄 Cópia dos hotéis concluída em {time.time() - inicio:.0f}s: "
-                    f"{len([r for r in relatorio if 'linhas' in r])} hotel(éis) lido(s), {len(copiados)} com novidade, "
+                    f"{len([r for r in relatorio if 'linhas' in r])} hotel(éis) lido(s), {pulados} sem mudança no Drive "
+                    f"(não lidos), {len(copiados)} com novidade, "
                     f"{sum(r['pendentes'] for r in copiados)} pendente(s) neles.")
         if sem_hotel:
             logger.warning(f"⚠️ Planilhas na pasta sem hotel no cadastro (não copiadas): {', '.join(sem_hotel)}")
@@ -386,7 +417,7 @@ if __name__ == "__main__":
         sys.exit(copiar_e_enviar() if "--enviar" in sys.argv else rodar_agendado())
     gravar = "--gravar" in sys.argv
     inicio = time.time()
-    relatorio, sem_hotel, sem_planilha = sincronizar(gravar)
+    relatorio, sem_hotel, sem_planilha = sincronizar(gravar, completa=True if "--completa" in sys.argv else None)
     print(("GRAVADO" if gravar else "PRÉVIA — nada foi gravado") + f" ({time.time() - inicio:.0f}s)\n")
     tot = {"linhas": 0, "pendentes": 0, "true_da_central": 0}
     for r in relatorio:
