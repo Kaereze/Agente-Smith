@@ -21,8 +21,8 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 from config import PASTA_ESTADO, ErroDeConfig, carregar_config, e_principal
-from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, ler_assunto_nf,
-                         categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
+from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, e_email_do_robo,
+                         ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
                          trocar_paragrafo_status)
 from log_util import configurar_logging
 
@@ -291,7 +291,7 @@ def _procurar_consolidado(pasta, codigo, profundidade=0):
             if i >= 300:
                 break
             try:
-                if codigo in (item.Body or ""):
+                if codigo in (item.Body or "") and e_email_do_robo(item.Subject, item.Body, codigo):
                     return item
             except Exception:
                 continue
@@ -336,7 +336,7 @@ def atualizar_consolidados(outlook, namespace, registro):
         if dados.get("entry_id_recebido"):
             try:
                 item = namespace.GetItemFromID(dados["entry_id_recebido"], conta.DeliveryStore.StoreID)
-                if codigo not in (item.Body or ""):
+                if codigo not in (item.Body or "") or not e_email_do_robo(item.Subject, item.Body, codigo):
                     item = None
             except Exception:
                 item = None

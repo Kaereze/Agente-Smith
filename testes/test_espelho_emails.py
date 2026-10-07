@@ -60,3 +60,21 @@ def test_quartos_vao_e_voltam_pela_aba():
     assert lidos["y"]["quartos"] == 0 and lidos["y"]["hospedes_quartos"] == []
     antiga = [esp.CABECALHO[:11], ["z", "c", "h", "d", "n", "s", "2026-10-06T10:00:00", "", "t", "PC", "agora"]]
     assert esp.ler_aba(antiga)[0]["quartos"] == 0   # aba de PC ainda sem a coluna nova
+
+
+def test_hospede_dizendo_que_falta_nota():
+    from controle_nf import reclama_falta_nota
+    assert reclama_falta_nota("Bom dia,\nFicou faltando a nf referente a esse outro pagamento.") == \
+        "Ficou faltando a nf referente a esse outro pagamento."
+    assert reclama_falta_nota("Referente ao dia 29/09 e 30/09, ele ficou mais duas diárias além da que foi enviada.")
+    assert reclama_falta_nota("A outra diária no hotel.")
+    assert reclama_falta_nota("Boa tarde, recebi a nota, obrigada!") == ""
+    assert reclama_falta_nota("Segue o comprovante de pagamento.") == ""
+
+
+def test_resposta_do_hospede_nao_e_o_email_do_robo():
+    from controle_nf import e_email_do_robo
+    cod = "NF-CBC1B39537"
+    assert e_email_do_robo("[1/1 ✅] Solicitação NF - JANGADEIRO - GERALDO", "...\nCódigo de envio: NF-CBC1B39537", cod)
+    assert not e_email_do_robo("[1/1 ✅] RE: NF 196 - GERALDO", "Ficou faltando\n____\nDe: nf\nCódigo de envio: NF-CBC1B39537", cod)
+    assert not e_email_do_robo("NF 196 - GERALDO", "Prezado\nDe: notafiscal\nCódigo de envio: NF-CBC1B39537", cod)

@@ -61,6 +61,45 @@ def quartos_da_reserva(texto):
     return (n, nomes) if n >= 1 and (nomes or _PRECO_QUARTO.search(t) or _QUARTOS_PARA.search(t)) else (0, [])
 
 
+# Hóspede dizendo que ainda falta nota/diária depois de uma NF (pedido do usuário, 07/10/2026: "Ficou faltando
+# a nf referente a esse outro pagamento", "a outra diária", "ficou mais duas diárias além da que foi enviada").
+_FALTA_NOTA = [
+    re.compile(r"\bfalt(?:a|am|ou|aram|ando|ante)\b[^.\n]{0,60}?\b(?:notas?|nfs?|nfs-?e|nf-?e|di[aá]rias?|pagamentos?)\b", re.I),
+    re.compile(r"\b(?:mais|outras?|demais)\s+(?:\d+\s+|uma\s+|duas\s+|tr[eê]s\s+|quatro\s+|cinco\s+)?di[aá]rias?\b", re.I),
+    re.compile(r"\bn[aã]o\s+(?:recebi|recebemos|veio|vieram|consta|constam|chegou|chegaram)\b[^.\n]{0,40}?"
+               r"\b(?:notas?|nfs?|di[aá]rias?)\b", re.I),
+]
+
+
+def reclama_falta_nota(texto):
+    """-> a frase do hóspede que diz que falta nota/diária ("" se não diz). Só o texto dele (sem o histórico)."""
+    for regra in _FALTA_NOTA:
+        m = regra.search(texto or "")
+        if m:
+            ini = max((texto or "").rfind("\n", 0, m.start()), (texto or "").rfind(".", 0, m.start())) + 1
+            fim = min([i for i in ((texto or "").find("\n", m.end()), (texto or "").find(".", m.end())) if i >= 0]
+                      or [len(texto)])
+            return re.sub(r"\s+", " ", texto[ini:fim + 1]).strip()[:200]
+    return ""
+
+
+_RESPOSTA = re.compile(r"^\s*(?:\[[^\]]{1,20}\]\s*)?(?:re|res|enc|fw|fwd|tr|rv)\s*:", re.I)
+_CABECALHO_CITACAO = re.compile(r"^\s*(?:De:|From:|-{2,}\s*(?:Mensagem original|Original Message)|_{5,}|"
+                                r"Em .{5,120}escreveu:|On .{5,120}wrote:)", re.I | re.M)
+
+
+def e_email_do_robo(assunto, corpo, codigo):
+    """O e-mail de solicitação é o que o robô mandou: não é resposta/encaminhamento e o código está no texto dele,
+    não na conversa citada embaixo (o hóspede respondendo copia o código e virava "✅ NF concluído")."""
+    if _RESPOSTA.match(assunto or ""):
+        return False
+    pos = (corpo or "").find(codigo)
+    if pos < 0:
+        return False
+    citacao = _CABECALHO_CITACAO.search(corpo or "")
+    return not (citacao and citacao.start() < pos)
+
+
 def ler_assunto_nf(assunto):
     """'NF 1212 - JOÃO SILVA - 363305' -> ('1212', 'JOÃO SILVA') | None"""
     m = PADRAO_ASSUNTO_NF.match(assunto or "")

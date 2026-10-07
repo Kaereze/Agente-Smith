@@ -18,6 +18,7 @@ import socket
 
 from arquivos import salvar_json
 from config import PASTA_ESTADO
+from controle_nf import reclama_falta_nota
 from log_util import configurar_logging
 from tratamento import normalizar
 
@@ -26,7 +27,7 @@ logger = configurar_logging("espelho_emails")
 DESDE = datetime.date(2026, 9, 1)
 PREFIXO_ABA = "Emails_"
 CABECALHO = ["ID", "Caixa", "Hotel", "De", "Nome", "Assunto", "Recebido", "Anexos", "Texto", "PC", "Atualizado",
-             "Quartos"]
+             "Quartos", "Falta nota"]
 MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
@@ -162,13 +163,14 @@ def linhas_da_aba(pendentes, pc, agora=None):
     agora = (agora or datetime.datetime.now()).isoformat(timespec="seconds")
     corpo = sorted(pendentes.values(), key=lambda e: e["recebido"], reverse=True)
     return [CABECALHO] + [[e["id"], e["caixa"], e["hotel"], e["de"], e["nome"], e["assunto"], e["recebido"],
-                          ", ".join(e["anexos"]), e["texto"], pc, agora, texto_quartos(e)] for e in corpo]
+                          ", ".join(e["anexos"]), e["texto"], pc, agora, texto_quartos(e),
+                          reclama_falta_nota(e["texto"])] for e in corpo]
 
 
 def ler_aba(linhas):
     """Linhas de uma aba Emails_<PC> -> [dict]"""
     chaves = ["id", "caixa", "hotel", "de", "nome", "assunto", "recebido", "anexos", "texto", "pc", "atualizado",
-              "quartos"]
+              "quartos", "falta_nota"]
     saida = []
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():

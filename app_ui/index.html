@@ -156,7 +156,7 @@ label.sel::after{content:"";position:absolute;right:14px;top:50%;width:7px;heigh
 .p-aguardando_envio{background:var(--folha-2);color:var(--tinta-2);border:1px solid var(--linha)}
 .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font:500 10.5px var(--f-texto);background:var(--info-fundo);color:var(--info);vertical-align:1px}
 .tag.nf-ok{background:var(--ok-fundo);color:var(--ok)} .tag.nf-parc{background:var(--atencao-fundo);color:var(--atencao)}
-.tag.dono{background:var(--roxo-fundo);color:var(--roxo)}
+.tag.dono{background:var(--roxo-fundo);color:var(--roxo)} .tag.falta{background:var(--erro-fundo);color:var(--erro)}
 .paginacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--tinta-3);flex-wrap:wrap}
 .pags{display:flex;gap:6px}
 .pags button{min-width:32px;height:32px;padding:0 9px;justify-content:center}
@@ -601,6 +601,10 @@ async function carregar(){
     desenharPcsCabecalho(j.pcs || []);
     try { const em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}
     AG = {}; (st.hoteis || []).forEach(h => AG[h.hotel] = h.agente);
+    // Hóspede respondeu dizendo que falta nota/diária: o pedido dele não está resolvido, mesmo com NF
+    const faltas = {};
+    st.emails.forEach(m => { if (m.falta_nota && m.solicitacao) faltas[m.solicitacao.chave] = m.falta_nota; });
+    st.fila.forEach(s => { s.falta_nota = faltas[s.chave] || ""; if (s.falta_nota && s.situacao === "concluida") s.situacao = "nf_parcial"; });
     TODOS = st.fila.map(s => ({tipo: "form", id: s.chave, s, hoteis: [s.hotel], quando: s.data + "T" + horaDoCarimbo(s.carimbo)}))
       .concat(st.emails.map(m => ({tipo: "email", id: m.id, m, hoteis: m.hotel.split(" / "), quando: m.recebido || ""})))
       .sort((a, b) => b.quando.localeCompare(a.quando));
@@ -649,6 +653,10 @@ function tagDivisao(s) {
   return feitas >= partes ? `<span class="tag nf-ok" title="NF ${esc(s.nfs.join(", "))}">NF emitida</span>`
     : `<span class="tag nf-parc" title="NF ${esc(s.nfs.join(", "))} · ${feitas} de ${partes}">falta ${falta} nota${falta > 1 ? "s" : ""}</span>`;
 }
+// Hóspede diz que ainda falta nota/diária (frase dele na dica)
+const tagFalta = frase => frase ? `<span class="tag falta" title="${esc(frase)}">falta nota</span>` : "";
+const quadroFalta = frase => frase ? `<section class="ficha"><div class="ficha-tit"><span class="rot" style="color:var(--erro)">O hóspede diz que ainda falta nota</span>
+  <span class="tag falta">falta nota</span></div><div class="ficha-corpo">“${esc(frase)}”</div></section>` : "";
 // Voucher anexado ao e-mail com 2+ quartos (um hóspede por quarto) = nota dividida
 const tagQuartos = m => m.quartos >= 2
   ? `<span class="tag" title="${esc((m.hospedes_quartos || []).join(" · "))}">dividida · ${m.quartos} quartos</span>` : "";
@@ -698,7 +706,7 @@ function linhaHtml(it) {
     const sub = [s.email, s.nfs.length ? "NF " + s.nfs.join(", ") : ""].filter(Boolean).join(" · ");
     return `<div class="linha ${sel === s.chave ? "sel" : ""}" role="option" tabindex="0" data-k="${esc(s.chave)}">
       <span class="col-tipo tipo-o form"><i><svg><use href="#i-form"/></svg></i>Form.</span>
-      <span class="quem-linha"><b>${esc(s.nome)}${s.dono ? `<span class="tag dono">${esc(s.dono)}</span>` : ""}${s.dividida ? '<span class="tag">dividida</span>' + tagDivisao(s) : tagNotaUnica(s)}</b>
+      <span class="quem-linha"><b>${esc(s.nome)}${tagFalta(s.falta_nota)}${s.dono ? `<span class="tag dono">${esc(s.dono)}</span>` : ""}${s.dividida ? '<span class="tag">dividida</span>' + tagDivisao(s) : tagNotaUnica(s)}</b>
         <small>${esc(sub)}</small></span>
       <span class="col-hotel">${esc(s.hotel)}<small>${esc(AG[s.hotel] || "")}</small></span>
       <span class="hora">${chegou(it.quando)}</span>
@@ -707,7 +715,7 @@ function linhaHtml(it) {
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
     <span class="col-tipo tipo-o email"><i><svg><use href="#i-mail"/></svg></i>E-mail</span>
-    <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
+    <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagFalta(m.falta_nota)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
     <span class="hora">${chegou(it.quando)}</span>
@@ -766,7 +774,7 @@ function desenharDetalhe() {
         <span class="etq ${s.enviado ? "" : "ruim"}">${s.enviado ? "E-mail ao hotel enviado" : "E-mail ao hotel não enviado"}</span>
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
         ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}</div></header>
-    <div class="corpo-msg">
+    <div class="corpo-msg">${quadroFalta(s.falta_nota)}
       <section class="ficha"><div class="ficha-tit"><span class="rot">Ficha do formulário</span><span class="dica">${dataBr(s.data)}</span></div>
         <dl><dt>E-mail do hóspede</dt><dd>${esc(s.email)}</dd>${s.campos.map(c =>
           `<dt>${esc(c[0])}</dt><dd class="${/\d{3}[.\/-]\d/.test(c[1]) ? "dado" : ""}">${esc(c[1])}</dd>`).join("")}</dl></section>
@@ -799,7 +807,7 @@ function desenharDetalheEmail(e) {
         <span class="de">&lt;${esc(e.de)}&gt; para ${esc(e.caixa)}</span></div>
       <div class="etiquetas"><span class="pilula p-sem_resposta">Sem resposta</span><span class="etq">E-mail direto</span>
         <span class="etq">${esc(e.hotel)}</span><span class="etq ${e.pc_online ? "" : "ruim"}">Caixa no PC de ${esc(e.agente_pc || e.pc)}${e.pc_online ? "" : " · desligado: a resposta sai quando ele ligar"}</span></div></header>
-    <div class="corpo-msg">
+    <div class="corpo-msg">${quadroFalta(e.falta_nota)}
       ${e.quartos >= 2 ? `<section class="ficha"><div class="ficha-tit"><span class="rot">Nota dividida · voucher com ${e.quartos} quartos</span>
         <span class="tag">dividida</span></div><dl>${(e.hospedes_quartos.length ? e.hospedes_quartos : Array(e.quartos).fill("(nome não lido)"))
           .map((n, k) => `<dt>Quarto ${k + 1}</dt><dd>${esc(n)}</dd>`).join("")}</dl></section>` : ""}
