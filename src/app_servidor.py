@@ -491,6 +491,11 @@ class Estado:
     def _ignorados(self):
         return {self.cadastro.canonico(h) or h for h in self.ignorar}
 
+    def hoteis_por_agente(self):
+        """[{hotel, agente}] do Cadastro_Hoteis (sem os ignorados): filtros de hotel e agente da caixa."""
+        ign = self._ignorados()
+        return [{"hotel": h, "agente": self.cadastro.dados(h).get("agente", "")} for h in self.cadastro.nomes() if h not in ign]
+
     def _fila_do_painel(self):
         ign = self._ignorados()
         return [s for s in self.fila(desde=self.desde.isoformat()) if s["hotel"] not in ign]
@@ -586,6 +591,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila(dias), "pcs": estado.pcs(),
+                    "hoteis": estado.hoteis_por_agente(),
                 })
             if url.path == "/api/envio":
                 def ler_status():

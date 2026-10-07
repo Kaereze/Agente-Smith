@@ -1,4 +1,5 @@
-// Visão geral e Hotéis. Usa api/$/esc/toast/st/NOMES do script da fila (mesmo escopo global).
+// Visão geral, Hotéis, Log, Máquinas e as janelas de envio. Usa api/$/esc/toast/st/desenhar do script da caixa
+// (mesmo escopo global).
 const PERIODOS = [["mes", "Este mês"], ["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"], ["tudo", "Desde 01/09"]];
 const MEDIDAS = {
   nf: { nome: "Solicitações × NFs", chaves: [{ k: "solicitacoes", nome: "Solicitações recebidas" }, { k: "nfs", nome: "NFs emitidas" }] },
@@ -28,30 +29,36 @@ async function carregarPainel() {
   pn.timer = setTimeout(carregarPainel, 60000);
 }
 
+const TITULOS = { visao: "Visão geral", fila: "Caixa de entrada", hoteis: "Hotéis", log: "Log do robô", maquinas: "Máquinas" };
 function trocarVista(v) {
+  if (!TITULOS[v]) v = "fila";
   pn.vista = v;
-  document.querySelectorAll("#abas button").forEach(b => b.classList.toggle("sel", b.dataset.vista === v));
-  for (const id of ["visao", "fila", "hoteis", "atividade"]) $("v-" + id).classList.toggle("oculta", id !== v);
+  for (const id of Object.keys(TITULOS)) $("v-" + id).classList.toggle("oculta", id !== v);
+  $("trilha").textContent = TITULOS[v];
+  document.querySelectorAll(".ln[data-vista]").forEach(b =>
+    b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba))));
+  desenhar();   // a lateral só marca a caixa quando ela está aberta
   if (v === "visao") desenharVisao();
   if (v === "hoteis") desenharHoteis();
   clearTimeout(at.timer);
-  if (v === "atividade") carregarAtividade();
+  if (v === "log" || v === "maquinas") carregarAtividade();
 }
 
-// ---------- Atividade: o que os robôs de todos os PCs fizeram ----------
+// ---------- Log e Máquinas: o que os robôs de todos os PCs fizeram ----------
 const TIPOS_ATIV = {NOVA_SOLICITACAO: "Pedido novo", EMAIL_RECEBIDO: "E-mail recebido", NF_ENVIADA: "NF enviada",
   NF_DROPBOX: "NF no Dropbox", TRATATIVA: "Tratativa", NOTA_UNICA: "Nota única", OUTLOOK_FECHADO: "Outlook fechado",
   OUTLOOK_ABERTO: "Outlook aberto", ATUALIZADO: "Atualizado", FALHA: "Falha"};
-const FILTROS_ATIV = [["", "Tudo"], ["NOVA_SOLICITACAO", "Pedidos novos"], ["NF_ENVIADA,NF_DROPBOX", "NFs"],
-  ["TRATATIVA", "Tratativas"], ["EMAIL_RECEBIDO", "E-mails recebidos"], ["OUTLOOK_FECHADO,OUTLOOK_ABERTO", "Outlook"],
-  ["ATUALIZADO", "Atualizações"]];
-let at = { dados: null, filtro: "", pc: "", timer: null };
+// entrada = o que chegou · saída = o que a equipe/robô mandou ou confirmou · atualizações · Outlook e PCs
+const SENTIDO = {NOVA_SOLICITACAO: "entrada", EMAIL_RECEBIDO: "entrada", NF_ENVIADA: "saida", NF_DROPBOX: "saida",
+  TRATATIVA: "saida", NOTA_UNICA: "saida", ATUALIZADO: "sistema", FALHA: "sistema", OUTLOOK_FECHADO: "maquina", OUTLOOK_ABERTO: "maquina"};
+const ABAS_LOG = [["tudo", "Tudo"], ["entrada", "Entradas"], ["saida", "Saídas"], ["sistema", "Atualizações"], ["maquina", "Outlook e PCs"]];
+let at = { dados: null, aba: "tudo", pc: "", timer: null };
 
 async function carregarAtividade() {
   const j = await api("/api/atividade").catch(() => null);
-  if (j && !j.erro) { at.dados = j; desenharAtividade(); }
+  if (j && !j.erro) { at.dados = j; desenharLog(); desenharMaquinas(); }
   clearTimeout(at.timer);
-  if (pn.vista === "atividade") at.timer = setTimeout(carregarAtividade, 20000);
+  if (pn.vista === "log" || pn.vista === "maquinas") at.timer = setTimeout(carregarAtividade, 20000);
 }
 
 function haQuanto(iso) {
@@ -60,51 +67,77 @@ function haQuanto(iso) {
   return min < 1 ? "agora" : min < 60 ? `há ${min} min` : min < 1440 ? `há ${Math.round(min / 60)} h` : `há ${Math.round(min / 1440)} d`;
 }
 
-function desenharAtividade() {
-  const d = at.dados, el = $("atividade");
+function desenharLog() {
+  const d = at.dados, el = $("log");
   if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
-  const cards = d.pcs.map(p => {
-    const cls = !p.online ? "off" : p.outlook === "fechado" ? "ruim" : (p.conferencia_atrasada || p.versao !== d.versao) ? "alerta" : "";
-    const antigo = !p.versao;   // PC com o código de antes desta página: não publica Outlook nem versão
-    const versao = antigo ? `<span class="ruim-txt">código antigo — atualize este PC</span>`
-      : p.versao === d.versao ? "igual a este PC" : `<span class="ruim-txt">diferente deste PC (${esc(d.versao)})</span>`;
-    return `<div class="pc-card ${cls}"><b>${esc(p.agente || "?")}</b> · ${esc(p.pc)}${p.pc === d.este_pc ? " (este PC)" : ""}<br>
-      <span class="linha">${p.online ? "🟢 online" : "⚫ desligado"} · visto ${haQuanto(p.visto.replace(" ", "T"))} · ${p.caixas} caixas · ${esc(p.papel || "")}</span><br>
-      Outlook: ${antigo ? "sem informação" : p.outlook === "aberto" ? "aberto" : `<span class="ruim-txt">${esc(p.outlook || "?")}</span>`}<br>
-      Conferência: ${antigo ? "sem informação" : p.conferencia_atrasada ? `<span class="ruim-txt">parada (${haQuanto(p.conferencia)})</span>`
-        : p.conferencia ? haQuanto(p.conferencia) : "aguardando a primeira volta"}
-        ${p.conferencia_resumo ? ` · ${esc(p.conferencia_resumo)}` : ""}<br>
-      Versão: ${antigo ? "" : esc(p.versao) + " · "}${versao}<br>
-      ${p.online ? `<button data-at-atualizar="${esc(p.pc)}">Atualizar este PC</button>` : ""}</div>`;
-  }).join("");
-  const tipos = at.filtro ? at.filtro.split(",") : null;
-  const evs = d.eventos.filter(e => (!tipos || tipos.includes(e.tipo)) && (!at.pc || e.pc === at.pc));
+  const hoje = d.eventos.filter(e => e.quando.slice(0, 10) === hojeIso());
+  const nHoje = (...tipos) => hoje.filter(e => tipos.includes(e.tipo)).length;
+  const alertas = d.pcs.filter(p => !p.online || p.outlook === "fechado" || p.conferencia_atrasada);
+  const evs = d.eventos.filter(e => (at.aba === "tudo" || SENTIDO[e.tipo] === at.aba) && (!at.pc || e.pc === at.pc));
   const pcsLista = [...new Set(d.eventos.map(e => e.pc))].sort();
-  el.innerHTML = `<div class="titulo-pagina"><h2>Atividade dos robôs</h2>
-      <span class="dica">${d.pcs.filter(p => p.online).length} PC(s) online · atualiza sozinho a cada 20 s ·
-        este PC na versão ${esc(d.versao)}${d.atualizacao.motivo ? " · " + esc(d.atualizacao.motivo) : ""}</span>
-      <button data-at-atualizar="TODOS" title="Cada PC puxa a versão nova do GitHub e reinicia">Atualizar todos os PCs</button></div>
-    <div class="pcs-grade">${cards || `<div class="vazio">Nenhum PC publicou ainda.</div>`}</div>
-    <div class="ativ-filtros">${FILTROS_ATIV.map(([v, n]) => `<button class="chip ${at.filtro === v ? "sel" : ""}" data-at-filtro="${v}">${n}</button>`).join("")}
-      <select id="at-pc"><option value="">Todos os PCs</option>${pcsLista.map(p => `<option ${p === at.pc ? "selected" : ""}>${esc(p)}</option>`).join("")}</select></div>
-    <table class="ativ-tab"><tbody>${evs.slice(0, 300).map(e => `<tr>
-      <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
-      <td><span class="tipo t-${esc(e.tipo)}">${esc(TIPOS_ATIV[e.tipo] || e.tipo)}</span></td>
-      <td>${esc(e.agente || "")}<div class="dica">${esc(e.pc)}</div></td>
-      <td>${esc(e.hotel || "")}<div class="dica">${esc(e.pedido || "")}</div></td>
-      <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table>`;
+  el.innerHTML = `<div class="cab-pagina"><h1>Log do robô</h1>
+      <span class="dica">Tudo o que entrou e saiu em todos os PCs · atualiza sozinho a cada 20 s</span></div>
+    <div class="contas">
+      <div class="conta"><span class="rot">Entraram hoje</span><span class="v">${nHoje("NOVA_SOLICITACAO", "EMAIL_RECEBIDO")}</span>
+        <span class="s">${nHoje("NOVA_SOLICITACAO")} pelo formulário · ${nHoje("EMAIL_RECEBIDO")} por e-mail</span></div>
+      <div class="conta"><span class="rot">NFs hoje</span><span class="v">${nHoje("NF_ENVIADA", "NF_DROPBOX")}</span>
+        <span class="s">${nHoje("NF_ENVIADA")} enviadas por e-mail · ${nHoje("NF_DROPBOX")} achadas no Dropbox</span></div>
+      <div class="conta"><span class="rot">Tratativas hoje</span><span class="v">${nHoje("TRATATIVA")}</span><span class="s">e-mails ao hóspede sem nota</span></div>
+      <div class="conta"><span class="rot">Máquinas com alerta</span><span class="v" style="color:${alertas.length ? "var(--erro)" : "var(--ok)"}">${alertas.length}</span>
+        <span class="s">${alertas.length ? alertas.map(p => esc(p.agente || p.pc) + (!p.online ? " desligado" : p.outlook === "fechado" ? " com Outlook fechado" : " com conferência parada")).join(" · ")
+          : "todos os PCs no ar"}</span></div>
+    </div>
+    <div class="abas-log" role="tablist">${ABAS_LOG.map(([v, n]) => `<button class="aba ${at.aba === v ? "sel" : ""}" role="tab" aria-selected="${at.aba === v}" data-at-aba="${v}">${n}</button>`).join("")}
+      <label class="sel sel-pc"><select id="at-pc" aria-label="PC"><option value="">Todos os PCs</option>${pcsLista.map(p => `<option ${p === at.pc ? "selected" : ""}>${esc(p)}</option>`).join("")}</select></label></div>
+    <div class="tabela-wrap"><table class="ativ-tab"><thead><tr><th>Quando</th><th>O quê</th><th>Máquina</th><th>Hotel / pedido</th><th>Detalhe</th></tr></thead>
+      <tbody>${evs.slice(0, 300).map(e => `<tr>
+        <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
+        <td><span class="tipo t-${esc(e.tipo)}">${esc(TIPOS_ATIV[e.tipo] || e.tipo)}</span></td>
+        <td>${esc(e.agente || "")}<div class="dica">${esc(e.pc)}</div></td>
+        <td>${esc(e.hotel || "")}<div class="dica">${esc(e.pedido || "")}</div></td>
+        <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table></div>
+    <p class="dica">Mostra os ${d.eventos.length} registros mais recentes da aba Atividade_Robo da Planilha Central.</p>`;
   const sel = $("at-pc");
-  if (sel) sel.onchange = () => { at.pc = sel.value; desenharAtividade(); };
+  if (sel) sel.onchange = () => { at.pc = sel.value; desenharLog(); };
+}
+
+function desenharMaquinas() {
+  const d = at.dados, el = $("maquinas");
+  if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
+  const a = d.atualizacao || {};
+  const cards = d.pcs.map(p => {
+    const antigo = !p.versao;   // PC com o código de antes da página Atividade: não publica Outlook nem versão
+    const cls = !p.online ? "off" : p.outlook === "fechado" ? "ruim" : (p.conferencia_atrasada || p.versao !== d.versao) ? "alerta" : "";
+    const ponto = !p.online ? "" : p.outlook === "fechado" ? "off" : cls === "alerta" ? "warn" : "on";
+    const versao = antigo ? `<span class="ruim-txt">código antigo, atualize</span>`
+      : p.versao === d.versao ? `<span class="dado">${esc(p.versao)}</span> · igual a este PC` : `<span class="dado">${esc(p.versao)}</span> · <span class="alerta-txt">diferente deste PC</span>`;
+    const conf = antigo ? "sem informação" : p.conferencia_atrasada ? `<span class="ruim-txt">parada (${haQuanto(p.conferencia)})</span>`
+      : p.conferencia ? haQuanto(p.conferencia) : "aguardando a primeira volta";
+    return `<article class="maq ${cls}"><div class="maq-cab"><div><b>${esc(p.agente || "?")}</b><span class="dado">${esc(p.pc)}${p.pc === d.este_pc ? " · este PC" : ""}</span></div>
+        <span class="pill"><span class="dot ${ponto}"></span>${p.online ? "No ar" : "Desligado"}</span></div>
+      <dl><dt>Visto</dt><dd>${haQuanto(p.visto.replace(" ", "T"))}</dd>
+        <dt>Outlook</dt><dd>${antigo ? "sem informação" : p.outlook === "aberto" ? `<span style="color:var(--ok)">aberto</span>` : `<span class="ruim-txt">${esc(p.outlook || "?")}</span>`}</dd>
+        <dt>Conferência</dt><dd>${conf}${p.conferencia_resumo ? `<div class="dica">${esc(p.conferencia_resumo)}</div>` : ""}</dd>
+        <dt>Versão</dt><dd>${versao}</dd>
+        <dt>Caixas</dt><dd class="dado">${p.caixas}</dd><dt>Papel</dt><dd>${esc(p.papel || "")}</dd></dl>
+      ${p.online ? `<button data-at-atualizar="${esc(p.pc)}"><svg class="ic"><use href="#i-sync"/></svg>Atualizar este PC</button>` : ""}</article>`;
+  }).join("");
+  el.innerHTML = `<div class="cab-pagina"><h1>Máquinas da equipe</h1>
+      <span class="dica">${d.pcs.filter(p => p.online).length} de ${d.pcs.length} PCs no ar · atualiza sozinho a cada 20 s</span></div>
+    <div class="versao-ref"><span class="rot">Este PC</span><span class="dado">${esc(d.versao)}</span>
+      <span class="dica">${a.atras ? `o GitHub tem ${a.atras} commit(s) novo(s)` : esc(a.motivo || "")}${a.verificado_em ? " · conferido " + haQuanto(a.verificado_em) : ""}</span>
+      <button data-at-atualizar="TODOS" title="Cada PC puxa a versão nova do GitHub e reinicia"><svg class="ic"><use href="#i-sync"/></svg>Atualizar todos os PCs</button></div>
+    <div class="maquinas">${cards || `<div class="vazio">Nenhum PC publicou ainda.</div>`}</div>`;
 }
 
 document.addEventListener("click", async e => {
-  const b = e.target.closest("[data-at-filtro],[data-at-atualizar]");
+  const b = e.target.closest("[data-at-aba],[data-at-atualizar]");
   if (!b) return;
-  if (b.dataset.atFiltro !== undefined) { at.filtro = b.dataset.atFiltro; return desenharAtividade(); }
+  if (b.dataset.atAba) { at.aba = b.dataset.atAba; trocarVista("log"); return; }
   const para = b.dataset.atAtualizar;
   if (!confirm(para === "TODOS" ? "Pedir pra TODOS os PCs puxarem a versão nova do GitHub e reiniciarem?" : `Pedir pro PC ${para} atualizar e reiniciar?`)) return;
   const r = await api("/api/comando", { para, comando: "atualizar" });
-  toast(r.ok ? "Pedido enviado — o PC responde em até 1 minuto (veja a lista abaixo)." : (r.motivo || r.erro || "falhou"), !r.ok);
+  toast(r.ok ? "Pedido enviado — o PC responde em até 1 minuto (veja o Log)." : (r.motivo || r.erro || "falhou"), !r.ok);
 });
 
 // ---------- Visão geral ----------
@@ -253,19 +286,34 @@ async function abrirHotel(nome, silencioso) {
   graficoBarrasH($("idade-hotel"), f.idade.map(i => ({ rotulo: i.faixa, n: i.n })));
 }
 
-// ---------- Enviar pendentes (janela com o andamento ao vivo) ----------
+// ---------- Enviar pendentes: o caminho que o robô faz, com as linhas reais do log ----------
+// Cada etapa acende quando aparece no log uma linha dela (main.py); a linha vira o detalhe da etapa.
+const ETAPAS_ENVIO = [
+  ["Pedido ao robô", "o PC principal recebe o pedido", /Pedido entregue|início|DESLIGADO/i],
+  ["Planilha Central", "abas de respostas de cada hotel", /aba\(s\) de respostas/i],
+  ["Solicitações pendentes", "o que ainda não foi pra caixa do hotel", /pendente\(s\) lida|já tratada|esperando a vez/i],
+  ["Montando os e-mails", "um e-mail por operador, com as solicitações", /montado/i],
+  ["Enviando às caixas dos hotéis", "pelo Outlook do PC principal", /Enviando|SAIU/i],
+  ["Marcando a planilha", "Enviado = TRUE e aviso ao conferente de NF", /marcada|anotado/i],
+  ["Concluído", "", null],
+];
 let envioTimer = null;
 async function abrirEnvio() {
   if (document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
-  fundo.innerHTML = `<div class="modal"><div class="modal-topo"><div class="anel" id="env-anel"></div>
+  fundo.innerHTML = `<div class="modal proc" role="dialog" aria-modal="true" aria-labelledby="env-titulo">
+    <div class="proc-cab"><div class="anel" id="env-anel"></div>
       <div><h3 id="env-titulo">Enviar solicitações pendentes</h3><div class="sub" id="env-sub">Confirme para o robô começar</div></div></div>
-    <div class="barra-prog" id="env-barra" style="visibility:hidden"><i></i></div>
-    <div class="trilha" id="env-trilha"><div class="vazio" style="padding:30px">O robô lê as pendentes da Planilha Central, monta um e-mail
-      por solicitação e envia pra caixa de cada hotel. Nada é enviado ao hóspede.</div></div>
+    <div class="proc-barra" id="env-barra"><i></i></div>
+    <div class="proc-corpo">
+      <ol class="etapas" id="env-etapas">${ETAPAS_ENVIO.map(([t, s], k) =>
+        `<li class="etapa" id="env-et-${k}"><span class="marco">${k + 1}</span><span><b>${esc(t)}</b><small>${esc(s)}</small></span></li>`).join("")}</ol>
+      <div class="trilha" id="env-trilha"><div class="vazio" style="padding:30px;font-family:var(--f-texto)">O robô lê as pendentes da Planilha Central,
+        monta um e-mail por operador e envia pra caixa de cada hotel. Nada é enviado ao hóspede.</div></div>
+    </div>
     <div class="modal-rodape"><span class="res" id="env-res"></span>
-      <span><button id="env-fechar">Cancelar</button> <button class="creme" id="env-ir">Enviar agora</button></span></div></div>`;
+      <span style="display:flex;gap:8px"><button id="env-fechar">Cancelar</button><button class="creme" id="env-ir">Enviar agora</button></span></div></div>`;
   document.body.appendChild(fundo);
   $("env-anel").style.animationPlayState = "paused";
   $("env-fechar").onclick = () => { clearTimeout(envioTimer); fundo.remove(); };
@@ -276,12 +324,26 @@ async function abrirEnvio() {
     $("env-ir").style.display = "none";
     $("env-fechar").textContent = "Fechar (continua em segundo plano)";
     $("env-anel").style.animationPlayState = "running";
-    $("env-barra").style.visibility = "visible";
-    $("env-titulo").textContent = "Enviando pendentes…";
-    $("env-sub").textContent = r.modo === "local" ? "Rodando neste PC" : "Pedido enviado ao PC principal";
+    $("env-titulo").textContent = "O robô está enviando as pendentes";
+    $("env-sub").textContent = r.modo === "local" ? "Rodando neste PC" : "Pedido entregue ao PC principal";
     $("env-trilha").innerHTML = "";
     acompanharEnvio(r.modo === "local" ? 700 : 2500);
   };
+}
+
+function marcarEtapas(linhas, rodando, ok) {
+  let atual = 0;
+  const detalhe = {};
+  linhas.forEach(l => ETAPAS_ENVIO.forEach(([, , re], k) => { if (re && re.test(l.texto)) { atual = Math.max(atual, k); detalhe[k] = l.texto; } }));
+  if (!rodando) atual = ETAPAS_ENVIO.length - 1;
+  ETAPAS_ENVIO.forEach((et, k) => {
+    const li = $("env-et-" + k);
+    if (!li) return;
+    li.classList.toggle("feita", k < atual || (!rodando && ok));
+    li.classList.toggle("agora", rodando && k === atual);
+    if (detalhe[k]) li.querySelector("small").textContent = detalhe[k].replace(/^\W+\s*/u, "");
+  });
+  $("env-barra").querySelector("i").style.width = Math.round(100 * (rodando ? atual + .5 : ETAPAS_ENVIO.length) / ETAPAS_ENVIO.length) + "%";
 }
 
 async function acompanharEnvio(ms) {
@@ -302,12 +364,15 @@ async function acompanharEnvio(ms) {
       d.querySelector(".m").textContent = atual ? "" : "✓";
     });
     if (noFim) trilha.scrollTop = trilha.scrollHeight;
-    if (!e.rodando && e.modo) {
-      const ok = e.codigo === 0;
+    const terminou = !e.rodando && e.modo, ok = e.codigo === 0;
+    marcarEtapas(e.linhas, !terminou, ok);
+    if (terminou) {
       $("env-anel").className = "anel " + (ok ? "ok" : "ruim");
       $("env-anel").textContent = ok ? "✓" : "!";
       $("env-barra").classList.add("fim");
       $("env-titulo").textContent = ok ? "Envio concluído" : "Envio terminou com aviso";
+      $("env-sub").textContent = e.resumo || "";
+      $("env-et-" + (ETAPAS_ENVIO.length - 1)).querySelector("small").textContent = e.resumo || "";
       $("env-res").textContent = e.resumo || "";
       $("env-fechar").textContent = "Fechar";
       carregar(); carregarPainel();
@@ -496,19 +561,19 @@ document.addEventListener("click", e => {
   const t = e.target.closest("[data-vista],[data-p-periodo],[data-p-medida],[data-p-tabela],[data-p-ordem],[data-p-hotel],[data-p-fechar],[data-p-sol],[data-p-ir]");
   if (!t) return;
   const ds = t.dataset;
-  if (ds.vista) return trocarVista(ds.vista);
+  if (ds.vista) { if (ds.log) at.aba = ds.log; return trocarVista(ds.vista); }
   if (ds.pPeriodo) { pn.periodo = ds.pPeriodo; return carregarPainel(); }
   if (ds.pMedida) { pn.medida = ds.pMedida; return desenharVisao(); }
   if (ds.pTabela) { pn.tabela = !pn.tabela; return desenharVisao(); }
   if (ds.pOrdem) { pn.ordem = { campo: ds.pOrdem, desc: pn.ordem.campo === ds.pOrdem ? !pn.ordem.desc : ds.pOrdem !== "hotel" && ds.pOrdem !== "agente" }; return desenharHoteis(); }
   if (ds.pHotel) return abrirHotel(ds.pHotel);
   if (ds.pFechar) { pn.hotelAberto = null; $("v-hoteis").classList.remove("ficha-aberta"); return; }
-  if (ds.pIr) { filtro = "na_fila"; hotel = ""; trocarVista("fila"); return desenhar(); }
+  if (ds.pIr) { filtro = "na_fila"; origem = "tudo"; hotel = ""; agenteF = ""; pagina = 0; return trocarVista("fila"); }
   if (ds.pSol) {
     const s = st.fila.find(x => x.chave === ds.pSol);
-    filtro = "todas"; hotel = pn.hotelAberto || ""; sel = ds.pSol;
+    filtro = "todas"; origem = "tudo"; hotel = pn.hotelAberto || ""; agenteF = ""; pagina = 0; sel = ds.pSol; emailSel = null;
     if (!s) { $("dias").value = "0"; carregar(); }
-    trocarVista("fila"); desenhar();
+    trocarVista("fila");
   }
 });
 document.addEventListener("change", e => {
@@ -525,5 +590,5 @@ document.addEventListener("input", e => {
 });
 $("btn-atualizar").addEventListener("click", () => setTimeout(carregarPainel, 1500));
 window.addEventListener("resize", () => { clearTimeout(pn.rz); pn.rz = setTimeout(() => pn.vista === "visao" && desenharVisao(), 200); });
-trocarVista(["visao", "fila", "hoteis"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "visao");
+trocarVista(location.hash.slice(1) || "fila");
 carregarPainel();

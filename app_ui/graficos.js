@@ -1,9 +1,15 @@
 // Gráficos em SVG puro (sem biblioteca): linhas com crosshair e barras horizontais.
-// Paleta validada (dataviz) contra a superfície dos cartões #0f2e2a.
+// Séries validadas (dataviz) contra os cartões do tema claro (#fffdf8) e do escuro (#112420).
+// Texto, grade e fundo vêm dos tokens da página, lidos a cada desenho (o tema segue o Windows).
 const VIZ = {
   serie: ["#3987e5", "#d95926"],
-  texto: "#efe4d4", texto2: "#b9a98f", mudo: "#8fa39c", grade: "#1f3f3a", eixo: "#2d5b53", fundo: "#0f2e2a",
+  texto: "#16261f", texto2: "#52605a", mudo: "#86918a", grade: "#e3dccb", eixo: "#cbbf9f", fundo: "#fffdf8",
 };
+function coresDoTema() {
+  const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
+  Object.assign(VIZ, { texto: v("--tinta") || VIZ.texto, texto2: v("--tinta-2") || VIZ.texto2, mudo: v("--tinta-3") || VIZ.mudo,
+                       grade: v("--linha") || VIZ.grade, eixo: v("--linha-forte") || VIZ.eixo, fundo: v("--folha") || VIZ.fundo });
+}
 const NS = "http://www.w3.org/2000/svg";
 
 function svgEl(tag, attrs, pai) {
@@ -28,6 +34,7 @@ const ddmm = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7);
 
 // serie: [{data, ...}], chaves: [{k, nome}] (no máximo 2 — cada uma pega uma cor fixa pela posição)
 function graficoLinhas(el, serie, chaves, { altura = 260, notaDoDia } = {}) {
+  coresDoTema();
   el.innerHTML = "";
   if (!serie.length) { el.textContent = "Sem dados no período."; return; }
   const largura = Math.max(320, el.clientWidth || 600);
@@ -99,9 +106,10 @@ function legenda(el, chaves) {
 
 // itens: [{rotulo, n}] — uma série só (sem legenda: o título diz o que é)
 function graficoBarrasH(el, itens, { aoClicar } = {}) {
+  coresDoTema();
   el.innerHTML = "";
   const ctx = document.createElement("canvas").getContext("2d");
-  ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+  ctx.font = '12px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif';
   const rotuloW = Math.ceil(Math.max(40, ...itens.map(i => ctx.measureText(i.rotulo).width))) + 12;
   const largura = Math.max(280, el.clientWidth || 400), linha = 30;
   const altura = itens.length * linha + 4, w = largura - rotuloW - 48;
