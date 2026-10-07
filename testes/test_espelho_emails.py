@@ -34,3 +34,29 @@ def test_aba_ida_e_volta():
     assert linhas[0] == ee.CABECALHO
     e = ee.ler_aba(linhas)[0]
     assert (e["id"], e["hotel"], e["anexos"], e["pc"]) == ("x1", "LUXOR", ["a.pdf", "b.pdf"], "PC-A")
+
+
+def test_voucher_com_dois_quartos_e_nota_dividida():
+    from controle_nf import quartos_da_reserva
+    recibo = ("Recibo\nN° do itinerário da Hoteis.com: 72077571275512\n2 quartos para 3 diárias\nQuarto duplo econômico\n"
+              "Reserva feita para: Lorena Perego Mendonça\nQuarto duplo econômico\nReserva feita para: José Eduardo Canteli\n"
+              "Preço do quarto 1\nPreço do quarto 2\nTotal R$ 1.218,75")
+    assert quartos_da_reserva(recibo) == (2, ["Lorena Perego Mendonça", "José Eduardo Canteli"])
+    voucher = "Detalhes do quarto\nQuarto duplo\nReservado para\nMaria Silva, 2 adultos\nPreço do quarto 1\nTotal"
+    assert quartos_da_reserva(voucher) == (1, ["Maria Silva"])
+    assert quartos_da_reserva("Boa tarde, segue o comprovante de pagamento.") == (0, [])
+
+
+def test_quartos_vao_e_voltam_pela_aba():
+    import datetime
+    import espelho_emails as esp
+    p = {"x": {"id": "x", "caixa": "nf@h.com", "hotel": "BOA VIAGEM", "de": "a@b.com", "nome": "A", "assunto": "NF",
+               "recebido": "2026-10-06T18:14:32", "anexos": ["voucher.pdf"], "texto": "oi",
+               "quartos": [2, ["Lorena Perego Mendonça", "José Eduardo Canteli"]]},
+         "y": {"id": "y", "caixa": "nf@h.com", "hotel": "BOA VIAGEM", "de": "c@d.com", "nome": "C", "assunto": "Oi",
+               "recebido": "2026-10-06T10:00:00", "anexos": [], "texto": "oi"}}
+    lidos = {e["id"]: e for e in esp.ler_aba(esp.linhas_da_aba(p, "PC-A", datetime.datetime(2026, 10, 7)))}
+    assert lidos["x"]["quartos"] == 2 and lidos["x"]["hospedes_quartos"] == ["Lorena Perego Mendonça", "José Eduardo Canteli"]
+    assert lidos["y"]["quartos"] == 0 and lidos["y"]["hospedes_quartos"] == []
+    antiga = [esp.CABECALHO[:11], ["z", "c", "h", "d", "n", "s", "2026-10-06T10:00:00", "", "t", "PC", "agora"]]
+    assert esp.ler_aba(antiga)[0]["quartos"] == 0   # aba de PC ainda sem a coluna nova

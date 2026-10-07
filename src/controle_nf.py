@@ -42,6 +42,25 @@ def pede_nota_dividida(texto):
     return bool(_PEDIDO_DIVISAO.search(_ROTULOS_DIVISAO.sub(" ", t)))
 
 
+# Voucher/recibo de reserva (Hoteis.com, Expedia, Booking...) com mais de um quarto = nota dividida
+# (pedido do usuário, 07/10/2026: "2 quartos para 3 diárias", "Preço do quarto 2", um "Reservado para" por quarto).
+_QUARTOS_PARA = re.compile(r"\b(\d{1,2})\s+(?:quartos|rooms|habitaciones)\b", re.I)
+_PRECO_QUARTO = re.compile(r"(?:pre[cç]o do quarto|room)\s+(\d{1,2})\b", re.I)
+_RESERVADO_PARA = re.compile(r"(?:reservado para|reserva feita para|booked for|reserved for)\s*:?\s*([^\n,;]{3,80})", re.I)
+
+
+def quartos_da_reserva(texto):
+    """-> (quantos quartos, [nome de quem está em cada quarto]) lidos do voucher/recibo; (0, []) se não for um."""
+    t = texto or ""
+    nomes = []
+    for m in _RESERVADO_PARA.finditer(t):
+        nome = re.sub(r"\s+", " ", m.group(1)).strip(" .:-")
+        if nome and nome.lower() not in {n.lower() for n in nomes}:
+            nomes.append(nome)
+    n = max([len(nomes)] + [int(x) for x in _QUARTOS_PARA.findall(t)] + [int(x) for x in _PRECO_QUARTO.findall(t)])
+    return (n, nomes) if n >= 1 and (nomes or _PRECO_QUARTO.search(t) or _QUARTOS_PARA.search(t)) else (0, [])
+
+
 def ler_assunto_nf(assunto):
     """'NF 1212 - JOÃO SILVA - 363305' -> ('1212', 'JOÃO SILVA') | None"""
     m = PADRAO_ASSUNTO_NF.match(assunto or "")

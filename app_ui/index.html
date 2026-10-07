@@ -649,6 +649,9 @@ function tagDivisao(s) {
   return feitas >= partes ? `<span class="tag nf-ok" title="NF ${esc(s.nfs.join(", "))}">NF emitida</span>`
     : `<span class="tag nf-parc" title="NF ${esc(s.nfs.join(", "))} · ${feitas} de ${partes}">falta ${falta} nota${falta > 1 ? "s" : ""}</span>`;
 }
+// Voucher anexado ao e-mail com 2+ quartos (um hóspede por quarto) = nota dividida
+const tagQuartos = m => m.quartos >= 2
+  ? `<span class="tag" title="${esc((m.hospedes_quartos || []).join(" · "))}">dividida · ${m.quartos} quartos</span>` : "";
 // O hóspede pediu dividida e depois aceitou uma nota só: a frase dele fica no título
 const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s.nota_unica)}">1 nota a pedido do hóspede</span>` : "";
 
@@ -704,7 +707,7 @@ function linhaHtml(it) {
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
     <span class="col-tipo tipo-o email"><i><svg><use href="#i-mail"/></svg></i>E-mail</span>
-    <span class="quem-linha"><b>${esc(m.nome || m.de)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
+    <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
     <span class="hora">${chegou(it.quando)}</span>
@@ -796,7 +799,11 @@ function desenharDetalheEmail(e) {
         <span class="de">&lt;${esc(e.de)}&gt; para ${esc(e.caixa)}</span></div>
       <div class="etiquetas"><span class="pilula p-sem_resposta">Sem resposta</span><span class="etq">E-mail direto</span>
         <span class="etq">${esc(e.hotel)}</span><span class="etq ${e.pc_online ? "" : "ruim"}">Caixa no PC de ${esc(e.agente_pc || e.pc)}${e.pc_online ? "" : " · desligado: a resposta sai quando ele ligar"}</span></div></header>
-    <div class="corpo-msg"><div class="texto-email">${esc(e.texto || "(sem texto)")}</div>
+    <div class="corpo-msg">
+      ${e.quartos >= 2 ? `<section class="ficha"><div class="ficha-tit"><span class="rot">Nota dividida · voucher com ${e.quartos} quartos</span>
+        <span class="tag">dividida</span></div><dl>${(e.hospedes_quartos.length ? e.hospedes_quartos : Array(e.quartos).fill("(nome não lido)"))
+          .map((n, k) => `<dt>Quarto ${k + 1}</dt><dd>${esc(n)}</dd>`).join("")}</dl></section>` : ""}
+      <div class="texto-email">${esc(e.texto || "(sem texto)")}</div>
       ${e.anexos.length ? `<div><div class="rot" style="margin-bottom:8px">Anexos</div><div class="anexos">${e.anexos.map(a =>
         `<div class="anexo"><span class="ext">${esc(String(a).split(".").pop().toUpperCase().slice(0, 4))}</span><span>${esc(a)}</span></div>`).join("")}</div></div>` : ""}
     </div>`;

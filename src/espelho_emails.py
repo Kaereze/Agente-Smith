@@ -25,7 +25,10 @@ logger = configurar_logging("espelho_emails")
 
 DESDE = datetime.date(2026, 9, 1)
 PREFIXO_ABA = "Emails_"
-CABECALHO = ["ID", "Caixa", "Hotel", "De", "Nome", "Assunto", "Recebido", "Anexos", "Texto", "PC", "Atualizado"]
+CABECALHO = ["ID", "Caixa", "Hotel", "De", "Nome", "Assunto", "Recebido", "Anexos", "Texto", "PC", "Atualizado",
+             "Quartos"]
+MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
+MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
 MAX_TEXTO = 20000                 # célula do Sheets aceita 50 mil; o e-mail do hóspede raramente passa de 2 mil
 REVARRER_HORAS = 24               # releitura completa 1x por dia (pega e-mail apagado/movido)
@@ -99,6 +102,52 @@ def _enderecos(item):
     return saida
 
 
+def quartos_dos_anexos(item):
+    """Lê os PDFs anexados (voucher/recibo de reserva) -> (quartos, [nomes]). Sem OCR: só o texto do PDF."""
+    import os
+    import tempfile
+    from controle_nf import quartos_da_reserva
+    melhor = (0, [])
+    try:
+        anexos = [item.Attachments.Item(i) for i in range(1, item.Attachments.Count + 1)]
+    except Exception:
+        return melhor
+    pdfs = [a for a in anexos if str(a.FileName).lower().endswith(".pdf") and (a.Size or 0) <= MAX_PDF_BYTES]
+    for a in pdfs[:MAX_PDFS]:
+        pasta = tempfile.mkdtemp(prefix="voucher_")
+        caminho = os.path.join(pasta, "anexo.pdf")
+        try:
+            a.SaveAsFile(caminho)
+            from pypdf import PdfReader
+            texto = "\n".join((p.extract_text() or "") for p in PdfReader(caminho).pages[:4])
+            achado = quartos_da_reserva(texto)
+            if achado[0] > melhor[0] or (achado[0] == melhor[0] and len(achado[1]) > len(melhor[1])):
+                melhor = achado
+        except Exception as e:
+            logger.debug(f"anexo ilegível ({a.FileName}): {e}")
+        finally:
+            try:
+                os.remove(caminho)
+                os.rmdir(pasta)
+            except OSError:
+                pass
+    return melhor
+
+
+def marcar_dividida_no_outlook(item):
+    """Etiqueta azul "Nota dividida" no próprio e-mail do hóspede (a mesma dos e-mails do robô)."""
+    from controle_nf import CATEGORIA_DIVIDIDA
+    atuais = [c.strip() for c in re.split(r"[;,]", item.Categories or "") if c.strip()]
+    if CATEGORIA_DIVIDIDA not in atuais:
+        item.Categories = ", ".join(atuais + [CATEGORIA_DIVIDIDA])
+        item.Save()
+
+
+def texto_quartos(e):
+    n, nomes = e.get("quartos", [0, []]) if isinstance(e.get("quartos"), list) else (0, [])
+    return f"{n}|{'; '.join(nomes)}" if n else ""
+
+
 def resolver_pendentes(pendentes, enviados):
     """Tira os e-mails respondidos. enviados: {endereço: último envio (datetime)}."""
     def respondido(e):
@@ -113,12 +162,13 @@ def linhas_da_aba(pendentes, pc, agora=None):
     agora = (agora or datetime.datetime.now()).isoformat(timespec="seconds")
     corpo = sorted(pendentes.values(), key=lambda e: e["recebido"], reverse=True)
     return [CABECALHO] + [[e["id"], e["caixa"], e["hotel"], e["de"], e["nome"], e["assunto"], e["recebido"],
-                          ", ".join(e["anexos"]), e["texto"], pc, agora] for e in corpo]
+                          ", ".join(e["anexos"]), e["texto"], pc, agora, texto_quartos(e)] for e in corpo]
 
 
 def ler_aba(linhas):
     """Linhas de uma aba Emails_<PC> -> [dict]"""
-    chaves = ["id", "caixa", "hotel", "de", "nome", "assunto", "recebido", "anexos", "texto", "pc", "atualizado"]
+    chaves = ["id", "caixa", "hotel", "de", "nome", "assunto", "recebido", "anexos", "texto", "pc", "atualizado",
+              "quartos"]
     saida = []
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():
@@ -126,6 +176,9 @@ def ler_aba(linhas):
         l = list(l) + [""] * (len(chaves) - len(l))
         e = dict(zip(chaves, (str(v) for v in l[:len(chaves)])))
         e["anexos"] = [a for a in e["anexos"].split(", ") if a]
+        n, _, nomes = e["quartos"].partition("|")
+        e["quartos"] = int(n) if n.strip().isdigit() else 0
+        e["hospedes_quartos"] = [x for x in nomes.split("; ") if x]
         saida.append(e)
     return saida
 
@@ -160,11 +213,13 @@ class Espelho:
         ultima = self.estado.get("ultima_volta")
         completa = (not ultima or agora - datetime.datetime.fromisoformat(self.estado.get("ultima_completa", ultima))
                     > datetime.timedelta(hours=REVARRER_HORAS))
+        completa = completa or "vouchers" not in self.estado   # 1ª volta com a leitura de voucher: relê tudo
         desde = datetime.datetime.combine(DESDE, datetime.time()) if completa else \
             datetime.datetime.fromisoformat(ultima) - datetime.timedelta(minutes=FOLGA_MINUTOS)
         if completa:
             self.pendentes = {}
         enviados = dict(self.estado.get("enviados", {}))   # {endereço: iso do último envio}
+        vouchers = dict(self.estado.get("vouchers", {}))   # {id: [quartos, nomes]} — PDF lido uma vez só
         for conta in namespace.Accounts:
             caixa = str(conta.SmtpAddress or "").strip().lower()
             if caixa not in caixas:
@@ -200,6 +255,17 @@ class Espelho:
                     i = id_do_email(item.EntryID)
                     if i in self.pendentes:
                         continue
+                    # voucher com 2+ quartos = nota dividida (lido 1 vez por e-mail; a releitura diária usa a memória)
+                    if i not in vouchers:
+                        n, nomes = quartos_dos_anexos(item) if item.Attachments.Count else (0, [])
+                        vouchers[i] = [n, nomes]
+                        if n >= 2:
+                            try:
+                                marcar_dividida_no_outlook(item)
+                            except Exception as e:
+                                logger.debug(f"categoria no Outlook: {e}")
+                            logger.info(f"🔀 Nota dividida pelo voucher: {n} quartos ({'; '.join(nomes)}) · "
+                                        f"{str(item.Subject or '')[:60]} ({caixa})")
                     recebido = _data(item.ReceivedTime)
                     anexos = [a.FileName for a in item.Attachments
                               if not str(a.FileName).lower().startswith("image0")]
@@ -207,7 +273,7 @@ class Espelho:
                         "id": i, "entry_id": item.EntryID, "caixa": caixa, "hotel": caixas.get(caixa, ""),
                         "de": de, "nome": str(item.SenderName or ""), "assunto": str(item.Subject or ""),
                         "recebido": recebido.isoformat(timespec="seconds") if recebido else "",
-                        "anexos": anexos, "texto": sem_historico(item.Body)}
+                        "anexos": anexos, "texto": sem_historico(item.Body), "quartos": vouchers[i]}
                 except Exception as e:
                     logger.debug(f"e-mail ilegível em {caixa}: {e}")
         enviados_dt = {e: datetime.datetime.fromisoformat(q) for e, q in enviados.items()}
@@ -215,7 +281,8 @@ class Espelho:
         self.estado = {"ultima_volta": agora.isoformat(timespec="seconds"),
                        "ultima_completa": agora.isoformat(timespec="seconds") if completa
                        else self.estado.get("ultima_completa", agora.isoformat(timespec="seconds")),
-                       "pendentes": self.pendentes, "enviados": enviados}
+                       "pendentes": self.pendentes, "enviados": enviados,
+                       "vouchers": {i: v for i, v in vouchers.items() if i in self.pendentes or v[0] >= 2}}
         salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
         self.publicar()
         return len(self.pendentes)
@@ -223,7 +290,7 @@ class Espelho:
     def publicar(self):
         pc = socket.gethostname()
         linhas = linhas_da_aba(self.pendentes, pc, self.relogio())
-        assinatura = hashlib.sha1(json.dumps([l[:9] for l in linhas], ensure_ascii=False).encode()).hexdigest()
+        assinatura = hashlib.sha1(json.dumps([l[:9] + l[11:] for l in linhas], ensure_ascii=False).encode()).hexdigest()
         if assinatura == self.estado.get("publicado"):
             return   # nada mudou: poupa a cota da planilha
         aba = nome_aba(pc)
