@@ -173,7 +173,8 @@ class Estado:
     def _extras_pc(self):
         """Colunas E-H da linha deste PC em PCs_Painel."""
         outlook = {True: "aberto", False: "fechado"}.get(self.outlook, "?")
-        return [outlook, self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia()]
+        # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
+        return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia()]
 
     def _rede(self, lidas, solicitacoes):
         pc, agente = socket.gethostname(), nome_do_agente()
