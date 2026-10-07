@@ -385,6 +385,8 @@ def garantir_categorias(namespace):
 NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
 ESPELHO_EMAILS_SEGUNDOS = 2 * 60   # aba E-mails do Painel: pendentes das caixas deste PC
 CONFIRMAR_NFS_SEGUNDOS = 2 * 60   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
+VIGIA_SEGUNDOS = 20               # vigia_outlook: só olha; e-mail novo antecipa a conferência e o espelho
+MIN_ENTRE_CONFERENCIAS = 30       # conferência completa leva ~15 s: no máximo uma a cada 30 s por PC
 _ja_olhados = set()
 
 
@@ -650,6 +652,7 @@ def main():
     proxima_conferencia = proximo_sinal = proxima_identidade = proxima_dividida = 0.0
     proxima_confirmacao = time.monotonic() + 60
     proximo_espelho, espelho = time.monotonic() + 30, None
+    proximo_vigia, vigia, ultima_completa = time.monotonic() + 40, None, -1e9
     while True:
         agora = time.monotonic()
         try:
@@ -693,7 +696,41 @@ def main():
                     proxima_dividida = agora + NOTAS_DIVIDIDAS_SEGUNDOS
             except Exception as e:
                 logger.warning(f"⚠️ Volta do conferente falhou ({e}) — tento de novo em {intervalo}s.")
-            if agora >= proxima_confirmacao:
+            try:
+                if e_principal(cfg):
+                    publicar_cota(backend, namespace, cfg)
+            except Exception as e:
+                logger.warning(f"⚠️ Não consegui medir a cota de envio ({e}).")
+            proxima_conferencia = time.monotonic() + intervalo
+
+        if agora >= proximo_vigia:
+            # Vigia (20 s): só olha o Outlook. E-mail novo enviado/recebido -> conferência e espelho agora.
+            try:
+                pythoncom.CoInitialize()
+                namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                import vigia_outlook
+                vigia = vigia or vigia_outlook.Vigia()
+                novos = vigia.novidades(namespace)
+                if any(novos.values()):
+                    logger.info(f"👁️ Outlook: {novos['enviado']} enviado(s) e {novos['recebido']} recebido(s) novo(s) "
+                                f"— conferindo agora")
+                    quando = max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS)
+                    proxima_confirmacao = min(proxima_confirmacao, quando)
+                    proximo_espelho = min(proximo_espelho, quando)
+            except Exception as e:
+                logger.debug(f"vigia do Outlook: {e}")
+            proximo_vigia = time.monotonic() + VIGIA_SEGUNDOS
+
+        if agora >= proxima_confirmacao or agora >= proximo_espelho:
+            try:
+                pythoncom.CoInitialize()
+                namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+            except Exception as e:
+                logger.warning(f"⚠️ Outlook indisponível ({e}) — confiro de novo em 2 min.")
+                namespace = None
+                proxima_confirmacao = agora + CONFIRMAR_NFS_SEGUNDOS
+                proximo_espelho = agora + ESPELHO_EMAILS_SEGUNDOS
+            if namespace is not None and agora >= proxima_confirmacao:
                 # NFs de todas as solicitações da Central -> aba Tratamento (o painel de todos os PCs vê).
                 # Cada PC confere o próprio Outlook; o Dropbox é compartilhado, então só o principal lê.
                 try:
@@ -701,8 +738,9 @@ def main():
                     confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg))
                 except Exception as e:
                     logger.warning(f"⚠️ Confirmação de NFs falhou ({e}) — tento de novo em 10 min.")
-                proxima_confirmacao = agora + CONFIRMAR_NFS_SEGUNDOS
-            if agora >= proximo_espelho:
+                proxima_confirmacao = time.monotonic() + CONFIRMAR_NFS_SEGUNDOS
+                ultima_completa = time.monotonic()
+            if namespace is not None and agora >= proximo_espelho:
                 # E-mails de hóspedes sem resposta das caixas daqui -> aba Emails_<PC> (o Painel de todos vê)
                 try:
                     import espelho_emails
@@ -712,13 +750,7 @@ def main():
                 except Exception as e:
                     logger.warning(f"⚠️ Espelho de e-mails falhou ({e}) — tento de novo em 2 min.")
                     espelho = None
-                proximo_espelho = agora + ESPELHO_EMAILS_SEGUNDOS
-            try:
-                if e_principal(cfg):
-                    publicar_cota(backend, namespace, cfg)
-            except Exception as e:
-                logger.warning(f"⚠️ Não consegui medir a cota de envio ({e}).")
-            proxima_conferencia = time.monotonic() + intervalo
+                proximo_espelho = time.monotonic() + ESPELHO_EMAILS_SEGUNDOS
 
         if uma_vez:
             return 0

@@ -621,7 +621,7 @@ Liga as tarefas de novo.
 | `visual_email` | `classico` | Visual do e-mail ao hotel: `classico` (branco + verde) ou `verde` |
 | `destino_envio` | `hotel` | `hotel` = e-mail da coluna B · `agente` = e-mail em `agentes` |
 | `cota_envio` | KingHost, 250/h | Limite do servidor de e-mail por hora |
-| `conferencia` | 60 s, pdf/xml/zip, 45 dias | De quanto em quanto tempo o conferente olha, quais anexos contam como NF, até quantos dias atrás |
+| `conferencia` | 60 s, pdf/xml/zip, 14 dias | De quanto em quanto tempo o conferente olha, quais anexos contam como NF, até quantos dias atrás |
 | `dropbox_notas` | 4 pastas, 5 min | Pastas do Dropbox com as NFs (**só leitura**). `%USERPROFILE%` vira a pasta do usuário de cada PC. |
 | `app` | 15 s / 60 s | Painel relê a Central a cada 15 s com a janela aberta e a cada 60 s fechada |
 | `painel.desde` | `2026-09-01` | Visão geral/Hotéis mostram dados a partir desta data |

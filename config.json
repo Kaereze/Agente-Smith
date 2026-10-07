@@ -135,7 +135,7 @@
       "xml",
       "zip"
     ],
-    "dias_maximos": 45
+    "dias_maximos": 14
   },
   "_ajuda_dropbox_notas": "Pastas do Dropbox com as NFs (só leitura); %USERPROFILE% = pasta do usuário de cada PC. Dropbox em outro lugar: sobrescreva no config.local.json",
   "dropbox_notas": {

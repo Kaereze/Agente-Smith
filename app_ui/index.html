@@ -617,7 +617,8 @@ function agentesDo(it) {
 }
 function passaSit(it, f) {
   if (f === "todas") return true;
-  if (it.tipo === "email") return f === "aberto" || f === "sem_resposta";
+  // e-mail de hóspede sem resposta é NF ainda não resolvida: entra também em "NF não emitida"
+  if (it.tipo === "email") return f === "aberto" || f === "sem_resposta" || f === "na_fila";
   const s = it.s;
   if (f === "aberto") return s.situacao !== "concluida";
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
