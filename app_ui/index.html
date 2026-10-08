@@ -399,6 +399,80 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .toast.erro{background:var(--erro);color:#fff}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
+/* ---------- lateral enxuta ---------- */
+.principal{padding:0 10px 8px;display:grid;gap:2px}
+.ln.raiz{padding:10px 12px;color:var(--mata-tinta);font-weight:500;font-size:14px}
+.ln.raiz .ic{color:var(--mata-suave)}
+.ln.raiz[aria-current="true"] .ic{color:var(--creme-forte)}
+
+/* ---------- Notas fiscais: abas, cartões de situação e pílulas de filtro ---------- */
+.notas-cab{padding:20px 26px 12px;gap:18px}
+.notas-topo{display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;border-bottom:1px solid var(--linha)}
+.notas-topo h1{padding-bottom:12px}
+.abas-origem{display:flex;gap:4px}
+.aba-o{border:0;border-radius:0;background:transparent;padding:10px 14px 12px;color:var(--tinta-2);font-weight:600;font-size:14.5px;
+  box-shadow:inset 0 -2px 0 transparent;gap:8px}
+.aba-o:hover{color:var(--tinta);border:0}
+.aba-o[aria-selected="true"]{color:var(--tinta);box-shadow:inset 0 -3px 0 var(--verde)}
+.aba-o .cnt{font:600 11.5px var(--f-dado);background:var(--folha-2);border:1px solid var(--linha);color:var(--tinta-2);border-radius:999px;padding:2px 8px}
+.aba-o[aria-selected="true"] .cnt{background:var(--verde);border-color:var(--verde);color:#fff}
+.status-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stc{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px;border:1px solid var(--linha);border-radius:12px;
+  background:var(--folha);text-align:left;white-space:normal;position:relative;overflow:hidden}
+.stc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cor,var(--linha-forte))}
+.stc:hover{border-color:var(--linha-forte)}
+.stc[aria-pressed="true"]{border-color:var(--verde);box-shadow:0 0 0 1px var(--verde),var(--sombra);background:var(--folha)}
+.stc-r{font:600 11px var(--f-titulo);letter-spacing:.07em;text-transform:uppercase;color:var(--tinta-3)}
+.stc[aria-pressed="true"] .stc-r{color:var(--verde-forte)}
+.stc-n{font:500 24px/1 var(--f-dado);color:var(--tinta)}
+.stc.zero .stc-n{color:var(--tinta-3)}
+.filtros-linha{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fp{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--linha-forte);background:transparent;color:var(--tinta-2);
+  border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500}
+.fp:hover{border-color:var(--verde);color:var(--tinta)}
+.fp svg{width:14px;height:14px}
+.fp-on{display:inline-flex;align-items:stretch;border:1px solid var(--verde);background:var(--verde-suave);border-radius:999px;overflow:hidden}
+.fp-on > button{border:0;border-radius:0;background:transparent;padding:6px 10px 6px 12px;font-size:13px;gap:6px;color:var(--tinta)}
+.fp-on .fp-k{color:var(--tinta-2);font-weight:500}
+.fp-on .fp-v{font-weight:600;color:var(--verde-forte)}
+.fp-on .fp-x{padding:6px 10px 6px 4px;color:var(--tinta-3);font-size:15px}
+.fp-on .fp-x:hover{color:var(--erro)}
+.fp-limpar{border:0;background:transparent;color:var(--tinta-3);font-size:13px;text-decoration:underline;padding:6px}
+.filtros-linha .resultado{margin-left:auto;font:500 12.5px var(--f-dado);color:var(--tinta-3)}
+.notas-cab.buscando .status-cards,.notas-cab.buscando .filtros-linha .fp,.notas-cab.buscando .filtros-linha .fp-on{opacity:.4;pointer-events:none}
+.aviso-busca{font-size:12.5px;color:var(--tinta-2);background:var(--info-fundo);border-radius:8px;padding:6px 10px}
+/* menu da pílula */
+.pop{position:fixed;z-index:35;width:300px;max-height:420px;display:flex;flex-direction:column;background:var(--folha);border:1px solid var(--linha);
+  border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,.25);overflow:hidden}
+.pop input{margin:10px;border-color:var(--linha)}
+.pop-lista{overflow-y:auto;padding:4px 6px 8px}
+.pop-grupo{font:600 10.5px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);padding:10px 8px 4px}
+.pop-op{width:100%;border:0;border-radius:8px;background:transparent;justify-content:space-between;padding:7px 10px;font-weight:400;font-size:13.5px}
+.pop-op:hover{background:var(--folha-2)}
+.pop-op[aria-selected="true"]{background:var(--verde-suave);color:var(--verde-forte);font-weight:600}
+.pop-op .n{font:500 11.5px var(--f-dado);color:var(--tinta-3)}
+/* lista sem a coluna de origem (as abas já separam) */
+.linhas-cab,.linha{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) 74px 156px}
+.mesa.com-leitura .linhas-cab,.mesa.com-leitura .linha{grid-template-columns:minmax(0,1.8fr) 70px 146px}
+
+/* ---------- Visão geral ---------- */
+.kpis-v{display:grid;grid-template-columns:1.5fr repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi-hero,.kpi-b{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;text-align:left;white-space:normal;border-radius:14px;padding:18px 20px}
+.kpi-hero{background:var(--mata);border-color:var(--mata);color:var(--mata-tinta)}
+.kpi-hero:hover{border-color:var(--creme-forte)}
+.kpi-hero .kpi-r{color:var(--mata-suave)} .kpi-hero .kpi-v{font-size:52px;color:var(--mata-tinta)} .kpi-hero .kpi-s{color:var(--mata-suave)}
+.kpi-hero .kpi-s b{color:var(--creme-forte)}
+.kpi-b{background:var(--folha);border:1px solid var(--linha);position:relative;overflow:hidden}
+.kpi-b::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--cor)}
+.kpi-b:hover{border-color:var(--linha-forte)}
+.kpi-r{font:600 11px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.kpi-v{font:500 32px/1 var(--f-dado);color:var(--tinta)}
+.kpi-s{font-size:12.5px;color:var(--tinta-3);line-height:1.35}
+.viz-quad{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.viz-total{margin-top:6px;padding-top:6px;border-top:1px solid var(--linha)}
+.cab-pagina .seg{margin-left:auto}
+@media (max-width:1280px){.kpis-v{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* ---------- janelas menores ---------- */
 @media (max-width:1280px){.kpis{grid-template-columns:repeat(3,1fr)}.kpi.hero{grid-row:auto}}
 @media (max-width:1100px){
@@ -432,25 +506,10 @@ textarea{width:100%;min-height:64px;resize:vertical}
     <div class="marca"><div class="selo" aria-hidden="true">NF</div><div><b>Painel Fiscal</b><small>Notas fiscais dos hotéis</small></div></div>
 
     <nav class="navega">
-    <details class="secao" data-g="painel" open>
-      <summary><svg class="ic"><use href="#i-painel"/></svg>Painel<svg class="seta"><use href="#i-seta"/></svg></summary>
-      <div class="sub">
-        <button class="ln" data-vista="visao">Visão geral</button>
-        <button class="ln" data-vista="hoteis">Hotéis</button>
-      </div>
-    </details>
-    <details class="secao" data-g="caixa" open>
-      <summary><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<svg class="seta"><use href="#i-seta"/></svg></summary>
-      <div class="sub" id="nav-caixa"></div>
-    </details>
-    <details class="secao" data-g="nf" open>
-      <summary><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<svg class="seta"><use href="#i-seta"/></svg></summary>
-      <div class="sub" id="nav-nf"></div>
-    </details>
-    <details class="secao" data-g="agentes">
-      <summary><svg class="ic"><use href="#i-gente"/></svg>Agentes<svg class="seta"><use href="#i-seta"/></svg></summary>
-      <div class="sub" id="nav-agentes"></div>
-    </details>
+    <div class="principal">
+      <button class="ln raiz" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
+      <button class="ln raiz" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n"></span></button>
+    </div>
     <details class="secao" data-g="monit" open>
       <summary><svg class="ic"><use href="#i-log"/></svg>Monitoramento<svg class="seta"><use href="#i-seta"/></svg></summary>
       <div class="sub">
@@ -488,32 +547,22 @@ textarea{width:100%;min-height:64px;resize:vertical}
     </header>
 
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
-    <section class="vista oculta" id="v-hoteis">
-      <div class="rolagem" id="hoteis"></div>
-      <div class="detalhe" id="ficha-hotel"></div>
-    </section>
     <section class="vista oculta" id="v-log"><div class="rolagem" id="log"></div></section>
     <section class="vista oculta" id="v-maquinas"><div class="rolagem" id="maquinas"></div></section>
 
     <section class="vista" id="v-fila">
-      <div class="cabecalho">
-        <h1><span id="titulo-caixa">Caixa de entrada</span> <span class="n" id="titulo-n"></span></h1>
-        <div class="filtros-caixa">
-          <label class="sel"><select id="f-hotel" aria-label="Hotel"></select></label>
-          <label class="sel"><select id="f-agente" aria-label="Agente"></select></label>
-          <label class="sel"><select id="dias" aria-label="Período">
-            <option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="45" selected>Últimos 45 dias</option>
-            <option value="90">Últimos 90 dias</option><option value="0">Todo o período</option></select></label>
-          <label class="sel"><select id="f-envio" aria-label="E-mail ao hotel"></select></label>
-          <button class="chip-f" data-chip="na_fila" aria-pressed="false"><span class="bola" style="background:var(--atencao)"></span>NF não emitida</button>
-          <button class="chip-f" data-chip="concluida" aria-pressed="false"><span class="bola" style="background:var(--ok)"></span>NF emitida</button>
-          <button class="chip-f" data-chip="tratativa" aria-pressed="false"><span class="bola" style="background:var(--info)"></span>Tratativa</button>
-          <div class="seg" role="group" aria-label="Origem" id="seg-origem"></div>
+      <div class="cabecalho notas-cab" id="notas-cab">
+        <div class="notas-topo">
+          <h1><span id="titulo-caixa">Notas fiscais</span> <span class="n" id="titulo-n"></span></h1>
+          <div class="abas-origem" role="tablist" id="abas-origem"></div>
         </div>
+        <div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
+        <div class="filtros-linha" id="filtros-linha"></div>
       </div>
+      <div class="pop oculta" id="pop" role="dialog" aria-label="Escolher filtro"></div>
       <div class="mesa" id="mesa">
         <section class="quadro" aria-label="Solicitações e e-mails">
-          <div class="linhas-cab"><span class="col-tipo">Origem</span><span>Hóspede / assunto</span><span class="col-hotel">Hotel</span><span>Chegou</span><span>Situação</span></div>
+          <div class="linhas-cab"><span>Hóspede / assunto</span><span class="col-hotel">Hotel</span><span>Chegou</span><span>Situação</span></div>
           <div class="linhas" id="lista" role="listbox" aria-label="Itens"></div>
           <div class="paginacao"><span id="pag-txt"></span><div class="pags" id="pags"></div></div>
         </section>
@@ -532,16 +581,24 @@ const COR_SIT = {na_fila:"var(--atencao)", em_tratamento:"var(--roxo)", tratativ
 // Notas fiscais (lateral): "Em aberto" = tudo que ainda não tem NF + e-mails sem resposta
 const SITUACOES = [["aberto", "Em aberto"], ["na_fila"], ["em_tratamento"], ["tratativa"], ["nf_parcial"], ["aguardando_envio"],
                    ["sem_resposta"], ["concluida"], ["envio_pendente", "Envio pendente"], ["minhas", "Minhas"], ["todas", "Todas"]];
-const ORIGENS = [["tudo", "Tudo"], ["email", "E-mail"], ["form", "Formulário"]];
-const ENVIO = {todos: ["E-mail ao hotel: todos", () => true], sim: ["E-mail ao hotel: enviado", s => s.enviado],
-               nao: ["E-mail ao hotel: não enviado", s => !s.enviado]};
+// Pedido do usuário (08/10/2026): uma tela "Notas fiscais" com duas abas (formulários e e-mails), situações como
+// cartões de filtro e os demais filtros em pílulas com menu
+const ORIGENS = [["form", "Formulários"], ["email", "E-mails"]];
+const SIT_EMAIL = [["todos", "Todos", "var(--linha-forte)"], ["sem_nf", "Sem NF", "var(--erro)"],
+                   ["com_nf", "Envio pendente", "var(--atencao)"], ["falta_nota", "Diz que falta nota", "var(--erro)"],
+                   ["dividida", "Nota dividida", "var(--info)"]];
+const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
+const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30", "Últimos 30 dias"], ["45", "Últimos 45 dias"],
+                     ["0", "Todo o período"]];
 const POR_PAGINA = 100;
 let st = {fila:[], agente:"", status:{}, emails:[], hoteis:[], pcs:[]}, timer = null, intervalo = 15;
-let filtro = "aberto", origem = "tudo", hotel = "", agenteF = "", envio = "todos", pagina = 0, sel = null, emailSel = null;
+let filtro = "aberto", filtroEmail = "todos", origem = "form", hotel = "", agenteF = "", envio = "todos", periodo = "45";
+let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "";
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
 try { const p = JSON.parse(localStorage.getItem("painel.caixa") || "{}");
-      if (p.origem) origem = p.origem; if (p.filtro) filtro = p.filtro; if (p.agente) agenteF = p.agente; } catch (e) {}
-const guardarCaixa = () => { try { localStorage.setItem("painel.caixa", JSON.stringify({origem, filtro, agente: agenteF})); } catch (e) {} };
+      if (p.origem === "form" || p.origem === "email") origem = p.origem; if (p.filtro) filtro = p.filtro;
+      if (p.filtroEmail) filtroEmail = p.filtroEmail; if (p.agente) agenteF = p.agente; } catch (e) {}
+const guardarCaixa = () => { try { localStorage.setItem("painel.caixa", JSON.stringify({origem, filtro, filtroEmail, agente: agenteF})); } catch (e) {} };
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -584,11 +641,11 @@ function desenharPcsCabecalho(pcs) {
 
 async function carregar(){
   try {
-    const j = await api("/api/estado?dias=" + $("dias").value);
+    const j = await api("/api/estado?dias=" + (periodo === "0" ? 0 : 45));   // período menor é filtrado aqui
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
-    if (roboAntes !== JSON.stringify(st.status || {}) && pn.vista === "visao" && pn.dados) desenharVisao();
+
     desenharOperador(j.agente, j.operadores || [], j.pc);
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
@@ -612,6 +669,7 @@ async function carregar(){
       .concat(st.emails.map(m => ({tipo: "email", id: m.id, m, hoteis: m.hotel.split(" / "), quando: m.recebido || ""})))
       .sort((a, b) => b.quando.localeCompare(a.quando));
     desenhar();
+    if (pn.vista === "visao") desenharVisao();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
@@ -623,15 +681,22 @@ function agentesDo(it) {
   return a.length ? a : it.tipo === "email" ? [it.m.agente_pc] : [];
 }
 function passaSit(it, f) {
-  if (f === "todas") return true;
-  // e-mail de hóspede sem resposta é NF ainda não resolvida: entra também em "NF não emitida"
-  // e-mail com a NF já no Dropbox: "NF emitida" (falta mandar ao hóspede); sem NF: entra em "NF não emitida"
-  if (f === "envio_pendente") return it.tipo === "email" ? !!it.m.notas?.length : !!it.s.envio_pendente;
-  if (it.tipo === "email") return f === "aberto" || f === "sem_resposta" || f === (it.m.notas?.length ? "concluida" : "na_fila");
+  if (it.tipo === "email") {
+    const m = it.m;
+    return f === "todos" ? true : f === "sem_nf" ? !m.notas?.length : f === "com_nf" ? !!m.notas?.length
+      : f === "falta_nota" ? !!m.falta_nota : f === "dividida" ? m.quartos >= 2 : true;
+  }
   const s = it.s;
+  if (f === "todas") return true;
+  if (f === "envio_pendente") return !!s.envio_pendente;
   if (f === "aberto") return s.situacao !== "concluida";
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
   return s.situacao === f;
+}
+function corteDoPeriodo() {
+  if (periodo === "0") return "";
+  const d = new Date(); d.setDate(d.getDate() - Number(periodo));   // igual ao corte do servidor (dias=45)
+  return d.toLocaleDateString("sv-SE");
 }
 // Busca do jeito do Outlook: sem acento e sem maiúscula ("Corné" acha "CORNELIO"), pedaço de palavra, cada
 // palavra digitada em qualquer campo (nome, e-mail, assunto, corpo, anexos, NF, CPF/CNPJ com ou sem pontuação)
@@ -662,13 +727,15 @@ function termosDaBusca(busca) {
   return termos;
 }
 function passa(it, ignorar, busca) {
-  // pesquisando, procura em tudo: os filtros de situação, origem, hotel e agente não escondem o que bate
+  if (ignorar !== "origem" && it.tipo !== origem) return false;
+  // pesquisando, procura na aba inteira: situação, hotel, agente e período não escondem o que bate
   if (busca) return termosDaBusca(busca).every(re => re.test(textoDo(it)));
-  if (ignorar !== "origem" && origem !== "tudo" && it.tipo !== origem) return false;
-  if (ignorar !== "sit" && !passaSit(it, filtro)) return false;
+  if (ignorar !== "sit" && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
   if (ignorar !== "agente" && agenteF && !agentesDo(it).includes(agenteF)) return false;
   if (ignorar !== "hotel" && hotel && !it.hoteis.includes(hotel)) return false;
-  if (it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
+  if (ignorar !== "envio" && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
+  const corte = ignorar === "periodo" ? "" : corteDoPeriodo();
+  if (corte && it.quando.slice(0, 10) < corte) return false;
   return true;
 }
 const ln = (attrs, rotulo, n, atual, bola) =>
@@ -695,41 +762,96 @@ const tagQuartos = m => m.quartos >= 2
 // O hóspede pediu dividida e depois aceitou uma nota só: a frase dele fica no título
 const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s.nota_unica)}">1 nota a pedido do hóspede</span>` : "";
 
-function desenharLateral(busca) {
-  const naCaixa = typeof pn === "undefined" || pn.vista === "fila";
-  const conta = (ign, f) => TODOS.reduce((n, it) => n + (passa(it, ign, busca) && f(it) ? 1 : 0), 0);
-  $("nav-caixa").innerHTML = ORIGENS.map(([o]) => ln(`data-origem="${o}"`,
-    o === "tudo" ? "Tudo" : o === "form" ? "Formulário (QR code)" : "E-mails dos hóspedes",
-    conta("origem", it => o === "tudo" || it.tipo === o), naCaixa && origem === o)).join("");
-  $("nav-nf").innerHTML = SITUACOES.map(([f, nome]) => {
-    const n = conta("sit", it => passaSit(it, f));
-    if (!n && f !== filtro && ["em_tratamento", "aguardando_envio", "minhas", "envio_pendente"].includes(f)) return "";
-    return ln(`data-f="${f}"`, nome || NOMES[f], n, naCaixa && filtro === f, COR_SIT[f]);
-  }).join("");
-  const agentes = [...new Set((st.hoteis || []).map(h => h.agente).filter(Boolean))];
-  $("nav-agentes").innerHTML = ln('data-agente=""', "Todos os agentes", "", naCaixa && !agenteF) +
-    agentes.map(a => ln(`data-agente="${esc(a)}"`, a, conta("agente", it => agentesDo(it).includes(a)), naCaixa && agenteF === a)).join("");
+function desenharLateral() {
+  const abertos = st.fila.filter(s => s.situacao !== "concluida").length + st.emails.filter(m => !m.notas?.length).length;
+  $("nav-notas-n").textContent = abertos ? abertos.toLocaleString("pt-BR") : "";
 }
 
-function desenharFiltros(busca) {
-  // hotéis agrupados por agente; o número é o que aparece na lista com os outros filtros
-  const n = {};
-  TODOS.forEach(it => { if (passa(it, "hotel", busca)) it.hoteis.forEach(h => n[h] = (n[h] || 0) + 1); });
-  const grupos = {};
-  (st.hoteis || []).forEach(h => { if (!agenteF || h.agente === agenteF) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
-  Object.keys(n).filter(h => !(h in AG) && !agenteF).forEach(h => (grupos["Fora do cadastro"] ||= []).push(h));
-  const total = Object.values(grupos).reduce((a, g) => a + g.length, 0);
-  $("f-hotel").innerHTML = `<option value="">Todos os hotéis (${total})</option>` +
-    Object.entries(grupos).map(([a, hs]) => `<optgroup label="${esc(a)}">${hs.sort((x, y) => x.localeCompare(y, "pt")).map(h =>
-      `<option value="${esc(h)}" ${h === hotel ? "selected" : ""}>${esc(h)}${n[h] ? " · " + n[h] : ""}</option>`).join("")}</optgroup>`).join("");
-  const agentes = [...new Set((st.hoteis || []).map(h => h.agente).filter(Boolean))];
-  $("f-agente").innerHTML = `<option value="">Todos os agentes</option>` +
-    agentes.map(a => `<option ${a === agenteF ? "selected" : ""}>${esc(a)}</option>`).join("");
-  $("f-envio").innerHTML = Object.entries(ENVIO).map(([k, [nome]]) => `<option value="${k}" ${k === envio ? "selected" : ""}>${nome}</option>`).join("");
-  document.querySelectorAll("[data-chip]").forEach(b => b.setAttribute("aria-pressed", String(filtro === b.dataset.chip)));
-  const nOrig = o => TODOS.reduce((c, it) => c + (passa(it, "origem", busca) && (o === "tudo" || it.tipo === o) ? 1 : 0), 0);
-  $("seg-origem").innerHTML = ORIGENS.map(([o, nome]) =>
-    `<button data-origem="${o}" aria-pressed="${origem === o}">${nome} <span class="n">${nOrig(o).toLocaleString("pt-BR")}</span></button>`).join("");
+const conta = (ign, f, busca) => TODOS.reduce((n, it) => n + (passa(it, ign, busca) && f(it) ? 1 : 0), 0);
+function situacoesDaAba(busca) {
+  if (origem === "email") return SIT_EMAIL.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)]);
+  const base = [["aberto", "Em aberto", "var(--verde)"], ["na_fila", "NF não emitida", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
+    ["nf_parcial", "NF parcial", COR_SIT.nf_parcial], ["envio_pendente", "Envio pendente", "var(--atencao)"],
+    ["concluida", "NF emitida", COR_SIT.concluida], ["em_tratamento", "Em tratamento", COR_SIT.em_tratamento],
+    ["aguardando_envio", "Aguardando envio", COR_SIT.aguardando_envio], ["minhas", "Minhas", "var(--roxo)"], ["todas", "Todas", "var(--linha-forte)"]];
+  return base.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)])
+    .filter(([f, , , n]) => n || f === filtro || !["em_tratamento", "aguardando_envio", "minhas"].includes(f));
+}
+
+const MAIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+function pilula(campo, rotulo, valor, padrao) {
+  if (!valor || valor === padrao) {
+    return campo === "periodo"
+      ? `<span class="fp-on"><button data-pop="periodo"><span class="fp-k">Período</span><span class="fp-v">${esc(valor)}</span></button></span>`
+      : `<button class="fp" data-pop="${campo}">${MAIS}${rotulo}</button>`;
+  }
+  return `<span class="fp-on"><button data-pop="${campo}"><span class="fp-k">${rotulo}</span><span class="fp-v">${esc(valor)}</span></button>` +
+    `<button class="fp-x" data-limpa="${campo}" aria-label="Tirar o filtro ${rotulo}">×</button></span>`;
+}
+
+function desenharFiltros(busca, total) {
+  $("abas-origem").innerHTML = ORIGENS.map(([o, nome]) =>
+    `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
+      conta("origem", it => it.tipo === o, busca).toLocaleString("pt-BR")}</span></button>`).join("");
+  const atual = origem === "form" ? filtro : filtroEmail;
+  $("status-cards").innerHTML = situacoesDaAba(busca).map(([f, nome, cor, n]) =>
+    `<button class="stc ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
+      <span class="stc-r">${esc(nome)}</span><span class="stc-n">${n.toLocaleString("pt-BR")}</span></button>`).join("");
+  const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
+  const algum = hotel || agenteF || envio !== "todos" || periodo !== "45";
+  $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) + pilula("agente", "Agente", agenteF) +
+    pilula("periodo", "Período", nomePeriodo, "Últimos 45 dias") +
+    (origem === "form" ? pilula("envio", "E-mail ao hotel", envio === "todos" ? "" : ENVIO[envio][0]) : "") +
+    (algum ? `<button class="fp-limpar" data-limpa="tudo">Limpar filtros</button>` : "") +
+    (busca ? `<span class="aviso-busca">Buscando em toda a aba: situação e filtros não valem enquanto pesquisa</span>` : "") +
+    `<span class="resultado">${total.toLocaleString("pt-BR")} ${total === 1 ? "resultado" : "resultados"}</span>`;
+  $("notas-cab").classList.toggle("buscando", !!busca);
+  if (popAberto) desenharPop();
+}
+
+function desenharPop() {
+  const pop = $("pop"), alvo = document.querySelector(`[data-pop="${popAberto}"]`);
+  if (!alvo) { fecharPop(); return; }
+  const r = alvo.getBoundingClientRect();
+  pop.style.left = Math.min(r.left, window.innerWidth - 316) + "px";
+  pop.style.top = (r.bottom + 6) + "px";
+  pop.classList.remove("oculta");
+  const op = (campo, valor, nome, atual, n) => `<button class="pop-op" data-opv="${esc(valor)}" data-campo="${campo}" aria-selected="${atual}">
+    <span>${esc(nome)}</span>${n !== undefined ? `<span class="n">${n.toLocaleString("pt-BR")}</span>` : ""}</button>`;
+  let lista = "";
+  if (popAberto === "hotel") {
+    const n = {}, busca = semAcento(buscaPop);
+    TODOS.forEach(it => { if (passa(it, "hotel", "")) it.hoteis.forEach(h => n[h] = (n[h] || 0) + 1); });
+    const grupos = {};
+    (st.hoteis || []).forEach(h => { if ((!agenteF || h.agente === agenteF) && (!busca || semAcento(h.hotel).includes(busca)))
+      (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
+    lista = (busca ? "" : op("hotel", "", "Todos os hotéis", !hotel)) + Object.entries(grupos).map(([a, hs]) =>
+      `<div class="pop-grupo">${esc(a)}</div>` + hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt"))
+        .map(h => op("hotel", h, h, h === hotel, n[h] || 0)).join("")).join("") || `<div class="pop-grupo">Nenhum hotel com esse nome</div>`;
+  } else if (popAberto === "agente") {
+    const agentes = [...new Set((st.hoteis || []).map(h => h.agente).filter(Boolean))];
+    lista = op("agente", "", "Todos os agentes", !agenteF) +
+      agentes.map(a => op("agente", a, a, a === agenteF, conta("agente", it => agentesDo(it).includes(a), ""))).join("");
+  } else if (popAberto === "periodo") {
+    lista = PERIODOS_NF.map(([v, nome]) => op("periodo", v, nome, v === periodo)).join("");
+  } else if (popAberto === "envio") {
+    lista = Object.entries(ENVIO).map(([k, [nome]]) => op("envio", k, nome, k === envio, conta("envio", it => ENVIO[k][1](it.s), ""))).join("");
+  }
+  const comBusca = popAberto === "hotel";
+  if (!pop.dataset.campo || pop.dataset.campo !== popAberto) {
+    pop.dataset.campo = popAberto;
+    pop.innerHTML = (comBusca ? `<input id="pop-busca" type="search" placeholder="Buscar hotel…" autocomplete="off">` : "") + `<div class="pop-lista" id="pop-lista"></div>`;
+    if (comBusca) { const i = $("pop-busca"); i.value = buscaPop; i.addEventListener("input", () => { buscaPop = i.value; desenharPop(); }); setTimeout(() => i.focus(), 0); }
+  }
+  $("pop-lista").innerHTML = lista;
+}
+function fecharPop() { popAberto = ""; buscaPop = ""; $("pop").classList.add("oculta"); $("pop").dataset.campo = ""; }
+
+// Visão geral e outros atalhos abrem a tela de notas já filtrada
+function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = {}) {
+  origem = o; if (o === "form") filtro = f; else filtroEmail = f;
+  agenteF = agente; hotel = ""; envio = "todos"; pagina = 0; sel = null; emailSel = null;
+  $("busca").value = ""; guardarCaixa(); trocarVista("fila");
 }
 
 function linhaHtml(it) {
@@ -737,7 +859,6 @@ function linhaHtml(it) {
     const s = it.s;
     const sub = [s.email, s.nfs.length ? "NF " + s.nfs.join(", ") : ""].filter(Boolean).join(" · ");
     return `<div class="linha ${sel === s.chave ? "sel" : ""}" role="option" tabindex="0" data-k="${esc(s.chave)}">
-      <span class="col-tipo tipo-o form"><i><svg><use href="#i-form"/></svg></i>Form.</span>
       <span class="quem-linha"><b>${esc(s.nome)}${tagFalta(s.falta_nota)}${s.dono ? `<span class="tag dono">${esc(s.dono)}</span>` : ""}${s.dividida ? '<span class="tag">dividida</span>' + tagDivisao(s) : tagNotaUnica(s)}</b>
         <small>${esc(sub)}</small></span>
       <span class="col-hotel">${esc(s.hotel)}<small>${esc(AG[s.hotel] || "")}</small></span>
@@ -746,7 +867,6 @@ function linhaHtml(it) {
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
-    <span class="col-tipo tipo-o email"><i><svg><use href="#i-mail"/></svg></i>E-mail</span>
     <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagFalta(m.falta_nota)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
@@ -757,24 +877,21 @@ function linhaHtml(it) {
 
 function desenhar(){
   const busca = $("busca").value.trim();
-  desenharLateral(busca);
-  desenharFiltros(busca);
+  desenharLateral();
   const lista = TODOS.filter(it => passa(it, "", busca));
+  desenharFiltros(busca, lista.length);
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   pagina = Math.min(pagina, paginas - 1);
-  const nomeSit = (SITUACOES.find(x => x[0] === filtro) || [])[1] || NOMES[filtro];
-  $("titulo-caixa").textContent = busca ? `Busca: “${busca}”` : filtro === "aberto" ? "Caixa de entrada" : nomeSit;
-  document.querySelector(".filtros-caixa").classList.toggle("buscando", !!busca);
-  const periodo = $("dias").value === "0" ? "" : ` dos últimos ${$("dias").value} dias`;
-  $("titulo-n").textContent = `· ${lista.length.toLocaleString("pt-BR")} ${lista.length === 1 ? "item" : "itens"}`;
+  $("titulo-caixa").textContent = busca ? `Busca: “${busca}”` : "Notas fiscais";
+  $("titulo-n").textContent = "";
+  const p = periodo === "0" ? "" : ` dos últimos ${periodo} dias`;
   $("lista").innerHTML = lista.length ? lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA).map(linhaHtml).join("")
-    : busca ? `<div class="vazio">Nada com “${esc(busca)}” nos pedidos${periodo} nem nos e-mails sem resposta.<br>
-        ${periodo ? "Para pedidos mais antigos, escolha “Todo o período”. " : ""}E-mail já respondido só aparece no Outlook.</div>`
-    : `<div class="vazio">Nada com esses filtros.<br>Troque a situação, o hotel ou a origem.</div>`;
+    : busca ? `<div class="vazio">Nada com “${esc(busca)}” ${origem === "form" ? "nos formulários" + (periodo === "0" ? "" : " carregados") : "nos e-mails sem resposta"}.<br>
+        Veja a outra aba${origem === "email" ? "; e-mail já respondido só aparece no Outlook" : ""}.</div>`
+    : `<div class="vazio">Nada com esses filtros${p}.<br>Escolha outra situação ou tire um filtro.</div>`;
   const de = lista.length ? pagina * POR_PAGINA + 1 : 0, ate = Math.min(lista.length, (pagina + 1) * POR_PAGINA);
-  $("pag-txt").textContent = `Mostrando ${de.toLocaleString("pt-BR")}–${ate.toLocaleString("pt-BR")} de ${lista.length.toLocaleString("pt-BR")} · ` +
-    (busca ? `busca em tudo (formulários${periodo} e e-mails sem resposta; filtros não valem enquanto pesquisa)`
-      : hotel || (agenteF ? "hotéis de " + agenteF : "todos os hotéis"));
+  $("pag-txt").textContent = `Mostrando ${de.toLocaleString("pt-BR")}–${ate.toLocaleString("pt-BR")} de ${lista.length.toLocaleString("pt-BR")}` +
+    (busca ? " · busca na aba inteira" : hotel ? " · " + hotel : agenteF ? " · hotéis de " + agenteF : "");
   // páginas: primeira, vizinhas da atual e última
   const nums = [...new Set([0, pagina - 1, pagina, pagina + 1, paginas - 1])].filter(p => p >= 0 && p < paginas).sort((a, b) => a - b);
   $("pags").innerHTML = paginas < 2 ? "" : nums.map((p, i) => (i && p - nums[i - 1] > 1 ? `<span style="align-self:center">…</span>` : "") +
@@ -881,20 +998,35 @@ async function acao(a, valor){
 
 const irPraCaixa = () => { if (pn.vista !== "fila") trocarVista("fila"); };
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-f],[data-origem],[data-agente],[data-chip],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],#d-fechar,#d-nf-ok");
+  if (popAberto && !e.target.closest("#pop,[data-pop]")) fecharPop();
+  const t = e.target.closest("[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],#d-fechar,#d-nf-ok");
   if (!t) return;
   const d = t.dataset;
-  if (d.f) { filtro = d.f; pagina = 0; guardarCaixa(); irPraCaixa(); return desenhar(); }
-  if (d.chip) { filtro = filtro === d.chip ? "aberto" : d.chip; pagina = 0; guardarCaixa(); return desenhar(); }
-  if (d.origem) { origem = d.origem; pagina = 0; guardarCaixa(); irPraCaixa(); return desenhar(); }
-  if (d.agente !== undefined) { agenteF = d.agente; hotel = ""; pagina = 0; guardarCaixa(); irPraCaixa(); return desenhar(); }
+  if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
+  if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; pagina = 0; guardarCaixa(); return desenhar(); }
+  if (d.pop) { if (popAberto === d.pop) fecharPop(); else { popAberto = d.pop; buscaPop = ""; $("pop").dataset.campo = ""; desenharPop(); } return; }
+  if (d.opv !== undefined) {
+    const v = d.opv;
+    if (d.campo === "hotel") hotel = v;
+    if (d.campo === "agente") { agenteF = v; hotel = ""; }
+    if (d.campo === "envio") envio = v;
+    if (d.campo === "periodo") { const antes = periodo; periodo = v; if ((antes === "0") !== (v === "0")) carregar(); }
+    fecharPop(); pagina = 0; guardarCaixa(); return desenhar();
+  }
+  if (d.limpa) {
+    if (d.limpa === "hotel" || d.limpa === "tudo") hotel = "";
+    if (d.limpa === "agente" || d.limpa === "tudo") agenteF = "";
+    if (d.limpa === "envio" || d.limpa === "tudo") envio = "todos";
+    if ((d.limpa === "tudo" || d.limpa === "periodo") && periodo !== "45") { const antes = periodo; periodo = "45"; if (antes === "0") carregar(); }
+    pagina = 0; guardarCaixa(); return desenhar();
+  }
   if (d.pag) { pagina = Number(d.pag); desenhar(); $("lista").scrollTop = 0; return; }
   if (d.k) { sel = d.k; emailSel = null; return desenhar(); }
   if (d.em) { emailSel = d.em; sel = null; return desenhar(); }
   if (t.id === "d-fechar") { sel = null; emailSel = null; return desenhar(); }
   if (d.resp) return abrirEnvioNF(null, { id: d.resp, comNF: false });
   if (d.respNf) return abrirEnvioNF(null, { id: d.respNf, comNF: true });
-  if (d.verPedido) { filtro = "todas"; origem = "tudo"; sel = d.verPedido; emailSel = null; return desenhar(); }
+  if (d.verPedido) { filtro = "todas"; origem = "form"; hotel = ""; agenteF = ""; sel = d.verPedido; emailSel = null; return desenhar(); }
   if (d.a) {
     if (d.v === "forcar" && !confirm("Tirar esta solicitação de quem está tratando?")) return;
     return acao(d.a, d.v);
@@ -913,10 +1045,7 @@ document.addEventListener("keydown", e => {
   if (l && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); l.click(); }
 });
 $("busca").addEventListener("input", () => { pagina = 0; irPraCaixa(); desenhar(); });
-$("f-hotel").addEventListener("change", e => { hotel = e.target.value; pagina = 0; desenhar(); });
-$("f-agente").addEventListener("change", e => { agenteF = e.target.value; hotel = ""; pagina = 0; guardarCaixa(); desenhar(); });
-$("f-envio").addEventListener("change", e => { envio = e.target.value; pagina = 0; desenhar(); });
-$("dias").addEventListener("change", () => { pagina = 0; carregar(); });
+window.addEventListener("resize", () => { if (popAberto) desenharPop(); });
 
 // Seções da lateral abrem/fecham; o estado fica guardado neste PC
 const GRUPOS_KEY = "painel.secoesFechadas";
@@ -969,6 +1098,7 @@ document.addEventListener("click", e => { if (!e.target.closest("#op")) menuOper
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   menuOperador(false);
+  if (popAberto) { fecharPop(); return; }
   if (!document.querySelector(".modal-fundo") && (sel || emailSel)) { sel = null; emailSel = null; desenhar(); }
 });
 </script>

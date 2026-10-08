@@ -1,35 +1,9 @@
-// Visão geral, Hotéis, Log, Máquinas e as janelas de envio. Usa api/$/esc/toast/st/desenhar do script da caixa
+// Visão geral, Log, Máquinas e as janelas de envio. Usa api/$/esc/toast/st/desenhar e o estado da tela de notas
 // (mesmo escopo global).
-const PERIODOS = [["mes", "Este mês"], ["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"], ["tudo", "Desde 01/09"]];
-const MEDIDAS = {
-  nf: { nome: "Solicitações × NFs", chaves: [{ k: "solicitacoes", nome: "Solicitações recebidas" }, { k: "nfs", nome: "NFs emitidas" }] },
-  email: { nome: "E-mails", chaves: [{ k: "recebidos", nome: "E-mails recebidos" }, { k: "enviados", nome: "E-mails enviados" }] },
-  outros: { nome: "Ligações × Canceladas/Substituídas", chaves: [{ k: "ligacoes", nome: "Ligações" }, { k: "cancelamentos", nome: "Canceladas/subst." }] },
-};
-let pn = { vista: "visao", periodo: "30", ini: "", fim: "", medida: "nf", tabela: false, dados: null,
-           ordem: { campo: "pendentes", desc: true }, buscaHotel: "", hotelAberto: null, ficha: null, timer: null };
-
+let pn = { vista: "visao", janela: 30, rz: null };
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
-function periodoAtual() {
-  const hoje = new Date(hojeIso() + "T12:00");
-  const iso = d => d.toLocaleDateString("sv-SE");
-  if (pn.periodo === "custom") return [pn.ini, pn.fim];
-  if (pn.periodo === "mes") return [iso(new Date(hoje.getFullYear(), hoje.getMonth(), 1)), iso(hoje)];
-  if (pn.periodo === "tudo") return ["", iso(hoje)];
-  const ini = new Date(hoje); ini.setDate(ini.getDate() - (Number(pn.periodo) - 1));
-  return [iso(ini), iso(hoje)];
-}
 
-async function carregarPainel() {
-  const [ini, fim] = periodoAtual();
-  const j = await api(`/api/painel?ini=${ini}&fim=${fim}`).catch(() => null);
-  if (j && !j.erro) { pn.dados = j; desenharVisao(); desenharHoteis(); }
-  if (pn.hotelAberto) abrirHotel(pn.hotelAberto, true);
-  clearTimeout(pn.timer);
-  pn.timer = setTimeout(carregarPainel, 60000);
-}
-
-const TITULOS = { visao: "Visão geral", fila: "Caixa de entrada", hoteis: "Hotéis", log: "Log do robô", maquinas: "Máquinas" };
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas" };
 function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
   pn.vista = v;
@@ -37,9 +11,8 @@ function trocarVista(v) {
   $("trilha").textContent = TITULOS[v];
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
     b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba))));
-  desenhar();   // a lateral só marca a caixa quando ela está aberta
+  desenhar();
   if (v === "visao") desenharVisao();
-  if (v === "hoteis") desenharHoteis();
   clearTimeout(at.timer);
   if (v === "log" || v === "maquinas") carregarAtividade();
 }
@@ -140,150 +113,94 @@ document.addEventListener("click", async e => {
   toast(r.ok ? "Pedido enviado — o PC responde em até 1 minuto (veja o Log)." : (r.motivo || r.erro || "falhou"), !r.ok);
 });
 
-// ---------- Visão geral ----------
-function filtrosHtml(titulo) {
-  const [ini, fim] = periodoAtual();
-  return `<div class="filtros"><div class="titulo">${titulo}</div>
-    <div class="seg">${PERIODOS.map(([k, n]) => `<button data-p-periodo="${k}" class="${pn.periodo === k ? "sel" : ""}">${n}</button>`).join("")}</div>
-    <input type="date" data-p-data="ini" value="${ini || (pn.dados?.desde ?? "")}" min="${pn.dados?.desde ?? ""}" max="${hojeIso()}">
-    <span style="color:var(--suave)">até</span>
-    <input type="date" data-p-data="fim" value="${fim}" min="${pn.dados?.desde ?? ""}" max="${hojeIso()}"></div>`;
+// ---------- Visão geral: só os dados do próprio Painel (pedidos da Central + e-mails dos hóspedes) ----------
+// Pedido do usuário (08/10/2026): menos informação, nada de comparar com o Mail Analytics, gráficos concretos.
+const JANELAS = [7, 15, 30, 45];
+// cores validadas (dataviz, tema claro e escuro) na ordem em que aparecem empilhadas
+const COR_VIZ = { emitida: "#1f9d6b", envio: "#b97a12", andamento: "#3987e5", sem_nf: "#d6453a", email: "#8b6fd6" };
+const SERIES_DIA = [
+  { k: "emitida", nome: "NF emitida e enviada", cor: COR_VIZ.emitida },
+  { k: "envio", nome: "NF emitida, envio pendente", cor: COR_VIZ.envio },
+  { k: "andamento", nome: "Em andamento", cor: COR_VIZ.andamento },
+  { k: "sem_nf", nome: "Sem NF", cor: COR_VIZ.sem_nf },
+];
+const SERIES_AGENTE = [
+  { k: "email", nome: "E-mail sem resposta", cor: COR_VIZ.email },
+  { k: "sem_nf", nome: "Sem NF", cor: COR_VIZ.sem_nf },
+  { k: "andamento", nome: "Em andamento", cor: COR_VIZ.andamento },
+  { k: "envio", nome: "Envio pendente", cor: COR_VIZ.envio },
+];
+function categoriaVisao(s) {
+  if (s.envio_pendente) return "envio";
+  if (s.situacao === "concluida") return "emitida";
+  if (["tratativa", "em_tratamento", "nf_parcial"].includes(s.situacao)) return "andamento";
+  return "sem_nf";
 }
-
-function saudeHtml(d) {
-  const s = d.saude || {}, cards = [];
-  const robo = st.status || {};
-  cards.push(card(robo.ligado ? "bom" : "ruim", `${robo.ligado ? "✔" : "✖"} Robô de NF`,
-    robo.ligado ? `ligado · última execução ${robo.ultima_execucao || "—"}` : "desligado na aba Status", robo.resumo));
-  const e = s.escutar_comando;
-  if (e) {
-    const cls = !e.online ? "ruim" : e.desatualizado ? "alerta" : "bom";
-    const txt = !e.online ? "parado — abra o escutar_comando.bat" : e.desatualizado ? "rodando com código velho — reinicie" : "online";
-    cards.push(card(cls, `${cls === "bom" ? "✔" : cls === "alerta" ? "⚠" : "✖"} Mail Analytics`,
-      `${txt} · consolidado de ${e.ultimo_consolidado || "—"}`, e.status));
-  }
-  for (const o of s.operadores || []) {
-    const cls = o.ontem === "nao_puxado" ? "ruim" : o.status === "ATENCAO" ? "alerta" : "bom";
-    const ontem = o.ontem === "puxado" ? "dados de ontem puxados" : o.ontem === "guardado"
-      ? `ontem guardado pra somar em ${dataBr(o.domingo)}` : o.ontem === "fim_de_semana"
-      ? "fim de semana sem expediente (só entra se trabalhar)" : "dados de ontem NÃO chegaram";
-    // ATENÇÃO: o motivo (1º aviso do Mail Analytics) aparece no cartão; o texto completo fica no tooltip
-    const motivo = o.status === "ATENCAO" && o.detalhe ? o.detalhe.split(/;\s*/)[0].split(" — ")[0] : "";
-    cards.push(card(cls, `${cls === "bom" ? "✔" : cls === "alerta" ? "⚠" : "✖"} ${o.operador}`,
-      `${ontem} · ${o.ultima_execucao || "nunca rodou"}`, o.detalhe, motivo));
-  }
-  return `<div class="saude">${cards.join("")}</div>`;
-  function card(cls, titulo, linha, dica, motivo) {
-    return `<div class="c ${cls}" title="${esc(dica || linha)}"><b>${esc(titulo)}</b><span>${esc(linha)}</span>` +
-           (motivo ? `<span class="motivo">${esc(motivo)}</span>` : "") + `</div>`;
-  }
-}
+const diasAtras = iso => Math.round((new Date(hojeIso() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 86400000);
 
 function desenharVisao() {
-  const d = pn.dados, el = $("visao");
-  if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
-  const k = d.visao.kpis, n = v => (v ?? 0).toLocaleString("pt-BR");
-  const med = MEDIDAS[pn.medida];
-  const fds = d.visao.serie.some(p => p.fim_de_semana.length);
-  el.innerHTML = filtrosHtml("Visão geral") + saudeHtml(d) +
-    (d.fi_erro ? `<div class="avisos ruim-txt">⚠ Não consegui ler o Fiscal Intelligence: ${esc(d.fi_erro)}</div>` : "") +
-    `<div class="kpis">
-      <div class="kpi hero"><div class="r">Pendentes agora</div><div class="v">${n(k.pendentes_agora)}</div>
-        <div class="s">${n(k.pendentes_7d)} há mais de 7 dias · <button class="link" data-p-ir="fila">ver fila</button></div></div>
-      <div class="kpi"><div class="r">Solicitações recebidas</div><div class="v">${n(k.solicitacoes)}</div><div class="s">no período</div></div>
-      <div class="kpi"><div class="r">Com NF emitida</div><div class="v">${n(k.concluidas)}</div>
-        <div class="s">${k.taxa_atendimento == null ? "—" : k.taxa_atendimento + "% das solicitações"}</div></div>
-      <div class="kpi"><div class="r">NFs emitidas (Mail Analytics)</div><div class="v">${n(k.nfs)}</div><div class="s">contadas nos e-mails</div></div>
-      <div class="kpi" title="Arquivos renomeados (CANCELADA)/(SUBSTITUIDA) na pasta de notas do Dropbox, pela data de modificação">
-        <div class="r">Canceladas/substituídas</div><div class="v">${n(k.cancelamentos)}</div>
-        <div class="s">${n(k.canceladas)} canceladas · ${n(k.substituidas)} substituídas${k.nfs ? " · " + Math.round(100 * k.cancelamentos / k.nfs) + "% das NFs" : ""}</div></div>
-      <div class="kpi"><div class="r">E-mails recebidos</div><div class="v">${n(k.recebidos)}</div></div>
-      <div class="kpi"><div class="r">E-mails enviados</div><div class="v">${n(k.enviados)}</div></div>
-      <div class="kpi"><div class="r">Ligações</div><div class="v">${n(k.ligacoes)}</div></div>
-      <div class="kpi"><div class="r">Período</div><div class="v" style="font-size:18px">${dataBr(d.ini)} a ${dataBr(d.fim)}</div>
-        <div class="s">Mail Analytics lido ${quando(d.fi_lido_em)}</div></div>
+  const el = $("visao");
+  if (!st.atualizado_em) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
+  const n = v => (v ?? 0).toLocaleString("pt-BR");
+  const hoje = new Date(hojeIso() + "T12:00"), ini = new Date(hoje);
+  ini.setDate(ini.getDate() - (pn.janela - 1));
+  const corte = ini.toLocaleDateString("sv-SE");
+  const pedidos = st.fila.filter(s => s.data >= corte);
+  const abertos = st.fila.filter(s => s.situacao !== "concluida");
+  const emailsSem = st.emails.filter(m => !m.notas?.length);
+  const naoEmitida = st.fila.filter(s => ["na_fila", "aguardando_envio"].includes(s.situacao)).length;
+  const envioPend = st.fila.filter(s => s.envio_pendente).length;
+  const tratativas = st.fila.filter(s => ["tratativa", "em_tratamento"].includes(s.situacao)).length;
+  const velhos = abertos.filter(s => diasAtras(s.data) > 7).length;
+  const comNf = pedidos.filter(s => s.nfs.length).length;
+  // gráfico 1: os pedidos de cada dia e o que aconteceu com eles
+  const porDia = {};
+  for (const d = new Date(ini); d <= hoje; d.setDate(d.getDate() + 1)) porDia[d.toLocaleDateString("sv-SE")] = {};
+  pedidos.forEach(s => { const p = porDia[s.data]; if (p) { const c = categoriaVisao(s); p[c] = (p[c] || 0) + 1; } });
+  const dias = Object.entries(porDia).map(([data, partes]) => ({
+    rotulo: data.slice(8, 10) + "/" + data.slice(5, 7), partes,
+    titulo: new Date(data + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) }));
+  // gráfico 2: o que está em aberto, por agente (clicar abre as notas dele)
+  const ag = {};
+  const somar = (a, k) => { (ag[a] ||= {})[k] = (ag[a][k] || 0) + 1; };
+  st.fila.forEach(s => { if (s.situacao !== "concluida" || s.envio_pendente) somar(AG[s.hotel] || "Sem agente", categoriaVisao(s)); });
+  emailsSem.forEach(m => somar(m.hotel.split(" / ").map(h => AG[h]).find(Boolean) || m.agente_pc || "Sem agente", "email"));
+  const total = p => SERIES_AGENTE.reduce((a, s) => a + (p[s.k] || 0), 0);
+  const porAgente = Object.entries(ag).map(([rotulo, partes]) => ({ rotulo, partes })).sort((a, b) => total(b.partes) - total(a.partes));
+  // espera dos pedidos em aberto
+  const faixas = [["Até 2 dias", 0, 2], ["3 a 7 dias", 3, 7], ["8 a 15 dias", 8, 15], ["Mais de 15 dias", 16, 1e9]];
+  const idade = faixas.map(([rotulo, a, b]) => ({ rotulo, n: abertos.filter(s => { const d = diasAtras(s.data); return d >= a && d <= b; }).length }));
+  const kpi = (alvo, rot, v, sub, cor) => `<button class="kpi-b" data-ir="${alvo}" style="--cor:${cor}">
+      <span class="kpi-r">${rot}</span><span class="kpi-v">${n(v)}</span><span class="kpi-s">${sub}</span></button>`;
+  el.innerHTML = `<div class="cab-pagina"><h1>Visão geral</h1>
+      <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span>
+      <div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
+        `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div></div>
+    <div class="kpis-v">
+      <button class="kpi-hero" data-ir="aberto"><span class="kpi-r">Em aberto agora</span>
+        <span class="kpi-v">${n(abertos.length + emailsSem.length)}</span>
+        <span class="kpi-s">${n(abertos.length)} pedidos e ${n(emailsSem.length)} e-mails · <b>${n(velhos)}</b> esperando há mais de 7 dias</span></button>
+      ${kpi("na_fila", "NF não emitida", naoEmitida, "pedidos sem nota", "var(--erro)")}
+      ${kpi("envio_pendente", "Envio pendente", envioPend, "nota pronta, e-mail não saiu", "var(--atencao)")}
+      ${kpi("tratativa", "Tratativas", tratativas, "esperando o hóspede ou em andamento", "var(--info)")}
+      ${kpi("concluida", `NFs nos últimos ${pn.janela} dias`, comNf,
+        pedidos.length ? `${Math.round(100 * comNf / pedidos.length)}% dos ${n(pedidos.length)} pedidos` : "sem pedidos no período", "var(--ok)")}
     </div>
-    <div class="cartao"><div class="cartao-topo"><div><h3>${med.nome} por dia</h3>
-      <div class="sub">${fds ? "Domingos marcados incluem sexta/sábado somados pelo Mail Analytics (passe o mouse)" : "Passe o mouse para ver cada dia"}</div></div>
-      <div class="seg">${Object.entries(MEDIDAS).map(([c, m]) => `<button data-p-medida="${c}" class="${pn.medida === c ? "sel" : ""}">${m.nome}</button>`).join("")}</div>
-      <button class="link" data-p-tabela="1">${pn.tabela ? "ver gráfico" : "ver tabela"}</button></div>
-      <div id="leg-dia" style="margin-bottom:6px"></div><div id="graf-dia"></div></div>
+    <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
+      <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div></div>
+      <div id="leg-dias" style="margin:4px 0 10px"></div><div id="graf-dias"></div></div>
     <div class="grade2">
-      <div class="cartao"><h3>Pendentes por idade</h3><div class="sub">Solicitações sem NF desde ${dataBr(d.desde)}, pelo tempo de espera</div><div id="graf-idade"></div></div>
-      <div class="cartao"><h3>Hotéis com mais pendentes</h3><div class="sub">Clique para abrir a ficha do hotel</div><div id="graf-top"></div></div>
+      <div class="cartao"><h3>Em aberto por agente</h3><div class="sub">Clique num agente para ver as notas dele</div>
+        <div id="leg-agentes" style="margin:4px 0 10px"></div><div id="graf-agentes"></div></div>
+      <div class="cartao"><h3>Há quanto tempo esperam</h3><div class="sub">Pedidos em aberto, pelo dia em que foram feitos</div>
+        <div id="graf-idade" style="margin-top:14px"></div></div>
     </div>`;
-  legenda($("leg-dia"), med.chaves);
-  if (pn.tabela) {
-    $("graf-dia").innerHTML = `<table class="tabela"><thead><tr><th>Dia</th>${med.chaves.map(c => `<th class="num">${c.nome}</th>`).join("")}<th>Observação</th></tr></thead>
-      <tbody>${d.visao.serie.map(p => `<tr><td>${dataBr(p.data)}</td>${med.chaves.map(c => `<td class="num">${p[c.k] == null ? "—" : n(p[c.k])}</td>`).join("")}
-      <td>${esc(p.fim_de_semana.join(" · "))}</td></tr>`).join("")}</tbody></table>`;
-  } else {
-    graficoLinhas($("graf-dia"), d.visao.serie, med.chaves, { notaDoDia: p => p.fim_de_semana.map(esc).join("<br>") });
-  }
-  graficoBarrasH($("graf-idade"), d.visao.idade.map(i => ({ rotulo: i.faixa, n: i.n })));
-  graficoBarrasH($("graf-top"), d.visao.top_pendentes.map(h => ({ rotulo: h.hotel, n: h.n })),
-                 { aoClicar: it => { trocarVista("hoteis"); abrirHotel(it.rotulo); } });
-}
-
-// ---------- Hotéis ----------
-const COLS = [["hotel", "Hotel"], ["agente", "Agente"], ["solicitacoes", "Solicitações", 1], ["concluidas", "Com NF", 1],
-  ["taxa_atendimento", "Atendimento", 1, "%"], ["pendentes", "Pendentes", 1], ["mais_antigo", "Mais antigo", 1, " d"],
-  ["nfs", "NFs (MA)", 1], ["canceladas", "Canceladas", 1], ["substituidas", "Substituídas", 1], ["taxa_cancelamento", "Canc.+Subst. %", 1, "%"],
-  ["recebidos", "E-mails rec.", 1], ["enviados", "E-mails env.", 1], ["ligacoes", "Ligações", 1]];
-
-function desenharHoteis() {
-  const d = pn.dados, el = $("hoteis");
-  if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
-  const busca = pn.buscaHotel.toLowerCase(), { campo, desc } = pn.ordem;
-  let linhas = d.hoteis.filter(h => !busca || (h.hotel + " " + h.agente).toLowerCase().includes(busca));
-  linhas = linhas.slice().sort((a, b) => {
-    const va = a[campo] ?? -1, vb = b[campo] ?? -1;
-    return (typeof va === "string" ? va.localeCompare(vb) : va - vb) * (desc ? -1 : 1);
-  });
-  const foco = document.activeElement?.id === "busca-hotel";
-  el.innerHTML = filtrosHtml("Hotéis") +
-    `<div class="barra"><input id="busca-hotel" placeholder="Filtrar por hotel ou agente…" value="${esc(pn.buscaHotel)}"></div>
-    <div class="cartao" style="padding:0;overflow:auto"><table class="tabela"><thead><tr>${COLS.map(([c, nome, num]) =>
-      `<th class="${num ? "num" : ""}" data-p-ordem="${c}">${nome}${campo === c ? (desc ? " ▾" : " ▴") : ""}</th>`).join("")}</tr></thead>
-    <tbody>${linhas.map(h => `<tr data-p-hotel="${esc(h.hotel)}">${COLS.map(([c, , num, suf]) => {
-      const v = h[c];
-      if (!num) return `<td>${esc(v)}</td>`;
-      const cls = (v == null || v === 0) ? "zero" : (c === "mais_antigo" && v > 15) || (c === "taxa_cancelamento" && v > 30) ? "ruim-txt"
-        : (c === "mais_antigo" && v > 7) ? "alerta-txt" : "";
-      return `<td class="num ${cls}">${v == null ? "—" : v.toLocaleString("pt-BR") + (suf || "")}</td>`;
-    }).join("")}</tr>`).join("")}</tbody></table></div>
-    <div class="avisos">${linhas.length} hotéis · NFs (MA) vêm do Mail Analytics; canceladas e substituídas, dos arquivos renomeados no Dropbox; solicitações e pendentes, da Planilha Central${d.avisos.length ? " · " + esc(d.avisos.join(" · ")) : ""}</div>`;
-  if (foco) { const i = $("busca-hotel"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
-}
-
-async function abrirHotel(nome, silencioso) {
-  pn.hotelAberto = nome;
-  $("v-hoteis").classList.add("ficha-aberta");
-  const [ini, fim] = periodoAtual();
-  if (!silencioso) $("ficha-hotel").innerHTML = `<div class="vazio">Carregando ${esc(nome)}…</div>`;
-  const f = await api(`/api/hotel?nome=${encodeURIComponent(nome)}&ini=${ini}&fim=${fim}`);
-  if (pn.hotelAberto !== nome) return;
-  const t = f.totais, n = v => (v ?? 0).toLocaleString("pt-BR");
-  $("ficha-hotel").innerHTML = `<button class="fechar" data-p-fechar="1">×</button>
-    <h2>${esc(nome)}</h2><div class="sub">${esc(f.email || "")} · agente ${esc(f.agente || "—")}</div>
-    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><div class="r">Pendentes</div><div class="v">${n(f.pendentes.length)}</div></div>
-      <div class="kpi"><div class="r">NFs (MA)</div><div class="v">${n(t.nfs)}</div></div>
-      <div class="kpi" title="${n(t.canceladas)} canceladas · ${n(t.substituidas)} substituídas (arquivos renomeados no Dropbox)">
-        <div class="r">Canceladas/subst.</div><div class="v">${n(t.cancelamentos)}</div></div>
-      <div class="kpi"><div class="r">E-mails rec.</div><div class="v">${n(t.recebidos)}</div></div>
-      <div class="kpi"><div class="r">E-mails env.</div><div class="v">${n(t.enviados)}</div></div>
-      <div class="kpi"><div class="r">Ligações</div><div class="v">${n(t.ligacoes)}</div></div>
-    </div>
-    <div class="cartao"><h3>Solicitações × NFs por dia</h3><div id="leg-hotel" style="margin:6px 0"></div><div id="graf-hotel"></div></div>
-    <div class="cartao"><h3>Pendentes por idade</h3><div id="idade-hotel" style="margin-top:8px"></div></div>
-    <div class="cartao"><h3>Pendentes (${f.pendentes.length})</h3><div class="sub">Clique para abrir na fila de solicitações</div>
-      <table class="tabela"><tbody>${f.pendentes.map(p => `<tr data-p-sol="${esc(p.chave)}"><td>${dataBr(p.data)}</td>
-      <td>${esc(p.nome)}</td><td>${p.dono ? "👤 " + esc(p.dono) : ""}</td><td class="num ${p.idade > 15 ? "ruim-txt" : p.idade > 7 ? "alerta-txt" : ""}">${p.idade} d</td></tr>`).join("") ||
-      `<tr><td class="zero">Nenhuma pendente 🎉</td></tr>`}</tbody></table></div>`;
-  legenda($("leg-hotel"), MEDIDAS.nf.chaves);
-  graficoLinhas($("graf-hotel"), f.serie, MEDIDAS.nf.chaves, { altura: 200, notaDoDia: p => p.fim_de_semana.map(esc).join("<br>") });
-  graficoBarrasH($("idade-hotel"), f.idade.map(i => ({ rotulo: i.faixa, n: i.n })));
+  legendaCores($("leg-dias"), SERIES_DIA);
+  graficoColunas($("graf-dias"), dias, SERIES_DIA);
+  legendaCores($("leg-agentes"), SERIES_AGENTE);
+  graficoBarrasEmpilhadas($("graf-agentes"), porAgente, SERIES_AGENTE, {
+    aoClicar: it => { abrirNotas({ agente: it.rotulo === "Sem agente" ? "" : it.rotulo, filtro: "aberto" }); } });
+  graficoBarrasH($("graf-idade"), idade);
 }
 
 // ---------- Enviar pendentes: o caminho que o robô faz, com as linhas reais do log ----------
@@ -375,7 +292,7 @@ async function acompanharEnvio(ms) {
       $("env-et-" + (ETAPAS_ENVIO.length - 1)).querySelector("small").textContent = e.resumo || "";
       $("env-res").textContent = e.resumo || "";
       $("env-fechar").textContent = "Fechar";
-      carregar(); carregarPainel();
+      carregar();
       return;
     }
   }
@@ -558,37 +475,12 @@ document.addEventListener("click", e => {
 
 // ---------- Eventos ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-vista],[data-p-periodo],[data-p-medida],[data-p-tabela],[data-p-ordem],[data-p-hotel],[data-p-fechar],[data-p-sol],[data-p-ir]");
+  const t = e.target.closest("[data-vista],[data-vj],[data-ir]");
   if (!t) return;
   const ds = t.dataset;
   if (ds.vista) { if (ds.log) at.aba = ds.log; return trocarVista(ds.vista); }
-  if (ds.pPeriodo) { pn.periodo = ds.pPeriodo; return carregarPainel(); }
-  if (ds.pMedida) { pn.medida = ds.pMedida; return desenharVisao(); }
-  if (ds.pTabela) { pn.tabela = !pn.tabela; return desenharVisao(); }
-  if (ds.pOrdem) { pn.ordem = { campo: ds.pOrdem, desc: pn.ordem.campo === ds.pOrdem ? !pn.ordem.desc : ds.pOrdem !== "hotel" && ds.pOrdem !== "agente" }; return desenharHoteis(); }
-  if (ds.pHotel) return abrirHotel(ds.pHotel);
-  if (ds.pFechar) { pn.hotelAberto = null; $("v-hoteis").classList.remove("ficha-aberta"); return; }
-  if (ds.pIr) { filtro = "na_fila"; origem = "tudo"; hotel = ""; agenteF = ""; pagina = 0; return trocarVista("fila"); }
-  if (ds.pSol) {
-    const s = st.fila.find(x => x.chave === ds.pSol);
-    filtro = "todas"; origem = "tudo"; hotel = pn.hotelAberto || ""; agenteF = ""; pagina = 0; sel = ds.pSol; emailSel = null;
-    if (!s) { $("dias").value = "0"; carregar(); }
-    trocarVista("fila");
-  }
+  if (ds.vj) { pn.janela = Number(ds.vj); return desenharVisao(); }
+  if (ds.ir) return abrirNotas({ filtro: ds.ir });
 });
-document.addEventListener("change", e => {
-  const campo = e.target.dataset?.pData;
-  if (!campo) return;
-  const [ini, fim] = periodoAtual();
-  pn.ini = campo === "ini" ? e.target.value : (ini || pn.dados?.desde || "");
-  pn.fim = campo === "fim" ? e.target.value : fim;
-  pn.periodo = "custom";
-  carregarPainel();
-});
-document.addEventListener("input", e => {
-  if (e.target.id === "busca-hotel") { pn.buscaHotel = e.target.value; desenharHoteis(); }
-});
-$("btn-atualizar").addEventListener("click", () => setTimeout(carregarPainel, 1500));
 window.addEventListener("resize", () => { clearTimeout(pn.rz); pn.rz = setTimeout(() => pn.vista === "visao" && desenharVisao(), 200); });
-trocarVista(location.hash.slice(1) || "fila");
-carregarPainel();
+trocarVista(location.hash.slice(1) || "visao");

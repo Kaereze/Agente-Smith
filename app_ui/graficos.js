@@ -130,3 +130,108 @@ function graficoBarrasH(el, itens, { aoClicar } = {}) {
     if (aoClicar) g.addEventListener("click", () => aoClicar(it));
   });
 }
+
+// ---------- Empilhados (cores por categoria, validadas no dataviz nos dois temas) ----------
+// series: [{k, nome, cor}] em ordem fixa; itens: [{rotulo, partes: {k: n}}]
+function legendaCores(el, series) {
+  el.innerHTML = series.map(s =>
+    `<span class="viz-leg"><span class="viz-quad" style="background:${s.cor}"></span>${s.nome}</span>`).join("");
+}
+
+function _dicaEmpilhada(titulo, partes, series) {
+  const total = series.reduce((a, s) => a + (partes[s.k] || 0), 0);
+  return `<b>${titulo}</b>` + series.filter(s => partes[s.k]).map(s =>
+    `<div><span class="viz-quad" style="background:${s.cor}"></span>${s.nome}: <b>${fmtN(partes[s.k])}</b></div>`).join("") +
+    `<div class="viz-total">Total: <b>${fmtN(total)}</b></div>`;
+}
+
+// Colunas por dia (base no zero; 2px de folga entre as partes)
+function graficoColunas(el, itens, series, { altura = 280 } = {}) {
+  coresDoTema();
+  el.innerHTML = "";
+  if (!itens.length) { el.textContent = "Sem pedidos no período."; return; }
+  const largura = Math.max(320, el.clientWidth || 600);
+  const m = { t: 14, r: 8, b: 28, l: 40 };
+  const w = largura - m.l - m.r, h = altura - m.t - m.b;
+  const totais = itens.map(it => series.reduce((a, s) => a + (it.partes[s.k] || 0), 0));
+  const ticks = ticksLimpos(Math.max(1, ...totais)), topo = ticks[ticks.length - 1];
+  const y = v => m.t + h - (v / topo) * h;
+  const svg = svgEl("svg", { width: largura, height: altura, role: "img", "aria-label": "Pedidos por dia, por situação" }, el);
+  for (const t of ticks) {
+    svgEl("line", { x1: m.l, x2: m.l + w, y1: y(t), y2: y(t), stroke: t === 0 ? VIZ.eixo : VIZ.grade, "stroke-width": 1 }, svg);
+    svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = fmtN(t);
+  }
+  const passo = w / itens.length, bw = Math.max(3, Math.min(34, passo * 0.7));
+  const cada = Math.max(1, Math.ceil(itens.length / Math.max(2, Math.floor(w / 52))));
+  const dica = document.createElement("div");
+  dica.className = "viz-dica";
+  el.style.position = "relative";
+  el.appendChild(dica);
+  itens.forEach((it, i) => {
+    const x = m.l + i * passo + (passo - bw) / 2;
+    const g = svgEl("g", {}, svg);
+    let base = 0;
+    series.forEach(s => {
+      const v = it.partes[s.k] || 0;
+      if (!v) return;
+      const y1 = y(base + v), alto = y(base) - y1;
+      svgEl("rect", { x, y: y1 + (base ? 0 : 0), width: bw, height: Math.max(1, alto - (base + v < totais[i] ? 2 : 0)),
+                      rx: 2, fill: s.cor }, g);
+      base += v;
+    });
+    if (i % cada === 0 || i === itens.length - 1)
+      svgEl("text", { x: x + bw / 2, y: altura - 8, "text-anchor": "middle", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = it.rotulo;
+    const alvo = svgEl("rect", { x: m.l + i * passo, y: m.t, width: passo, height: h, fill: "transparent" }, svg);
+    alvo.addEventListener("mouseenter", () => {
+      dica.innerHTML = _dicaEmpilhada(it.titulo || it.rotulo, it.partes, series);
+      dica.style.display = "block";
+      const px = x + bw + 10, cabe = px + dica.offsetWidth < largura;
+      dica.style.left = (cabe ? px : x - dica.offsetWidth - 10) + "px";
+      dica.style.top = m.t + "px";
+      g.setAttribute("opacity", "0.85");
+    });
+    alvo.addEventListener("mouseleave", () => { dica.style.display = "none"; g.removeAttribute("opacity"); });
+  });
+}
+
+// Barras deitadas empilhadas (uma por agente), total no fim; clique abre o filtro
+function graficoBarrasEmpilhadas(el, itens, series, { aoClicar } = {}) {
+  coresDoTema();
+  el.innerHTML = "";
+  if (!itens.length) { el.textContent = "Nada em aberto. 🎉"; return; }
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = '13px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif';
+  const rotuloW = Math.ceil(Math.max(40, ...itens.map(i => ctx.measureText(i.rotulo).width))) + 14;
+  const largura = Math.max(280, el.clientWidth || 400), linha = 40, bh = 22;
+  const altura = itens.length * linha + 4, w = largura - rotuloW - 56;
+  const totais = itens.map(it => series.reduce((a, s) => a + (it.partes[s.k] || 0), 0));
+  const max = Math.max(1, ...totais);
+  const svg = svgEl("svg", { width: largura, height: altura, role: "img", "aria-label": "Em aberto por agente" }, el);
+  const dica = document.createElement("div");
+  dica.className = "viz-dica";
+  el.style.position = "relative";
+  el.appendChild(dica);
+  itens.forEach((it, k) => {
+    const y0 = k * linha + 8;
+    const g = svgEl("g", { style: aoClicar ? "cursor:pointer" : "" }, svg);
+    svgEl("text", { x: rotuloW - 10, y: y0 + 16, "text-anchor": "end", fill: VIZ.texto, "font-size": 13, "font-weight": 600 }, g).textContent = it.rotulo;
+    let x = rotuloW;
+    series.forEach(s => {
+      const v = it.partes[s.k] || 0;
+      if (!v) return;
+      const bw = Math.max(3, (v / max) * w);
+      svgEl("rect", { x, y: y0, width: Math.max(1, bw - 2), height: bh, rx: 3, fill: s.cor }, g);
+      x += bw;
+    });
+    svgEl("text", { x: x + 8, y: y0 + 16, fill: VIZ.texto, "font-size": 13, "font-weight": 600 }, g).textContent = fmtN(totais[k]);
+    const alvo = svgEl("rect", { x: 0, y: y0 - 8, width: largura, height: linha, fill: "transparent" }, g);
+    alvo.addEventListener("mouseenter", () => {
+      dica.innerHTML = _dicaEmpilhada(it.rotulo, it.partes, series) + (aoClicar ? `<div class="viz-nota">Clique para ver as notas</div>` : "");
+      dica.style.display = "block";
+      dica.style.left = Math.min(largura - dica.offsetWidth - 4, x + 40) + "px";
+      dica.style.top = Math.max(0, y0 - 10) + "px";
+    });
+    alvo.addEventListener("mouseleave", () => { dica.style.display = "none"; });
+    if (aoClicar) g.addEventListener("click", () => aoClicar(it));
+  });
+}
