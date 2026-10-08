@@ -59,6 +59,7 @@ CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
 ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
+NOTAS_EMAILS_SEGUNDOS = 120   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
@@ -114,6 +115,7 @@ class Estado:
         self.envio_nf.extras = self._extras_pc
         self.abas_emails, self.emails = [], []
         self.avisos = avisos_windows.Avisos()
+        self.notas_emails, self.notas_emails_em = {}, -1e9   # {id do e-mail: [NF do Dropbox]} — calculado em segundo plano
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -279,10 +281,18 @@ class Estado:
 
     # ---------- aba E-mails ----------
     def _solicitacao_do_email(self, de):
-        """Pedido do formulário mais recente desse mesmo e-mail (se houver)."""
-        de = (de or "").lower()
-        candidatas = [s for s in self.solicitacoes if de and de in {x.lower() for x in [s["email"]] + s.get("emails", [])}]
-        return max(candidatas, key=lambda s: (s["data"], s["carimbo"]), default=None)
+        """Pedido do formulário mais recente desse mesmo e-mail (se houver). Índice por e-mail, refeito só quando
+        a lista de pedidos muda: varrer 3,6 mil pedidos para cada e-mail deixava a tela lenta."""
+        lista = self.solicitacoes
+        if getattr(self, "_indice_emails", (None,))[0] is not lista:
+            indice = {}
+            for s in lista:
+                for x in {str(e).lower() for e in [s["email"]] + s.get("emails", []) if e}:
+                    atual = indice.get(x)
+                    if atual is None or (s["data"], s["carimbo"]) > (atual["data"], atual["carimbo"]):
+                        indice[x] = s
+            self._indice_emails = (lista, indice)
+        return self._indice_emails[1].get((de or "").lower())
 
     def lista_emails(self):
         pcs = {p["pc"]: p for p in self.pcs()}
@@ -290,14 +300,24 @@ class Estado:
         for e in self.emails:
             sol = self._solicitacao_do_email(e["de"])
             dono = pcs.get(e["pc"], {})
-            try:
-                notas = envio_nf.notas_do_email(e, self.cfg)
-            except Exception as erro:
-                logger.debug(f"NF do Dropbox pro e-mail {e['id']}: {erro}")
-                notas = []
+            notas = self.notas_emails.get(e["id"], [])
             saida.append({**e, "pc_online": bool(dono.get("online")), "agente_pc": dono.get("agente", ""), "notas": notas,
                           "solicitacao": {"chave": sol["chave"], "hotel": sol["hotel"], "data": sol["data"]} if sol else None})
         return sorted(saida, key=lambda e: e["recebido"], reverse=True)
+
+    def atualizar_notas_emails(self, forcar=False):
+        """NF do Dropbox de cada e-mail espelhado (lê o Dropbox e às vezes o PDF: segundos). Roda no laço de fundo
+        a cada NOTAS_EMAILS_SEGUNDOS; a lista de e-mails só consulta o resultado e responde na hora."""
+        if not forcar and self.relogio() - self.notas_emails_em < NOTAS_EMAILS_SEGUNDOS:
+            return
+        self.notas_emails_em = self.relogio()
+        mapa = {}
+        for e in list(self.emails):
+            try:
+                mapa[e["id"]] = envio_nf.notas_do_email(e, self.cfg)
+            except Exception as erro:
+                logger.debug(f"NF do Dropbox pro e-mail {e['id']}: {erro}")
+        self.notas_emails = mapa
 
     def _email(self, id_email):
         e = next((x for x in self.emails if x["id"] == id_email), None)
@@ -737,6 +757,7 @@ def main():
         """Fica rodando enquanto o PC estiver ligado. Janela aberta: relê rápido; fechada: devagar (cota da API)."""
         while True:
             estado.atualizar()
+            estado.atualizar_notas_emails()
             estado.atualizar_fi()
             estado.atualizar_canceladas()
             estado.salvar_cache()

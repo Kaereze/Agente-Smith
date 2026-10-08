@@ -49,12 +49,12 @@ function graficoLinhas(el, serie, chaves, { altura = 260, notaDoDia } = {}) {
                              "aria-label": chaves.map(c => c.nome).join(" e ") + " por dia" }, el);
   for (const t of ticks) {
     svgEl("line", { x1: m.l, x2: m.l + w, y1: y(t), y2: y(t), stroke: t === 0 ? VIZ.eixo : VIZ.grade, "stroke-width": 1 }, svg);
-    svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = fmtN(t);
+    svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", fill: VIZ.mudo, "font-size": 12 }, svg).textContent = fmtN(t);
   }
   const passoX = Math.max(1, Math.ceil(serie.length / Math.max(2, Math.floor(w / 56))));
   serie.forEach((p, i) => {
     if (i % passoX === 0 || i === serie.length - 1)
-      svgEl("text", { x: x(i), y: altura - 6, "text-anchor": "middle", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = ddmm(p.data);
+      svgEl("text", { x: x(i), y: altura - 6, "text-anchor": "middle", fill: VIZ.mudo, "font-size": 12 }, svg).textContent = ddmm(p.data);
   });
   chaves.forEach((c, ci) => {
     // null = dia ainda sem dado: a linha para no último ponto conhecido
@@ -122,7 +122,7 @@ function graficoBarrasH(el, itens, { aoClicar } = {}) {
     if (bw) {
       const r = Math.min(4, bw / 2);
       svgEl("path", { d: `M${rotuloW},${y0} h${bw - r} a${r},${r} 0 0 1 ${r},${r} v${bh - 2 * r} a${r},${r} 0 0 1 -${r},${r} h-${bw - r} z`,
-                      fill: VIZ.serie[0] }, g);
+                      fill: it.cor || VIZ.serie[0] }, g);
     }
     svgEl("text", { x: rotuloW + bw + 6, y: y0 + 13, fill: VIZ.texto, "font-size": 12, "font-weight": 600 }, g).textContent = fmtN(it.n);
     svgEl("rect", { x: 0, y: y0 - 4, width: largura, height: linha, fill: "transparent" }, g);
@@ -159,7 +159,7 @@ function graficoColunas(el, itens, series, { altura = 280 } = {}) {
   const svg = svgEl("svg", { width: largura, height: altura, role: "img", "aria-label": "Pedidos por dia, por situação" }, el);
   for (const t of ticks) {
     svgEl("line", { x1: m.l, x2: m.l + w, y1: y(t), y2: y(t), stroke: t === 0 ? VIZ.eixo : VIZ.grade, "stroke-width": 1 }, svg);
-    svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = fmtN(t);
+    svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", fill: VIZ.mudo, "font-size": 12 }, svg).textContent = fmtN(t);
   }
   const passo = w / itens.length, bw = Math.max(3, Math.min(34, passo * 0.7));
   const cada = Math.max(1, Math.ceil(itens.length / Math.max(2, Math.floor(w / 52))));
@@ -180,7 +180,7 @@ function graficoColunas(el, itens, series, { altura = 280 } = {}) {
       base += v;
     });
     if (i % cada === 0 || i === itens.length - 1)
-      svgEl("text", { x: x + bw / 2, y: altura - 8, "text-anchor": "middle", fill: VIZ.mudo, "font-size": 11 }, svg).textContent = it.rotulo;
+      svgEl("text", { x: x + bw / 2, y: altura - 8, "text-anchor": "middle", fill: VIZ.mudo, "font-size": 12 }, svg).textContent = it.rotulo;
     const alvo = svgEl("rect", { x: m.l + i * passo, y: m.t, width: passo, height: h, fill: "transparent" }, svg);
     alvo.addEventListener("mouseenter", () => {
       dica.innerHTML = _dicaEmpilhada(it.titulo || it.rotulo, it.partes, series);

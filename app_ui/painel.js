@@ -1,6 +1,6 @@
 // Visão geral, Log, Máquinas e as janelas de envio. Usa api/$/esc/toast/st/desenhar e o estado da tela de notas
 // (mesmo escopo global).
-let pn = { vista: "visao", janela: 30, rz: null };
+let pn = { vista: "visao", janela: 30, rz: null, tabela: {} };   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
 const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas" };
@@ -150,7 +150,7 @@ function desenharVisao() {
   const emailsSem = st.emails.filter(m => !m.notas?.length);
   const naoEmitida = st.fila.filter(s => ["na_fila", "aguardando_envio"].includes(s.situacao)).length;
   const envioPend = st.fila.filter(s => s.envio_pendente).length;
-  const tratativas = st.fila.filter(s => ["tratativa", "em_tratamento"].includes(s.situacao)).length;
+  const tratativas = st.fila.filter(s => s.situacao === "tratativa").length;   // mesmo critério do cartão "Tratativa"
   const velhos = abertos.filter(s => diasAtras(s.data) > 7).length;
   const comNf = pedidos.filter(s => s.nfs.length).length;
   // gráfico 1: os pedidos de cada dia e o que aconteceu com eles
@@ -169,11 +169,15 @@ function desenharVisao() {
   const porAgente = Object.entries(ag).map(([rotulo, partes]) => ({ rotulo, partes })).sort((a, b) => total(b.partes) - total(a.partes));
   // espera dos pedidos em aberto
   const faixas = [["Até 2 dias", 0, 2], ["3 a 7 dias", 3, 7], ["8 a 15 dias", 8, 15], ["Mais de 15 dias", 16, 1e9]];
-  const idade = faixas.map(([rotulo, a, b]) => ({ rotulo, n: abertos.filter(s => { const d = diasAtras(s.data); return d >= a && d <= b; }).length }));
+  // cores do prazo (as mesmas da coluna Espera): até 2 dias verde, até 7 âmbar, acima vermelho
+  const corFaixa = [COR_VIZ.emitida, COR_VIZ.envio, COR_VIZ.sem_nf, COR_VIZ.sem_nf];
+  const idade = faixas.map(([rotulo, a, b], k) => ({ rotulo, cor: corFaixa[k], atrasada: a > 7,
+    n: abertos.filter(s => { const d = diasAtras(s.data); return d >= a && d <= b; }).length }));
+  const botaoTabela = id => `<button class="link" data-vt="${id}">${pn.tabela[id] ? "Ver gráfico" : "Ver em tabela"}</button>`;
   const kpi = (alvo, rot, v, sub, cor) => `<button class="kpi-b" data-ir="${alvo}" style="--cor:${cor}">
       <span class="kpi-r">${rot}</span><span class="kpi-v">${n(v)}</span><span class="kpi-s">${sub}</span></button>`;
-  el.innerHTML = `<div class="cab-pagina"><h1>Visão geral</h1>
-      <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span>
+  el.innerHTML = `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
+      <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span></div>
       <div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
         `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div></div>
     <div class="kpis-v">
@@ -182,25 +186,38 @@ function desenharVisao() {
         <span class="kpi-s">${n(abertos.length)} pedidos e ${n(emailsSem.length)} e-mails · <b>${n(velhos)}</b> esperando há mais de 7 dias</span></button>
       ${kpi("na_fila", "NF não emitida", naoEmitida, "pedidos sem nota", "var(--erro)")}
       ${kpi("envio_pendente", "Envio pendente", envioPend, "nota pronta, e-mail não saiu", "var(--atencao)")}
-      ${kpi("tratativa", "Tratativas", tratativas, "esperando o hóspede ou em andamento", "var(--info)")}
+      ${kpi("tratativa", "Tratativas", tratativas, "esperando resposta do hóspede", "var(--info)")}
       ${kpi("concluida", `NFs nos últimos ${pn.janela} dias`, comNf,
         pedidos.length ? `${Math.round(100 * comNf / pedidos.length)}% dos ${n(pedidos.length)} pedidos` : "sem pedidos no período", "var(--ok)")}
     </div>
     <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
-      <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div></div>
+      <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div>
+      ${botaoTabela("dias")}</div>
       <div id="leg-dias" style="margin:4px 0 10px"></div><div id="graf-dias"></div></div>
     <div class="grade2">
-      <div class="cartao"><h3>Em aberto por agente</h3><div class="sub">Clique num agente para ver as notas dele</div>
+      <div class="cartao"><div class="cartao-topo"><div><h3>Em aberto por agente</h3><div class="sub">Clique num agente para ver as notas dele</div></div>
+        ${botaoTabela("agentes")}</div>
         <div id="leg-agentes" style="margin:4px 0 10px"></div><div id="graf-agentes"></div></div>
-      <div class="cartao"><h3>Há quanto tempo esperam</h3><div class="sub">Pedidos em aberto, pelo dia em que foram feitos</div>
+      <div class="cartao"><div class="cartao-topo"><div><h3>Há quanto tempo esperam</h3><div class="sub">Pedidos em aberto, pelo dia em que foram feitos. Clique para ver.</div></div>
+        ${botaoTabela("idade")}</div>
         <div id="graf-idade" style="margin-top:14px"></div></div>
     </div>`;
+  // cada gráfico também como tabela (leitor de tela, teclado e quem prefere números)
+  const tabela = (cab, linhas) => `<div style="overflow-x:auto"><table class="tabela"><thead><tr>${cab.map((c, i) =>
+    `<th class="${i ? "num" : ""}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${linhas.map(l => `<tr>${l.map((v, i) =>
+    `<td class="${i ? "num" : ""}">${typeof v === "number" ? n(v) : esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  const somaSeries = (partes, series) => series.reduce((a, s) => a + (partes[s.k] || 0), 0);
   legendaCores($("leg-dias"), SERIES_DIA);
-  graficoColunas($("graf-dias"), dias, SERIES_DIA);
+  if (pn.tabela.dias) $("graf-dias").innerHTML = tabela(["Dia", ...SERIES_DIA.map(s => s.nome), "Total"],
+    dias.map(d => [d.titulo, ...SERIES_DIA.map(s => d.partes[s.k] || 0), somaSeries(d.partes, SERIES_DIA)]));
+  else graficoColunas($("graf-dias"), dias, SERIES_DIA);
   legendaCores($("leg-agentes"), SERIES_AGENTE);
-  graficoBarrasEmpilhadas($("graf-agentes"), porAgente, SERIES_AGENTE, {
+  if (pn.tabela.agentes) $("graf-agentes").innerHTML = tabela(["Agente", ...SERIES_AGENTE.map(s => s.nome), "Total"],
+    porAgente.map(a => [a.rotulo, ...SERIES_AGENTE.map(s => a.partes[s.k] || 0), somaSeries(a.partes, SERIES_AGENTE)]));
+  else graficoBarrasEmpilhadas($("graf-agentes"), porAgente, SERIES_AGENTE, {
     aoClicar: it => { abrirNotas({ agente: it.rotulo === "Sem agente" ? "" : it.rotulo, filtro: "aberto" }); } });
-  graficoBarrasH($("graf-idade"), idade);
+  if (pn.tabela.idade) $("graf-idade").innerHTML = tabela(["Espera", "Pedidos em aberto"], idade.map(i => [i.rotulo, i.n]));
+  else graficoBarrasH($("graf-idade"), idade, { aoClicar: it => abrirNotas({ filtro: it.atrasada ? "atrasadas" : "aberto" }) });
 }
 
 // ---------- Enviar pendentes: o caminho que o robô faz, com as linhas reais do log ----------
@@ -475,11 +492,12 @@ document.addEventListener("click", e => {
 
 // ---------- Eventos ----------
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-vista],[data-vj],[data-ir]");
+  const t = e.target.closest("[data-vista],[data-vj],[data-ir],[data-vt]");
   if (!t) return;
   const ds = t.dataset;
   if (ds.vista) { if (ds.log) at.aba = ds.log; return trocarVista(ds.vista); }
   if (ds.vj) { pn.janela = Number(ds.vj); return desenharVisao(); }
+  if (ds.vt) { pn.tabela[ds.vt] = !pn.tabela[ds.vt]; return desenharVisao(); }
   if (ds.ir) return abrirNotas({ filtro: ds.ir });
 });
 window.addEventListener("resize", () => { clearTimeout(pn.rz); pn.rz = setTimeout(() => pn.vista === "visao" && desenharVisao(), 200); });
