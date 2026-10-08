@@ -125,6 +125,7 @@ label.sel::after{content:"";position:absolute;right:14px;top:50%;width:7px;heigh
 .seg button.sel,.seg button[aria-pressed="true"]{background:var(--verde);color:#fff}
 .seg button .n{font:500 11px var(--f-dado);opacity:.8}
 .filtros-caixa .seg{margin-left:auto}
+.filtros-caixa.buscando{opacity:.45}
 
 .mesa{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-height:0;padding:0 26px 22px}
 .mesa.com-leitura{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
@@ -628,19 +629,42 @@ function passaSit(it, f) {
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
   return s.situacao === f;
 }
+// Busca do jeito do Outlook: sem acento e sem maiúscula ("Corné" acha "CORNELIO"), pedaço de palavra, cada
+// palavra digitada em qualquer campo (nome, e-mail, assunto, corpo, anexos, NF, CPF/CNPJ com ou sem pontuação)
+const semAcento = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const soDigitos = s => s.replace(/(\d)[.\-\/\s](?=\d)/g, "$1");
 function textoDo(it) {
-  if (!it._t) it._t = (it.tipo === "form"
-    ? [it.s.nome, it.s.email, it.s.hotel, it.s.carimbo, it.s.nfs.join(" "), it.s.dono, ...it.s.campos.map(c => c[1])]
-    : [it.m.nome, it.m.de, it.m.assunto, it.m.hotel, it.m.texto]).join(" ").toLowerCase();
+  if (!it._t) {
+    const t = semAcento((it.tipo === "form"
+      ? [it.s.nome, it.s.email, it.s.hotel, it.s.carimbo, it.s.nfs.map(n => "nf " + n).join(" "), it.s.dono,
+         it.s.falta_nota, ...it.s.campos.map(c => c[0] + " " + c[1])]
+      : [it.m.nome, it.m.de, it.m.assunto, it.m.hotel, it.m.caixa, it.m.agente_pc, it.m.texto, (it.m.anexos || []).join(" "),
+         (it.m.hospedes_quartos || []).join(" "), it.m.falta_nota]).join(" \n "));
+    it._t = t + " \n " + soDigitos(t);
+  }
   return it._t;
 }
+// "NF 196" é o número exato da nota (não acha 1960 nem o 196 de um telefone); o resto é pedaço de palavra
+let _termos = ["", []];
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function termosDaBusca(busca) {
+  if (_termos[0] === busca) return _termos[1];
+  const termos = [];
+  const resto = semAcento(busca).replace(/\bnfs?-?e?\s*(?:n[º°o]\.?\s*)?(\d+)\b/g, (_, n) => {
+    termos.push(new RegExp(`nf\\S*\\s*(?:n[º°o]\\.?\\s*)?${n}(?!\\d)`)); return " ";
+  });
+  resto.split(/\s+/).filter(Boolean).map(soDigitos).forEach(p => termos.push(new RegExp(escRe(p))));
+  _termos = [busca, termos];
+  return termos;
+}
 function passa(it, ignorar, busca) {
+  // pesquisando, procura em tudo: os filtros de situação, origem, hotel e agente não escondem o que bate
+  if (busca) return termosDaBusca(busca).every(re => re.test(textoDo(it)));
   if (ignorar !== "origem" && origem !== "tudo" && it.tipo !== origem) return false;
   if (ignorar !== "sit" && !passaSit(it, filtro)) return false;
   if (ignorar !== "agente" && agenteF && !agentesDo(it).includes(agenteF)) return false;
   if (ignorar !== "hotel" && hotel && !it.hoteis.includes(hotel)) return false;
   if (it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
-  if (busca && !textoDo(it).includes(busca)) return false;
   return true;
 }
 const ln = (attrs, rotulo, n, atual, bola) =>
@@ -723,20 +747,25 @@ function linhaHtml(it) {
 }
 
 function desenhar(){
-  const busca = $("busca").value.trim().toLowerCase();
+  const busca = $("busca").value.trim();
   desenharLateral(busca);
   desenharFiltros(busca);
   const lista = TODOS.filter(it => passa(it, "", busca));
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   pagina = Math.min(pagina, paginas - 1);
   const nomeSit = (SITUACOES.find(x => x[0] === filtro) || [])[1] || NOMES[filtro];
-  $("titulo-caixa").textContent = filtro === "aberto" ? "Caixa de entrada" : nomeSit;
+  $("titulo-caixa").textContent = busca ? `Busca: “${busca}”` : filtro === "aberto" ? "Caixa de entrada" : nomeSit;
+  document.querySelector(".filtros-caixa").classList.toggle("buscando", !!busca);
+  const periodo = $("dias").value === "0" ? "" : ` dos últimos ${$("dias").value} dias`;
   $("titulo-n").textContent = `· ${lista.length.toLocaleString("pt-BR")} ${lista.length === 1 ? "item" : "itens"}`;
   $("lista").innerHTML = lista.length ? lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA).map(linhaHtml).join("")
+    : busca ? `<div class="vazio">Nada com “${esc(busca)}” nos pedidos${periodo} nem nos e-mails sem resposta.<br>
+        ${periodo ? "Para pedidos mais antigos, escolha “Todo o período”. " : ""}E-mail já respondido só aparece no Outlook.</div>`
     : `<div class="vazio">Nada com esses filtros.<br>Troque a situação, o hotel ou a origem.</div>`;
   const de = lista.length ? pagina * POR_PAGINA + 1 : 0, ate = Math.min(lista.length, (pagina + 1) * POR_PAGINA);
   $("pag-txt").textContent = `Mostrando ${de.toLocaleString("pt-BR")}–${ate.toLocaleString("pt-BR")} de ${lista.length.toLocaleString("pt-BR")} · ` +
-    (hotel || (agenteF ? "hotéis de " + agenteF : "todos os hotéis"));
+    (busca ? `busca em tudo (formulários${periodo} e e-mails sem resposta; filtros não valem enquanto pesquisa)`
+      : hotel || (agenteF ? "hotéis de " + agenteF : "todos os hotéis"));
   // páginas: primeira, vizinhas da atual e última
   const nums = [...new Set([0, pagina - 1, pagina, pagina + 1, paginas - 1])].filter(p => p >= 0 && p < paginas).sort((a, b) => a - b);
   $("pags").innerHTML = paginas < 2 ? "" : nums.map((p, i) => (i && p - nums[i - 1] > 1 ? `<span style="align-self:center">…</span>` : "") +
