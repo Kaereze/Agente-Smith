@@ -45,7 +45,7 @@ RECEBIDOS_DIAS = 2
 MAX_ATIVIDADES_POR_TIPO = 25   # acima disso vira uma linha de resumo (ex.: conferência do ano)
 # Sobe quando a regra muda e e-mails já vistos precisam ser lidos de novo: na 1ª volta depois de atualizar,
 # cada PC relê os enviados sozinho. 2 = tratativas e NF anexada em assunto fora do padrão (07/10/2026).
-VERSAO_REGRAS = 2
+VERSAO_REGRAS = 4   # 3/4: registra os e-mails com NF já enviados, até pra outro endereço (envio pendente x enviada)
 CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
 AGENTE = "Robô"
 PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
@@ -225,7 +225,23 @@ def _itens_enviados(pasta, limite):
     return pasta.Items.Restrict(f"[SentOn] >= '{limite:%d/%m/%Y %H:%M}'")
 
 
-def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_ITENS_POR_CONTA):
+def numeros_de_nf_enviados(assunto, anexos, extensoes):
+    """Nºs das NFs que um e-mail levou: "NF 590 - NOME" no assunto (com anexo de NF) e/ou PDF/XML "NF 590 - NOME"."""
+    from controle_nf import tem_anexo_nf
+    numeros = set()
+    nf = ler_assunto_nf(assunto or "")
+    if nf and tem_anexo_nf(anexos, extensoes):
+        numeros.add(nf[0])
+    for a in anexos:
+        if str(a).lower().endswith((".pdf", ".xml")):
+            n = ler_assunto_nf(os.path.splitext(str(a))[0])
+            if n:
+                numeros.add(n[0])
+    return numeros
+
+
+def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_ITENS_POR_CONTA,
+                  envios=None, por_email_todos=None, por_nf=None):
     """Itens Enviados das caixas deste PC: e-mail com NF anexada conclui o pedido; qualquer outro
     e-mail mandado ao endereço de um pedido aberto é tratativa (pedido do usuário, 06/10/2026)."""
     from conferente import _anexos, _data_outlook, _enderecos, texto_da_nota
@@ -253,6 +269,18 @@ def varrer_emails(namespace, indice, cfg, limite, vistos, textos, max_itens=MAX_
                 destinatarios = _enderecos(item)
                 if nf:
                     da_conta += 1
+                if envios is not None:
+                    # e-mail com NF pro endereço de um pedido, mesmo já marcado como emitido (Painel: "enviada")
+                    numeros = numeros_de_nf_enviados(item.Subject, _anexos(item), extensoes)
+                    if numeros:
+                        quando = _data_outlook(item.SentOn)
+                        refs = {k: d for d in destinatarios for k in (por_email_todos or {}).get(d.lower(), ())}
+                        # mandada pra outro endereço (o hóspede pediu): vale a NF do pedido saindo da caixa do hotel
+                        for n in numeros:
+                            for k in (por_nf or {}).get((smtp, n), ()):
+                                refs.setdefault(k, ", ".join(sorted(destinatarios)))
+                        for k, para in refs.items():
+                            envios.append((k, entry, para, quando, sorted(numeros, key=int)))
                 candidatas = indice.para_email(destinatarios, smtp, nf[1] if nf else "")
                 if not candidatas:
                     continue
@@ -389,7 +417,7 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         rever = True
     if rever:
         vistos_email, vistos_dropbox = set(), {}
-    recebidos = []
+    recebidos, envios = [], []
     textos = CacheTextos()
     import conferente
     ocr_original = conferente._texto_ocr
@@ -398,8 +426,20 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
 
     try:
         indice = Indice(reg)
+        por_email_todos = {}
+        for s in solicitacoes:
+            if s["data"] and s["data"] >= desde:
+                for e in [s["email"]] + list(s.get("emails", [])):
+                    if e:
+                        por_email_todos.setdefault(e.lower(), set()).add(s["chave"])
+        por_nf = {}   # (caixa do hotel, nº da NF) -> pedidos: o nº da NF é único em cada hotel
+        for s in solicitacoes:
+            if s["data"] and s["data"] >= desde and s.get("email_hotel"):
+                for n in estados.get(s["chave"], {}).get("nfs", []):
+                    por_nf.setdefault((s["email_hotel"].lower(), str(n)), set()).add(s["chave"])
         lidos_email = varrer_emails(namespace, indice, cfg, limite, vistos_email, textos,
-                                    None if rever else MAX_ITENS_POR_CONTA) if namespace is not None else 0
+                                    None if rever else MAX_ITENS_POR_CONTA, envios=envios,
+                                    por_email_todos=por_email_todos, por_nf=por_nf) if namespace is not None else 0
         lidos_dropbox = varrer_dropbox(indice, cfg, limite, vistos_dropbox, textos) if usar_dropbox else 0
         if namespace is not None:
             recebidos = varrer_recebidos(namespace, indice, vistos_recebidos)
@@ -441,6 +481,20 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
         linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.TRATATIVA,
                                    f"E-mail ao hóspede em {quando}: {d.get('assunto', '')[:90]} [{marca}]"))
         tratativas.append((s, d))
+    # E-mail com NF que saiu pro hóspede: o Painel separa "NF emitida · enviada" de "envio pendente"
+    ja_obs = {k: " ".join(o["texto"] for o in estados.get(k, {}).get("obs", [])) for k in {x[0] for x in envios}}
+    feitos = set()
+    for k, entry, para, quando, numeros in envios:
+        marca = marca_do_email(entry)
+        if (k, entry) in feitos or marca in ja_obs.get(k, "") or k not in por_chave:
+            continue
+        feitos.add((k, entry))
+        s = por_chave[k]
+        quando_txt = quando.strftime("%d/%m/%Y %H:%M") if quando else ""
+        linhas.append(dados.evento(dados.agora(), AGENTE, pc, s["aba"], s["carimbo"], s["email"], dados.OBS,
+                                   f"E-mail com a NF {', '.join(numeros)} enviado para {para} em {quando_txt} [{marca}]"))
+    if feitos:
+        logger.info(f"📧 {len(feitos)} e-mail(s) com NF ao hóspede registrado(s) (envio conferido)")
     if unicas:
         achadas = achadas + [(k, "nota única", f"“{frase}” ({origem})") for k, (frase, origem) in unicas.items()]
 

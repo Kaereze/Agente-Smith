@@ -158,3 +158,28 @@ def test_fim_de_semana_sem_dado_e_dia_a_mais_pra_quem_nao_soma():
     assert por["Bernardo"]["ontem"] == "fim_de_semana" and por["Cristian"]["ontem"] == "nao_puxado"
     terca = fi.saude({}, [], {}, D(2026, 10, 7), datetime.datetime(2026, 10, 7, 10), somam_fim_de_semana=["João"])
     assert {o["operador"]: o["ontem"] for o in terca["operadores"]}["Bernardo"] == "nao_puxado"   # dia útil cobra
+
+
+def test_nf_emitida_sem_email_fica_envio_pendente():
+    import datetime
+    import app_dados as d
+    sol = {"email": "h@x.com", "data": "2026-10-06"}
+    hoje = datetime.date(2026, 10, 8)
+    marcada = {"historico": [{"quando": "2026-10-08T09:00:00-03:00", "acao": d.NF, "valor": "590"}], "obs": []}
+    assert d.envio_pendente(["590"], d.envios_nf(sol, marcada), sol, hoje)
+    enviada = {**marcada, "obs": [{"quando": "2026-10-08T09:30:00-03:00",
+                                   "texto": "E-mail com a NF 590 enviado para h@x.com em 08/10/2026 09:30 [#abc12345]"}]}
+    envs = d.envios_nf(sol, enviada)
+    assert envs == [{"nfs": ["590"], "para": "h@x.com", "quando": "08/10/2026 09:30"}]
+    assert not d.envio_pendente(["590"], envs, sol, hoje)
+    pelo_painel = {**marcada, "obs": [{"quando": "2026-10-08T09:40:00-03:00",
+                                       "texto": '"NF 590 - CORNELIO" enviada ao hóspede (h@x.com) pela caixa nf@hotel.com'}]}
+    assert d.envios_nf(sol, pelo_painel)[0]["nfs"] == ["590"]
+    assert not d.envio_pendente(["1"], [], {"data": "2026-09-01"}, hoje)   # pedido antigo sem registro: não acusa
+
+
+def test_numeros_de_nf_que_o_email_levou():
+    import confirmar_nfs as c
+    assert c.numeros_de_nf_enviados("NF 590 - CORNELIO - 62222", ["NF 590 - CORNELIO - 62222.pdf"], ["pdf"]) == {"590"}
+    assert c.numeros_de_nf_enviados("RE: dúvida", ["NF 12 - ANA.pdf", "NF 13 - ANA.pdf"], ["pdf"]) == {"12", "13"}
+    assert c.numeros_de_nf_enviados("NF 590 - CORNELIO", [], ["pdf"]) == set()   # sem anexo não é envio da nota

@@ -6,6 +6,7 @@ Como a ordem é decidida pelo servidor do Google, dois PCs clicando "Assumir" ao
 resolvem sem trava: vale a linha que entrou primeiro.
 """
 import datetime
+import re
 
 from sheets import VALORES_PENDENTE, _achar_coluna, _celula, _dados_para_conferencia, _nome_titulo
 from tratamento import campos_para_email, detectar_formato_data, ler_data, normalizar
@@ -121,6 +122,50 @@ def situacao(sol, est, nfs_conferente=()):
     return NA_FILA if sol["enviado"] else AGUARDANDO_ENVIO
 
 
+_ENVIO_ROBO = re.compile(r"E-mail com a NF ([\d, ]+) enviado para (\S+) em (\d{2}/\d{2}/\d{4} \d{2}:\d{2})")
+_ENVIO_PAINEL = re.compile(r'^"(.*?)" enviada ao h[oó]spede \((.*?)\) pela caixa')
+_CONFIRMADA = re.compile(r"^NF (\d+) confirmada automaticamente: (.*)$")
+ENVIO_PENDENTE_DIAS = 14   # = conferencia.dias_maximos: período em que o robô relê os e-mails enviados
+
+
+def _quando_br(iso):
+    return f"{iso[8:10]}/{iso[5:7]}/{iso[:4]} {iso[11:16]}" if len(iso) >= 16 else iso
+
+
+def envios_nf(sol, est):
+    """E-mails com a NF que saíram pro hóspede -> [{nfs, para, quando}] (robô, Painel ou NF achada no e-mail)."""
+    saida = []
+    for o in est["obs"]:
+        t = o["texto"]
+        m = _ENVIO_ROBO.search(t)
+        if m:
+            saida.append({"nfs": [n.strip() for n in m.group(1).split(",") if n.strip()], "para": m.group(2),
+                          "quando": m.group(3)})
+            continue
+        m = _ENVIO_PAINEL.match(t)
+        if m:
+            saida.append({"nfs": re.findall(r"\bNF\s*(\d+)", m.group(1), re.I), "para": m.group(2),
+                          "quando": _quando_br(o["quando"])})
+            continue
+        m = _CONFIRMADA.match(t)
+        if m and "e-mail" in m.group(2):
+            saida.append({"nfs": [m.group(1)], "para": sol.get("email", ""), "quando": _quando_br(o["quando"])})
+    return saida
+
+
+def envio_pendente(nfs, envios, sol, hoje=None):
+    """NF emitida e nenhum e-mail com ela pro hóspede. Só pra pedido dos últimos ENVIO_PENDENTE_DIAS: o robô relê
+    os enviados desse período, e o e-mail da NF sai depois do pedido; mais antigo, sem registro não quer dizer
+    que não foi (a conferência do ano marcou NFs antigas sem olhar o envio)."""
+    if not nfs or envios:
+        return False
+    hoje = hoje or datetime.date.today()
+    try:
+        return (hoje - datetime.date.fromisoformat(sol.get("data") or "")).days <= ENVIO_PENDENTE_DIAS
+    except ValueError:
+        return False
+
+
 def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
     """Junta solicitações + estados. nfs_conferente: {(aba, carimbo): [números]} do controle_nf local."""
     nfs_conferente = nfs_conferente or {}
@@ -130,7 +175,10 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
             continue
         est = estados.get(s["chave"], estado_inicial())
         conf = nfs_conferente.get((s["aba"], s["carimbo"]), [])
-        fila.append({**s, "dono": est["dono"], "dono_desde": est["dono_desde"],
+        envios = envios_nf(s, est)
+        todas_nfs = list(dict.fromkeys(est["nfs"] + list(conf)))
+        fila.append({**s, "dono": est["dono"], "dono_desde": est["dono_desde"], "envios": envios,
+                     "envio_pendente": envio_pendente(todas_nfs, envios, s),
                      "nfs": list(dict.fromkeys(est["nfs"] + list(conf))), "nfs_conferente": list(conf),
                      "tratativas": est["tratativas"], "obs": est["obs"],
                      "dividida": est["dividida"] if est["dividida"] is not None else s["partes"] > 1,

@@ -157,7 +157,9 @@ label.sel::after{content:"";position:absolute;right:14px;top:50%;width:7px;heigh
 .p-aguardando_envio{background:var(--folha-2);color:var(--tinta-2);border:1px solid var(--linha)}
 .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font:500 10.5px var(--f-texto);background:var(--info-fundo);color:var(--info);vertical-align:1px}
 .tag.nf-ok{background:var(--ok-fundo);color:var(--ok)} .tag.nf-parc{background:var(--atencao-fundo);color:var(--atencao)}
-.tag.dono{background:var(--roxo-fundo);color:var(--roxo)} .tag.falta{background:var(--erro-fundo);color:var(--erro)}
+.tag.dono{background:var(--roxo-fundo);color:var(--roxo)}
+.envio{display:block;margin-top:4px;font:600 10px/1 var(--f-titulo);letter-spacing:.05em;text-transform:uppercase}
+.envio.pend{color:var(--atencao)} .envio.ok{color:var(--ok)} .tag.falta{background:var(--erro-fundo);color:var(--erro)}
 .paginacao{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--tinta-3);flex-wrap:wrap}
 .pags{display:flex;gap:6px}
 .pags button{min-width:32px;height:32px;padding:0 9px;justify-content:center}
@@ -526,10 +528,10 @@ const TOKEN = "__TOKEN__";
 const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"NF não emitida", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida", sem_resposta:"Sem resposta"};
 const COR_SIT = {na_fila:"var(--atencao)", em_tratamento:"var(--roxo)", tratativa:"var(--info)", nf_parcial:"var(--creme-forte)",
-                 aguardando_envio:"var(--tinta-3)", sem_resposta:"var(--erro)", concluida:"var(--ok)"};
+                 aguardando_envio:"var(--tinta-3)", sem_resposta:"var(--erro)", concluida:"var(--ok)", envio_pendente:"var(--atencao)"};
 // Notas fiscais (lateral): "Em aberto" = tudo que ainda não tem NF + e-mails sem resposta
 const SITUACOES = [["aberto", "Em aberto"], ["na_fila"], ["em_tratamento"], ["tratativa"], ["nf_parcial"], ["aguardando_envio"],
-                   ["sem_resposta"], ["concluida"], ["minhas", "Minhas"], ["todas", "Todas"]];
+                   ["sem_resposta"], ["concluida"], ["envio_pendente", "Envio pendente"], ["minhas", "Minhas"], ["todas", "Todas"]];
 const ORIGENS = [["tudo", "Tudo"], ["email", "E-mail"], ["form", "Formulário"]];
 const ENVIO = {todos: ["E-mail ao hotel: todos", () => true], sim: ["E-mail ao hotel: enviado", s => s.enviado],
                nao: ["E-mail ao hotel: não enviado", s => !s.enviado]};
@@ -624,6 +626,7 @@ function passaSit(it, f) {
   if (f === "todas") return true;
   // e-mail de hóspede sem resposta é NF ainda não resolvida: entra também em "NF não emitida"
   // e-mail com a NF já no Dropbox: "NF emitida" (falta mandar ao hóspede); sem NF: entra em "NF não emitida"
+  if (f === "envio_pendente") return it.tipo === "email" ? !!it.m.notas?.length : !!it.s.envio_pendente;
   if (it.tipo === "email") return f === "aberto" || f === "sem_resposta" || f === (it.m.notas?.length ? "concluida" : "na_fila");
   const s = it.s;
   if (f === "aberto") return s.situacao !== "concluida";
@@ -678,6 +681,10 @@ function tagDivisao(s) {
   return feitas >= partes ? `<span class="tag nf-ok" title="NF ${esc(s.nfs.join(", "))}">NF emitida</span>`
     : `<span class="tag nf-parc" title="NF ${esc(s.nfs.join(", "))} · ${feitas} de ${partes}">falta ${falta} nota${falta > 1 ? "s" : ""}</span>`;
 }
+// NF emitida x e-mail com a NF enviado ao hóspede (a colega emite e esquece de mandar)
+const textoEnvio = v => `NF ${v.nfs.join(", ")} enviada para ${v.para} em ${v.quando}`;
+const marcaEnvio = s => s.envio_pendente ? `<span class="envio pend" title="A NF existe, mas nenhum e-mail com ela saiu para o hóspede">envio pendente</span>`
+  : s.envios?.length && s.nfs.length ? `<span class="envio ok" title="${esc(s.envios.map(textoEnvio).join("\n"))}">enviada ✓</span>` : "";
 // Hóspede diz que ainda falta nota/diária (frase dele na dica)
 const tagFalta = frase => frase ? `<span class="tag falta" title="${esc(frase)}">falta nota</span>` : "";
 const quadroFalta = frase => frase ? `<section class="ficha"><div class="ficha-tit"><span class="rot" style="color:var(--erro)">O hóspede diz que ainda falta nota</span>
@@ -696,7 +703,7 @@ function desenharLateral(busca) {
     conta("origem", it => o === "tudo" || it.tipo === o), naCaixa && origem === o)).join("");
   $("nav-nf").innerHTML = SITUACOES.map(([f, nome]) => {
     const n = conta("sit", it => passaSit(it, f));
-    if (!n && f !== filtro && ["em_tratamento", "aguardando_envio", "minhas"].includes(f)) return "";
+    if (!n && f !== filtro && ["em_tratamento", "aguardando_envio", "minhas", "envio_pendente"].includes(f)) return "";
     return ln(`data-f="${f}"`, nome || NOMES[f], n, naCaixa && filtro === f, COR_SIT[f]);
   }).join("");
   const agentes = [...new Set((st.hoteis || []).map(h => h.agente).filter(Boolean))];
@@ -735,7 +742,7 @@ function linhaHtml(it) {
         <small>${esc(sub)}</small></span>
       <span class="col-hotel">${esc(s.hotel)}<small>${esc(AG[s.hotel] || "")}</small></span>
       <span class="hora">${chegou(it.quando)}</span>
-      <span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span></span></div>`;
+      <span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span>${marcaEnvio(s)}</span></div>`;
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
@@ -744,7 +751,7 @@ function linhaHtml(it) {
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
     <span class="hora">${chegou(it.quando)}</span>
-    <span>${m.notas?.length ? `<span class="pilula p-concluida" title="${esc(m.notas.map(n => n.nome).join(" · "))}">NF ${esc(m.notas.map(n => n.nf).join(", "))} emitida</span>`
+    <span>${m.notas?.length ? `<span class="pilula p-concluida" title="${esc(m.notas.map(n => n.nome).join(" · "))}">NF ${esc(m.notas.map(n => n.nf).join(", "))} emitida</span><span class="envio pend">envio pendente</span>`
       : `<span class="pilula p-sem_resposta">Sem resposta</span>`}</span></div>`;
 }
 
@@ -813,6 +820,10 @@ function desenharDetalhe() {
         <div class="ficha-corpo">
           ${s.nfs.length ? `<div class="etiquetas">${s.nfs.map(n => `<span class="nf-num">NF ${esc(n)}${s.nfs_conferente.includes(n) ? " · conferente"
             : ` <a href="#" data-desfaz="${esc(n)}" title="Desfazer">×</a>`}</span>`).join("")}</div>` : `<span class="dica">Nenhuma NF ainda.</span>`}
+          ${s.nfs.length ? (s.envio_pendente
+            ? `<div class="envio pend" style="font-size:11.5px">Envio pendente: a nota existe, mas nenhum e-mail com o PDF saiu para ${esc(s.email)}</div>`
+            : s.envios?.length ? s.envios.map(v => `<div class="envio ok" style="font-size:11.5px">✓ ${esc(textoEnvio(v))}</div>`).join("")
+            : `<span class="dica">Envio por e-mail não registrado (pedido de mais de 14 dias)</span>`) : ""}
           <div class="linha-form"><input id="d-nf" placeholder="Número da NF emitida" inputmode="numeric"><button class="prim" id="d-nf-ok">Marcar NF</button></div>
         </div></section>
       <section class="ficha"><div class="ficha-tit"><span class="rot">Tratativa / observação</span></div>
@@ -836,11 +847,11 @@ function desenharDetalheEmail(e) {
       <div class="remet"><div class="avatar">${esc((e.nome || e.de || "?").trim().charAt(0).toUpperCase())}</div><b>${esc(e.nome || e.de)}</b>
         <span class="quando">${chegou(e.recebido) === "Ontem" ? "Ontem" : dataBr(e.recebido.slice(0, 10))}<br><span class="dado">${esc(e.recebido.slice(11, 16))}</span></span>
         <span class="de">&lt;${esc(e.de)}&gt; para ${esc(e.caixa)}</span></div>
-      <div class="etiquetas">${e.notas?.length ? `<span class="pilula p-concluida">NF ${esc(e.notas.map(n => n.nf).join(", "))} emitida</span><span class="etq ruim">falta enviar</span>`
+      <div class="etiquetas">${e.notas?.length ? `<span class="pilula p-concluida">NF ${esc(e.notas.map(n => n.nf).join(", "))} emitida</span><span class="etq ruim">envio pendente</span>`
         : `<span class="pilula p-sem_resposta">Sem resposta</span>`}<span class="etq">E-mail direto</span>
         <span class="etq">${esc(e.hotel)}</span><span class="etq ${e.pc_online ? "" : "ruim"}">Caixa no PC de ${esc(e.agente_pc || e.pc)}${e.pc_online ? "" : " · desligado: a resposta sai quando ele ligar"}</span></div></header>
     <div class="corpo-msg">${quadroFalta(e.falta_nota)}
-      ${e.notas?.length ? `<section class="ficha"><div class="ficha-tit"><span class="rot" style="color:var(--ok)">NF já emitida · falta enviar ao hóspede</span>
+      ${e.notas?.length ? `<section class="ficha"><div class="ficha-tit"><span class="rot" style="color:var(--atencao)">NF já emitida · envio pendente</span>
         <span class="pilula p-concluida">NF ${esc(e.notas.map(n => n.nf).join(", "))}</span></div><dl>${e.notas.map(n =>
           `<dt>NF ${esc(n.nf)}</dt><dd>${esc(n.nome)}<div class="dica">salva no Dropbox em ${esc(n.modificado)} · ${esc(n.prova)}</div></dd>`).join("")}</dl></section>` : ""}
       ${e.quartos >= 2 ? `<section class="ficha"><div class="ficha-tit"><span class="rot">Nota dividida · voucher com ${e.quartos} quartos</span>
