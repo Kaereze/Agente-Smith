@@ -290,7 +290,12 @@ class Estado:
         for e in self.emails:
             sol = self._solicitacao_do_email(e["de"])
             dono = pcs.get(e["pc"], {})
-            saida.append({**e, "pc_online": bool(dono.get("online")), "agente_pc": dono.get("agente", ""),
+            try:
+                notas = envio_nf.notas_do_email(e, self.cfg)
+            except Exception as erro:
+                logger.debug(f"NF do Dropbox pro e-mail {e['id']}: {erro}")
+                notas = []
+            saida.append({**e, "pc_online": bool(dono.get("online")), "agente_pc": dono.get("agente", ""), "notas": notas,
                           "solicitacao": {"chave": sol["chave"], "hotel": sol["hotel"], "data": sol["data"]} if sol else None})
         return sorted(saida, key=lambda e: e["recebido"], reverse=True)
 
@@ -305,6 +310,8 @@ class Estado:
         destino, motivo = self.envio_nf.destino_para(e["caixa"])
         sol = self._solicitacao_do_email(e["de"])
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg) if sol else []
+        if not sugestoes:   # e-mail sem formulário (ex.: recepção repassando o pedido): a NF achada pelo nº/nome
+            sugestoes = envio_nf.notas_do_email(e, self.cfg)
         assunto = e["assunto"] if e["assunto"].lower().startswith(("re:", "res:")) else "RE: " + e["assunto"]
         return {"para": [e["de"]], "conta_de": e["caixa"], "destino": destino, "motivo": motivo,
                 "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,

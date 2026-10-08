@@ -232,3 +232,22 @@ def test_corpo_com_selo_leva_a_mensagem_padrao_e_a_imagem():
     html = en.corpo_com_selo("")
     assert "Prezado(a) hóspede" in html and "Atenciosamente," in html and f'cid:{en.CID_SELO}' in html
     assert "Segue também o XML" in en.corpo_com_selo("Segue também o XML")
+
+
+def test_email_sem_formulario_acha_a_nf_pelo_numero_da_estada_e_nome_com_erro(monkeypatch):
+    import envio_nf as e
+    itens = [("NF 590 - COERNELIO NOGUEIRA - 62222.pdf", r"C:\dropbox\NF 590 - COERNELIO NOGUEIRA - 62222.pdf", 1791460000,
+              ("590", "COERNELIO NOGUEIRA")),
+             ("NF 428 - FRANCISCO ALISSON PEREIRA GURGEL - 2911.pdf", r"C:\dropbox\NF 428 - FRANCISCO ALISSON PEREIRA GURGEL - 2911.pdf",
+              1791460000, ("428", "FRANCISCO ALISSON PEREIRA GURGEL"))]
+    monkeypatch.setattr(e, "listar_notas_dropbox", lambda cfg: itens)
+    monkeypatch.setattr(e, "raiz_dropbox", lambda cfg: None)
+    monkeypatch.setattr(e, "_LISTAGEM", {"em": object(), "chave": None, "itens": itens})
+    monkeypatch.setattr(e, "_INDICE_NOTAS", {"em": None, "por_reserva": {}, "por_palavra": {}})
+    cornelio = {"assunto": "NF 62222 ESTADA HOTEL SAO FRANCISCO", "recebido": "2026-10-07T16:45:08", "nome": "Recepção São Francisco",
+                "texto": "NOME DO HOSPEDE:\n\nCORNELIO NOGUEIRA NETO \n\nCPF:\n\n459.324.339-49\n\nESTADA:\n\n62222\n"}
+    assert [n["nf"] for n in e.notas_do_email(cornelio, {})] == ["590"]
+    xavier = {"assunto": "Solicitação NF", "recebido": "2026-10-07T10:00:00", "nome": "x",
+              "texto": "Nome do hóspede: FRANCISCO XAVIER PEREIRA\nCPF: 111.222.333-44"}
+    assert e.notas_do_email(xavier, {}) == []   # outro Francisco Pereira: não é a nota dele
+    assert e.palavra_parecida("coernelio", "cornelio") and not e.palavra_parecida("ana", "ama")

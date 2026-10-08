@@ -623,7 +623,8 @@ function agentesDo(it) {
 function passaSit(it, f) {
   if (f === "todas") return true;
   // e-mail de hóspede sem resposta é NF ainda não resolvida: entra também em "NF não emitida"
-  if (it.tipo === "email") return f === "aberto" || f === "sem_resposta" || f === "na_fila";
+  // e-mail com a NF já no Dropbox: "NF emitida" (falta mandar ao hóspede); sem NF: entra em "NF não emitida"
+  if (it.tipo === "email") return f === "aberto" || f === "sem_resposta" || f === (it.m.notas?.length ? "concluida" : "na_fila");
   const s = it.s;
   if (f === "aberto") return s.situacao !== "concluida";
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
@@ -743,7 +744,8 @@ function linhaHtml(it) {
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
     <span class="hora">${chegou(it.quando)}</span>
-    <span><span class="pilula p-sem_resposta">Sem resposta</span></span></div>`;
+    <span>${m.notas?.length ? `<span class="pilula p-concluida" title="${esc(m.notas.map(n => n.nome).join(" · "))}">NF ${esc(m.notas.map(n => n.nf).join(", "))} emitida</span>`
+      : `<span class="pilula p-sem_resposta">Sem resposta</span>`}</span></div>`;
 }
 
 function desenhar(){
@@ -834,9 +836,13 @@ function desenharDetalheEmail(e) {
       <div class="remet"><div class="avatar">${esc((e.nome || e.de || "?").trim().charAt(0).toUpperCase())}</div><b>${esc(e.nome || e.de)}</b>
         <span class="quando">${chegou(e.recebido) === "Ontem" ? "Ontem" : dataBr(e.recebido.slice(0, 10))}<br><span class="dado">${esc(e.recebido.slice(11, 16))}</span></span>
         <span class="de">&lt;${esc(e.de)}&gt; para ${esc(e.caixa)}</span></div>
-      <div class="etiquetas"><span class="pilula p-sem_resposta">Sem resposta</span><span class="etq">E-mail direto</span>
+      <div class="etiquetas">${e.notas?.length ? `<span class="pilula p-concluida">NF ${esc(e.notas.map(n => n.nf).join(", "))} emitida</span><span class="etq ruim">falta enviar</span>`
+        : `<span class="pilula p-sem_resposta">Sem resposta</span>`}<span class="etq">E-mail direto</span>
         <span class="etq">${esc(e.hotel)}</span><span class="etq ${e.pc_online ? "" : "ruim"}">Caixa no PC de ${esc(e.agente_pc || e.pc)}${e.pc_online ? "" : " · desligado: a resposta sai quando ele ligar"}</span></div></header>
     <div class="corpo-msg">${quadroFalta(e.falta_nota)}
+      ${e.notas?.length ? `<section class="ficha"><div class="ficha-tit"><span class="rot" style="color:var(--ok)">NF já emitida · falta enviar ao hóspede</span>
+        <span class="pilula p-concluida">NF ${esc(e.notas.map(n => n.nf).join(", "))}</span></div><dl>${e.notas.map(n =>
+          `<dt>NF ${esc(n.nf)}</dt><dd>${esc(n.nome)}<div class="dica">salva no Dropbox em ${esc(n.modificado)} · ${esc(n.prova)}</div></dd>`).join("")}</dl></section>` : ""}
       ${e.quartos >= 2 ? `<section class="ficha"><div class="ficha-tit"><span class="rot">Nota dividida · voucher com ${e.quartos} quartos</span>
         <span class="tag">dividida</span></div><dl>${(e.hospedes_quartos.length ? e.hospedes_quartos : Array(e.quartos).fill("(nome não lido)"))
           .map((n, k) => `<dt>Quarto ${k + 1}</dt><dd>${esc(n)}</dd>`).join("")}</dl></section>` : ""}

@@ -307,6 +307,120 @@ def listar_notas_dropbox(cfg, forcar=False):
     return _LISTAGEM["itens"]
 
 
+# ---------- NF do Dropbox de um e-mail sem formulário (pedido do usuário, 08/10/2026) ----------
+# Ex.: a recepção repassa "NF 62222 ESTADA HOTEL SAO FRANCISCO" e a nota sai como
+# "NF 590 - COERNELIO NOGUEIRA - 62222.pdf": nº da estada + nome (com erro de digitação) ligam os dois.
+_ROTULO_RESERVA = re.compile(r"(?:estada|estadia|reserva|localizador|itiner[aá]rio|booking|c[oó]digo)\D{0,25}?(\d{4,10})",
+                             re.IGNORECASE)
+_NOME_HOSPEDE = re.compile(r"(?:nome d[oa] h[oó]spede|reservado para|reserva feita para|h[oó]spede\s*:|nome\s*:)[\s:]*"
+                           r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' .]{4,80})", re.IGNORECASE)
+_INDICE_NOTAS = {"em": None, "por_reserva": {}, "por_palavra": {}}
+JANELA_NOTA_EMAIL_DIAS = (-3, 30)
+
+
+def _indice_notas(cfg):
+    itens = listar_notas_dropbox(cfg)
+    if _INDICE_NOTAS["em"] is not _LISTAGEM["em"] or not _INDICE_NOTAS["por_palavra"]:
+        por_reserva, por_palavra = {}, {}
+        for item in itens:
+            nome_nf = item[3][1]
+            # "NF 590 - COERNELIO NOGUEIRA - 62222.pdf": o nº da estada fica depois do nome
+            resto = " ".join(os.path.splitext(item[0])[0].split(" - ")[2:])
+            for r in set(re.findall(r"\d{4,10}", resto)):
+                por_reserva.setdefault(r, []).append(item)
+            for p in _palavras(nome_nf):
+                por_palavra.setdefault(p, []).append(item)
+        _INDICE_NOTAS.update(em=_LISTAGEM["em"], por_reserva=por_reserva, por_palavra=por_palavra)
+    return _INDICE_NOTAS
+
+
+def palavra_parecida(a, b):
+    """Igual, ou uma letra a mais/a menos/trocada em palavras de 5+ letras (COERNELIO x CORNELIO)."""
+    if a == b:
+        return True
+    if min(len(a), len(b)) < 5 or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) > len(b):
+        a, b = b, a
+    i = 0
+    while i < len(a) and a[i] == b[i]:
+        i += 1
+    return a[i + 1:] == b[i + 1:] if len(a) == len(b) else a[i:] == b[i + 1:]
+
+
+def nomes_do_email(e):
+    texto = f"{e.get('texto', '')}"
+    nomes = [m.group(1).strip() for m in _NOME_HOSPEDE.finditer(texto)]
+    nomes += list(e.get("hospedes_quartos") or [])
+    if not nomes and e.get("nome"):
+        nomes.append(e["nome"])   # sem nome no texto: o remetente é o próprio hóspede
+    return [n for n in nomes if _palavras(n)]
+
+
+_DOCUMENTO = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b|\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b")
+
+
+def _confere_no_pdf(caminho, mtime, documentos, nomes):
+    """Abre o PDF da nota (sem baixar arquivo que está só na nuvem) e confere CPF/CNPJ ou o nome inteiro."""
+    from arquivos import so_na_nuvem
+    if so_na_nuvem(caminho):
+        return ""
+    texto = _texto_da_nota_rapido(caminho, mtime) or ""
+    digitos = re.sub(r"\D", "", texto)
+    if any(d in digitos for d in documentos):
+        return "nome no arquivo e CPF/CNPJ do e-mail no PDF"
+    palavras_pdf = _palavras(texto)
+    if any(n <= palavras_pdf for n in nomes):
+        return "nome no arquivo e no PDF"
+    return ""
+
+
+def notas_do_email(e, cfg):
+    """NFs do Dropbox emitidas pra este e-mail -> [{nome, nf, rel, prova, modificado, forte}].
+    1) nº da estada/reserva (assunto ou texto) igual ao do arquivo E uma palavra do nome parecida;
+    2) sem nº: nome do hóspede (2+ palavras iguais) e nota salva de 3 dias antes a 30 depois do e-mail."""
+    idx = _indice_notas(cfg)
+    texto = f"{e.get('assunto', '')}\n{e.get('texto', '')}"
+    reservas = set(_ROTULO_RESERVA.findall(texto)) | set(re.findall(r"\b\d{4,10}\b", e.get("assunto", "")))
+    palavras = set().union(set(), *(_palavras(n) for n in nomes_do_email(e)))
+    achadas = {}
+    for r in reservas:
+        for item in idx["por_reserva"].get(r, []):
+            nome_nf = item[3][1]
+            if any(palavra_parecida(p, q) for p in _palavras(nome_nf) for q in palavras):
+                achadas.setdefault(item[1], (item, f"nº {r} e nome no arquivo"))
+    if not achadas:
+        # Só pelo nome é fraco ("FRANCISCO XAVIER PEREIRA" x "FRANCISCO ALISSON PEREIRA GURGEL"): o nome inteiro
+        # de alguém do e-mail tem que estar no arquivo E o PDF tem que conferir (CPF/CNPJ do e-mail ou o nome)
+        try:
+            recebido = datetime.datetime.fromisoformat(e.get("recebido", "")).date()
+        except ValueError:
+            recebido = None
+        nomes = [_palavras(n) for n in nomes_do_email(e)]
+        nomes = [n for n in nomes if len(n) >= 2]
+        documentos = {d for d in (re.sub(r"\D", "", x) for x in _DOCUMENTO.findall(texto)) if len(d) in (11, 14)}
+        vistos = {}
+        for n in nomes:
+            for p in n:
+                for item in idx["por_palavra"].get(p, []):
+                    vistos[item[1]] = item
+        for caminho, item in vistos.items():
+            t = _palavras(item[3][1])
+            atraso = (datetime.date.fromtimestamp(item[2]) - recebido).days if recebido else 0
+            if not (len(t) >= 2 and any(n <= t for n in nomes)
+                    and JANELA_NOTA_EMAIL_DIAS[0] <= atraso <= JANELA_NOTA_EMAIL_DIAS[1]):
+                continue
+            prova = _confere_no_pdf(caminho, item[2], documentos, nomes)
+            if prova:
+                achadas.setdefault(caminho, (item, prova))
+    raiz = raiz_dropbox(cfg)
+    saida = [{"nome": item[0], "nf": item[3][0], "forte": True, "prova": prova,
+              "modificado": datetime.datetime.fromtimestamp(item[2]).strftime("%d/%m/%Y %H:%M"),
+              "rel": os.path.relpath(item[1], raiz) if raiz else item[1]}
+             for item, prova in achadas.values()]
+    return sorted(saida, key=lambda n: n["modificado"][6:10] + n["modificado"][3:5] + n["modificado"][:2], reverse=True)[:4]
+
+
 _TEXTOS_SUGESTAO = {}   # (caminho, mtime) -> texto do PDF
 CANDIDATAS_SUGESTAO = 8
 JANELA_SUGESTAO_DIAS = (-3, 90)   # nota salva de 3 dias antes a 90 depois do pedido
