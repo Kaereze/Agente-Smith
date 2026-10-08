@@ -455,6 +455,35 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .linhas-cab,.linha{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr) 74px 156px}
 .mesa.com-leitura .linhas-cab,.mesa.com-leitura .linha{grid-template-columns:minmax(0,1.8fr) 70px 146px}
 
+/* ---------- fila de trabalho: prazo, densidade, histórico discreto ---------- */
+.status-cards{display:block}
+.status-grupos{display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap}
+.grupo-st{display:flex;flex-direction:column;gap:8px;min-width:0}
+.grupo-st > .rot{padding-left:2px}
+.grupo-st .cards{display:flex;gap:10px;flex-wrap:wrap}
+.grupo-st .stc{width:150px}
+.grupo-st.hist .stc{width:118px;padding:9px 12px;background:transparent;border-style:dashed}
+.grupo-st.hist .stc::before{display:none}
+.grupo-st.hist .stc-n{font-size:17px;color:var(--tinta-2)}
+.grupo-st.hist .stc[aria-pressed="true"]{border-style:solid;background:var(--folha)}
+.linhas-cab,.linha{grid-template-columns:minmax(0,2fr) minmax(0,1fr) 92px 64px 150px;gap:14px}
+.mesa.com-leitura .linhas-cab,.mesa.com-leitura .linha{grid-template-columns:minmax(0,1.8fr) 84px 140px}
+.mesa.com-leitura .col-chegou{display:none}
+.linha{min-height:50px}
+.quem-linha{padding-block:6px;gap:1px}
+.quem-linha b{font-size:13.5px}
+.quem-linha small{font-size:12px}
+.col-hotel{font-size:11.5px}
+.col-hotel small{font-size:11.5px}
+.ord{border:0;background:transparent;padding:0;font:600 11px var(--f-titulo);letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3);gap:4px}
+.ord:hover{color:var(--tinta);border:0}
+.ord.ativo{color:var(--verde-forte)}
+.espera{font:600 11.5px/1 var(--f-dado);padding:5px 8px;border-radius:6px;justify-self:start;white-space:nowrap}
+.espera.ok{background:var(--ok-fundo);color:var(--ok)} .espera.med{background:var(--atencao-fundo);color:var(--atencao)}
+.espera.alto{background:var(--erro-fundo);color:var(--erro)} .espera.fim{color:var(--tinta-3);padding-left:0}
+.resp{font-size:12.5px;color:var(--tinta-2);display:flex;flex-direction:column;gap:3px}
+.resp.livre{color:var(--tinta-3)}
+
 /* ---------- Visão geral ---------- */
 .kpis-v{display:grid;grid-template-columns:1.5fr repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
 .kpi-hero,.kpi-b{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;text-align:left;white-space:normal;border-radius:14px;padding:18px 20px}
@@ -562,7 +591,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
       <div class="pop oculta" id="pop" role="dialog" aria-label="Escolher filtro"></div>
       <div class="mesa" id="mesa">
         <section class="quadro" aria-label="Solicitações e e-mails">
-          <div class="linhas-cab"><span>Hóspede / assunto</span><span class="col-hotel">Hotel</span><span>Chegou</span><span>Situação</span></div>
+          <div class="linhas-cab" id="linhas-cab"></div>
           <div class="linhas" id="lista" role="listbox" aria-label="Itens"></div>
           <div class="paginacao"><span id="pag-txt"></span><div class="pags" id="pags"></div></div>
         </section>
@@ -593,7 +622,7 @@ const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30"
 const POR_PAGINA = 100;
 let st = {fila:[], agente:"", status:{}, emails:[], hoteis:[], pcs:[]}, timer = null, intervalo = 15;
 let filtro = "aberto", filtroEmail = "todos", origem = "form", hotel = "", agenteF = "", envio = "todos", periodo = "45";
-let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "";
+let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "", ordem = "";   // ordem "": automática
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
 try { const p = JSON.parse(localStorage.getItem("painel.caixa") || "{}");
       if (p.origem === "form" || p.origem === "email") origem = p.origem; if (p.filtro) filtro = p.filtro;
@@ -690,8 +719,19 @@ function passaSit(it, f) {
   if (f === "todas") return true;
   if (f === "envio_pendente") return !!s.envio_pendente;
   if (f === "aberto") return s.situacao !== "concluida";
+  if (f === "atrasadas") return s.situacao !== "concluida" && diasDesde(s.data) > PRAZO.med;
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
   return s.situacao === f;
+}
+// Prazo de atendimento: quantos dias o pedido (ou o e-mail) espera
+const diasDesde = iso => Math.max(0, Math.round((new Date(hojeIsoF() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 864e5));
+const PRAZO = { ok: 2, med: 7 };   // até 2 dias verde, até 7 âmbar, acima vermelho
+function esperaHtml(it) {
+  const resolvido = it.tipo === "form" && it.s.situacao === "concluida" && !it.s.envio_pendente;
+  if (resolvido) return `<span class="espera fim">—</span>`;
+  const d = diasDesde(it.quando);
+  const cls = d <= PRAZO.ok ? "ok" : d <= PRAZO.med ? "med" : "alto";
+  return `<span class="espera ${cls}" title="Esperando desde ${dataBr(it.quando.slice(0, 10))}">${d === 0 ? "hoje" : d === 1 ? "1 dia" : d + " dias"}</span>`;
 }
 function corteDoPeriodo() {
   if (periodo === "0") return "";
@@ -726,15 +766,15 @@ function termosDaBusca(busca) {
   _termos = [busca, termos];
   return termos;
 }
-function passa(it, ignorar, busca) {
-  if (ignorar !== "origem" && it.tipo !== origem) return false;
+function passa(it, ignorar = "", busca) {   // ignorar: "origem|sit"...
+  if (!ignorar.includes("origem") && it.tipo !== origem) return false;
   // pesquisando, procura na aba inteira: situação, hotel, agente e período não escondem o que bate
   if (busca) return termosDaBusca(busca).every(re => re.test(textoDo(it)));
-  if (ignorar !== "sit" && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
-  if (ignorar !== "agente" && agenteF && !agentesDo(it).includes(agenteF)) return false;
-  if (ignorar !== "hotel" && hotel && !it.hoteis.includes(hotel)) return false;
-  if (ignorar !== "envio" && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
-  const corte = ignorar === "periodo" ? "" : corteDoPeriodo();
+  if (!ignorar.includes("sit") && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
+  if (!ignorar.includes("agente") && agenteF && !agentesDo(it).includes(agenteF)) return false;
+  if (!ignorar.includes("hotel") && hotel && !it.hoteis.includes(hotel)) return false;
+  if (!ignorar.includes("envio") && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
+  const corte = ignorar.includes("periodo") ? "" : corteDoPeriodo();
   if (corte && it.quando.slice(0, 10) < corte) return false;
   return true;
 }
@@ -767,10 +807,12 @@ function desenharLateral() {
   $("nav-notas-n").textContent = abertos ? abertos.toLocaleString("pt-BR") : "";
 }
 
+const HISTORICO = ["concluida", "todas"];   // o que já terminou fica discreto, ao lado da fila
 const conta = (ign, f, busca) => TODOS.reduce((n, it) => n + (passa(it, ign, busca) && f(it) ? 1 : 0), 0);
 function situacoesDaAba(busca) {
   if (origem === "email") return SIT_EMAIL.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)]);
-  const base = [["aberto", "Em aberto", "var(--verde)"], ["na_fila", "NF não emitida", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
+  const base = [["aberto", "Em aberto", "var(--verde)"], ["atrasadas", "Atrasadas +7 dias", "var(--erro)"],
+    ["na_fila", "NF não emitida", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
     ["nf_parcial", "NF parcial", COR_SIT.nf_parcial], ["envio_pendente", "Envio pendente", "var(--atencao)"],
     ["concluida", "NF emitida", COR_SIT.concluida], ["em_tratamento", "Em tratamento", COR_SIT.em_tratamento],
     ["aguardando_envio", "Aguardando envio", COR_SIT.aguardando_envio], ["minhas", "Minhas", "var(--roxo)"], ["todas", "Todas", "var(--linha-forte)"]];
@@ -792,11 +834,14 @@ function pilula(campo, rotulo, valor, padrao) {
 function desenharFiltros(busca, total) {
   $("abas-origem").innerHTML = ORIGENS.map(([o, nome]) =>
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
-      conta("origem", it => it.tipo === o, busca).toLocaleString("pt-BR")}</span></button>`).join("");
+      conta("origem|sit", it => it.tipo === o && passaSit(it, o === "form" ? "aberto" : "todos"), busca).toLocaleString("pt-BR")}</span></button>`).join("");
   const atual = origem === "form" ? filtro : filtroEmail;
-  $("status-cards").innerHTML = situacoesDaAba(busca).map(([f, nome, cor, n]) =>
-    `<button class="stc ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
-      <span class="stc-r">${esc(nome)}</span><span class="stc-n">${n.toLocaleString("pt-BR")}</span></button>`).join("");
+  const card = ([f, nome, cor, n]) => `<button class="stc ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
+      <span class="stc-r">${esc(nome)}</span><span class="stc-n">${n.toLocaleString("pt-BR")}</span></button>`;
+  const todas = situacoesDaAba(busca), hist = todas.filter(x => HISTORICO.includes(x[0]));
+  $("status-cards").innerHTML = `<div class="status-grupos">
+      <div class="grupo-st"><span class="rot">Fila de trabalho</span><div class="cards">${todas.filter(x => !HISTORICO.includes(x[0])).map(card).join("")}</div></div>
+      ${hist.length ? `<div class="grupo-st hist"><span class="rot">Histórico</span><div class="cards">${hist.map(card).join("")}</div></div>` : ""}</div>`;
   const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
   const algum = hotel || agenteF || envio !== "todos" || periodo !== "45";
   $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) + pilula("agente", "Agente", agenteF) +
@@ -854,6 +899,13 @@ function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = 
   $("busca").value = ""; guardarCaixa(); trocarVista("fila");
 }
 
+// Filtro de uma situação só: a coluna não repete a etiqueta, mostra quem está cuidando
+const visaoMista = () => origem === "email" ? filtroEmail === "todos"
+  : ["aberto", "todas", "minhas", "envio_pendente", "atrasadas"].includes(filtro);
+function colunaSituacao(s) {
+  if (visaoMista()) return `<span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span>${marcaEnvio(s)}</span>`;
+  return `<span class="resp ${s.dono ? "" : "livre"}">${s.dono ? "Com " + esc(s.dono) : "Livre"}${marcaEnvio(s)}</span>`;
+}
 function linhaHtml(it) {
   if (it.tipo === "form") {
     const s = it.s;
@@ -862,15 +914,15 @@ function linhaHtml(it) {
       <span class="quem-linha"><b>${esc(s.nome)}${tagFalta(s.falta_nota)}${s.dono ? `<span class="tag dono">${esc(s.dono)}</span>` : ""}${s.dividida ? '<span class="tag">dividida</span>' + tagDivisao(s) : tagNotaUnica(s)}</b>
         <small>${esc(sub)}</small></span>
       <span class="col-hotel">${esc(s.hotel)}<small>${esc(AG[s.hotel] || "")}</small></span>
-      <span class="hora">${chegou(it.quando)}</span>
-      <span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span>${marcaEnvio(s)}</span></div>`;
+      ${esperaHtml(it)}<span class="hora col-chegou">${chegou(it.quando)}</span>
+      ${colunaSituacao(s)}</div>`;
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
     <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagFalta(m.falta_nota)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     <span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
-    <span class="hora">${chegou(it.quando)}</span>
+    ${esperaHtml(it)}<span class="hora col-chegou">${chegou(it.quando)}</span>
     <span>${m.notas?.length ? `<span class="pilula p-concluida" title="${esc(m.notas.map(n => n.nome).join(" · "))}">NF ${esc(m.notas.map(n => n.nf).join(", "))} emitida</span><span class="envio pend">envio pendente</span>`
       : `<span class="pilula p-sem_resposta">Sem resposta</span>`}</span></div>`;
 }
@@ -878,7 +930,16 @@ function linhaHtml(it) {
 function desenhar(){
   const busca = $("busca").value.trim();
   desenharLateral();
-  const lista = TODOS.filter(it => passa(it, "", busca));
+  let lista = TODOS.filter(it => passa(it, "", busca));
+  // fila de trabalho: o mais atrasado primeiro; histórico e busca: o mais recente primeiro
+  const historico = origem === "form" && HISTORICO.includes(filtro);
+  const ord = ordem || (busca || historico ? "recente" : "antigo");
+  if (ord === "antigo") lista = lista.slice().reverse();
+  const seta = o => ord === o ? (o === "antigo" ? " ↓" : " ↓") : "";
+  $("linhas-cab").innerHTML = `<span>Hóspede / assunto</span><span class="col-hotel">Hotel</span>
+    <button class="ord ${ord === "antigo" ? "ativo" : ""}" data-ordem="antigo" title="Mais atrasado primeiro">Espera${seta("antigo")}</button>
+    <button class="ord col-chegou ${ord === "recente" ? "ativo" : ""}" data-ordem="recente" title="Mais recente primeiro">Chegou${seta("recente")}</button>
+    <span>${visaoMista() ? "Situação" : "Responsável"}</span>`;
   desenharFiltros(busca, lista.length);
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   pagina = Math.min(pagina, paginas - 1);
@@ -999,11 +1060,12 @@ async function acao(a, valor){
 const irPraCaixa = () => { if (pn.vista !== "fila") trocarVista("fila"); };
 document.addEventListener("click", async e => {
   if (popAberto && !e.target.closest("#pop,[data-pop]")) fecharPop();
-  const t = e.target.closest("[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],#d-fechar,#d-nf-ok");
   if (!t) return;
   const d = t.dataset;
+  if (d.ordem) { ordem = d.ordem; pagina = 0; return desenhar(); }
   if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
-  if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; pagina = 0; guardarCaixa(); return desenhar(); }
+  if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
   if (d.pop) { if (popAberto === d.pop) fecharPop(); else { popAberto = d.pop; buscaPop = ""; $("pop").dataset.campo = ""; desenharPop(); } return; }
   if (d.opv !== undefined) {
     const v = d.opv;
