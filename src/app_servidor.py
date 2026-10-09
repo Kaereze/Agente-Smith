@@ -938,7 +938,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
-                    "hoteis": estado.hoteis_por_agente(),
+                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
                 })
             if url.path == "/api/envio":
                 def ler_status():
@@ -1078,12 +1078,25 @@ def main():
     import cota_google
     cota_google.configurar("painel")
     cfg = carregar_config()
-    estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
-    if estado.carregar_cache():
+    modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/demo.py)
+    if modo_demo:
+        import demo
+        global CAMINHO_CACHE
+        CAMINHO_CACHE = PASTA_ESTADO / "painel_cache_demo.pkl"
+        cfg = demo.configurar_cfg(cfg)
+        backend_demo = demo.BackendDemo()
+        estado = Estado(backend_demo, cfg)
+        demo.preparar(estado, backend_demo)
+        logger.info("🧪 MODO DEMONSTRAÇÃO: dados fictícios, nada vai pro Google nem pro Outlook")
+    else:
+        estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
+    estado.demo = modo_demo
+    if not modo_demo and estado.carregar_cache():
         logger.info(f"📦 Último estado carregado do disco ({estado.atualizado_em:%d/%m %H:%M}) — atualizando em seguida.")
-    estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
-    estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
-                                                              "ping": estado.rede_ping}).iniciar()
+    if not modo_demo:
+        estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
+        estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
+                                                                  "ping": estado.rede_ping}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
     servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))

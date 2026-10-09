@@ -939,6 +939,7 @@ async function carregar(){
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
+    if (j.demo) $("faixa-quem").textContent = "MODO DEMONSTRAÇÃO · dados fictícios · nada é enviado";
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
       clearTimeout(timer); timer = setTimeout(carregar, 2000); return;
