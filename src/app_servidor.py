@@ -81,6 +81,21 @@ EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"]
 
 
+def ler_prefs():
+    """Preferências DESTE PC (estado/app.json): operador e tema da tela."""
+    try:
+        return json.load(open(CAMINHO_PREFS, encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def salvar_pref(chave, valor):
+    salvar_json(CAMINHO_PREFS, {**ler_prefs(), chave: valor})   # junta: trocar o tema não apaga o operador
+
+
+TEMAS_OK = ("", "light", "dark")
+
+
 def nome_do_agente():
     try:
         nome = json.load(open(CAMINHO_PREFS, encoding="utf-8")).get("agente")
@@ -945,6 +960,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
+                    "tema": ler_prefs().get("tema", ""),
                 })
             if url.path == "/api/envio":
                 def ler_status():
@@ -999,11 +1015,17 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if path == "/api/acao":
                     r = estado.registrar(nome_do_agente(), pc, corpo["chave"], corpo["acao"], corpo.get("valor", ""))
                     return self._json(r)
+                if path == "/api/tema":   # tema por PC (claro, escuro ou o do Windows), lembrado depois de reiniciar
+                    tema = str(corpo.get("tema", ""))
+                    if tema not in TEMAS_OK:
+                        return self._json({"ok": False, "motivo": "tema desconhecido"}, 400)
+                    salvar_pref("tema", tema)
+                    return self._json({"ok": True})
                 if path == "/api/agente":
                     nome = str(corpo.get("nome", "")).strip()[:40]
                     if nome not in operadores:
                         return self._json({"ok": False, "motivo": "operador desconhecido"}, 400)
-                    salvar_json(CAMINHO_PREFS, {"agente": nome})
+                    salvar_pref("agente", nome)
                     return self._json({"ok": True})
                 if path == "/api/enviar":
                     if e_principal(carregar_config()):   # aqui mesmo: rápido e com log direto da memória

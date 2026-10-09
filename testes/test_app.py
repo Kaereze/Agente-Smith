@@ -151,3 +151,12 @@ def test_falha_de_leitura_nao_derruba(cfg, planilha):
     planilha.listar_abas = lambda _id: (_ for _ in ()).throw(RuntimeError("503"))
     e.atualizar()
     assert "503" in e.erro
+
+
+def test_tema_e_operador_ficam_juntos_nas_preferencias_do_pc(tmp_path, monkeypatch):
+    import app_servidor
+    monkeypatch.setattr(app_servidor, "CAMINHO_PREFS", tmp_path / "app.json")
+    app_servidor.salvar_pref("agente", "Clara")
+    app_servidor.salvar_pref("tema", "dark")
+    assert app_servidor.ler_prefs() == {"agente": "Clara", "tema": "dark"}   # trocar o tema não apaga o operador
+    assert app_servidor.nome_do_agente() == "Clara"

@@ -947,6 +947,7 @@ async function carregar(){
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
     $("pill-demo").classList.toggle("oculta", !j.demo);
+    if (j.tema !== undefined && j.tema !== temaServidor) { temaServidor = j.tema; if (j.tema !== (document.documentElement.dataset.theme || "")) aplicarTema(j.tema); }
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
       clearTimeout(timer); timer = setTimeout(carregar, 2000); return;
@@ -1419,7 +1420,9 @@ $("busca").addEventListener("input", () => {
 });
 // Tema: segue o Windows (padrão), claro ou escuro — fica guardado neste PC
 const TEMAS = [["", "Sistema"], ["light", "Claro"], ["dark", "Escuro"]];
-function aplicarTema(t) {
+let temaServidor = null;   // o tema guardado neste PC (estado/app.json) vale mais que o do navegador
+function aplicarTema(t, guardarNoPc = false) {
+  if (guardarNoPc) { temaServidor = t; api("/api/tema", { tema: t }); }
   if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
   const nome = (TEMAS.find(x => x[0] === t) || TEMAS[0])[1];
   $("tema-nome").textContent = nome;
@@ -1429,7 +1432,7 @@ function aplicarTema(t) {
 }
 $("btn-tema").addEventListener("click", () => {
   const i = TEMAS.findIndex(x => x[0] === (document.documentElement.dataset.theme || ""));
-  aplicarTema(TEMAS[(i + 1) % TEMAS.length][0]);
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length][0], true);
   toast("Tema: " + $("tema-nome").textContent);
 });
 try { aplicarTema(localStorage.getItem("painel.tema") || ""); } catch (e) { aplicarTema(""); }
