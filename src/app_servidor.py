@@ -74,6 +74,7 @@ ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/favicon.ico": ("icone.ico", "image/x-icon"),
     "/graficos.js": ("graficos.js", "text/javascript; charset=utf-8"),
     "/painel.js": ("painel.js", "text/javascript; charset=utf-8"),
+    "/correio.js": ("correio.js", "text/javascript; charset=utf-8"),
 }
 EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"]

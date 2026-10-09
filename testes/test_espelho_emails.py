@@ -10,6 +10,8 @@ def test_corta_o_historico_colado_embaixo():
     assert ee.sem_historico(texto) == "Boa tarde,\nPreciso da nota no CNPJ 12.345.678/0001-90.\nObrigada"
     assert ee.sem_historico("Oi\n\nEm seg., 5 de out. de 2026 às 10:00, Hotel <a@b> escreveu:\n> antigo") == "Oi"
     assert ee.sem_historico("só o texto") == "só o texto"
+    gmail = "Boa tarde! O valor real pago.\n\nEm qui., 8 de out. de 2026 às 16:30, <nf@hotel.com.br>\nescreveu:\n> Prezada"
+    assert ee.sem_historico(gmail) == "Boa tarde! O valor real pago."   # o Gmail quebra a linha antes do "escreveu:"
 
 
 def test_automaticos_e_listas_ficam_de_fora():

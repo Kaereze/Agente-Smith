@@ -3,14 +3,18 @@
 let pn = { vista: "visao", janela: 30, rz: null, tabela: {} };   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
-const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas" };
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas", correio: "E-mails" };
 function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
   pn.vista = v;
   for (const id of Object.keys(TITULOS)) $("v-" + id).classList.toggle("oculta", id !== v);
-  $("trilha").textContent = TITULOS[v];
+  $("trilha").textContent = v === "correio" ? "E-mails / " + CAIXAS[cx.caixa] : TITULOS[v];
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
-    b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba))));
+    b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba)
+                                          && (v !== "correio" || b.dataset.caixa === cx.caixa))));
+  $("busca").placeholder = v === "correio" ? "Buscar hóspede, CPF/CNPJ, sobrenome, frase… (Enter procura no Outlook dos 4 PCs)"
+    : "Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…";
+  if (v === "correio") { desenharCorreio(); return; }
   desenhar();
   if (v === "visao") desenharVisao();
   clearTimeout(at.timer);
@@ -117,7 +121,8 @@ document.addEventListener("click", async e => {
 // Pedido do usuário (08/10/2026): menos informação, nada de comparar com o Mail Analytics, gráficos concretos.
 const JANELAS = [7, 15, 30, 45];
 // cores validadas (dataviz, tema claro e escuro) na ordem em que aparecem empilhadas
-const COR_VIZ = { emitida: "#1f9d6b", envio: "#b97a12", andamento: "#3987e5", sem_nf: "#d6453a", email: "#8b6fd6" };
+// validadas (dataviz) contra o branco e o verde-petróleo do tema escuro (#ffffff e #1b3a34)
+const COR_VIZ = { emitida: "#1f9d6b", envio: "#b97a12", andamento: "#3987e5", sem_nf: "#e04f43", email: "#8b6fd6" };
 const SERIES_DIA = [
   { k: "emitida", nome: "NF emitida e enviada", cor: COR_VIZ.emitida },
   { k: "envio", nome: "NF emitida, envio pendente", cor: COR_VIZ.envio },
@@ -462,7 +467,7 @@ async function acompanharNF(id) {
     $("nf-res").textContent = envNF.resp
       ? `Resposta enviada${s.pc ? " pelo PC " + s.pc : ""}. O e-mail sai da lista na próxima volta do robô (até 2 min).`
       : `NF enviada ao hóspede${s.pc ? " pelo PC " + s.pc : ""}. Ela já ficou marcada no pedido.`;
-    $("nf-ir").style.display = "none"; carregar(); return;
+    $("nf-ir").style.display = "none"; if (envNF.resp) correioRespondido(envNF.resp.id); carregar(); return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") return mostrarFalhaNF(s.detalhe, s.contas_locais);
   $("nf-res").textContent = s.estado === "enviando" ? `O PC ${s.pc || ""} está enviando…` : `Aguardando o PC ${s.pc || ""}…`;

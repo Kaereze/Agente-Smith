@@ -48,6 +48,21 @@ testes/                  testes automáticos (Bat/rodar_testes.bat)
 - **Lista de já enviadas** (`estado/ja_enviadas.json`): linha sem TRUE que já saiu só ganha o TRUE.
 - **Robô ligado?** (aba Status, B1) desmarcado = nada é enviado.
 
+## Painel Fiscal = espelho do Outlook dos 4 PCs (sem histórico)
+
+| Peça | O quê | Arquivo |
+|---|---|---|
+| Espelho (cada PC) | Caixa de Entrada sem resposta (14 dias; +7 dias ou pedido de correção = Urgência) e Itens Enviados de 24 h → abas `Correio_<PC>` e `CorreioTexto_<PC>`, reescritas (nada acumula) | `src/espelho_emails.py` |
+| Correio no Painel | 1 linha por hóspede juntando os 4 PCs; respondido/excluído some; lido vale pra equipe (`Eventos_Correio`) | `src/correio.py`, `app_ui/correio.js` |
+| Ações no PC dono | Responder, encaminhar, excluir (vai pra Itens Excluídos); PC desligado = fila de até 24 h | `src/envio_nf.py` |
+| Busca ao vivo | Pergunta aos Outlooks dos PCs pela rede local (porta 8766, assinada, só leitura) | `src/busca_outlook.py`, `src/rede_local.py` |
+| Cota do Google | Cada programa tem uma fatia fixa; soma dos 4 PCs = 57 de 60 por minuto | `src/cota_google.py` |
+| Leitura leve | Tratamento só pelo fim; abas dos hotéis a cada 2 min (de ~11 MB para ~20 KB a cada 15 s) | `src/app_servidor.py`, `src/confirmar_nfs.py` |
+| Faxina diária | No PC principal: Tratamento vira resumo por pedido (com trava e backup), filas 3 dias, atividade 7 | `src/faxina.py` |
+
+Primeira vez em cada PC: rodar `ATUALIZAR_PAINEL.bat` e aceitar o pedido do Windows (libera a porta 8766 só
+pra rede local — `Automacoes/liberar_rede.ps1`).
+
 ## Chave do Google
 
 `%APPDATA%\SolicitacoesNF\chave-api.json` (conta de serviço, APIs Sheets + Drive ativas).

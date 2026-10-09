@@ -112,6 +112,7 @@ if errorlevel 1 echo        [AVISO] pip falhou - sigo com as bibliotecas que ja 
 
 :: ---------- 6. reiniciar conferente e Painel ----------
 echo [6/6] Reiniciando o conferente e o Painel...
+powershell -NoProfile -ExecutionPolicy Bypass -File "Automacoes\liberar_rede.ps1"
 schtasks /query /tn "SolicitacoesNF_Painel" >nul 2>nul
 if errorlevel 1 (
   echo [ERRO] A tarefa SolicitacoesNF_Painel nao existe neste PC. Rode o INSTALAR_OU_ATUALIZAR.bat uma vez.

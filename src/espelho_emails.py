@@ -62,8 +62,9 @@ REMETENTES_AUTOMATICOS = ("no-reply", "noreply", "naoresponda", "nao-responda", 
 DOMINIOS_AUTOMATICOS = ("booking.com", "decolar.com", "expedia", "airbnb", "hotels.com", "trivago", "omnibees",
                         "hbook", "cloudbeds", "facebookmail", "google.com", "microsoft.com", "linkedin")
 PR_CABECALHOS = "http://schemas.microsoft.com/mapi/proptag/0x007D001F"
-_HISTORICO = re.compile(
-    r"^\s*(?:De:|From:|-{2,}\s*(?:Mensagem original|Original Message)|_{5,}|Em .{5,120}escreveu:|On .{5,120}wrote:)",
+_HISTORICO = re.compile(   # "Em qui., 8 de out. ... <x@y>\nescreveu:" (o Gmail quebra a linha antes do "escreveu:")
+    r"^\s*(?:De:|From:|-{2,}\s*(?:Mensagem original|Original Message)|_{5,}|"
+    r"Em [^\n]{5,160}(?:\n[^\n]{0,80})?escreveu:|On [^\n]{5,160}(?:\n[^\n]{0,80})?wrote:)",
     re.IGNORECASE | re.MULTILINE)
 
 
