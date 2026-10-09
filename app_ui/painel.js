@@ -12,7 +12,7 @@ function trocarVista(v) {
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
     b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba)
                                           && (v !== "correio" || b.dataset.caixa === cx.caixa))));
-  $("busca").placeholder = v === "correio" ? "Buscar hóspede, CPF/CNPJ, sobrenome, frase… (Enter procura no Outlook dos 4 PCs)"
+  $("busca").placeholder = v === "correio" ? "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, sobrenome, frase…"
     : "Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…";
   if (v === "correio") { desenharCorreio(); return; }
   desenhar();

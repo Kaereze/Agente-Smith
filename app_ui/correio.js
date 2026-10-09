@@ -1,18 +1,19 @@
-// E-mails: o espelho do Outlook dos 4 PCs (Caixa de entrada, Urgência, Itens enviados) — pedido do usuário, 08/10/2026.
-// O Painel não guarda e-mail: o que está aqui é o que está no Outlook agora. Respondeu, fica cinza e some; o texto
-// inteiro vem ao vivo do PC dono da caixa; a busca pergunta aos Outlooks dos 4 PCs. Usa api/$/esc/toast/st (index.html).
-let cx = { caixa: "entrada", dados: null, sel: null, conv: null, textos: {}, hotel: "", live: null, buscando: "",
-           resolvendo: {}, escondidos: {}, desfazer: null, abertoEm: 0, manterNaoLido: {}, enviadoSel: null };
+// E-mails: espelho do Outlook dos 4 PCs, no formato do Outlook (usuário, 08/10/2026): lista compacta, 1 linha por
+// e-mail separada por Hoje / Ontem / Esta semana; ao clicar, o e-mail aberto à direita (De, Para, Data, texto) e o
+// histórico do hóspede puxado ao vivo do Outlook. Tudo que se faz aqui (responder, encaminhar, excluir) roda no
+// Outlook do PC dono por trás, sem abrir janela. A busca vai direto ao Outlook dos 4 PCs. Usa api/$/esc/toast/st.
+let cx = { caixa: "entrada", dados: null, sel: null, hist: {}, textos: {}, hotel: "", live: null, buscando: "",
+           resolvendo: {}, escondidos: {}, desfazer: null, manterNaoLido: {}, timerBusca: null, conv: {} };
 const CAIXAS = { entrada: "Caixa de entrada", urgencia: "Urgência", enviados: "Itens enviados" };
 const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["Nota complementar", "atencao"],
   cobranca: ["Cobrança", "atencao"], dados_tomador: ["Dados do tomador", "info"], pedido_nf: ["Pedido de NF", "ok"] };
-const PASTAS = { entrada: "Entrada", enviado: "Enviado", excluido: "Excluído" };
+const PASTAS = { entrada: "Recebido", enviado: "Enviado", excluido: "Excluído" };
 const RESOLVENDO_MS = 4 * 60 * 1000;   // cinza até o espelho do PC dono confirmar (até ~2 min) e a linha sumir
 
 async function carregarCorreio() {
   try {
     const j = await api("/api/correio");
-    if (!j.conversas) return;
+    if (!j.emails) return;
     cx.dados = j;
     const agora = Date.now();
     for (const [k, t] of Object.entries(cx.resolvendo)) if (agora - t > RESOLVENDO_MS) delete cx.resolvendo[k];
@@ -21,271 +22,261 @@ async function carregarCorreio() {
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 
-const convsDa = caixa => (cx.dados?.conversas || []).filter(c => !cx.escondidos[c.de] && (caixa === "urgencia" ? c.urgente : !c.urgente));
+const emailsDa = caixa => (cx.dados?.emails || []).filter(e => !cx.escondidos[e.id] && (caixa === "urgencia" ? e.urgente : !e.urgente));
 function desenharLateralCorreio() {
   const c = cx.dados?.contagem || {};
   const n = (id, v, alerta) => { const el = $(id); if (!el) return; el.textContent = v ? v.toLocaleString("pt-BR") : "";
     el.classList.toggle("alerta-n", !!(alerta && v)); };
-  n("nav-entrada-n", c.entrada_nao_lidos); n("nav-urgencia-n", c.urgencia, true);
-  n("nav-enviados-n", (cx.dados?.enviados || []).length);
+  n("nav-entrada-n", c.entrada_nao_lidos); n("nav-urgencia-n", emailsDa("urgencia").length, true);
 }
 
-const nomeAgente = pc => (cx.dados?.pcs || []).find(p => p.pc === pc)?.agente || pc;
+const nomeAgente = pc => (cx.dados?.pcs || []).find(p => p.pc === pc)?.agente || cx.live?.agentes?.[pc] || pc;
 const pcOnline = pc => !!(cx.dados?.pcs || []).find(p => p.pc === pc)?.online;
-const iniciais = n => (String(n || "?").trim().split(/\s+/).slice(0, 2).map(p => p[0]).join("") || "?").toUpperCase();
 function horaCurta(iso) {
   if (!iso) return "";
   const d = iso.slice(0, 10);
-  return d === hojeIsoF() ? iso.slice(11, 16) : d === ontemIso() ? "Ontem" : d.slice(8, 10) + "/" + d.slice(5, 7);
+  return d === hojeIsoF() ? iso.slice(11, 16) : d === ontemIso() ? "Ontem " + iso.slice(11, 16) : d.slice(8, 10) + "/" + d.slice(5, 7);
 }
-const chipClasse = c => CLASSES[c] ? `<span class="cx-chip c-${CLASSES[c][1]}">${esc(CLASSES[c][0])}</span>` : "";
-function textoBusca(c) {
-  const u = c.ultimo || c;
-  return semAcento([c.nome, c.de, u.assunto, u.previa, (c.hoteis || [c.hotel]).join(" "), u.para,
-    (c.classes || []).map(k => CLASSES[k]?.[0]).join(" "), (c.agentes || []).join(" ")].join(" \n "));
+const dataLonga = iso => { const d = new Date(iso); return isNaN(d) ? iso : d.toLocaleString("pt-BR", { weekday: "short", day: "2-digit",
+  month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); };
+function grupoData(iso) {   // Hoje / Ontem / Esta semana / Mais antigos (como o Outlook)
+  const dias = diasDesde(iso);
+  return dias === 0 ? "Hoje" : dias === 1 ? "Ontem" : dias < 7 ? "Esta semana" : dias < 14 ? "Semana passada" : "Mais antigos";
 }
-function passaBusca(c, busca) {
+const etiqueta = c => CLASSES[c] ? `<span class="et et-${CLASSES[c][1]}">${esc(CLASSES[c][0])}</span>` : "";
+function textoBusca(e) {
+  return semAcento([e.nome, e.de, e.assunto, e.previa, e.hotel, e.para, e.caixa,
+    (e.classes || []).map(k => CLASSES[k]?.[0]).join(" "), e.agente].join(" \n "));
+}
+function passaBusca(e, busca) {
   if (!busca) return true;
-  const t = textoBusca(c);
+  const t = textoBusca(e);
   return semAcento(busca).split(/\s+/).filter(Boolean).every(p => t.includes(p) || soDigitos(t).includes(soDigitos(p)));
 }
 
-function desenharCorreio() {
-  const v = $("v-correio");
-  if (!v) return;
-  const busca = $("busca").value.trim();
-  const d = cx.dados;
-  $("cx-titulo").textContent = busca ? `Busca: “${busca}”` : CAIXAS[cx.caixa];
-  // PCs desligados: o espelho deles fica parado na última foto (e as ações esperam o PC ligar)
-  const off = (d?.pcs || []).filter(p => !p.online);
-  $("cx-avisos").innerHTML = off.length ? `<span class="cx-aviso" title="${esc(off.map(p => `${p.agente || p.pc}: ${p.espelho
-      ? "espelho de " + quando(p.espelho) : "ainda sem espelho (Painel sem a versão nova)"}`).join("\n"))}"><span class="dot off"></span>
-    Desligado agora: <b>${esc(off.map(p => p.agente || p.pc).join(", "))}</b> · os e-mails deles ficam na última foto e o que for pedido sai quando ligarem</span>` : "";
-  let lista;
-  if (cx.caixa === "enviados") {
-    lista = (d?.enviados || []).filter(e => (!cx.hotel || e.hotel === cx.hotel) && passaBusca(e, busca));
-  } else {
-    lista = (busca ? (d?.conversas || []).filter(c => !cx.escondidos[c.de]) : convsDa(cx.caixa))
-      .filter(c => (!cx.hotel || c.hoteis.includes(cx.hotel)) && passaBusca(c, busca));
-    if (cx.caixa === "urgencia" && !busca) lista = lista.slice().sort((a, b) => a.desde.localeCompare(b.desde));   // mais velho primeiro
+// ---------- lista ----------
+function itensDaTela(busca) {
+  if (busca) {   // busca: o que o Outlook dos PCs devolveu + o espelho dos PCs que não responderam (desligados)
+    const r = cx.live && cx.live.termo === busca ? cx.live : null;
+    const deles = new Set(Object.entries(r?.pcs || {}).filter(([, s]) => s.ok).map(([pc]) => pc));
+    const espelho = (cx.dados?.emails || []).filter(e => !deles.has(e.pc) && passaBusca(e, busca)).map(e => ({ ...e, pasta: "entrada" }));
+    const vistos = new Set();
+    return [...(r?.resultados || []), ...espelho].filter(e => !vistos.has(e.id) && vistos.add(e.id))
+      .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
-  desenharFiltrosCorreio(lista.length, busca);
-  const vazio = busca ? `Nada com “${esc(busca)}” no espelho.` : cx.caixa === "entrada" ? "Caixa de entrada em dia: nada esperando resposta. 🎉"
-    : cx.caixa === "urgencia" ? "Nenhum e-mail em urgência." : "Nada enviado nas últimas 24 h.";
+  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })) : emailsDa(cx.caixa);
+  const lista = base.filter(e => !cx.hotel || e.hotel === cx.hotel);
+  return cx.caixa === "urgencia" ? lista.sort((a, b) => a.quando.localeCompare(b.quando)) : lista;
+}
+
+function desenharCorreio() {
+  if (!$("v-correio")) return;
+  const busca = $("busca").value.trim().length >= 3 ? $("busca").value.trim() : "";
+  const lista = itensDaTela(busca);
+  const naoLidos = lista.filter(e => e.pasta !== "enviado" && e.lido === false).length;
+  $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
+  $("cx-sub").textContent = busca ? `“${busca}” · ${lista.length} e-mail(s)` :
+    cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${lista.length} e-mail(s)${naoLidos ? ` · ${naoLidos} não lido(s)` : ""}`;
+  const off = (cx.dados?.pcs || []).filter(p => !p.online);
+  $("cx-avisos").innerHTML = (off.length ? `<span class="cx-aviso" title="Os e-mails deles aparecem como estavam na última leitura; o que for pedido sai quando ligarem.">
+      Desligado: ${esc(off.map(p => p.agente || p.pc).join(", "))}</span>` : "") + statusBusca(busca);
+  desenharFiltroHotel(lista);
   // a lista é refeita a cada 15 s: quem estava com o foco numa linha continua nela
-  const focada = document.activeElement?.closest?.("#cx-lista .cx-linha");
-  const chaveFoco = focada && ["cx", "cxEnv", "cxLive"].map(k => focada.dataset[k] && [k, focada.dataset[k]]).find(Boolean);
-  $("cx-lista").innerHTML = (lista.length ? lista.map(cx.caixa === "enviados" ? linhaEnviado : linhaConversa).join("")
-    : `<div class="vazio">${vazio}</div>`) + blocoBuscaAoVivo(busca);
-  if (chaveFoco) [...$("cx-lista").querySelectorAll(".cx-linha")].find(l => l.dataset[chaveFoco[0]] === chaveFoco[1])?.focus();
+  const focada = document.activeElement?.closest?.("#cx-lista .cx-l");
+  const idFoco = focada?.dataset.id;
+  let grupo = "", html = "";
+  for (const e of lista) {
+    const g = cx.caixa === "urgencia" && !busca ? "" : grupoData(e.quando);
+    if (g && g !== grupo) { html += `<div class="cx-grupo">${g}</div>`; grupo = g; }
+    html += linhaEmail(e);
+  }
+  const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
+    : cx.caixa === "entrada" ? "Nenhum e-mail esperando resposta." : cx.caixa === "urgencia" ? "Nenhum e-mail em urgência." : "Nada enviado nas últimas 24 h.";
+  $("cx-lista").innerHTML = html || `<div class="vazio">${vazio}</div>`;
+  if (idFoco) $("cx-lista").querySelector(`.cx-l[data-id="${CSS.escape(idFoco)}"]`)?.focus();
   desenharLeituraCorreio();
 }
 
-function desenharFiltrosCorreio(total, busca) {
-  const hoteis = new Set();
-  (cx.caixa === "enviados" ? cx.dados?.enviados || [] : convsDa(cx.caixa)).forEach(c => (c.hoteis || [c.hotel]).forEach(h => h && hoteis.add(h)));
-  const opcoes = [...hoteis].sort((a, b) => a.localeCompare(b, "pt"));
-  if (cx.hotel && !opcoes.includes(cx.hotel)) opcoes.unshift(cx.hotel);
-  $("cx-filtros").innerHTML = `<label class="sel"><select id="cx-hotel" aria-label="Filtrar por hotel">
-      <option value="">Todos os hotéis</option>${opcoes.map(h => `<option ${h === cx.hotel ? "selected" : ""}>${esc(h)}</option>`).join("")}</select></label>
-    ${busca ? `<span class="aviso-busca">Procurando no espelho (o que está sem resposta). Para respondidos e antigos, use “Procurar no Outlook”.</span>` : ""}
-    <span class="resultado">${total.toLocaleString("pt-BR")} ${cx.caixa === "enviados" ? (total === 1 ? "e-mail" : "e-mails") : (total === 1 ? "conversa" : "conversas")}</span>`;
+function statusBusca(busca) {
+  if (!busca) return "";
+  if (cx.buscando === busca) return `<span class="cx-aviso neutro">Procurando no Outlook dos PCs…</span>`;
+  const r = cx.live;
+  if (!r || r.termo !== busca) return "";
+  return Object.entries(r.pcs || {}).filter(([pc, s]) => s.ok || pcOnline(pc)).map(([pc, s]) => `<span class="cx-aviso ${s.ok ? "neutro" : ""}">${esc(r.agentes?.[pc] || pc)}:
+    ${s.ok ? `${s.achados}${s.completo ? "" : "+"} achado(s)` : esc(s.erro)}</span>`).join("");
+}
+
+function desenharFiltroHotel(lista) {
+  const hoteis = [...new Set(lista.map(e => e.hotel).filter(Boolean).concat(cx.hotel ? [cx.hotel] : []))].sort((a, b) => a.localeCompare(b, "pt"));
+  $("cx-filtros").innerHTML = `<label class="cx-campo">Hotel <select id="cx-hotel"><option value="">Todos</option>${hoteis.map(h =>
+    `<option ${h === cx.hotel ? "selected" : ""}>${esc(h)}</option>`).join("")}</select></label>`;
   $("cx-hotel").onchange = e => { cx.hotel = e.target.value; desenharCorreio(); };
 }
 
-function linhaConversa(c) {
-  const u = c.ultimo, cinza = !!cx.resolvendo[c.de], sel = cx.sel === c.de;
-  const off = c.pcs.filter(pc => !pcOnline(pc));
-  const nf = c.notas?.length ? `<span class="cx-chip c-ok" title="${esc(c.notas.map(n => n.nome).join(" · "))}">NF ${esc(c.notas.map(n => n.nf).join(", "))} emitida</span>` : "";
-  return `<div class="cx-linha ${c.nao_lidos && !cinza ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "resolvendo" : ""}" role="option"
-      tabindex="0" aria-selected="${sel}" data-cx="${esc(c.de)}">
-    <span class="cx-av" aria-hidden="true">${esc(iniciais(c.nome))}</span>
-    <span class="cx-meio">
-      <span class="cx-l1"><b>${esc(c.nome)}</b>${c.total > 1 ? `<span class="cx-qtd" title="${c.total} e-mails sem resposta">${c.total}</span>` : ""}
-        ${cinza ? `<span class="cx-chip c-cinza">respondido · saindo da caixa</span>` : ""}</span>
-      <span class="cx-l2">${esc(u.assunto || "(sem assunto)")}</span>
-      <span class="cx-l3">${esc(u.previa || "")}</span>
-      <span class="cx-chips">${c.classes.filter(k => k !== "pedido_nf").map(chipClasse).join("")}${nf}${c.quartos >= 2 ? `<span class="cx-chip c-info">dividida · ${c.quartos} quartos</span>` : ""}
-        ${c.falta_nota ? `<span class="cx-chip c-erro">diz que falta nota</span>` : ""}</span>
-    </span>
-    <span class="cx-dir">
-      <span class="cx-hora" title="${esc(quando(u.quando))}">${horaCurta(u.quando)}</span>
-      <span class="cx-hotel">${esc(c.hoteis.join(" / "))}</span>
-      ${c.urgente ? `<span class="cx-espera">${diasDesde(c.desde) > 7 ? diasDesde(c.desde) + " dias" : "correção"}</span>` : ""}
-      ${off.length ? `<span class="cx-off" title="O PC dono desta caixa está desligado: a resposta sai quando ele ligar">PC desligado</span>` : ""}
-      ${c.nao_lidos && !cinza ? `<span class="so-leitor">não lido</span>` : ""}
-    </span></div>`;
+function linhaEmail(e) {
+  const enviado = e.pasta === "enviado", excluido = e.pasta === "excluido";
+  const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
+  const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de);
+  const marcas = (e.classes || []).filter(k => k !== "pedido_nf").map(etiqueta).join("") +
+    (e.notas?.length ? `<span class="et et-ok">NF ${esc(e.notas.map(n => n.nf).join(", "))} emitida</span>` : "") +
+    (e.quartos >= 2 ? `<span class="et et-info">${e.quartos} quartos</span>` : "") +
+    (excluido ? `<span class="et">Excluído</span>` : "") + (cinza ? `<span class="et">Respondido</span>` : "") +
+    (e.pasta === "entrada" && e.pc && !pcOnline(e.pc) ? `<span class="et et-atencao" title="PC dono desligado: o que for pedido sai quando ele ligar">PC desligado</span>` : "");
+  return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
+      aria-selected="${sel}" data-id="${esc(e.id)}">
+    <div class="cx-l1"><span class="cx-quem">${esc(quem)}</span>${e.total_conversa > 1 && !enviado ? `<span class="cx-n" title="e-mails sem resposta deste hóspede">${e.total_conversa}</span>` : ""}
+      <span class="cx-hora">${horaCurta(e.quando)}</span></div>
+    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}</div>
+    <div class="cx-l3"><span class="cx-hotel">${esc(e.hotel || "")}</span>${esc(e.previa || "")}</div>
+    ${marcas ? `<div class="cx-l4">${marcas}</div>` : ""}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
 
-function linhaEnviado(e) {
-  const sel = cx.enviadoSel === e.id;
-  return `<div class="cx-linha ${sel ? "sel" : ""}" role="option" tabindex="0" aria-selected="${sel}" data-cx-env="${esc(e.id)}">
-    <span class="cx-av env" aria-hidden="true">↗</span>
-    <span class="cx-meio"><span class="cx-l1"><b>Para: ${esc(e.para)}</b></span>
-      <span class="cx-l2">${esc(e.assunto || "(sem assunto)")}</span><span class="cx-l3">${esc(e.previa || "")}</span>
-      <span class="cx-chips">${e.anexos.length ? `<span class="cx-chip c-cinza">📎 ${esc(e.anexos.join(", "))}</span>` : ""}</span></span>
-    <span class="cx-dir"><span class="cx-hora">${horaCurta(e.quando)}</span><span class="cx-hotel">${esc(e.hotel)}</span>
-      <span class="cx-hotel">${esc(nomeAgente(e.pc))}</span></span></div>`;
-}
-
-// ---------- busca ao vivo nos Outlooks dos 4 PCs ----------
-function blocoBuscaAoVivo(busca) {
-  if (busca.length < 3) return "";
-  if (cx.buscando === busca) return `<div class="cx-live"><div class="anel" style="width:20px;height:20px;border-width:2px"></div>
-    Procurando “${esc(busca)}” no Outlook dos PCs ligados (Entrada, Enviados e Excluídos)…</div>`;
-  const r = cx.live;
-  if (!r || r.termo !== busca) return `<div class="cx-live"><button class="prim" id="cx-buscar-outlook">
-    <svg class="ic"><use href="#i-busca"/></svg>Procurar “${esc(busca)}” no Outlook dos 4 PCs</button>
-    <span class="dica">Inclui e-mails já respondidos, enviados e excluídos, de qualquer data. Atalho: Enter.</span></div>`;
-  const pcs = Object.entries(r.pcs || {}).map(([pc, s]) => `<span class="cx-pc ${s.ok ? "" : "ruim"}">${esc(r.agentes?.[pc] || pc)}:
-    ${s.ok ? `${s.achados}${s.completo ? "" : "+"}` : esc(s.erro)}</span>`).join("");
-  return `<div class="cx-live-cab"><span class="rot">No Outlook dos PCs · ${r.resultados.length} achados</span>${pcs}</div>` +
-    (r.resultados.length ? r.resultados.map(x => `<div class="cx-linha cx-achado ${cx.sel === "live:" + x.id ? "sel" : ""}" role="option" tabindex="0"
-        data-cx-live="${esc(x.id)}">
-      <span class="cx-av ${x.pasta === "enviado" ? "env" : ""}" aria-hidden="true">${x.pasta === "enviado" ? "↗" : esc(iniciais(x.nome || x.de))}</span>
-      <span class="cx-meio"><span class="cx-l1"><b>${esc(x.pasta === "enviado" ? "Para: " + x.para : (x.nome || x.de))}</b>
-          <span class="cx-chip c-cinza">${PASTAS[x.pasta] || x.pasta}</span></span>
-        <span class="cx-l2">${esc(x.assunto || "(sem assunto)")}</span><span class="cx-l3">${esc(x.previa || "")}</span></span>
-      <span class="cx-dir"><span class="cx-hora">${dataBr(x.quando.slice(0, 10))}</span><span class="cx-hotel">${esc(x.hotel)}</span>
-        <span class="cx-hotel">${esc(r.agentes?.[x.pc] || x.pc)}</span></span></div>`).join("")
-      : `<div class="vazio">Nenhum e-mail com “${esc(busca)}” no Outlook dos PCs que responderam.</div>`);
-}
-async function buscarNoOutlook() {
+// ---------- busca: direto no Outlook dos 4 PCs ----------
+function agendarBusca() {
+  clearTimeout(cx.timerBusca);
   const busca = $("busca").value.trim();
-  if (busca.length < 3) return toast("Digite pelo menos 3 letras", true);
+  cx.sel = null;   // pesquisa nova: fecha o e-mail que estava aberto
+  if (busca.length < 3) { cx.live = null; cx.buscando = ""; return desenharCorreio(); }
+  cx.timerBusca = setTimeout(() => buscarNoOutlook(busca), 650);
+  desenharCorreio();
+}
+async function buscarNoOutlook(busca) {
   cx.buscando = busca; desenharCorreio();
   const r = await api("/api/correio/buscar?q=" + encodeURIComponent(busca));
+  if ($("busca").value.trim() !== busca) return;   // já digitaram outra coisa
   cx.buscando = "";
   if (r.erro) { toast(r.erro, true); cx.live = null; } else cx.live = r;
-  if ($("busca").value.trim() === busca) desenharCorreio();
+  desenharCorreio();
   $("anuncio").textContent = r.resultados ? `${r.resultados.length} e-mails achados no Outlook` : "";
 }
 
-// ---------- leitura (conversa do hóspede) ----------
-async function abrirConversa(de) {
-  cx.sel = de; cx.enviadoSel = null; cx.conv = null; cx.abertoEm = Date.now();
-  desenharCorreio();
-  const r = await api("/api/correio/conversa?de=" + encodeURIComponent(de));
-  if (cx.sel !== de) return;
-  cx.conv = r.erro ? { erro: r.erro } : r;
-  desenharLeituraCorreio();
-  const c = (cx.dados?.conversas || []).find(x => x.de === de);
-  if (c && c.nao_lidos && !cx.manterNaoLido[de]) {   // abriu = lido (pra equipe toda)
-    const ids = (cx.conv.linha_do_tempo || []).filter(x => x.tipo === "recebido" && !x.lido).map(x => x.id);
-    if (ids.length) {
-      api("/api/correio/evento", { ids, acao: "LIDO" });
-      c.nao_lidos = 0; cx.dados.contagem.entrada_nao_lidos = Math.max(0, (cx.dados.contagem.entrada_nao_lidos || 0) - (c.urgente ? 0 : ids.length));
-      desenharLateralCorreio(); desenharCorreio();
-    }
-  }
-  delete cx.manterNaoLido[de];
-  (cx.conv.linha_do_tempo || []).filter(x => x.tipo !== "formulario").forEach(x => carregarTexto(x.id, x.pc));
+// ---------- leitura: o e-mail aberto, como no Outlook ----------
+function itemSelecionado() {
+  const todos = [...(cx.dados?.emails || []), ...(cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })),
+                 ...(cx.live?.resultados || [])];
+  return todos.find(e => e.id === cx.sel);
 }
-async function carregarTexto(id, pc, entry) {
-  const chave = id || entry;
+function abrirEmail(id) {
+  cx.sel = id;
+  const e = itemSelecionado();
+  desenharCorreio();
+  if (!e) return;
+  carregarTexto(e);
+  if (e.pasta !== "enviado" && e.de) carregarHistorico(e.de);
+  if (e.lido === false && !cx.manterNaoLido[e.id]) {   // abriu = lido (pra equipe toda)
+    api("/api/correio/evento", { ids: [e.id], acao: "LIDO" });
+    e.lido = true;
+    if (!e.urgente && cx.dados?.contagem) cx.dados.contagem.entrada_nao_lidos = Math.max(0, cx.dados.contagem.entrada_nao_lidos - 1);
+    desenharLateralCorreio(); desenharCorreio();
+  }
+  delete cx.manterNaoLido[e.id];
+}
+async function carregarTexto(e) {
+  const chave = e.id;
   if (cx.textos[chave]) return;
   cx.textos[chave] = { carregando: true };
-  const q = new URLSearchParams({ id: id || "", pc: pc || "", entry: entry || "" });
+  const espelho = (cx.dados?.emails || []).some(x => x.id === e.id) || (cx.dados?.enviados || []).some(x => x.id === e.id);
+  const q = new URLSearchParams({ id: espelho ? e.id : "", pc: e.pc || "", entry: e.entry || "" });
   const r = await api("/api/correio/texto?" + q);
   cx.textos[chave] = r.erro ? { erro: r.erro } : r;
   desenharLeituraCorreio();
 }
-
-function blocoTexto(chave) {
-  const t = cx.textos[chave];
-  if (!t || t.carregando) return `<div class="dica">Buscando o texto no Outlook do PC dono…</div>`;
-  if (t.erro) return `<div class="dica erro-txt">${esc(t.erro)}</div>`;
-  return `<div class="texto-email">${esc(t.texto || "(sem texto)")}</div>` + (t.citado ? `<details class="cx-citado"><summary>Mensagens anteriores coladas embaixo</summary>
-    <div class="texto-email">${esc(t.citado)}</div></details>` : "") + (t.origem && t.origem !== "ao vivo" && t.origem !== "este PC"
-    ? `<div class="dica">${esc(t.origem)}</div>` : "");
+async function carregarHistorico(de) {   // tudo do hóspede no Outlook dos PCs (qualquer pasta e data) + formulários
+  if (cx.hist[de]) return;
+  cx.hist[de] = { carregando: true };
+  const [r, conv] = await Promise.all([api("/api/correio/buscar?q=" + encodeURIComponent(de)),
+                                       api("/api/correio/conversa?de=" + encodeURIComponent(de))]);
+  cx.hist[de] = { resultados: (r.resultados || []).filter(x => x.de === de || (x.para || "").includes(de)), pcs: r.pcs || {},
+                  agentes: r.agentes || {}, conv: conv.erro ? null : conv };
+  desenharLeituraCorreio();
 }
-const anexosHtml = an => an?.length ? `<div class="anexos">${an.map(a => `<div class="anexo"><span class="ext">${esc(String(a).split(".").pop().toUpperCase().slice(0, 4))}</span><span>${esc(a)}</span></div>`).join("")}</div>` : "";
+
+function corpoTexto(chave) {
+  const t = cx.textos[chave];
+  if (!t || t.carregando) return `<p class="dica">Abrindo o e-mail no Outlook do PC dono…</p>`;
+  if (t.erro) return `<p class="dica erro-txt">${esc(t.erro)}</p>`;
+  return `<div class="cx-texto">${esc(t.texto || "(sem texto)")}</div>` + (t.citado ? `<details class="cx-citado"><summary>Mostrar mensagens anteriores</summary>
+    <div class="cx-texto">${esc(t.citado)}</div></details>` : "") +
+    (t.origem && !["ao vivo", "este PC"].includes(t.origem) ? `<p class="dica">${esc(t.origem)}</p>` : "");
+}
+const anexosHtml = an => an?.length ? `<div class="cx-anexos">${an.map(a => `<span class="cx-anexo"><b>${esc(String(a).split(".").pop().toUpperCase().slice(0, 4))}</b>${esc(a)}</span>`).join("")}</div>` : "";
 
 function desenharLeituraCorreio() {
   const el = $("cx-leitura");
-  const aberto = !!(cx.sel || cx.enviadoSel);
-  $("cx-mesa").classList.toggle("com-leitura", aberto);
-  el.classList.toggle("oculta", !aberto);
-  if (!aberto) { el.innerHTML = ""; return; }
-  if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-  if (cx.enviadoSel) return leituraEnviado(el);
-  if (String(cx.sel).startsWith("live:")) return leituraAchado(el);
-  const c = (cx.dados?.conversas || []).find(x => x.de === cx.sel);
-  const conv = cx.conv;
-  if (!conv) { el.innerHTML = `<div class="vazio">Abrindo a conversa…</div>`; return; }
-  if (conv.erro) { el.innerHTML = `<div class="vazio">${esc(conv.erro)}</div>`; return; }
-  const recebidos = conv.linha_do_tempo.filter(x => x.tipo === "recebido");
-  const ultimo = recebidos[0];
-  const lido = recebidos.find(x => x.lido_por);
-  const cinza = !!cx.resolvendo[cx.sel];
+  const e = cx.sel && itemSelecionado();
+  $("cx-mesa").classList.toggle("com-leitura", !!e);
+  el.classList.toggle("oculta", !e);
+  if (!e) { el.innerHTML = ""; return; }
+  if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA|SUMMARY/.test(document.activeElement.tagName)) return;
+  const noEspelho = (cx.dados?.emails || []).some(x => x.id === e.id);
+  const cinza = !!cx.resolvendo[e.id];
+  const enviado = e.pasta === "enviado";
+  const acoes = noEspelho && !cinza ? `
+      <button class="prim" data-cx-resp-nf="${esc(e.id)}">Responder com NF</button>
+      <button data-cx-resp="${esc(e.id)}">Responder</button>
+      <button data-cx-enc="${esc(e.id)}">Encaminhar</button>
+      <button data-cx-excluir="${esc(e.id)}">Excluir</button>
+      <button data-cx-naolido="${esc(e.id)}">Marcar como não lido</button>`
+    : cinza ? `<span class="dica">Respondido. Sai da caixa quando o Outlook do PC dono confirmar.</span>`
+    : `<span class="dica">${enviado ? "E-mail enviado" : PASTAS[e.pasta] || ""} · somente leitura</span>`;
+  const h = !enviado && e.de ? cx.hist[e.de] : null;
   el.innerHTML = `
-    <div class="acoes">
-      ${ultimo && !cinza ? `<button class="prim" data-cx-resp-nf="${esc(ultimo.id)}"><svg class="ic"><use href="#i-enviar"/></svg>Responder com a NF</button>
-      <button data-cx-resp="${esc(ultimo.id)}"><svg class="ic"><use href="#i-resp"/></svg>Responder</button>
-      <button data-cx-enc="${esc(ultimo.id)}">Encaminhar</button>
-      <button data-cx-naolido="${esc(ultimo.id)}">Marcar como não lido</button>` : cinza ? `<span class="dica">Respondido: o e-mail sai da caixa quando o Outlook do PC dono confirmar.</span>` : ""}
-      <button class="fechar" id="cx-fechar" aria-label="Fechar leitura">×</button></div>
-    <header class="cab-msg"><h2>${esc(conv.nome)}</h2>
-      <div class="remet"><div class="avatar">${esc(iniciais(conv.nome))}</div><b>${esc(conv.de)}</b>
-        <span class="quando">${c ? c.total + (c.total === 1 ? " e-mail sem resposta" : " e-mails sem resposta") : ""}</span>
-        <span class="de">${esc((c?.hoteis || []).join(" / "))}${c ? " · caixa no PC de " + esc(c.agentes.join(", ")) : ""}</span></div>
-      <div class="etiquetas">${(c?.classes || []).map(chipClasse).join("")}
-        ${lido ? `<span class="etq">lido por ${esc(lido.lido_por)} às ${esc(String(lido.lido_em).slice(11, 16))}</span>` : ""}
-        ${c && c.pcs.some(pc => !pcOnline(pc)) ? `<span class="etq ruim">PC dono desligado: o que for pedido sai quando ele ligar</span>` : ""}</div></header>
-    <div class="corpo-msg">
-      ${conv.nfs_enviadas.length ? `<section class="ficha cx-ja"><div class="ficha-tit"><span class="rot" style="color:var(--ok)">NF já enviada para este e-mail</span></div>
-        <div class="ficha-corpo">${conv.nfs_enviadas.map(v => `<div>✓ NF ${esc(v.nfs.join(", "))} enviada para ${esc(v.para)} em ${esc(v.quando)} · ${esc(v.hotel)}</div>`).join("")}
-        <div class="dica">Conferido pelo robô no Outlook (e no PDF da nota). Confira se o hóspede está pedindo outra nota antes de reenviar.</div></div></section>` : ""}
-      <div class="cx-tempo">${conv.linha_do_tempo.map(cartaoTempo).join("")}</div>
+    <div class="cx-barra">${acoes}<button class="cx-x" id="cx-fechar" aria-label="Fechar e-mail" title="Fechar (Esc)">✕</button></div>
+    <div class="cx-msg">
+      <h2>${esc(e.assunto || "(sem assunto)")}</h2>
+      <table class="cx-cab"><tbody>
+        <tr><th>De</th><td>${enviado ? esc(e.caixa) : `<b>${esc(e.nome || e.de)}</b> &lt;${esc(e.de)}&gt;`}</td></tr>
+        <tr><th>Para</th><td>${esc(enviado ? e.para : e.caixa || e.para)}</td></tr>
+        <tr><th>Data</th><td>${esc(dataLonga(e.quando))}</td></tr>
+        <tr><th>Hotel</th><td>${esc(e.hotel || "")}${e.pc ? ` · caixa no PC de ${esc(nomeAgente(e.pc))}${e.pc && !pcOnline(e.pc) ? " (desligado: o que for pedido sai quando ele ligar)" : ""}` : ""}</td></tr>
+        ${(e.classes || []).length ? `<tr><th>Assunto</th><td>${e.classes.map(etiqueta).join("")}</td></tr>` : ""}
+        ${e.lido_por ? `<tr><th>Lido</th><td>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</td></tr>` : ""}
+      </tbody></table>
+      ${avisoNfJaEnviada(h)}
+      ${corpoTexto(e.id)}${anexosHtml(e.anexos)}
+      ${h ? historicoHtml(h, e) : ""}
     </div>`;
 }
 
-function cartaoTempo(x) {
-  if (x.tipo === "formulario") return `<article class="cx-cartao form"><div class="cx-cartao-cab"><span class="cx-tipo">Formulário</span>
-      <b>${esc(x.hotel)}</b><span class="dica">${dataBr(x.quando)}</span>
-      <span class="pilula p-${x.situacao}">${NOMES[x.situacao] || x.situacao}${x.nfs.length ? " · NF " + esc(x.nfs.join(", ")) : ""}</span>
-      <button class="link" data-ver-pedido="${esc(x.chave)}">ver o pedido</button></div></article>`;
-  const env = x.tipo === "enviado";
-  return `<article class="cx-cartao ${env ? "env" : ""}"><div class="cx-cartao-cab"><span class="cx-tipo">${env ? "Enviado" : "Recebido"}</span>
-      <b>${esc(x.assunto || "(sem assunto)")}</b><span class="dica" title="${esc(quando(x.quando))}">${esc(quando(x.quando))}</span>
-      ${env ? `<span class="dica">para ${esc(x.para)} · pela caixa ${esc(x.caixa)}</span>` : `<span class="dica">para ${esc(x.caixa)}</span>`}
-      ${!env ? `<span class="cx-mini"><button data-cx-resp="${esc(x.id)}">Responder</button><button data-cx-enc="${esc(x.id)}">Encaminhar</button>
-        <button class="perigo" data-cx-excluir="${esc(x.id)}">Excluir</button></span>` : ""}</div>
-    ${blocoTexto(x.id)}${anexosHtml(x.anexos)}</article>`;
+function avisoNfJaEnviada(h) {
+  const nfs = h?.conv?.nfs_enviadas || [];
+  if (!nfs.length) return "";
+  return `<div class="cx-aviso-nf"><b>NF já enviada para este e-mail</b>${nfs.map(v => `<div>NF ${esc(v.nfs.join(", "))} · enviada para ${esc(v.para)} em ${esc(v.quando)} · ${esc(v.hotel)}</div>`).join("")}
+    <div class="dica">Conferido pelo robô no Outlook e no PDF da nota. Veja se o hóspede pede outra nota antes de reenviar.</div></div>`;
 }
 
-function leituraEnviado(el) {
-  const e = (cx.dados?.enviados || []).find(x => x.id === cx.enviadoSel);
-  if (!e) { cx.enviadoSel = null; el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="acoes"><span class="dica">Enviado pela caixa ${esc(e.caixa)} (PC de ${esc(nomeAgente(e.pc))})</span>
-      <button class="fechar" id="cx-fechar" aria-label="Fechar leitura">×</button></div>
-    <header class="cab-msg"><h2>${esc(e.assunto || "(sem assunto)")}</h2>
-      <div class="remet"><div class="avatar">↗</div><b>Para: ${esc(e.para)}</b><span class="quando">${esc(quando(e.quando))}</span>
-        <span class="de">${esc(e.hotel)}</span></div></header>
-    <div class="corpo-msg">${blocoTexto(e.id)}${anexosHtml(e.anexos)}</div>`;
-  carregarTexto(e.id, e.pc);
+function historicoHtml(h, atual) {
+  if (h.carregando) return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook</div><p class="dica">Procurando no Outlook dos PCs…</p></section>`;
+  const forms = (h.conv?.linha_do_tempo || []).filter(x => x.tipo === "formulario");
+  const itens = h.resultados.filter(x => x.id !== atual.id);
+  const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok).map(([pc]) => h.agentes[pc] || pc);
+  const linhas = [...itens.map(x => ({ q: x.quando, html: linhaHist(x) })),
+    ...forms.map(f => ({ q: f.quando, html: `<div class="cx-h form"><span class="cx-h-tipo">Formulário</span><span class="cx-h-data">${dataBr(f.quando)}</span>
+      <span class="cx-h-ass">${esc(f.hotel)} · ${NOMES[f.situacao] || f.situacao}${f.nfs.length ? " · NF " + esc(f.nfs.join(", ")) : ""}</span>
+      <button class="link" data-ver-pedido="${esc(f.chave)}">abrir pedido</button></div>` }))]
+    .sort((a, b) => String(b.q).localeCompare(String(a.q)));
+  return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook <span>${linhas.length}</span></div>
+    ${linhas.map(l => l.html).join("") || `<p class="dica">Nenhum outro e-mail deste endereço no Outlook dos PCs ligados.</p>`}
+    ${sem.length ? `<p class="dica">Sem resposta de: ${esc(sem.join(", "))} (desligado).</p>` : ""}</section>`;
 }
-function leituraAchado(el) {
-  const id = String(cx.sel).slice(5), x = (cx.live?.resultados || []).find(r => r.id === id);
-  if (!x) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="acoes"><span class="dica">${PASTAS[x.pasta] || x.pasta} · Outlook do PC de ${esc(cx.live.agentes?.[x.pc] || x.pc)} · só leitura</span>
-      <button class="fechar" id="cx-fechar" aria-label="Fechar leitura">×</button></div>
-    <header class="cab-msg"><h2>${esc(x.assunto || "(sem assunto)")}</h2>
-      <div class="remet"><div class="avatar">${esc(iniciais(x.nome || x.de))}</div><b>${esc(x.nome || x.de)}</b>
-        <span class="quando">${esc(quando(x.quando))}</span><span class="de">${esc(x.de)} → ${esc(x.para)} · ${esc(x.hotel)}</span></div></header>
-    <div class="corpo-msg">${blocoTexto(x.entry)}${anexosHtml(x.anexos)}</div>`;
-  carregarTexto("", x.pc, x.entry);
+function linhaHist(x) {
+  const aberto = cx.hist.aberto === x.id;
+  return `<div class="cx-h ${aberto ? "aberto" : ""}" data-cx-hist="${esc(x.id)}" tabindex="0" role="button" aria-expanded="${aberto}">
+      <span class="cx-h-tipo t-${x.pasta}">${x.pasta === "enviado" ? "↗ Enviado" : x.pasta === "excluido" ? "✕ Excluído" : "↙ Recebido"}</span>
+      <span class="cx-h-data">${esc(quando(x.quando))}</span><span class="cx-h-ass">${esc(x.assunto || "(sem assunto)")}</span>
+      <span class="cx-h-pc">${esc(nomeAgente(x.pc))}</span></div>
+    ${aberto ? `<div class="cx-h-corpo">${corpoTexto(x.id)}${anexosHtml(x.anexos)}</div>` : ""}`;
 }
 
-// ---------- ações ----------
+// ---------- ações (rodam no Outlook do PC dono, sem abrir janela) ----------
 function encaminhar(id) {
   if (document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
-  fundo.innerHTML = `<div class="modal"><div class="modal-topo"><div><h3>Encaminhar e-mail</h3>
-      <div class="sub">Sai pela caixa do hotel, no Outlook do PC dono, com o e-mail original embaixo.</div></div>
-      <button class="fechar" id="enc-fechar" aria-label="Fechar" style="margin-left:auto">×</button></div>
-    <div class="ficha-corpo" style="padding:18px 22px">
+  fundo.innerHTML = `<div class="modal" style="width:min(560px,94vw)"><div class="modal-topo"><div><h3>Encaminhar e-mail</h3>
+      <div class="sub">Sai pela caixa do hotel, pelo Outlook do PC dono, com o e-mail original anexado embaixo.</div></div>
+      <button class="fechar" id="enc-fechar" aria-label="Fechar" style="margin-left:auto">✕</button></div>
+    <div class="ficha-corpo" style="padding:16px 22px">
       <label class="rot" for="enc-para">Para</label><input id="enc-para" placeholder="recepcao@hotel.com.br; outro@..." autocomplete="off">
       <label class="rot" for="enc-msg" style="margin-top:8px">Mensagem (opcional)</label><textarea id="enc-msg" rows="4"></textarea></div>
     <div class="modal-rodape"><span class="res" id="enc-res"></span><button class="prim" id="enc-ir">Encaminhar</button></div></div>`;
@@ -298,49 +289,42 @@ function encaminhar(id) {
     const r = await api("/api/correio/encaminhar", { id, para, corpo: $("enc-msg").value });
     if (!r.ok) { $("enc-ir").disabled = false; $("enc-res").textContent = r.motivo || "Não deu certo"; return; }
     fundo.remove();
-    toast(r.aviso ? "Encaminhamento na fila: " + r.aviso : `Encaminhamento entregue ao PC ${r.destino}`);
+    toast(r.aviso ? "Na fila: " + r.aviso : `Encaminhado pelo Outlook do PC ${r.destino}`);
   };
 }
 
 function excluir(id) {
-  const conv = cx.conv, item = conv?.linha_do_tempo.find(x => x.id === id);
-  if (!item || document.querySelector(".modal-fundo")) return;
-  const c = (cx.dados?.conversas || []).find(x => x.de === conv.de);
-  const dono = nomeAgente(item.pc);
+  const e = (cx.dados?.emails || []).find(x => x.id === id);
+  if (!e || document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
   fundo.innerHTML = `<div class="modal" style="width:min(520px,94vw)"><div class="modal-topo"><div><h3>Excluir este e-mail?</h3>
-      <div class="sub">“${esc(item.assunto || "(sem assunto)")}” de ${esc(conv.nome)}</div></div></div>
-    <div class="ficha-corpo" style="padding:16px 22px">Ele vai para os <b>Itens Excluídos do Outlook de ${esc(dono)}</b> (dá pra recuperar de lá)
-      e some do Painel para toda a equipe. Fica registrado que foi você.</div>
-    <div class="modal-rodape"><button id="exc-nao" class="fechar-txt">Cancelar</button><button class="perigo" id="exc-sim">Excluir</button></div></div>`;
+      <div class="sub">“${esc(e.assunto || "(sem assunto)")}” · ${esc(e.nome || e.de)}</div></div></div>
+    <div class="ficha-corpo" style="padding:16px 22px">Vai para os <b>Itens Excluídos do Outlook de ${esc(nomeAgente(e.pc))}</b> (dá pra
+      recuperar de lá) e sai do Painel de toda a equipe. Fica registrado que foi você.</div>
+    <div class="modal-rodape"><button id="exc-nao">Cancelar</button><button class="perigo" id="exc-sim">Excluir</button></div></div>`;
   document.body.appendChild(fundo);
   $("exc-nao").onclick = () => fundo.remove();
   $("exc-sim").onclick = () => {
     fundo.remove();
-    // 10 s pra desfazer: só depois disso o pedido sai daqui
-    const ultimoDaConversa = c && c.total === 1;
-    if (ultimoDaConversa) { cx.escondidos[conv.de] = true; cx.sel = null; }
-    else if (cx.conv) cx.conv.linha_do_tempo = cx.conv.linha_do_tempo.filter(x => x.id !== id);
+    cx.escondidos[id] = true; if (cx.sel === id) cx.sel = null;
     desenharCorreio();
-    mostrarDesfazer(`E-mail excluído`, () => {
-      delete cx.escondidos[conv.de];
-      if (!ultimoDaConversa && cx.sel === conv.de) abrirConversa(conv.de); else desenharCorreio();
-    }, async () => {
+    mostrarDesfazer("E-mail excluído", () => { delete cx.escondidos[id]; desenharCorreio(); }, async () => {
       const r = await api("/api/correio/excluir", { id });
-      if (!r.ok) { delete cx.escondidos[conv.de]; toast(r.motivo || "Não deu pra excluir", true); }
+      if (!r.ok) { delete cx.escondidos[id]; toast(r.motivo || "Não deu pra excluir", true); }
       else if (r.aviso) toast(r.aviso);
       carregarCorreio();
     });
   };
 }
 
-function mostrarDesfazer(msg, desfazer, confirmar) {
-  if (cx.desfazer) { clearTimeout(cx.desfazer.timer); cx.desfazer.confirmar(); }
+function mostrarDesfazer(msg, desfazer, confirmar) {   // 10 s pra desfazer: só depois disso o pedido sai daqui
+  if (cx.desfazer) { clearTimeout(cx.desfazer.timer); clearInterval(cx.desfazer.tique); cx.desfazer.confirmar(); }
   const bar = $("cx-desfazer");
   let s = 10;
   const pintar = () => { bar.innerHTML = `<span>${esc(msg)} · ${s}s</span><button id="cx-desfazer-btn">Desfazer</button>`;
-    $("cx-desfazer-btn").onclick = () => { clearInterval(cx.desfazer.tique); clearTimeout(cx.desfazer.timer); cx.desfazer = null; bar.classList.add("oculta"); desfazer(); toast("Exclusão desfeita"); }; };
+    $("cx-desfazer-btn").onclick = () => { clearInterval(cx.desfazer.tique); clearTimeout(cx.desfazer.timer); cx.desfazer = null;
+      bar.classList.add("oculta"); desfazer(); toast("Exclusão desfeita"); }; };
   bar.classList.remove("oculta"); pintar();
   const tique = setInterval(() => { s--; if (s > 0) pintar(); }, 1000);
   const timer = setTimeout(() => { clearInterval(tique); bar.classList.add("oculta"); cx.desfazer = null; confirmar(); }, 10000);
@@ -349,48 +333,51 @@ function mostrarDesfazer(msg, desfazer, confirmar) {
 
 // a resposta saiu (envio pelo Painel): a linha fica cinza até o espelho do PC dono confirmar e ela sumir
 function correioRespondido(idEmail) {
-  const c = (cx.dados?.conversas || []).find(x => x.ids.includes(idEmail));
-  if (c) { cx.resolvendo[c.de] = Date.now(); if (pn.vista === "correio") desenharCorreio(); }
+  const e = (cx.dados?.emails || []).find(x => x.id === idEmail);
+  (cx.dados?.emails || []).filter(x => e && x.de === e.de).forEach(x => cx.resolvendo[x.id] = Date.now());
+  if (pn.vista === "correio") desenharCorreio();
 }
 
 function abrirCaixa(caixa) {
-  cx.caixa = caixa; cx.sel = null; cx.enviadoSel = null; cx.hotel = "";
+  cx.caixa = caixa; cx.sel = null; cx.hotel = "";
   try { localStorage.setItem("painel.caixaEmail", caixa); } catch (e) {}
 }
 try { const c = localStorage.getItem("painel.caixaEmail"); if (CAIXAS[c]) cx.caixa = c; } catch (e) {}
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-cx],[data-cx-env],[data-cx-live],[data-cx-resp],[data-cx-resp-nf],[data-cx-enc],[data-cx-excluir],[data-cx-naolido],#cx-fechar,#cx-buscar-outlook,[data-caixa]");
+  const t = e.target.closest(".cx-l,[data-cx-hist],[data-cx-resp],[data-cx-resp-nf],[data-cx-enc],[data-cx-excluir],[data-cx-naolido],#cx-fechar,[data-caixa]");
   if (!t) return;
   const d = t.dataset;
   if (d.caixa) { abrirCaixa(d.caixa); return; }   // o trocarVista do data-vista desenha
-  if (d.cx) return abrirConversa(d.cx);
-  if (d.cxEnv) { cx.enviadoSel = d.cxEnv; cx.sel = null; return desenharCorreio(); }
-  if (d.cxLive) { cx.sel = "live:" + d.cxLive; cx.enviadoSel = null; return desenharCorreio(); }
-  if (t.id === "cx-fechar") { cx.sel = null; cx.enviadoSel = null; return desenharCorreio(); }
-  if (t.id === "cx-buscar-outlook") return buscarNoOutlook();
+  if (t.classList.contains("cx-l")) return abrirEmail(d.id);
+  if (d.cxHist) {
+    cx.hist.aberto = cx.hist.aberto === d.cxHist ? null : d.cxHist;
+    const x = Object.values(cx.hist).flatMap(h => h?.resultados || []).find(r => r.id === d.cxHist);
+    if (x && cx.hist.aberto) carregarTexto(x);
+    return desenharLeituraCorreio();
+  }
+  if (t.id === "cx-fechar") { cx.sel = null; return desenharCorreio(); }
   if (d.cxResp) return abrirEnvioNF(null, { id: d.cxResp, comNF: false });
   if (d.cxRespNf) return abrirEnvioNF(null, { id: d.cxRespNf, comNF: true });
   if (d.cxEnc) return encaminhar(d.cxEnc);
   if (d.cxExcluir) return excluir(d.cxExcluir);
   if (d.cxNaolido) {
-    const de = cx.sel;
+    const x = (cx.dados?.emails || []).find(m => m.id === d.cxNaolido);
     api("/api/correio/evento", { ids: [d.cxNaolido], acao: "NAO_LIDO" });
-    const c = (cx.dados?.conversas || []).find(x => x.de === de);
-    if (c) { c.nao_lidos = Math.max(1, c.nao_lidos); if (!c.urgente) cx.dados.contagem.entrada_nao_lidos++; }
-    cx.manterNaoLido[de] = true; cx.sel = null; desenharLateralCorreio(); desenharCorreio();
-    toast("Marcado como não lido pra equipe");
+    if (x && x.lido !== false) { x.lido = false; if (!x.urgente) cx.dados.contagem.entrada_nao_lidos++; }
+    cx.manterNaoLido[d.cxNaolido] = true; cx.sel = null; desenharLateralCorreio(); desenharCorreio();
+    toast("Marcado como não lido para a equipe");
   }
 });
 document.addEventListener("keydown", e => {
   if (pn.vista !== "correio") return;
-  if (e.target.id === "busca" && e.key === "Enter") { e.preventDefault(); buscarNoOutlook(); }
-  const l = e.target.closest?.(".cx-linha");
+  const l = e.target.closest?.(".cx-l,[data-cx-hist]");
   if (l && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); l.click(); }
-  if (l && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+  if (l?.classList.contains("cx-l") && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
     e.preventDefault();
-    const todas = [...document.querySelectorAll("#cx-lista .cx-linha")], i = todas.indexOf(l);
-    todas[Math.max(0, Math.min(todas.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))]?.focus();
+    const todas = [...document.querySelectorAll("#cx-lista .cx-l")], i = todas.indexOf(l);
+    const prox = todas[Math.max(0, Math.min(todas.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
+    prox?.focus(); if (prox) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
   }
-  if (e.key === "Escape" && !document.querySelector(".modal-fundo") && (cx.sel || cx.enviadoSel)) { cx.sel = null; cx.enviadoSel = null; desenharCorreio(); }
+  if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel) { cx.sel = null; desenharCorreio(); }
 });

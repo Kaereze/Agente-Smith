@@ -420,7 +420,14 @@ class Estado:
         espelhos = {}
         for e in self.emails:   # quando cada PC atualizou o espelho por último (PC desligado = espelho parado)
             espelhos[e["pc"]] = max(espelhos.get(e["pc"], ""), e["atualizado"])
-        return {"conversas": saida, "enviados": enviados, "contagem": correio.contagem(convs),
+        with self.lock:
+            entrada = list(getattr(self, "entrada_correio", []))
+        por_de = {c["de"]: c for c in saida}
+        emails = [{**e, "pc_online": bool(pcs.get(e["pc"], {}).get("online")), "agente": pcs.get(e["pc"], {}).get("agente", ""),
+                   "total_conversa": por_de.get(e["de"], {}).get("total", 1),
+                   "notas": self.notas_emails.get(e["id"], []),
+                   "solicitacao": por_de.get(e["de"], {}).get("solicitacao")} for e in entrada]
+        return {"conversas": saida, "emails": emails, "enviados": enviados, "contagem": correio.contagem(convs),
                 "pcs": [{"pc": p["pc"], "agente": p["agente"], "online": p["online"], "espelho": espelhos.get(p["pc"], ""),
                          "rede": bool(p.get("rede"))} for p in pcs.values()],
                 "este_pc": socket.gethostname()}
