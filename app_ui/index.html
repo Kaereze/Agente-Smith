@@ -717,6 +717,46 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .anima .kpi-b:nth-child(5){animation-delay:.2s}.anima .cartao{animation-delay:.18s}
 .kpi-b:hover,.kpi-hero:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(10,107,78,.12)}
 .kpi-b,.kpi-hero{transition:transform .15s,box-shadow .15s}
+/* Visão geral: faixa compacta de indicadores (%, tendência e linha dos dias) */
+.faixa-resumo{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--folha);border:1px solid var(--linha);border-radius:14px;
+  box-shadow:var(--sombra);margin-bottom:18px;overflow:hidden}
+.fr-item{display:grid;gap:4px;align-content:start;text-align:left;white-space:normal;border:0;border-radius:0;background:transparent;
+  padding:14px 16px 12px;position:relative;border-left:1px solid var(--linha);transition:background .15s}
+.fr-item:first-child{border-left:0}
+.fr-item::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--cor);transform:scaleX(.25);transform-origin:left;transition:transform .25s}
+.fr-item:hover{background:var(--folha-2)} .fr-item:hover::before{transform:scaleX(1)}
+.fr-rot{font:600 11.5px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.fr-num{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.fr-num .kpi-v{font:600 24px/1.1 var(--f-dado);color:var(--tinta)}
+.fr-pct{font:600 13px var(--f-dado);color:var(--tinta-2)}
+.tend{font:600 11.5px var(--f-dado);padding:2px 6px;border-radius:6px}
+.tend.bom{color:var(--ok);background:var(--ok-fundo)} .tend.ruim{color:var(--erro);background:var(--erro-fundo)} .tend.igual{color:var(--tinta-3);background:var(--folha-2)}
+.fr-linha{width:100%;height:28px;display:block}
+.fr-linha polyline{stroke-dasharray:100;stroke-dashoffset:0}
+.anima .fr-linha polyline{animation:desenhaLinha 1s ease-out both}
+@keyframes desenhaLinha{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.anima .fr-item{animation:subir .4s ease both}
+.anima .fr-item:nth-child(2){animation-delay:.05s}.anima .fr-item:nth-child(3){animation-delay:.1s}.anima .fr-item:nth-child(4){animation-delay:.15s}.anima .fr-item:nth-child(5){animation-delay:.2s}
+.fr-sub{font-size:12px;color:var(--tinta-3);line-height:1.35}
+.fr-sub b{color:var(--erro)}
+@media (max-width:1180px){.faixa-resumo{grid-template-columns:repeat(3,minmax(0,1fr))}.fr-item:nth-child(4){border-left:0}}
+/* Gerência (em teste): tudo o que a equipe está fazendo, ao vivo */
+.ln .n.em-teste{font:600 10px var(--f-titulo);letter-spacing:.06em;text-transform:uppercase;background:var(--atencao-fundo);color:var(--atencao);border-radius:999px;padding:2px 7px}
+.ger-aviso{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:12px;border:1px dashed var(--atencao);background:var(--atencao-fundo);color:var(--atencao);margin-bottom:16px;font-size:13px}
+.ger-aviso svg{width:20px;height:20px;flex:none}
+.ger-dia{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--folha);border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);margin-bottom:16px;overflow:hidden}
+.ger-dia > div{padding:14px 16px;border-left:1px solid var(--linha);display:grid;gap:4px}
+.ger-dia > div:first-child{border-left:0}
+.ger-dia b{font:600 26px/1.1 var(--f-dado)} .ger-dia small{font-size:12px;color:var(--tinta-3)}
+.ger-dia .taxa{background:var(--verde-suave)} .ger-dia .taxa b{color:var(--verde-forte)}
+.ger-barra{height:6px;border-radius:999px;background:var(--linha);overflow:hidden} .ger-barra i{display:block;height:100%;background:var(--verde);border-radius:999px;transition:width .6s}
+.ger-tab{width:100%;border-collapse:collapse;font-size:13px}
+.ger-tab th{text-align:left;font:600 11.5px var(--f-titulo);letter-spacing:.07em;text-transform:uppercase;color:var(--tinta-3);padding:10px 12px;border-bottom:1px solid var(--linha);background:var(--folha-2)}
+.ger-tab td{padding:10px 12px;border-bottom:1px solid var(--linha)} .ger-tab td.num{text-align:right;font-family:var(--f-dado)}
+.ger-tab th.num{text-align:right}
+.ger-breve{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ger-breve > div{border:1px dashed var(--linha-forte);border-radius:12px;padding:14px 16px;color:var(--tinta-3);display:grid;gap:4px}
+.ger-breve b{color:var(--tinta-2);font:600 14px var(--f-titulo)}
 /* Máquinas: o que cada PC está fazendo agora + o log dele */
 .maq-uso{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--folha-2)}
 .maq-uso.ativo{background:var(--verde-suave);color:var(--verde-forte);font-weight:500}
@@ -753,6 +793,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
   <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-enc" viewBox="0 0 24 24"><path d="M14 7l6 5-6 5M20 12H10a6 6 0 0 0-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-olho" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-cadeado" viewBox="0 0 24 24"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
   <symbol id="i-seta" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
@@ -765,6 +806,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
     <div class="principal" role="group" aria-labelledby="rot-geral"><span class="rot-nav" id="rot-geral">Geral</span>
       <button class="ln raiz" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
       <button class="ln raiz" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n" title="Pedidos sem NF emitida"></span></button>
+      <button class="ln raiz" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
       <button class="ln raiz" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
@@ -813,6 +855,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta" id="v-log"><div class="rolagem" id="log"></div></section>
     <section class="vista oculta" id="v-maquinas"><div class="rolagem" id="maquinas"></div></section>
+    <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta" id="v-correio" aria-label="E-mails">
       <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span></div>
       <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
@@ -940,7 +983,9 @@ function desenharPcsCabecalho(pcs) {
 
 async function carregar(){
   try {
-    const j = await api("/api/estado?dias=" + (periodo === "0" ? 0 : 45) + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
+    // dias: o dobro da janela da Visão geral (o resumo compara com o período anterior inteiro)
+    const dias = periodo === "0" ? 0 : Math.max(45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
+    const j = await api("/api/estado?dias=" + dias + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
@@ -966,6 +1011,7 @@ async function carregar(){
     montarTodos();
     carregarCorreio();
     if (pn.vista === "visao") desenharVisao();
+    if (pn.vista === "gerencia") desenharGerencia();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
@@ -1003,6 +1049,8 @@ function passaSit(it, f) {
   return s.situacao === f;
 }
 // Prazo de atendimento: quantos dias o pedido (ou o e-mail) espera
+// Pedidos dos últimos 45 dias (os contadores de sempre); st.fila pode trazer mais, pra comparar períodos
+const filaBase = () => { const d = new Date(); d.setDate(d.getDate() - 45); const c = d.toLocaleDateString("sv-SE"); return st.fila.filter(s => !s.data || s.data >= c); };
 const diasDesde = iso => Math.max(0, Math.round((new Date(hojeIsoF() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 864e5));
 const PRAZO = { ok: 2, med: 7 };   // até 2 dias verde, até 7 âmbar, acima vermelho
 function esperaHtml(it) {
@@ -1082,7 +1130,7 @@ const tagQuartos = m => m.quartos >= 2
 const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s.nota_unica)}">1 nota a pedido do hóspede</span>` : "";
 
 function desenharLateral() {
-  const abertos = st.fila.filter(s => s.situacao === "na_fila").length;   // só o que pede ação: pedidos sem NF emitida
+  const abertos = filaBase().filter(s => s.situacao === "na_fila").length;   // só o que pede ação: pedidos sem NF emitida
   $("nav-notas-n").textContent = abertos ? abertos.toLocaleString("pt-BR") : "";
 }
 

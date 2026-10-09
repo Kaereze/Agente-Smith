@@ -3,7 +3,8 @@
 let pn = { vista: "visao", janela: 30, rz: null, tabela: {} };   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
-const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas", correio: "E-mails" };
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas", correio: "E-mails",
+                  gerencia: "Gerência (em teste)" };
 function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
   pn.vista = v;
@@ -18,6 +19,7 @@ function trocarVista(v) {
   if (v === "correio") { desenharCorreio(); return; }
   desenhar();
   if (v === "visao") { pn.animar = true; desenharVisao(); }
+  if (v === "gerencia") desenharGerencia();
   clearTimeout(at.timer);
   if (v === "log" || v === "maquinas") carregarAtividade();
 }
@@ -158,6 +160,106 @@ function categoriaVisao(s) {
 }
 const diasAtras = iso => Math.round((new Date(hojeIso() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 86400000);
 
+// Faixa do topo (usuário, 08/10/2026): 5 indicadores compactos com %, a tendência contra o período anterior (mesmo
+// tamanho) e a linha dos pedidos de cada dia. Pra baixo é bom em tudo, menos nas NFs emitidas (pra cima é bom).
+function faixaResumo({ abertos, emailsSem, velhos, naoEmitida, envioPend, tratativas, comNf, pedidos, ini, hoje }) {
+  const n = v => (v ?? 0).toLocaleString("pt-BR");
+  const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+  const dias = [];
+  for (const d = new Date(ini); d <= hoje; d.setDate(d.getDate() + 1)) dias.push(d.toLocaleDateString("sv-SE"));
+  const antesIni = new Date(ini); antesIni.setDate(antesIni.getDate() - dias.length);
+  const corteAntes = antesIni.toLocaleDateString("sv-SE"), corte = dias[0];
+  const anteriores = st.fila.filter(s => s.data >= corteAntes && s.data < corte);
+  // Só compara com o período anterior se ele existe INTEIRO nos dados (senão a seta mente: ▲ 635%)
+  const inicioDados = st.fila.reduce((m, s) => s.data && s.data < m ? s.data : m, "9999");
+  const comparavel = inicioDados <= corteAntes;
+  const serie = f => dias.map(dia => pedidos.filter(s => s.data === dia && f(s)).length);
+  const tendencia = (agora, antes, bomSubir, rotulo) => {
+    if (!comparavel || !antes) return "";
+    const v = Math.round(100 * (agora - antes) / antes);
+    const dica = `${rotulo}: ${agora.toLocaleString("pt-BR")} contra ${antes.toLocaleString("pt-BR")} nos ${dias.length} dias anteriores`;
+    if (!v) return `<span class="tend igual" title="${dica}">= 0%</span>`;
+    const cls = bomSubir === null ? "igual" : (v > 0) === bomSubir ? "bom" : "ruim";
+    return `<span class="tend ${cls}" title="${dica}">${v > 0 ? "▲" : "▼"} ${Math.abs(v)}%</span>`;
+  };
+  // NF enviada ao hóspede, pela data REAL do envio (o e-mail com a nota): mede o que a equipe entregou em cada período
+  const dataEnvio = q => { const m = String(q).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
+  const enviadasEntre = (a, b) => st.fila.reduce((t, s) => t + (s.envios || []).filter(v => { const d = dataEnvio(v.quando); return d >= a && d < b; }).length, 0);
+  const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
+  const enviadasAgora = enviadasEntre(corte, amanha.toLocaleDateString("sv-SE")), enviadasAntes = enviadasEntre(corteAntes, corte);
+  const semNf = s => ["na_fila", "aguardando_envio"].includes(s.situacao);
+  const abertoF = s => s.situacao !== "concluida";
+  const itens = [
+    { ir: "aberto", rot: "Em aberto", v: abertos.length + emailsSem.length, cor: COR_VIZ.andamento,
+      extra: tendencia(pedidos.length, anteriores.length, null, "Pedidos recebidos"),
+      sub: `<b>${n(velhos)}</b> há mais de 7 dias · ${n(emailsSem.length)} e-mails`, linha: serie(abertoF) },
+    { ir: "na_fila", rot: "Sem NF", v: naoEmitida, cor: COR_VIZ.sem_nf, pct: pct(naoEmitida, abertos.length), extra: "",
+      sub: "dos pedidos em aberto", linha: serie(semNf) },
+    { ir: "envio_pendente", rot: "Envio pendente", v: envioPend, cor: COR_VIZ.envio, extra: "",
+      sub: "nota pronta, e-mail não saiu", linha: serie(s => s.envio_pendente) },
+    { ir: "tratativa", rot: "Tratativas", v: tratativas, cor: COR_VIZ.andamento, pct: pct(tratativas, abertos.length), extra: "",
+      sub: "dos em aberto · esperando o hóspede", linha: serie(s => s.situacao === "tratativa") },
+    { ir: "concluida", rot: `NFs · ${dias.length} dias`, v: comNf, cor: COR_VIZ.emitida, pct: pct(comNf, pedidos.length),
+      extra: tendencia(enviadasAgora, enviadasAntes, true, "NFs enviadas aos hóspedes"),
+      sub: `dos ${n(pedidos.length)} pedidos já têm NF · ${n(enviadasAgora)} enviadas`, linha: serie(s => s.nfs.length > 0) },
+  ];
+  return `<div class="faixa-resumo" role="group" aria-label="Resumo do período">${itens.map(i => `
+    <button class="fr-item" data-ir="${i.ir}" style="--cor:${i.cor}" title="Abrir a lista: ${esc(i.rot)}">
+      <span class="fr-rot">${esc(i.rot)}</span>
+      <span class="fr-num"><span class="kpi-v">${n(i.v)}</span>${i.pct !== undefined ? `<span class="fr-pct">${i.pct}%</span>` : ""}${i.extra}</span>
+      ${miniLinha(i.linha)}
+      <span class="fr-sub">${i.sub}</span></button>`).join("")}</div>`;
+}
+function miniLinha(valores) {   // linha dos pedidos de cada dia, com área clara embaixo; se desenha ao abrir
+  const L = 120, A = 28, max = Math.max(1, ...valores), passo = valores.length > 1 ? L / (valores.length - 1) : L;
+  const pts = valores.map((v, k) => `${(k * passo).toFixed(1)},${(A - 2 - (v / max) * (A - 6)).toFixed(1)}`).join(" ");
+  return `<svg class="fr-linha" viewBox="0 0 ${L} ${A}" preserveAspectRatio="none" aria-hidden="true">
+    <polygon points="0,${A} ${pts} ${L},${A}" fill="var(--cor)" opacity=".13"/>
+    <polyline points="${pts}" fill="none" stroke="var(--cor)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" pathLength="100"/></svg>`;
+}
+// ---------- Gerência (em teste) — pedido do usuário, 08/10/2026 ----------
+// O gerente vê tudo o que a equipe está fazendo, em tempo real: o dia de hoje (pedidos e e-mails recebidos, e-mails
+// enviados, NFs emitidas e o cruzamento dos três) e cada PC. Depois: só o gerente acessa (login), ligações e
+// canceladas/substituídas do dia.
+function desenharGerencia() {
+  const el = $("gerencia");
+  if (!el || !st.atualizado_em) return;
+  const n = v => (v ?? 0).toLocaleString("pt-BR"), hoje = hojeIso();
+  const base = filaBase();
+  const pedidosHoje = base.filter(s => s.data === hoje).length;
+  const nfsHoje = base.reduce((t, s) => t + (s.historico || []).filter(h => h.acao === "NF" && String(h.quando).slice(0, 10) === hoje).length, 0);
+  const emails = cx.dados?.emails || [], enviados = cx.dados?.enviados || [];
+  const recebidosHoje = emails.filter(e => String(e.quando).slice(0, 10) === hoje).length;
+  const enviadosHoje = enviados.filter(e => String(e.quando).slice(0, 10) === hoje).length;
+  const entrou = pedidosHoje + recebidosHoje, saiu = nfsHoje + enviadosHoje;
+  const taxa = entrou ? Math.round(100 * saiu / entrou) : 0;   // pode passar de 100%: saiu mais do que entrou (atrasados)
+  const porAgente = {};
+  (st.pcs || []).forEach(p => { porAgente[p.agente || p.pc] = { p, notas: 0, entrada: 0, urg: 0, env: 0 }; });
+  base.forEach(s => { const a = AG[s.hotel]; if (a && porAgente[a] && ["na_fila", "aguardando_envio"].includes(s.situacao)) porAgente[a].notas++; });
+  emails.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) { a.entrada++; if (e.urgente) a.urg++; } });
+  enviados.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) a.env++; });
+  el.innerHTML = `<div class="cab-pagina"><h1>Gerência</h1><span class="dica">Tudo o que a equipe está fazendo agora · atualiza sozinho</span></div>
+    <div class="ger-aviso" role="note"><svg aria-hidden="true"><use href="#i-cadeado"/></svg><span><b>Página em construção.</b> Por enquanto todos veem;
+      depois só o gerente terá acesso (com login). Os números abaixo já são reais.</span></div>
+    <div class="ger-dia" role="group" aria-label="Hoje">
+      <div><small>Pedidos recebidos hoje</small><b>${n(pedidosHoje)}</b><small>formulários</small></div>
+      <div><small>E-mails recebidos hoje</small><b>${n(recebidosHoje)}</b><small>sem resposta ainda: ${n(emails.length)}</small></div>
+      <div><small>E-mails enviados hoje</small><b>${n(enviadosHoje)}</b><small>pelas caixas dos hotéis</small></div>
+      <div><small>NFs emitidas hoje</small><b>${n(nfsHoje)}</b><small>registradas hoje (inclui as achadas pelo robô)</small></div>
+      <div class="taxa"><small>Andamento do dia</small><b>${taxa}%</b><div class="ger-barra"><i style="width:${Math.min(100, taxa)}%"></i></div>
+        <small>saiu (NFs + e-mails enviados) ÷ entrou (pedidos + e-mails)</small></div></div>
+    <div class="cartao"><h3>Por PC / agente</h3><div class="sub">O que cada um tem pra fazer agora e o que já saiu hoje</div>
+      <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Agente</th><th>PC</th><th class="num">NFs pra emitir</th><th class="num">E-mails na entrada</th>
+        <th class="num">Urgência</th><th class="num">Enviados 24 h</th><th>Painel</th></tr></thead><tbody>
+        ${Object.entries(porAgente).map(([a, x]) => `<tr><td><b>${esc(a)}</b></td><td>${x.p.online ? '<span class="dot on"></span> no ar' : '<span class="dot"></span> desligado'}</td>
+          <td class="num">${n(x.notas)}</td><td class="num">${n(x.entrada)}</td><td class="num">${x.urg ? `<span class="ruim-txt">${n(x.urg)}</span>` : "0"}</td>
+          <td class="num">${n(x.env)}</td><td>${String(x.p.uso || "").startsWith("aberto") ? "aberto · " + esc(String(x.p.uso).split("|")[1] || "") : "fechado"}</td></tr>`).join("")}
+      </tbody></table></div></div>
+    <div class="ger-breve">
+      <div><b>Canceladas e substituídas do dia</b><span>Em construção: vem das NFs marcadas (CANCELADA)/(SUBSTITUÍDA) no Dropbox.</span></div>
+      <div><b>Ligações do dia</b><span>Em construção: precisa ligar o Painel ao sistema de telefone da empresa.</span></div>
+      <div><b>Tempo médio de resposta</b><span>Em construção: do e-mail chegar até a resposta sair, por agente.</span></div></div>`;
+}
 function contarNumeros(el) {   // os números grandes sobem do zero até o valor (0,6 s)
   el.querySelectorAll(".kpi-v").forEach(n => {
     const alvo = Number(String(n.textContent).replace(/\./g, "").replace(",", "."));
@@ -176,11 +278,12 @@ function desenharVisao() {
   ini.setDate(ini.getDate() - (pn.janela - 1));
   const corte = ini.toLocaleDateString("sv-SE");
   const pedidos = st.fila.filter(s => s.data >= corte);
-  const abertos = st.fila.filter(s => s.situacao !== "concluida");
+  const base = filaBase();   // contadores: os 45 dias de sempre (os dias a mais só servem pra comparar períodos)
+  const abertos = base.filter(s => s.situacao !== "concluida");
   const emailsSem = st.emails.filter(m => !m.notas?.length);
-  const naoEmitida = st.fila.filter(s => ["na_fila", "aguardando_envio"].includes(s.situacao)).length;
-  const envioPend = st.fila.filter(s => s.envio_pendente).length;
-  const tratativas = st.fila.filter(s => s.situacao === "tratativa").length;   // mesmo critério do cartão "Tratativa"
+  const naoEmitida = base.filter(s => ["na_fila", "aguardando_envio"].includes(s.situacao)).length;
+  const envioPend = base.filter(s => s.envio_pendente).length;
+  const tratativas = base.filter(s => s.situacao === "tratativa").length;   // mesmo critério do cartão "Tratativa"
   const velhos = abertos.filter(s => diasAtras(s.data) > 7).length;
   const comNf = pedidos.filter(s => s.nfs.length).length;
   // gráfico 1: os pedidos de cada dia e o que aconteceu com eles
@@ -193,7 +296,7 @@ function desenharVisao() {
   // gráfico 2: o que está em aberto, por agente (clicar abre as notas dele)
   const ag = {};
   const somar = (a, k) => { (ag[a] ||= {})[k] = (ag[a][k] || 0) + 1; };
-  st.fila.forEach(s => { if (s.situacao !== "concluida" || s.envio_pendente) somar(AG[s.hotel] || "Sem agente", categoriaVisao(s)); });
+  base.forEach(s => { if (s.situacao !== "concluida" || s.envio_pendente) somar(AG[s.hotel] || "Sem agente", categoriaVisao(s)); });
   emailsSem.forEach(m => somar(m.hotel.split(" / ").map(h => AG[h]).find(Boolean) || m.agente_pc || "Sem agente", "email"));
   const total = p => SERIES_AGENTE.reduce((a, s) => a + (p[s.k] || 0), 0);
   const porAgente = Object.entries(ag).map(([rotulo, partes]) => ({ rotulo, partes })).sort((a, b) => total(b.partes) - total(a.partes));
@@ -210,16 +313,7 @@ function desenharVisao() {
       <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span></div>
       <div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
         `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div></div>
-    <div class="kpis-v">
-      <button class="kpi-hero" data-ir="aberto"><span class="kpi-r">Em aberto agora</span>
-        <span class="kpi-v">${n(abertos.length + emailsSem.length)}</span>
-        <span class="kpi-s">${n(abertos.length)} pedidos e ${n(emailsSem.length)} e-mails · <b>${n(velhos)}</b> esperando há mais de 7 dias</span></button>
-      ${kpi("na_fila", "NF não emitida", naoEmitida, "pedidos sem nota", "var(--erro)")}
-      ${kpi("envio_pendente", "Envio pendente", envioPend, "nota pronta, e-mail não saiu", "var(--atencao)")}
-      ${kpi("tratativa", "Tratativas", tratativas, "esperando resposta do hóspede", "var(--info)")}
-      ${kpi("concluida", `NFs nos últimos ${pn.janela} dias`, comNf,
-        pedidos.length ? `${Math.round(100 * comNf / pedidos.length)}% dos ${n(pedidos.length)} pedidos` : "sem pedidos no período", "var(--ok)")}
-    </div>
+    ${faixaResumo({ abertos, emailsSem, velhos, naoEmitida, envioPend, tratativas, comNf, pedidos, ini, hoje })}
     <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
       <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div>
       ${botaoTabela("dias")}</div>
