@@ -229,3 +229,23 @@ def test_espelho_nao_regrava_a_aba_se_nada_mudou(tmp_path, monkeypatch):
     agora[0] = D(2026, 10, 8, 9, 2)
     esp.volta(ol)
     assert len(gravacoes) == 2   # resumo + textos na 1ª volta; na 2ª, nada mudou: zero escritas
+
+
+def test_nf_no_dropbox_vira_etiqueta_no_email_do_hospede(tmp_path, monkeypatch):
+    import envio_nf
+    from controle_nf import CATEGORIA_NF_EMITIDA
+    monkeypatch.setattr(ee, "CAMINHO_ESTADO", tmp_path / "espelho.json")
+    cfg = {"planilha_central_id": "C", "aba_cadastro_hoteis": "Cadastro_Hoteis"}
+    central, ol = Central(), OutlookFalso("nf@luxor.com")
+    ana = Item("E1", "ana@gmail.com", "Nota fiscal", "Reserva 62222", D(2026, 10, 8, 8, 0), nome="Ana")
+    ana.Categories, salvos = "Nota dividida", []
+    ana.Save = lambda: salvos.append(1)
+    ol.receber(ana)
+    ol.receber(Item("E2", "bia@gmail.com", "Dúvida", "Oi", D(2026, 10, 8, 8, 30)))
+    monkeypatch.setattr(envio_nf, "listar_notas_dropbox", lambda cfg, forcar=False: [])
+    monkeypatch.setattr(envio_nf, "notas_do_email", lambda e, cfg: [{"nf": "590"}] if e["de"] == "ana@gmail.com" else [])
+    esp = ee.Espelho(central, cfg, relogio=lambda: D(2026, 10, 8, 9, 0))
+    esp.volta(ol)
+    assert ana.Categories == f"Nota dividida, {CATEGORIA_NF_EMITIDA}" and len(salvos) == 1   # a etiqueta que já tinha fica
+    esp.volta(ol)
+    assert len(salvos) == 1   # não marca de novo

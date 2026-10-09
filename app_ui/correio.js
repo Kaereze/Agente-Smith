@@ -22,12 +22,14 @@ async function carregarCorreio() {
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 
-const emailsDa = caixa => (cx.dados?.emails || []).filter(e => !cx.escondidos[e.id] && (caixa === "urgencia" ? e.urgente : !e.urgente));
+const doEscopo = e => escopo === "equipe" || meuHotel(e.hotel) || nomeAgente(e.pc) === st.agente;
+const emailsDa = caixa => (cx.dados?.emails || []).filter(e => !cx.escondidos[e.id] && doEscopo(e) && (caixa === "urgencia" ? e.urgente : !e.urgente));
 function desenharLateralCorreio() {
   const c = cx.dados?.contagem || {};
   const n = (id, v, alerta) => { const el = $(id); if (!el) return; el.textContent = v ? v.toLocaleString("pt-BR") : "";
     el.classList.toggle("alerta-n", !!(alerta && v)); };
-  n("nav-entrada-n", c.entrada_nao_lidos); n("nav-urgencia-n", emailsDa("urgencia").length, true);
+  n("nav-entrada-n", escopo === "equipe" ? c.entrada_nao_lidos : emailsDa("entrada").filter(e => e.lido === false).length);
+  n("nav-urgencia-n", emailsDa("urgencia").length, true);
 }
 
 const nomeAgente = pc => (cx.dados?.pcs || []).find(p => p.pc === pc)?.agente || cx.live?.agentes?.[pc] || pc;
@@ -64,7 +66,7 @@ function itensDaTela(busca) {
     return [...(r?.resultados || []), ...espelho].filter(e => !vistos.has(e.id) && vistos.add(e.id))
       .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
-  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })) : emailsDa(cx.caixa);
+  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
   const lista = base.filter(e => !cx.hotel || e.hotel === cx.hotel);
   return cx.caixa === "urgencia" ? lista.sort((a, b) => a.quando.localeCompare(b.quando)) : lista;
 }
@@ -75,6 +77,11 @@ function desenharCorreio() {
   const lista = itensDaTela(busca);
   const naoLidos = lista.filter(e => e.pasta !== "enviado" && e.lido === false).length;
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
+  $("escopo-emails").innerHTML = escopoHtml();
+  $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
+    : { entrada: "O que os hóspedes estão esperando de resposta? Clique num e-mail pra ler; as setas ↑ ↓ andam pela lista. Respondeu, ele fica cinza e some.",
+        urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
+        enviados: "O que saiu das caixas dos hotéis nas últimas 24 h (pelo Outlook ou pelo Painel)." }[cx.caixa];
   $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${lista.length} e-mail(s) no Outlook dos PCs` :
     cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${lista.length} e-mail(s)${naoLidos ? ` · ${naoLidos} não lido(s)` : ""}`)
     + (cx.hotel ? ` · ${esc(cx.hotel)}` : "") + statusBusca(busca);
@@ -137,7 +144,7 @@ function desenharAcoes() {
     el.innerHTML = `<div class="ind"><b>${(c.entrada_nao_lidos || 0).toLocaleString("pt-BR")}</b><small>não lidos na entrada</small></div>
       <div class="ind urg"><b>${emailsDa("urgencia").length.toLocaleString("pt-BR")}</b><small>em urgência</small></div>
       <div class="ind"><b>${(cx.dados?.enviados || []).length.toLocaleString("pt-BR")}</b><small>enviados nas últimas 24 h</small></div>
-      <span class="dica" style="margin-left:auto">Clique num e-mail para ler e responder · as setas ↑ ↓ andam pela lista</span>`;
+      <span class="dica-prof so-texto" style="margin-left:auto">Clique num e-mail pra ler e responder · ↑ ↓ andam pela lista · tecla ? = ajuda</span>`;
     return;
   }
   el.classList.remove("vazio-acoes");
@@ -145,10 +152,10 @@ function desenharAcoes() {
   const cinza = !!cx.resolvendo[e.id], enviado = e.pasta === "enviado";
   const ic = id => `<svg class="ic"><use href="#${id}"/></svg>`;
   const botoes = noEspelho && !cinza ? `
-      <button class="prim" data-cx-resp-nf="${esc(e.id)}">${ic("i-enviar")}Responder com NF</button>
-      <button data-cx-resp="${esc(e.id)}">${ic("i-resp")}Responder</button>
-      <button data-cx-enc="${esc(e.id)}">${ic("i-enc")}Encaminhar</button>
-      <button class="perigo" data-cx-excluir="${esc(e.id)}">${ic("i-lixo")}Excluir</button>
+      <button class="prim" data-cx-resp-nf="${esc(e.id)}" title="Ctrl+Shift+R">${ic("i-enviar")}Responder com NF</button>
+      <button data-cx-resp="${esc(e.id)}" title="Ctrl+R">${ic("i-resp")}Responder</button>
+      <button data-cx-enc="${esc(e.id)}" title="Ctrl+F">${ic("i-enc")}Encaminhar</button>
+      <button class="perigo" data-cx-excluir="${esc(e.id)}" title="Delete">${ic("i-lixo")}Excluir</button>
       <button data-cx-naolido="${esc(e.id)}" title="Volta a ficar como não lido pra equipe">${ic("i-olho")}Não lido</button>`
     : cinza ? `<span class="dica">Respondido · sai da caixa quando o Outlook do PC dono confirmar</span>`
     : `<span class="dica">${enviado ? "E-mail enviado" : (PASTAS[e.pasta] || "") + " no Outlook"} · só leitura</span>`;
@@ -156,7 +163,8 @@ function desenharAcoes() {
     <div class="quem"><b>${esc(enviado ? "Para: " + e.para : e.nome || e.de)}</b>
       <small>${esc(e.hotel || "")}${e.pc ? " · caixa no PC de " + esc(nomeAgente(e.pc)) : ""} · ${esc(quando(e.quando))}</small>
       ${(e.classes || []).length ? `<div class="linha-et">${e.classes.map(etiqueta).join("")}</div>` : ""}</div>
-    <div class="botoes">${botoes}<button class="fechar" id="cx-fechar" aria-label="Fechar o e-mail" title="Fechar (Esc)">×</button></div>`;
+    <div class="botoes">${botoes}<button class="fechar" id="cx-fechar" aria-label="Fechar o e-mail" title="Fechar (Esc)">×</button></div>
+    ${noEspelho && !cinza ? `<span class="dica-prof so-texto" style="flex-basis:100%">Atalhos: Ctrl+R responder · Ctrl+Shift+R com NF · Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido</span>` : ""}`;
 }
 
 function linhaEmail(e) {
@@ -400,12 +408,35 @@ document.addEventListener("click", e => {
   if (d.cxRespNf) return abrirEnvioNF(null, { id: d.cxRespNf, comNF: true });
   if (d.cxEnc) return encaminhar(d.cxEnc);
   if (d.cxExcluir) return excluir(d.cxExcluir);
-  if (d.cxNaolido) {
-    const x = (cx.dados?.emails || []).find(m => m.id === d.cxNaolido);
-    api("/api/correio/evento", { ids: [d.cxNaolido], acao: "NAO_LIDO" });
-    if (x && x.lido !== false) { x.lido = false; if (!x.urgente) cx.dados.contagem.entrada_nao_lidos++; }
-    cx.manterNaoLido[d.cxNaolido] = true; cx.sel = null; desenharLateralCorreio(); desenharCorreio();
-    toast("Marcado como não lido para a equipe");
+  if (d.cxNaolido) marcarNaoLido(d.cxNaolido);
+});
+function marcarNaoLido(id) {
+  const x = (cx.dados?.emails || []).find(m => m.id === id);
+  api("/api/correio/evento", { ids: [id], acao: "NAO_LIDO" });
+  if (x && x.lido !== false) { x.lido = false; if (!x.urgente) cx.dados.contagem.entrada_nao_lidos++; }
+  cx.manterNaoLido[id] = true; cx.sel = null; desenharLateralCorreio(); desenharCorreio();
+  toast("Marcado como não lido para a equipe");
+}
+// Atalhos iguais aos do Outlook (usuário, 09/10/2026). Não valem enquanto se digita num campo ou com janela aberta.
+document.addEventListener("keydown", e => {
+  const digitando = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable;
+  const janela = !!document.querySelector(".modal-fundo");
+  const k = (e.key || "").toLowerCase();
+  if (e.key === "?" && !digitando && !janela) { e.preventDefault(); return abrirAjuda(); }
+  if (e.ctrlKey && k === "e" && !janela) { e.preventDefault(); $("busca").focus(); $("busca").select(); return; }
+  if (pn.vista !== "correio" || digitando || janela) return;
+  const aberto = cx.sel && (cx.dados?.emails || []).some(x => x.id === cx.sel) && !cx.resolvendo[cx.sel] ? cx.sel : "";
+  const precisa = () => { toast("Abra um e-mail da caixa primeiro (clique ou use as setas)", true); };
+  if (e.ctrlKey && k === "r") { e.preventDefault(); return aberto ? abrirEnvioNF(null, { id: aberto, comNF: e.shiftKey }) : precisa(); }
+  if (e.ctrlKey && k === "f") { e.preventDefault(); return aberto ? encaminhar(aberto) : precisa(); }
+  if (e.key === "Delete") { e.preventDefault(); return aberto ? excluir(aberto) : precisa(); }
+  if (e.ctrlKey && k === "u") { e.preventDefault(); return aberto ? marcarNaoLido(aberto) : precisa(); }
+  if (e.ctrlKey && k === "q") {
+    e.preventDefault();
+    if (!aberto) return precisa();
+    const x = (cx.dados?.emails || []).find(m => m.id === aberto);
+    if (x && x.lido === false) { api("/api/correio/evento", { ids: [aberto], acao: "LIDO" }); x.lido = true; desenharLateralCorreio(); desenharCorreio(); }
+    return toast("Marcado como lido para a equipe");
   }
 });
 document.addEventListener("keydown", e => {

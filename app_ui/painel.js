@@ -116,7 +116,7 @@ function desenharMaquinas() {
       ${usoHtml(p)}${logDoPc(d, p)}
       ${p.online ? `<button data-at-atualizar="${esc(p.pc)}"><svg class="ic"><use href="#i-sync"/></svg>Atualizar este PC</button>` : ""}</article>`;
   }).join("");
-  el.innerHTML = `<div class="cab-pagina"><h1>Máquinas da equipe</h1>
+  el.innerHTML = `<p class="dica-prof" style="margin-bottom:12px">Os 4 PCs da equipe: quem está ligado, se o Outlook está aberto (o robô precisa dele), se o Painel está aberto e o que cada um fez por último. "Atualizar" puxa a versão nova do GitHub.</p><div class="cab-pagina"><h1>Máquinas da equipe</h1>
       <span class="dica">${d.pcs.filter(p => p.online).length} de ${d.pcs.length} PCs no ar · atualiza sozinho a cada 20 s</span></div>
     <div class="versao-ref"><span class="rot">Este PC</span><span class="dado">${esc(d.versao)}</span>
       <span class="dica">${a.atras ? `o GitHub tem ${a.atras} commit(s) novo(s)` : esc(a.motivo || "")}${a.verificado_em ? " · conferido " + haQuanto(a.verificado_em) : ""}</span>
@@ -239,6 +239,7 @@ function desenharGerencia() {
   emails.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) { a.entrada++; if (e.urgente) a.urg++; } });
   enviados.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) a.env++; });
   el.innerHTML = `<div class="cab-pagina"><h1>Gerência</h1><span class="dica">Tudo o que a equipe está fazendo agora · atualiza sozinho</span></div>
+    <p class="dica-prof" style="margin:-8px 0 14px">A equipe está dando conta? "Andamento do dia" = o que saiu (NFs e e-mails enviados) dividido pelo que entrou (pedidos e e-mails recebidos). Acima de 100% = estamos tirando atraso.</p>
     <div class="ger-aviso" role="note"><svg aria-hidden="true"><use href="#i-cadeado"/></svg><span><b>Página em construção.</b> Por enquanto todos veem;
       depois só o gerente terá acesso (com login). Os números abaixo já são reais.</span></div>
     <div class="ger-dia" role="group" aria-label="Hoje">
@@ -313,6 +314,7 @@ function desenharVisao() {
       <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span></div>
       <div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
         `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div></div>
+    <p class="dica-prof" style="margin:-6px 0 14px">Como estamos? A faixa abaixo resume o período escolhido (7 a 45 dias): clique num indicador pra abrir a lista. A seta compara com o período anterior; a linha mostra os pedidos de cada dia.</p>
     ${faixaResumo({ abertos, emailsSem, velhos, naoEmitida, envioPend, tratativas, comNf, pedidos, ini, hoje })}
     <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
       <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div>

@@ -655,6 +655,7 @@ def main():
     proxima_confirmacao = time.monotonic() + 60
     proximo_espelho, espelho = time.monotonic() + 30, None
     proximo_vigia, vigia, ultima_completa = time.monotonic() + 40, None, -1e9
+    dropbox_antes = None   # marca das pastas de notas: mudou = NF nova (etiqueta "NF emitida" no e-mail do hóspede)
     proxima_faxina = time.monotonic() + 5 * 60   # faxina da Central: 1x por dia, só no principal (faxina.py)
     while True:
         agora = time.monotonic()
@@ -721,6 +722,13 @@ def main():
                 import vigia_outlook
                 vigia = vigia or vigia_outlook.Vigia()
                 novos = vigia.novidades(namespace)
+                import envio_nf
+                marca = envio_nf.marca_das_pastas(cfg)
+                if dropbox_antes is not None and marca != dropbox_antes:
+                    envio_nf.listar_notas_dropbox(cfg, forcar=True)
+                    logger.info("🧾 NF nova no Dropbox — conferindo os e-mails dos hóspedes agora")
+                    proximo_espelho = min(proximo_espelho, max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS))
+                dropbox_antes = marca
                 if any(novos.values()):
                     logger.info(f"👁️ Outlook: {novos['enviado']} enviado(s) e {novos['recebido']} recebido(s) novo(s) "
                                 f"— conferindo agora")

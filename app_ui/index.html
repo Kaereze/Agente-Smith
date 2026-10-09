@@ -606,7 +606,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .pop-op{border-radius:9px}
 /* fila de trabalho: abas com contador + exceção (atrasadas) à parte */
 .status-cards{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px}
-.topo .busca{max-width:400px;min-width:220px}
+.topo .busca{max-width:340px;min-width:200px}
 .topo .sync{flex-wrap:nowrap}
 .st-alerta{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:12px;background:var(--erro-fundo);color:var(--erro);
   border:1px solid var(--erro);animation:entrar .25s ease both}
@@ -757,6 +757,31 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .ger-breve{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .ger-breve > div{border:1px dashed var(--linha-forte);border-radius:12px;padding:14px 16px;color:var(--tinta-3);display:grid;gap:4px}
 .ger-breve b{color:var(--tinta-2);font:600 14px var(--f-titulo)}
+/* ---------- Etapa 1: modo professor, escopo, ajuda ---------- */
+.dica-prof{display:none}
+body.professor .dica-prof{display:flex}
+.dica-prof{align-items:flex-start;gap:8px;font-size:13px;color:var(--info);background:var(--info-fundo);border-radius:10px;padding:8px 12px;line-height:1.45;animation:entrar .25s ease both}
+.dica-prof::before{content:"i";font:700 11px/1 var(--f-dado);width:18px;height:18px;border-radius:50%;background:var(--info);color:var(--info-fundo);display:inline-grid;place-items:center;flex:none;margin-top:1px}
+.dica-prof.so-texto{background:transparent;padding:4px 0 0;color:var(--tinta-3)}
+.dica-prof.so-texto::before{content:none}
+.cx-cab .dica-prof,.notas-cab .dica-prof{width:100%}
+#btn-prof[aria-pressed="true"]{border-color:var(--info);color:var(--info);background:var(--info-fundo)}
+.btn-ajuda{width:34px;padding:6px 0;justify-content:center;font-weight:700}
+.escopo{display:inline-flex;border:1px solid var(--linha-forte);border-radius:999px;padding:3px;background:var(--folha);gap:2px}
+.escopo button{border:0;border-radius:999px;background:transparent;padding:6px 14px;font-size:13px;color:var(--tinta-2);gap:6px}
+.escopo button .qt{font:600 11.5px var(--f-dado);opacity:.8}
+.escopo button[aria-pressed="true"]{background:var(--verde);color:var(--sobre-verde);box-shadow:0 2px 8px rgba(10,107,78,.2)}
+.notas-topo .escopo,.cx-cab .escopo{margin-left:auto;align-self:center}
+.notas-topo{align-items:center}
+.ajuda{width:min(760px,94vw)}
+.ajuda-corpo{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 22px;overflow-y:auto}
+.ajuda-corpo h4{margin:0 0 8px;font:600 12px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.ajuda-corpo dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:13px}
+.ajuda-corpo dt{font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.ajuda-corpo dt i{width:9px;height:9px;border-radius:50%;background:var(--cor);display:inline-block}
+.ajuda-corpo dd{margin:0;color:var(--tinta-2)}
+.ajuda-corpo kbd{font:600 11.5px var(--f-dado);background:var(--folha-2);border:1px solid var(--linha-forte);border-bottom-width:2px;border-radius:6px;padding:2px 6px}
+@media (max-width:760px){.ajuda-corpo{grid-template-columns:1fr}}
 /* Máquinas: o que cada PC está fazendo agora + o log dele */
 .maq-uso{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--folha-2)}
 .maq-uso.ativo{background:var(--verde-suave);color:var(--verde-forte);font-weight:500}
@@ -794,6 +819,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
   <symbol id="i-enc" viewBox="0 0 24 24"><path d="M14 7l6 5-6 5M20 12H10a6 6 0 0 0-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-olho" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
   <symbol id="i-cadeado" viewBox="0 0 24 24"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chapeu" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5M22 9v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="i-seta" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
@@ -849,6 +875,8 @@ textarea{width:100%;min-height:64px;resize:vertical}
         <span class="pill clicavel" id="pcs" data-vista="maquinas" title="PCs da equipe"><span class="dot" id="pcs-dot"></span><span id="pcs-txt">PCs</span></span>
         <button class="btn-ic" id="btn-atualizar" title="Reler a planilha agora" aria-label="Reler a planilha agora"><svg class="ic"><use href="#i-sync"/></svg></button>
         <button class="tema-btn" id="btn-tema" title="Tema: segue o Windows, claro ou escuro"><svg class="ic"><use href="#i-tema"/></svg><span id="tema-nome">Sistema</span></button>
+        <button class="tema-btn" id="btn-prof" aria-pressed="true" title="Modo professor: dicas na tela pra quem está aprendendo. Clique pra ligar/desligar"><svg class="ic"><use href="#i-chapeu"/></svg><span id="prof-nome">Professor</span></button>
+        <button class="tema-btn btn-ajuda" id="btn-ajuda" title="Ajuda: o que cada nome significa e os atalhos do teclado (tecla ?)" aria-label="Ajuda">?</button>
       </div>
     </header>
 
@@ -857,7 +885,9 @@ textarea{width:100%;min-height:64px;resize:vertical}
     <section class="vista oculta" id="v-maquinas"><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta" id="v-correio" aria-label="E-mails">
-      <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span></div>
+      <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span>
+        <div class="escopo" role="group" aria-label="De quem" id="escopo-emails"></div>
+        <p class="dica-prof" id="cx-dica"></p></div>
       <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
       <div class="mesa" id="cx-mesa">
         <section class="quadro cx-quadro" aria-label="Lista de e-mails"><div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div></section>
@@ -871,7 +901,9 @@ textarea{width:100%;min-height:64px;resize:vertical}
         <div class="notas-topo">
           <h1><span id="titulo-caixa">Notas fiscais</span> <span class="n" id="titulo-n"></span></h1>
           <div class="abas-origem" role="tablist" id="abas-origem"></div>
+          <div class="escopo" role="group" aria-label="De quem" id="escopo-notas"></div>
         </div>
+        <p class="dica-prof">O que falta emitir ou enviar nos pedidos do formulário? Clique numa aba pra filtrar pela situação e num pedido pra abrir a ficha. As cores: vermelho = sem NF, azul = em andamento, âmbar = envio pendente, verde = emitida.</p>
         <div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
         <div class="filtros-linha" id="filtros-linha"></div>
       </div>
@@ -892,7 +924,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
 <script>
 const TOKEN = "__TOKEN__";
-const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"NF não emitida", em_tratamento:"Em tratamento",
+const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Sem NF", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida", sem_resposta:"Sem resposta"};
 // Uma cor por situação em todo o Painel (lista, cartões e gráficos): vermelho = sem NF / atrasada, violeta = e-mail sem
 // resposta, azul = em andamento, âmbar = envio pendente, verde = emitida
@@ -992,6 +1024,7 @@ async function carregar(){
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
     $("pill-demo").classList.toggle("oculta", !j.demo);
+    if (j.professor !== undefined && j.professor !== professorServidor) { professorServidor = j.professor; aplicarProfessor(!!j.professor); }
     if (j.tema !== undefined && j.tema !== temaServidor) { temaServidor = j.tema; if (j.tema !== (document.documentElement.dataset.theme || "")) aplicarTema(j.tema); }
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
@@ -1099,6 +1132,7 @@ function passa(it, ignorar = "", busca) {   // ignorar: "origem|sit"...
   if (busca) return termosDaBusca(busca).every(re => re.test(textoDo(it)));
   if (!ignorar.includes("sit") && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
   if (!ignorar.includes("agente") && agenteF && !agentesDo(it).includes(agenteF)) return false;
+  if (!ignorar.includes("escopo") && escopo === "meus" && !agentesDo(it).includes(st.agente)) return false;
   if (!ignorar.includes("hotel") && hotel && !it.hoteis.includes(hotel)) return false;
   if (!ignorar.includes("envio") && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
   const corte = ignorar.includes("periodo") ? "" : corteDoPeriodo();
@@ -1129,8 +1163,17 @@ const tagQuartos = m => m.quartos >= 2
 // O hóspede pediu dividida e depois aceitou uma nota só: a frase dele fica no título
 const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s.nota_unica)}">1 nota a pedido do hóspede</span>` : "";
 
+// "Equipe toda" (padrão) ou "Meus hotéis" — vale pra Notas, E-mails e os números da lateral; lembrado neste PC
+let escopo = "equipe";
+try { if (localStorage.getItem("painel.escopo") === "meus") escopo = "meus"; } catch (e) {}
+const meuHotel = h => String(h || "").split(" / ").some(x => AG[x] === st.agente);
+function escopoHtml() {
+  const meus = (st.hoteis || []).filter(h => h.agente === st.agente).length, todos = (st.hoteis || []).length;
+  return `<button data-escopo="equipe" aria-pressed="${escopo === "equipe"}">Equipe toda <span class="qt">${todos}</span></button>` +
+    `<button data-escopo="meus" aria-pressed="${escopo === "meus"}" title="Só os hotéis de ${esc(st.agente || "")}">Meus hotéis <span class="qt">${meus}</span></button>`;
+}
 function desenharLateral() {
-  const abertos = filaBase().filter(s => s.situacao === "na_fila").length;   // só o que pede ação: pedidos sem NF emitida
+  const abertos = filaBase().filter(s => s.situacao === "na_fila" && (escopo === "equipe" || meuHotel(s.hotel))).length;   // só o que pede ação: pedidos sem NF emitida
   $("nav-notas-n").textContent = abertos ? abertos.toLocaleString("pt-BR") : "";
 }
 
@@ -1139,12 +1182,12 @@ const conta = (ign, f, busca) => TODOS.reduce((n, it) => n + (passa(it, ign, bus
 function situacoesDaAba(busca) {
   if (origem === "email") return SIT_EMAIL.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)]);
   const base = [["aberto", "Em aberto", "var(--verde)"], ["atrasadas", "Atrasadas +7 dias", "var(--erro)"],
-    ["na_fila", "NF não emitida", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
+    ["na_fila", "Sem NF", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
     ["nf_parcial", "NF parcial", COR_SIT.nf_parcial], ["envio_pendente", "Envio pendente", "var(--atencao)"],
     ["concluida", "NF emitida", COR_SIT.concluida], ["em_tratamento", "Em tratamento", COR_SIT.em_tratamento],
     ["aguardando_envio", "Aguardando envio", COR_SIT.aguardando_envio], ["minhas", "Minhas", "var(--roxo)"], ["todas", "Todas", "var(--linha-forte)"]];
   return base.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)])
-    .filter(([f, , , n]) => n || f === filtro || !["em_tratamento", "aguardando_envio", "minhas"].includes(f));
+    .filter(([f, , , n]) => n || f === filtro || f === "aberto");   // o que é zero some (usuário, 09/10/2026)
 }
 
 const MAIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
@@ -1162,6 +1205,7 @@ function pilula(campo, rotulo, valor, padrao) {
 }
 
 function desenharFiltros(busca, total) {
+  $("escopo-notas").innerHTML = escopoHtml();
   $("abas-origem").innerHTML = ORIGENS.map(([o, nome]) =>
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
       conta("origem|sit", it => it.tipo === o && passaSit(it, o === "form" ? "aberto" : "todos"), busca).toLocaleString("pt-BR")}</span></button>`).join("");
@@ -1484,6 +1528,60 @@ $("btn-tema").addEventListener("click", () => {
   toast("Tema: " + $("tema-nome").textContent);
 });
 try { aplicarTema(localStorage.getItem("painel.tema") || ""); } catch (e) { aplicarTema(""); }
+// Modo professor (usuário, 09/10/2026): como o tutorial de um jogo — ligado, aparecem frases e dicas na tela pra quem
+// está aprendendo; desligado, a tela fica limpa. Lembrado neste PC (estado/app.json), como o tema.
+let professorServidor = null;
+function aplicarProfessor(ligado, guardarNoPc = false) {
+  if (guardarNoPc) { professorServidor = ligado; api("/api/professor", { ligado }); }
+  document.body.classList.toggle("professor", ligado);
+  $("btn-prof").setAttribute("aria-pressed", ligado);
+  $("btn-prof").title = (ligado ? "Modo professor LIGADO" : "Modo professor desligado") + ": dicas na tela pra quem está aprendendo. Clique pra trocar";
+  try { localStorage.setItem("painel.professor", ligado ? "1" : "0"); } catch (e) {}
+}
+$("btn-prof").addEventListener("click", () => {
+  const ligado = !document.body.classList.contains("professor");
+  aplicarProfessor(ligado, true);
+  toast(ligado ? "Modo professor ligado: dicas na tela" : "Modo professor desligado");
+});
+try { aplicarProfessor(localStorage.getItem("painel.professor") !== "0"); } catch (e) { aplicarProfessor(true); }
+// Ajuda: o que cada nome significa + atalhos do teclado (botão "?" ou tecla ?)
+const GLOSSARIO = [["Sem NF", "var(--erro)", "Pedido que ainda não tem nota fiscal emitida."],
+  ["Tratativa", "var(--info)", "Mandamos uma pergunta ao hóspede (ex.: CNPJ certo) e esperamos a resposta."],
+  ["NF parcial", "var(--info)", "Nota dividida: parte das notas já saiu, falta o resto."],
+  ["Envio pendente", "var(--atencao)", "A nota existe, mas o e-mail com ela ainda não saiu pro hóspede."],
+  ["Aguardando envio", "var(--tinta-3)", "O pedido ainda não foi mandado pro hotel pelo robô."],
+  ["NF emitida", "var(--ok)", "Nota pronta e enviada. Fica 24 h na lista e some."],
+  ["Atrasadas", "var(--erro)", "Pedidos esperando há mais de 7 dias sem nota."],
+  ["Urgência", "var(--erro)", "E-mail com pedido de correção/cancelamento de NF ou mais de 7 dias sem resposta."],
+  ["Cobrança", "var(--atencao)", "O hóspede diz que ainda não recebeu a nota."],
+  ["Nota complementar", "var(--atencao)", "Faltou diária ou consumo na nota: emitir a complementar."],
+  ["Dados do tomador", "var(--info)", "O e-mail traz CPF/CNPJ, razão social: dados pra emitir."],
+  ["🧾 NF emitida (Outlook)", "var(--ok)", "Etiqueta que o robô põe no e-mail do hóspede quando a nota aparece no Dropbox."]];
+const ATALHOS = [["Ctrl+R", "Responder o e-mail aberto"], ["Ctrl+Shift+R", "Responder com a NF"], ["Ctrl+F", "Encaminhar"],
+  ["Delete", "Excluir (com confirmação e Desfazer)"], ["Ctrl+Q", "Marcar como lido"], ["Ctrl+U", "Marcar como não lido"],
+  ["Ctrl+E", "Ir pra pesquisa"], ["↑ ↓", "E-mail anterior / próximo (já abre)"], ["Esc", "Fechar o e-mail ou a janela"], ["?", "Abrir esta ajuda"]];
+function abrirAjuda() {
+  if (document.querySelector(".modal-fundo")) return;
+  const fundo = document.createElement("div");
+  fundo.className = "modal-fundo";
+  fundo.innerHTML = `<div class="modal ajuda"><div class="modal-topo"><div><h3>Ajuda do Painel</h3><div class="sub">O que cada nome significa e os atalhos do teclado (iguais aos do Outlook)</div></div>
+      <button class="fechar" id="ajuda-fechar" aria-label="Fechar" style="margin-left:auto">×</button></div>
+    <div class="ajuda-corpo"><section><h4>O que significa</h4><dl>${GLOSSARIO.map(([t, c, d]) => `<dt><i style="--cor:${c}"></i>${esc(t)}</dt><dd>${esc(d)}</dd>`).join("")}</dl></section>
+      <section><h4>Atalhos do teclado</h4><dl>${ATALHOS.map(([k, d]) => `<dt>${k.split(" ").map(x => `<kbd>${esc(x)}</kbd>`).join(" ")}</dt><dd>${esc(d)}</dd>`).join("")}</dl>
+        <p class="dica" style="margin-top:14px">Os atalhos de e-mail valem na tela E-mails, com um e-mail aberto.</p></section></div></div>`;
+  document.body.appendChild(fundo);
+  $("ajuda-fechar").onclick = () => fundo.remove();
+  fundo.addEventListener("click", ev => { if (ev.target === fundo) fundo.remove(); });
+}
+$("btn-ajuda").addEventListener("click", abrirAjuda);
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-escopo]");
+  if (!b) return;
+  escopo = b.dataset.escopo;
+  try { localStorage.setItem("painel.escopo", escopo); } catch (er) {}
+  pagina = 0; desenharLateral(); desenhar();
+  if (typeof desenharCorreio === "function") { desenharLateralCorreio(); desenharCorreio(); }
+});
 window.addEventListener("resize", () => { if (popAberto) desenharPop(); });
 
 // Seções da lateral abrem/fecham; o estado fica guardado neste PC

@@ -25,7 +25,9 @@ CATEGORIA_PENDENTE = "⏳ NF pendente"
 CATEGORIA_TRATATIVA = "💬 Tratativa"
 CATEGORIAS_DO_ROBO = (CATEGORIA_CONCLUIDO, CATEGORIA_PENDENTE, CATEGORIA_TRATATIVA)
 CATEGORIA_DIVIDIDA = "Nota dividida"   # permanente: fora de CATEGORIAS_DO_ROBO de propósito
-CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2, CATEGORIA_DIVIDIDA: 8}   # OlCategoryColor
+CATEGORIA_NF_EMITIDA = "🧾 NF emitida"   # no e-mail do hóspede, quando a NF dele aparece no Dropbox (usuário, 09/10/2026)
+CORES_CATEGORIAS = {CATEGORIA_CONCLUIDO: 5, CATEGORIA_PENDENTE: 4, CATEGORIA_TRATATIVA: 2, CATEGORIA_DIVIDIDA: 8,
+                    CATEGORIA_NF_EMITIDA: 5}   # OlCategoryColor (5 = verde)
 
 _ROTULOS_DIVISAO = re.compile(r"nota dividida\s*[:\s]*(nao|não|sim)\b|dividida em quantas( vezes)?\s*[:\s]*\S*", re.I)
 _PEDIDO_DIVISAO = re.compile(

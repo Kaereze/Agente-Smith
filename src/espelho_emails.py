@@ -451,6 +451,7 @@ class Espelho:
                     logger.debug(f"e-mail ilegível em {caixa}: {e}")
         if not completa:
             self._tirar_excluidos(namespace, pastas_entrada)
+        nf_marcadas = self._marcar_nf_emitida(namespace)
         enviados_dt = {e: datetime.datetime.fromisoformat(q) for e, q in enviados.items()}
         self.itens = resolver(self.itens, enviados_dt, agora)
         self.estado = {"versao": VERSAO_ESTADO, "ultima_volta": agora.isoformat(timespec="seconds"),
@@ -459,7 +460,8 @@ class Espelho:
                        "itens": self.itens, "enviados": enviados,
                        "vouchers": {i: v for i, v in vouchers.items() if i in self.itens},
                        "publicado": self.estado.get("publicado", ""),
-                       "publicado_textos": self.estado.get("publicado_textos", "")}
+                       "publicado_textos": self.estado.get("publicado_textos", ""),
+                       "nf_marcadas": {i: v for i, v in nf_marcadas.items() if i in self.itens}}
         salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
         self.publicar(enviados_dt)
         return len(self.itens)
@@ -538,6 +540,40 @@ class Espelho:
         except Exception as erro:
             logger.debug(f"análise da NF: {erro}")
             return ""
+
+    def _marcar_nf_emitida(self, namespace):
+        """A NF do hóspede apareceu no Dropbox: etiqueta "🧾 NF emitida" no e-mail dele, no Outlook deste PC
+        (pela reserva ou pelo nome, conferido no PDF). Cada e-mail é conferido de novo só quando a pasta muda."""
+        marcadas = dict(self.estado.get("nf_marcadas", {}))
+        try:
+            import envio_nf
+            from controle_nf import CATEGORIA_NF_EMITIDA
+            envio_nf.listar_notas_dropbox(self.cfg)
+            listagem = str(envio_nf._LISTAGEM.get("em"))
+        except Exception as erro:
+            logger.debug(f"Dropbox indisponível pra etiqueta de NF: {erro}")
+            return marcadas
+        checadas = getattr(self, "_checadas", {})
+        for i, e in self.itens.items():
+            if e["pasta"] != ENTRADA or i in marcadas or checadas.get(i) == listagem:
+                continue
+            checadas[i] = listagem
+            try:
+                notas = envio_nf.notas_do_email({**e, "recebido": e["quando"]}, self.cfg)
+                if not notas:
+                    continue
+                item = namespace.GetItemFromID(e["entry_id"])
+                atuais = [c.strip() for c in re.split(r"[;,]", item.Categories or "") if c.strip()]
+                if CATEGORIA_NF_EMITIDA not in atuais:
+                    item.Categories = ", ".join(atuais + [CATEGORIA_NF_EMITIDA])
+                    item.Save()
+                marcadas[i] = [str(n.get("nf", "")) for n in notas]
+                logger.info(f"🧾 NF {', '.join(marcadas[i])} no Dropbox → etiqueta no e-mail de {e.get('nome') or e['de']} "
+                            f"({e['hotel']})")
+            except Exception as erro:
+                logger.debug(f"etiqueta de NF emitida ({e.get('de')}): {erro}")
+        self._checadas = checadas
+        return marcadas
 
     def _tirar_excluidos(self, namespace, pastas_entrada):
         """E-mail que saiu da Caixa de Entrada (excluído ou movido) sai do espelho: conta como resolvido."""

@@ -289,6 +289,17 @@ _LISTAGEM = {"em": None, "chave": None, "itens": []}
 LISTAGEM_SEGUNDOS = 300
 
 
+def marca_das_pastas(cfg):
+    """Quando cada pasta de notas mudou por último (nota nova = pasta muda): o vigia olha isso a cada 20 s."""
+    marca = []
+    for pasta in (cfg.get("dropbox_notas") or {}).get("pastas", []):
+        try:
+            marca.append(os.stat(pasta).st_mtime_ns)
+        except OSError:
+            marca.append(0)
+    return tuple(marca)
+
+
 def listar_notas_dropbox(cfg, forcar=False):
     """[(nome, caminho, mtime, (nº, nome na NF))] das pastas de notas — em cache: ler o Dropbox leva segundos."""
     pastas = tuple((cfg.get("dropbox_notas") or {}).get("pastas", []))

@@ -960,7 +960,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
-                    "tema": ler_prefs().get("tema", ""),
+                    "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
             if url.path == "/api/envio":
                 def ler_status():
@@ -1015,6 +1015,9 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if path == "/api/acao":
                     r = estado.registrar(nome_do_agente(), pc, corpo["chave"], corpo["acao"], corpo.get("valor", ""))
                     return self._json(r)
+                if path == "/api/professor":   # modo professor (dicas na tela) ligado/desligado, por PC
+                    salvar_pref("professor", bool(corpo.get("ligado")))
+                    return self._json({"ok": True})
                 if path == "/api/tema":   # tema por PC (claro, escuro ou o do Windows), lembrado depois de reiniciar
                     tema = str(corpo.get("tema", ""))
                     if tema not in TEMAS_OK:
