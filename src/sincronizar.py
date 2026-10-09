@@ -20,7 +20,9 @@ garantir_utf8()
 from arquivos import salvar_json
 from config import PASTA_ESTADO, carregar_config, caminho_chave_google, e_principal
 from log_util import configurar_logging
-from rede_util import com_retry, e_erro_passageiro_google
+from sheets import BackendGoogle as _Backend
+
+_api = _Backend._api   # conta na cota deste programa (cota_google)
 from sheets import VALORES_PENDENTE, _achar_coluna, _celula, nome_do_hotel_pela_aba, nome_intervalo
 import robo_antigo
 from tratamento import detectar_formato_data, ler_data, normalizar
@@ -186,19 +188,19 @@ def _ler_planilha_hotel(cliente, arquivo, cfg):
     """Tenta a aba padrão numa chamada só; se ela não existir, abre a planilha e procura."""
     preferida = cfg.get("fontes_hoteis", {}).get("aba_respostas", "Respostas ao formulário 1")
     try:
-        r = com_retry(lambda: cliente.http_client.values_batch_get(
+        r = _api("leitura", lambda: cliente.http_client.values_batch_get(
             arquivo["id"], [nome_intervalo(preferida)], params={"valueRenderOption": "FORMATTED_VALUE"}),
             e_erro_passageiro_google)
         return preferida, r["valueRanges"][0].get("values", [])
     except Exception as e:
         if "unable to parse range" not in str(e).lower() and "400" not in str(e):
             raise
-    sh = com_retry(lambda: cliente.open_by_key(arquivo["id"]), e_erro_passageiro_google)
-    abas = [w.title for w in com_retry(sh.worksheets, e_erro_passageiro_google)]
+    sh = _api("leitura", lambda: cliente.open_by_key(arquivo["id"]))
+    abas = [w.title for w in _api("leitura", sh.worksheets)]
     aba = preferida if preferida in abas else ([a for a in abas if "respostas" in a.lower()] or abas[:1])[0]
     time.sleep(PAUSA_ENTRE_LEITURAS)
-    r = com_retry(lambda: sh.values_batch_get([nome_intervalo(aba)], params={"valueRenderOption": "FORMATTED_VALUE"}),
-                  e_erro_passageiro_google)
+    r = _api("leitura", lambda: sh.values_batch_get([nome_intervalo(aba)], params={"valueRenderOption": "FORMATTED_VALUE"}),
+                  )
     return aba, r["valueRanges"][0].get("values", [])
 
 
@@ -350,15 +352,15 @@ def _gravar_aba(backend, cliente, central, aba, linhas, criar):
     largura = max(len(l) for l in linhas)
     corpo = [l + [""] * (largura - len(l)) for l in linhas]
     if criar:
-        ws = com_retry(lambda: planilha.add_worksheet(title=aba, rows=len(corpo) + 50, cols=largura),
-                       e_erro_passageiro_google)
+        ws = _api("escrita", lambda: planilha.add_worksheet(title=aba, rows=len(corpo) + 50, cols=largura),
+                       )
     else:
-        ws = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
+        ws = _api("leitura", lambda: planilha.worksheet(aba))
         if ws.row_count < len(corpo) or ws.col_count < largura:
-            com_retry(lambda: ws.resize(rows=max(ws.row_count, len(corpo) + 50), cols=max(ws.col_count, largura)),
-                      e_erro_passageiro_google)
+            _api("escrita", lambda: ws.resize(rows=max(ws.row_count, len(corpo) + 50), cols=max(ws.col_count, largura)),
+                      )
     time.sleep(PAUSA_ENTRE_LEITURAS)
-    com_retry(lambda: ws.update(range_name="A1", values=corpo, value_input_option="RAW"), e_erro_passageiro_google)
+    _api("escrita", lambda: ws.update(range_name="A1", values=corpo, value_input_option="RAW"))
     time.sleep(PAUSA_ENTRE_LEITURAS)
     sobras = []
     if ws.col_count > largura:
@@ -366,7 +368,7 @@ def _gravar_aba(backend, cliente, central, aba, linhas, criar):
     if ws.row_count > len(corpo):
         sobras.append(f"A{len(corpo) + 1}:{rowcol_to_a1(ws.row_count, largura)}")
     if sobras and not criar:
-        com_retry(lambda: ws.batch_clear(sobras), e_erro_passageiro_google)
+        _api("escrita", lambda: ws.batch_clear(sobras))
         time.sleep(PAUSA_ENTRE_LEITURAS)
 
 
@@ -413,6 +415,8 @@ def copiar_e_enviar():
 
 
 if __name__ == "__main__":
+    import cota_google
+    cota_google.configurar("sincronizar")
     if "--agendado" in sys.argv:
         sys.exit(copiar_e_enviar() if "--enviar" in sys.argv else rodar_agendado())
     gravar = "--gravar" in sys.argv

@@ -743,6 +743,8 @@ def main():
         return 0
 
     from sheets import BackendGoogle
+    import cota_google
+    cota_google.configurar("painel")
     cfg = carregar_config()
     estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
     if estado.carregar_cache():

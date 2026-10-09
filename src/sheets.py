@@ -8,6 +8,7 @@ from gspread.utils import rowcol_to_a1
 
 from log_util import configurar_logging
 from modelos import Hotel, Solicitacao
+from cota_google import COTA, e_cota_estourada
 from rede_util import com_retry, e_erro_passageiro_google
 from tratamento import campos_para_email, detectar_formato_data, ler_data, normalizar
 
@@ -54,22 +55,59 @@ def nome_intervalo(aba):
     return "'" + str(aba).replace("'", "''") + "'"
 
 
-class BackendGoogle:
-    def __init__(self, caminho_chave, somente_leitura=False):
-        import gspread
-        from google.oauth2.service_account import Credentials
+_CLIENTES = {}      # (chave, só leitura) -> (cliente gspread, {planilha_id: Spreadsheet}) — 1 por programa
+_ABAS = {}          # (planilha_id, aba) -> Worksheet: achar a aba custa 1 leitura; guarda pra não pagar toda vez
+_TAMANHOS = {}      # (planilha_id, aba) -> (linhas, colunas) da última vez que substituir_aba gravou
 
-        escopos = ESCOPOS_SO_LEITURA if somente_leitura else ESCOPOS
-        credenciais = Credentials.from_service_account_file(caminho_chave, scopes=escopos)
-        self._cliente = gspread.authorize(credenciais)
-        self._cliente.set_timeout(TIMEOUT_GOOGLE_SEGUNDOS)
-        self._planilhas = {}
+
+class BackendGoogle:
+    """Toda chamada passa pela cota_google: o programa nunca usa mais que a fatia dele da cota."""
+
+    def __init__(self, caminho_chave, somente_leitura=False):
+        chave = (str(caminho_chave), bool(somente_leitura))
+        if chave not in _CLIENTES:
+            import gspread
+            from google.oauth2.service_account import Credentials
+            escopos = ESCOPOS_SO_LEITURA if somente_leitura else ESCOPOS
+            credenciais = Credentials.from_service_account_file(caminho_chave, scopes=escopos)
+            cliente = gspread.authorize(credenciais)
+            cliente.set_timeout(TIMEOUT_GOOGLE_SEGUNDOS)
+            _CLIENTES[chave] = (cliente, {})
+        self._cliente, self._planilhas = _CLIENTES[chave]
+
+    @staticmethod
+    def _api(tipo, func):
+        def chamada():
+            COTA.usar(tipo)
+            try:
+                return func()
+            except Exception as e:
+                if e_cota_estourada(e):
+                    COTA.pausar()
+                raise
+        return com_retry(chamada, e_erro_passageiro_google)
 
     def _planilha(self, planilha_id):
         if planilha_id not in self._planilhas:
-            self._planilhas[planilha_id] = com_retry(
-                lambda: self._cliente.open_by_key(planilha_id), e_erro_passageiro_google)
+            self._planilhas[planilha_id] = self._api("leitura", lambda: self._cliente.open_by_key(planilha_id))
         return self._planilhas[planilha_id]
+
+    def _aba(self, planilha_id, aba):
+        chave = (planilha_id, aba)
+        if chave not in _ABAS:
+            _ABAS[chave] = self._api("leitura", lambda: self._planilha(planilha_id).worksheet(aba))
+        return _ABAS[chave]
+
+    def _com_aba(self, planilha_id, aba, func):
+        """Usa a aba guardada; se ela foi apagada/recriada na planilha (id velho), procura de novo uma vez."""
+        try:
+            return func(self._aba(planilha_id, aba))
+        except Exception as e:
+            if e_erro_passageiro_google(e) or (planilha_id, aba) not in _ABAS:
+                raise
+            _ABAS.pop((planilha_id, aba), None)
+            _TAMANHOS.pop((planilha_id, aba), None)
+            return func(self._aba(planilha_id, aba))
 
     def ler_abas(self, planilha_id, nomes):
         """Uma chamada pra todas as abas; se falhar, lê uma a uma pra isolar a com problema.
@@ -80,9 +118,8 @@ class BackendGoogle:
         planilha = self._planilha(planilha_id)
         parametros = {"valueRenderOption": "FORMATTED_VALUE"}
         try:
-            resposta = com_retry(
-                lambda: planilha.values_batch_get([nome_intervalo(n) for n in nomes], params=parametros),
-                e_erro_passageiro_google)
+            resposta = self._api("leitura", lambda: planilha.values_batch_get([nome_intervalo(n) for n in nomes],
+                                                                              params=parametros))
             faixas = resposta.get("valueRanges", [])
             return {nome: faixas[i].get("values", []) for i, nome in enumerate(nomes)}, {}
         except Exception as erro_lote:
@@ -93,16 +130,17 @@ class BackendGoogle:
         dados, erros = {}, {}
         for nome in nomes:
             try:
-                resposta = com_retry(
-                    lambda: planilha.values_batch_get([nome_intervalo(nome)], params=parametros),
-                    e_erro_passageiro_google)
+                resposta = self._api("leitura", lambda: planilha.values_batch_get([nome_intervalo(nome)], params=parametros))
                 dados[nome] = resposta.get("valueRanges", [{}])[0].get("values", [])
             except Exception as e:
                 erros[nome] = str(e)
         return dados, erros
 
     def listar_abas(self, planilha_id):
-        return [aba.title for aba in com_retry(lambda: self._planilha(planilha_id).worksheets(), e_erro_passageiro_google)]
+        abas = self._api("leitura", lambda: self._planilha(planilha_id).worksheets())
+        for aba in abas:   # de brinde: já guarda todas, os próximos acréscimos não precisam procurar a aba
+            _ABAS[(planilha_id, aba.title)] = aba
+        return [aba.title for aba in abas]
 
     def escrever(self, planilha_id, atualizacoes):
         """atualizacoes = [("'Aba'!K5", valor), ...]"""
@@ -113,26 +151,25 @@ class BackendGoogle:
             "valueInputOption": "USER_ENTERED",
             "data": [{"range": faixa, "values": [[valor]]} for faixa, valor in atualizacoes],
         }
-        com_retry(lambda: planilha.values_batch_update(corpo), e_erro_passageiro_google)
+        self._api("escrita", lambda: planilha.values_batch_update(corpo))
 
     def criar_aba_status(self, planilha_id, nome, linhas):
         planilha = self._planilha(planilha_id)
-        aba = com_retry(lambda: planilha.add_worksheet(title=nome, rows=20, cols=4), e_erro_passageiro_google)
-        com_retry(lambda: aba.update(range_name="A1", values=linhas, value_input_option="USER_ENTERED"),
-                  e_erro_passageiro_google)
+        aba = self._api("escrita", lambda: planilha.add_worksheet(title=nome, rows=20, cols=4))
+        _ABAS[(planilha_id, nome)] = aba
+        self._api("escrita", lambda: aba.update(range_name="A1", values=linhas, value_input_option="USER_ENTERED"))
         pedido = {"requests": [{"setDataValidation": {
             "range": {"sheetId": aba.id, "startRowIndex": 0, "endRowIndex": 1,
                       "startColumnIndex": 1, "endColumnIndex": 2},
             "rule": {"condition": {"type": "BOOLEAN"}},
         }}]}
-        com_retry(lambda: planilha.batch_update(pedido), e_erro_passageiro_google)
+        self._api("escrita", lambda: planilha.batch_update(pedido))
 
     def criar_aba_log(self, planilha_id, nome, cabecalho):
         planilha = self._planilha(planilha_id)
-        aba = com_retry(lambda: planilha.add_worksheet(title=nome, rows=1000, cols=len(cabecalho)),
-                        e_erro_passageiro_google)
-        com_retry(lambda: aba.update(range_name="A1", values=[cabecalho], value_input_option="RAW"),
-                  e_erro_passageiro_google)
+        aba = self._api("escrita", lambda: planilha.add_worksheet(title=nome, rows=1000, cols=len(cabecalho)))
+        _ABAS[(planilha_id, nome)] = aba
+        self._api("escrita", lambda: aba.update(range_name="A1", values=[cabecalho], value_input_option="RAW"))
         verde = {"red": 23 / 255, "green": 63 / 255, "blue": 57 / 255}
         creme = {"red": 213 / 255, "green": 189 / 255, "blue": 161 / 255}
         larguras = [140, 190, 190, 110, 110, 420, 250, 90, 150, 90, 120, 320, 120, 170]
@@ -152,45 +189,83 @@ class BackendGoogle:
                                                       "startIndex": i, "endIndex": i + 1},
                                             "properties": {"pixelSize": px}, "fields": "pixelSize"}}
              for i, px in enumerate(larguras[:len(cabecalho)])]
-        com_retry(lambda: planilha.batch_update({"requests": pedidos}), e_erro_passageiro_google)
+        self._api("escrita", lambda: planilha.batch_update({"requests": pedidos}))
 
     def inserir_no_topo(self, planilha_id, aba, linhas):
         planilha = self._planilha(planilha_id)
-        planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
-        com_retry(lambda: planilha.batch_update({"requests": [{"insertDimension": {
-            "range": {"sheetId": planilha_aba.id, "dimension": "ROWS", "startIndex": 1, "endIndex": 1 + len(linhas)},
-            "inheritFromBefore": False}}]}), e_erro_passageiro_google)
-        com_retry(lambda: planilha.values_update(f"{nome_intervalo(aba)}!A2", params={"valueInputOption": "RAW"},
-                                                 body={"values": linhas}), e_erro_passageiro_google)
+
+        def inserir(planilha_aba):
+            self._api("escrita", lambda: planilha.batch_update({"requests": [{"insertDimension": {
+                "range": {"sheetId": planilha_aba.id, "dimension": "ROWS", "startIndex": 1, "endIndex": 1 + len(linhas)},
+                "inheritFromBefore": False}}]}))
+        self._com_aba(planilha_id, aba, inserir)
+        self._api("escrita", lambda: planilha.values_update(f"{nome_intervalo(aba)}!A2", params={"valueInputOption": "RAW"},
+                                                            body={"values": linhas}))
 
     def substituir_aba(self, planilha_id, aba, linhas):
-        """Reescreve a aba inteira (cria se faltar) — pra abas de passagem, como o espelho de e-mails."""
+        """Reescreve a aba inteira (cria se faltar) — abas de passagem, como o espelho de e-mails.
+        Numa escrita só: grava por cima e preenche de vazio o que sobrou da vez anterior (a aba nunca fica vazia)."""
         import gspread
         planilha = self._planilha(planilha_id)
+        largura = max((len(l) for l in linhas), default=1)
+        chave = (planilha_id, aba)
         try:
-            planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
+            planilha_aba = self._aba(planilha_id, aba)
         except gspread.exceptions.WorksheetNotFound:
-            planilha_aba = com_retry(lambda: planilha.add_worksheet(title=aba, rows=max(len(linhas) + 50, 100),
-                                                                    cols=len(linhas[0])), e_erro_passageiro_google)
-        if planilha_aba.row_count < len(linhas):
-            com_retry(lambda: planilha_aba.add_rows(len(linhas) - planilha_aba.row_count + 50), e_erro_passageiro_google)
-        com_retry(lambda: planilha_aba.clear(), e_erro_passageiro_google)
-        com_retry(lambda: planilha_aba.update(range_name="A1", values=linhas, value_input_option="RAW"),
-                  e_erro_passageiro_google)
+            planilha_aba = self._api("escrita", lambda: planilha.add_worksheet(
+                title=aba, rows=max(len(linhas) + 50, 100), cols=max(largura, 1)))
+            _ABAS[chave] = planilha_aba
+            _TAMANHOS[chave] = (0, largura)
+        if planilha_aba.row_count < len(linhas) or planilha_aba.col_count < largura:
+            self._api("escrita", lambda: planilha_aba.resize(rows=max(planilha_aba.row_count, len(linhas) + 50),
+                                                             cols=max(planilha_aba.col_count, largura)))
+        anterior = _TAMANHOS.get(chave)
+        if anterior is None:   # 1ª vez neste programa: não sei o que tem embaixo — limpa tudo de uma vez
+            self._api("escrita", lambda: planilha_aba.clear())
+            anterior = (0, largura)
+        altura, largura_total = max(len(linhas), anterior[0]), max(largura, anterior[1])
+        corpo = [list(l) + [""] * (largura_total - len(l)) for l in linhas]
+        corpo += [[""] * largura_total for _ in range(altura - len(corpo))]
+        self._api("escrita", lambda: planilha.values_update(
+            f"{nome_intervalo(aba)}!A1:{rowcol_to_a1(max(altura, 1), largura_total)}",
+            params={"valueInputOption": "RAW"}, body={"values": corpo}))
+        _TAMANHOS[chave] = (len(linhas), largura)
 
     def garantir_colunas(self, planilha_id, aba, cabecalho):
         """Aba criada com menos colunas (ex.: PCs_Painel de 4 pra 8): aumenta a grade e reescreve o cabeçalho."""
-        planilha_aba = com_retry(lambda: self._planilha(planilha_id).worksheet(aba), e_erro_passageiro_google)
+        planilha_aba = self._aba(planilha_id, aba)
         if planilha_aba.col_count < len(cabecalho):
-            com_retry(lambda: planilha_aba.add_cols(len(cabecalho) - planilha_aba.col_count), e_erro_passageiro_google)
-        if planilha_aba.row_values(1)[:len(cabecalho)] != cabecalho:
-            com_retry(lambda: planilha_aba.update(range_name="A1", values=[cabecalho], value_input_option="RAW"),
-                      e_erro_passageiro_google)
+            self._api("escrita", lambda: planilha_aba.add_cols(len(cabecalho) - planilha_aba.col_count))
+        if self._api("leitura", lambda: planilha_aba.row_values(1))[:len(cabecalho)] != cabecalho:
+            self._api("escrita", lambda: planilha_aba.update(range_name="A1", values=[cabecalho], value_input_option="RAW"))
 
     def anexar_linhas(self, planilha_id, aba, linhas):
+        self._com_aba(planilha_id, aba, lambda planilha_aba: self._api(
+            "escrita", lambda: planilha_aba.append_rows(linhas, value_input_option="RAW")))
+
+    def apagar_linhas(self, planilha_id, aba, inicio, fim, novas=None):
+        """Faxina: apaga as linhas [inicio, fim) (1 = cabeçalho, 2 = 1ª de dados) e, no mesmo pedido, põe `novas`
+        no lugar. Um pedido só (atômico): o que outro PC acrescentou no fim enquanto isso fica intacto."""
         planilha = self._planilha(planilha_id)
-        planilha_aba = com_retry(lambda: planilha.worksheet(aba), e_erro_passageiro_google)
-        com_retry(lambda: planilha_aba.append_rows(linhas, value_input_option="RAW"), e_erro_passageiro_google)
+
+        def faxinar(planilha_aba):
+            pedidos = [{"deleteDimension": {"range": {"sheetId": planilha_aba.id, "dimension": "ROWS",
+                                                      "startIndex": inicio - 1, "endIndex": fim - 1}}}]
+            if novas:
+                pedidos += [{"insertDimension": {"range": {"sheetId": planilha_aba.id, "dimension": "ROWS",
+                                                           "startIndex": inicio - 1, "endIndex": inicio - 1 + len(novas)},
+                                                 "inheritFromBefore": False}},
+                            {"updateCells": {"start": {"sheetId": planilha_aba.id, "rowIndex": inicio - 1, "columnIndex": 0},
+                                             "rows": [{"values": [{"userEnteredValue": {"stringValue": str(v)}} for v in l]}
+                                                      for l in novas],
+                                             "fields": "userEnteredValue"}}]
+            self._api("escrita", lambda: planilha.batch_update({"requests": pedidos}))
+        self._com_aba(planilha_id, aba, faxinar)
+
+
+def limitar_leitura():
+    """Pra quem chama a API do Google por fora do BackendGoogle (cópia das planilhas dos hotéis)."""
+    COTA.usar("leitura")
 
 
 def _achar_coluna(cabecalhos, nomes_aceitos):

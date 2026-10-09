@@ -638,6 +638,8 @@ def main():
     if trava is None:
         logger.info("ℹ️ Já tem um conferente rodando nesta máquina — este sai.")
         return 0
+    import cota_google
+    cota_google.configurar("conferente_principal" if e_principal(cfg) else "conferente")
 
     import pythoncom
     import win32com.client
