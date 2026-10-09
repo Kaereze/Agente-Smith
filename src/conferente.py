@@ -714,6 +714,12 @@ def main():
                 logger.warning(f"⚠️ Não consegui medir a cota de envio ({e}).")
             proxima_conferencia = time.monotonic() + intervalo
 
+        try:   # a cada volta (10 s): aviso de certificado do Outlook (nome do servidor diferente) trava a fila de envio
+            import aviso_certificado
+            aviso_certificado.responder_avisos()
+        except Exception as erro:
+            logger.debug(f"aviso de certificado: {erro}")
+
         if agora >= proximo_vigia:
             # Vigia (20 s): só olha o Outlook. E-mail novo enviado/recebido -> conferência e espelho agora.
             try:
