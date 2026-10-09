@@ -14,9 +14,10 @@ function trocarVista(v) {
                                           && (v !== "correio" || b.dataset.caixa === cx.caixa))));
   $("busca").placeholder = v === "correio" ? "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, sobrenome, frase…"
     : "Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…";
+  if (v !== "correio") $("topo-filtro").innerHTML = "";   // o filtro do topo é dos e-mails
   if (v === "correio") { desenharCorreio(); return; }
   desenhar();
-  if (v === "visao") desenharVisao();
+  if (v === "visao") { pn.animar = true; desenharVisao(); }
   clearTimeout(at.timer);
   if (v === "log" || v === "maquinas") carregarAtividade();
 }
@@ -78,6 +79,19 @@ function desenharLog() {
   if (sel) sel.onchange = () => { at.pc = sel.value; desenharLog(); };
 }
 
+// "aberto|E-mails|14:32": o Painel está aberto nesse PC agora, nessa tela
+function usoHtml(p) {
+  if (!p.online) return "";
+  const [estado, tela] = String(p.uso || "").split("|");
+  return estado === "aberto" ? `<div class="maq-uso ativo"><span class="dot on"></span>Painel aberto agora${tela ? " · em " + esc(tela) : ""}</div>`
+    : `<div class="maq-uso"><span class="dot"></span>${p.uso ? "Painel fechado (o robô segue trabalhando)" : "sem informação de uso (versão antiga)"}</div>`;
+}
+function logDoPc(d, p) {
+  const ev = (d.eventos || []).filter(x => x.pc === p.pc).slice(0, 4);
+  if (!ev.length) return "";
+  return `<div class="maq-log"><span class="rot">O que fez por último</span>${ev.map(x => `<div><span>${esc(String(x.quando).slice(11, 16))}</span>
+    <span title="${esc([TIPOS_ATIV[x.tipo] || x.tipo, x.hotel, x.pedido, x.detalhe].filter(Boolean).join(" · "))}">${esc(TIPOS_ATIV[x.tipo] || x.tipo)}${x.hotel ? " · " + esc(x.hotel) : ""}${x.pedido ? " · " + esc(x.pedido) : ""}</span></div>`).join("")}</div>`;
+}
 function desenharMaquinas() {
   const d = at.dados, el = $("maquinas");
   if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
@@ -97,6 +111,7 @@ function desenharMaquinas() {
         <dt>Conferência</dt><dd>${conf}${p.conferencia_resumo ? `<div class="dica">${esc(p.conferencia_resumo)}</div>` : ""}</dd>
         <dt>Versão</dt><dd>${versao}</dd>
         <dt>Caixas</dt><dd class="dado">${p.caixas}</dd><dt>Papel</dt><dd>${esc(p.papel || "")}</dd></dl>
+      ${usoHtml(p)}${logDoPc(d, p)}
       ${p.online ? `<button data-at-atualizar="${esc(p.pc)}"><svg class="ic"><use href="#i-sync"/></svg>Atualizar este PC</button>` : ""}</article>`;
   }).join("");
   el.innerHTML = `<div class="cab-pagina"><h1>Máquinas da equipe</h1>
@@ -143,6 +158,16 @@ function categoriaVisao(s) {
 }
 const diasAtras = iso => Math.round((new Date(hojeIso() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 86400000);
 
+function contarNumeros(el) {   // os números grandes sobem do zero até o valor (0,6 s)
+  el.querySelectorAll(".kpi-v").forEach(n => {
+    const alvo = Number(String(n.textContent).replace(/\./g, "").replace(",", "."));
+    if (!isFinite(alvo) || alvo < 2) return;
+    const ini = performance.now(), texto = n.textContent;
+    const passo = t => { const k = Math.min(1, (t - ini) / 600), v = Math.round(alvo * (1 - Math.pow(1 - k, 3)));
+      n.textContent = k < 1 ? v.toLocaleString("pt-BR") : texto; if (k < 1) requestAnimationFrame(passo); };
+    requestAnimationFrame(passo);
+  });
+}
 function desenharVisao() {
   const el = $("visao");
   if (!st.atualizado_em) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
@@ -207,6 +232,8 @@ function desenharVisao() {
         ${botaoTabela("idade")}</div>
         <div id="graf-idade" style="margin-top:14px"></div></div>
     </div>`;
+  if (pn.animar && !matchMedia("(prefers-reduced-motion: reduce)").matches) { pn.animar = false; el.classList.add("anima"); contarNumeros(el); }
+  else el.classList.remove("anima");
   // cada gráfico também como tabela (leitor de tela, teclado e quem prefere números)
   const tabela = (cab, linhas) => `<div style="overflow-x:auto"><table class="tabela"><thead><tr>${cab.map((c, i) =>
     `<th class="${i ? "num" : ""}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${linhas.map(l => `<tr>${l.map((v, i) =>

@@ -68,6 +68,7 @@ NOTAS_EMAILS_SEGUNDOS = 120   # e-mail -> NF do Dropbox: recalculado a cada 2 mi
 HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
 JANELA_PAINEL_DIAS = 120
+TELAS = {"visao": "Visão geral", "fila": "Notas fiscais", "correio": "E-mails", "log": "Log", "maquinas": "Máquinas"}   # pra Máquinas mostrar onde cada um está
 RESOLVIDA_HORAS = 24               # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
@@ -262,8 +263,12 @@ class Estado:
         outlook = {True: "aberto", False: "fechado"}.get(self.outlook, "?")
         leituras, escritas = cota_google.consumo_deste_pc()
         # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
+        uso = getattr(self, "uso_ref", None)
+        aberta = bool(uso and time.monotonic() - uso[0] < JANELA_ABERTA_SEGUNDOS)
+        tela = TELAS.get(getattr(self, "vista_atual", ""), "")
         return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia(),
-                rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}"]
+                rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
+                f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado"]
 
     def _rede(self, lidas, solicitacoes):
         pc, agente = socket.gethostname(), nome_do_agente()
@@ -933,6 +938,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self._json({"erro": "não autorizado"}, 403)
             if url.path == "/api/estado":
                 dias = int(parse_qs(url.query).get("dias", ["45"])[0] or 0)
+                estado.vista_atual = parse_qs(url.query).get("vista", [""])[0]
                 return self._json({
                     "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores,
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
@@ -1099,6 +1105,7 @@ def main():
                                                                   "ping": estado.rede_ping}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
+    estado.uso_ref = ultimo_uso
     servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))
     app = cfg.get("app", {})
     em_uso, em_fundo = int(app.get("atualizar_segundos", 15)), int(app.get("atualizar_segundos_fundo", 60))

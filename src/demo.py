@@ -191,10 +191,15 @@ class BackendDemo:
         for aba, cab in ((envio_nf.ABA_FILA, envio_nf.CAB_FILA), (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS),
                          (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS), (ee.ABA_EVENTOS, ee.CAB_EVENTOS)):
             self.abas[aba] = [list(cab)]
-        self.abas[atividade.ABA] = [list(atividade.CABECALHO)]
+        uso = {"João": "aberto|E-mails|", "Clara": "aberto|Notas fiscais|", "Cristian": "fechado", "Bernardo": ""}
+        self.abas[atividade.ABA] = [list(atividade.CABECALHO)] + [
+            [(agora - datetime.timedelta(minutes=m)).isoformat(timespec="seconds"), PCS[ag], ag, tipo, hotel, pedido, ""]
+            for m, ag, tipo, hotel, pedido in [(4, "João", "NF_ENVIADA", "LUXOR", "Ana Lima"), (9, "Clara", "EMAIL_RECEBIDO", "SOLMAR", "Renata Souza"),
+                                               (15, "Cristian", "TRATATIVA", "LAPA", "André Rocha"), (22, "João", "NOVA_SOLICITACAO", "BAHIA", "Paulo Lima"),
+                                               (31, "Clara", "NF_DROPBOX", "ARACAJU", "Juliana Costa"), (47, "Cristian", "NF_ENVIADA", "GV", "Lucas Souza")]]
         self.abas[envio_nf.ABA_PCS] = [list(envio_nf.CAB_PCS)] + [
-            [pc, ag, ",".join(h[1] for h in HOTEIS if h[2] == ag), "", "aberto", "'demo", "principal" if ag == "João" else "conferente",
-             "", "", "'0/0"] for ag, pc in PCS.items()]
+            [pc, ag, ",".join(h[1] for h in HOTEIS if h[2] == ag), "", "aberto", "", "principal" if ag == "João" else "conferente",
+             agora.isoformat(timespec="seconds") + "|2 NF · 1 tratativa · 3 recebido(s)", "", "3/1", uso[ag]] for ag, pc in PCS.items()]
         self._gerar_correio(r, hospedes)
 
     def _gerar_correio(self, r, hospedes):
@@ -218,6 +223,11 @@ class BackendDemo:
                         "anexos": ["voucher.pdf"] if r.random() < 0.2 else [], "texto": texto,
                         "citado": f"De: {caixa}\nEnviada em: {(q - datetime.timedelta(days=2)):%d/%m/%Y}\nAssunto: {assunto}\n\nPrezado(a), segue...",
                         "quartos": [0, []], "classes": ee.classificar(assunto, texto, [])}
+                if "corrigir" in item["classes"]:   # a mesma verificação da NF do robô, com uma nota fictícia
+                    import analise_nf
+                    nf_ficticia = {"valor": "480,00", "competencia": co.strftime("%d/%m/%Y"),
+                                   "checkin": ci.strftime("%d/%m/%Y"), "checkout": co.strftime("%d/%m/%Y")}
+                    item["analise"] = analise_nf.resumo(analise_nf.pedido_do_cliente(assunto, texto), nf_ficticia, nf)
                 self.arquivo.append({**item, "pc": pc, "pasta": "excluido" if respondido else "entrada"})
                 if respondido:   # já respondido: está só no "Outlook" (Itens Excluídos/Enviados), não no Painel
                     resp = q + datetime.timedelta(hours=r.randint(1, 20))
@@ -313,6 +323,8 @@ def preparar(estado, backend):
     """Liga o Estado do Painel ao "Outlook" fictício: busca, texto, responder, excluir, encaminhar."""
     import types
     estado.envio_nf.ler_contas = lambda: []
+    for l in backend.abas[envio_nf.ABA_PCS][1:]:   # todos na mesma versão deste Painel
+        l[5] = str(getattr(estado, "versao", ""))
     contador = {"n": 0}
 
     def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao=""):

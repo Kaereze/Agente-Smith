@@ -6,6 +6,8 @@
 <title>Painel Notas Fiscais</title>
 <link rel="icon" type="image/png" href="/icone.png">
 <script>try { const t = localStorage.getItem("painel.tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
    Cores só por token: o tema claro/escuro segue o Windows. */
@@ -583,148 +585,149 @@ textarea{width:100%;min-height:64px;resize:vertical}
   .proc-corpo{grid-template-columns:1fr} .etapas{border-right:0;border-bottom:1px solid var(--linha)}
 }
 
-/* ===================== Pele corporativa (usuário, 08/10/2026) =====================
-   Sério e empresarial: cantos retos, sem sombra, linhas finas, Segoe UI (a do Windows/Outlook), compacto.
-   Lateral clara com o verde só no item aberto; faixa verde fina no topo. E-mails e Notas no formato do Outlook. */
-:root{--f-texto:"Segoe UI",system-ui,-apple-system,sans-serif;--f-titulo:"Segoe UI",system-ui,sans-serif;--f-dado:"Segoe UI",system-ui,sans-serif;
-  --lateral:#f6f8f7;--lateral-sel:#e1f0e9;--faixa:#0a6b4e;--faixa-tinta:#ffffff;--faixa-suave:#c6e8da;--chao:#f1f4f3;--linha:#dde4e1;--linha-forte:#c2cdc8}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--lateral:#132c27;--lateral-sel:#20493f;--faixa:#0b2420;--faixa-tinta:#e6f4ee;--faixa-suave:#a7c9bc}}
-:root[data-theme="dark"]{--lateral:#132c27;--lateral-sel:#20493f;--faixa:#0b2420;--faixa-tinta:#e6f4ee;--faixa-suave:#a7c9bc}
-*,*::before,*::after{border-radius:0!important;box-shadow:none!important}
-.dot,.anel{border-radius:50%!important}
-body{font:13px/1.45 var(--f-texto)}
-.dado{font-family:var(--f-texto);letter-spacing:0}
-h1{font:600 18px/1.25 var(--f-texto);letter-spacing:0}
-.rot{font:600 11px/1 var(--f-texto);letter-spacing:.06em}
-button{padding:5px 12px;font-size:13px;font-weight:400;min-height:30px;border-color:var(--linha-forte);background:var(--folha)}
-button:hover{border-color:var(--tinta-3);background:var(--folha-2)}
-button.prim{font-weight:600} button.prim:hover{background:var(--verde-forte);border-color:var(--verde-forte)}
-button.creme{background:var(--folha);border-color:var(--verde);color:var(--verde-forte);font-weight:600}
-input,select,textarea{padding:5px 9px;border-color:var(--borda-campo)}
-/* casca */
-.app{grid-template-columns:220px minmax(0,1fr);grid-template-rows:36px minmax(0,1fr);height:100vh}
-.faixa{grid-column:1/-1;background:var(--faixa);color:var(--faixa-tinta);display:flex;align-items:center;gap:12px;padding:0 16px;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
-.faixa b{font-weight:700;letter-spacing:.14em}
-.faixa .sep{width:1px;height:14px;background:var(--faixa-suave);opacity:.6}
-.faixa .dir{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--faixa-suave)}
-.lateral{background:var(--lateral);color:var(--tinta);border-right:1px solid var(--linha);padding-block:6px 10px}
-.marca{display:none}
-.principal,.nav-grupo{padding:4px 0 6px;gap:0}
-.secao{padding:0}
-.rot-nav,.secao summary{font:600 11px/1 var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);padding:12px 16px 6px}
-.secao summary .ic{display:none}
-.secao summary:hover{background:transparent;color:var(--tinta)}
-.ln,.ln.raiz{color:var(--tinta);font-size:13px;font-weight:400;padding:6px 16px;gap:10px;min-height:30px}
-.ln .ic{width:15px;height:15px;color:var(--tinta-2)}
-.sub .ln{padding-left:16px}
-.ln:hover{background:var(--folha-2);color:var(--tinta)}
-.ln[aria-current="true"]{background:var(--lateral-sel);color:var(--tinta);font-weight:600;box-shadow:inset 3px 0 0 var(--verde)!important}
-.ln[aria-current="true"] .ic{color:var(--verde-forte)}
-.ln .n{font:600 12px var(--f-texto);font-variant-numeric:tabular-nums;color:var(--tinta-2)}
-.ln .n.alerta-n{background:#c8372d;color:#fff;padding:1px 6px}
-.lateral .rodape{border-top:1px solid var(--linha);padding:10px 12px 0}
-.op-btn{color:var(--tinta)} .op-btn:hover,.op.aberto .op-btn{background:var(--folha-2);border-color:var(--linha)}
-.op-nome small{color:var(--tinta-3);font-family:var(--f-texto)}
-.topo{padding:6px 16px;gap:12px;min-height:46px}
-.trilha-nav{font-size:12.5px}
-.busca input{background:var(--folha);min-height:30px}
-.pill{padding:2px 6px;font-size:12px}
-.vista .rolagem{padding:16px 20px 30px}
-/* barra de carregamento: todo clique mostra o que está acontecendo */
-.carregando{position:fixed;top:36px;left:0;right:0;z-index:50;height:26px;display:flex;align-items:center;gap:10px;padding:0 16px;
-  background:var(--folha);border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--tinta-2)}
-.carregando i{position:absolute;left:0;bottom:-1px;height:2px;width:30%;background:var(--verde);animation:correr 1.1s ease-in-out infinite}
-.carregando.erro{color:var(--erro)} .carregando.erro i{display:none}
-/* cartões, quadros, janelas: retos e com linha fina */
-.quadro,.leitura,.cartao,.kpi-b,.stc,.conta,.maq,.tabela-wrap,.ficha,.modal,.saude .c,.versao-ref{border-color:var(--linha)}
-.stc{padding:9px 12px;gap:4px} .stc-n{font:600 20px/1 var(--f-texto)} .stc-r{font:600 11px var(--f-texto);letter-spacing:.05em}
-.grupo-st .stc{width:136px}
-.kpi-v{font:600 28px/1 var(--f-texto)} .kpi-hero .kpi-v{font-size:44px} .kpi-r{font:600 11px var(--f-texto);letter-spacing:.06em}
-.pilula,.tipo,.espera{font:600 11px/1 var(--f-texto);letter-spacing:.04em;padding:4px 6px}
-.tag,.etq{font-size:11.5px;padding:2px 6px}
-.fp,.fp-on{font-size:12.5px} .fp{padding:5px 10px;border-style:solid}
-.notas-cab,.cx-cab{padding:14px 20px 10px;gap:10px}
-.aba-o{padding:8px 12px 10px;font-size:13.5px}
-.mesa{gap:0;padding:0 20px 14px}
-.mesa .quadro{border-right:1px solid var(--linha)}
-.mesa.com-leitura .leitura{border-left:0}
-.modal-fundo{background:rgba(10,20,17,.45)}
-.modal-topo h3{font:600 16px var(--f-texto)}
-.toast{font-weight:500}
-/* ---------- E-mails e Notas: lista no formato do Outlook ---------- */
-#v-correio{grid-template-rows:auto minmax(0,1fr)}
-.cx-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--linha);margin:0 20px 10px;padding:14px 0 10px}
-.cx-tit{display:flex;align-items:baseline;gap:12px}
-.cx-sub{font-size:12.5px;color:var(--tinta-3)}
-.cx-ferr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.cx-campo{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tinta-2)}
-.cx-campo select{min-height:30px;max-width:220px}
-.cx-avisos{display:flex;gap:6px;flex-wrap:wrap}
-.cx-aviso{font-size:12px;padding:4px 8px;background:var(--atencao-fundo);color:var(--atencao);border:1px solid transparent}
-.cx-aviso.neutro{background:var(--folha);color:var(--tinta-2);border-color:var(--linha)}
+/* ===================== Visual verde (o que o usuário preferiu) + e-mails e notas no formato do Outlook =====================
+   Referências: Front/Zendesk/Help Scout (fila em abas com contador), Stripe (filtro "+ Hotel" que vira "Hotel: X ✕"),
+   boas práticas de fila de trabalho (resumo curto em cima, exceção destacada à parte, situação com ícone + cor). */
+.topo-filtro{display:flex;gap:8px;align-items:center}
+.topo-filtro:empty{display:none}
+.pill.demo{background:var(--atencao-fundo);color:var(--atencao);font-weight:600}
+/* filtros: botão com ícone, menu animado */
+.fp,.fp-on,.st-tab,.cx-acoes button{transition:background .15s,border-color .15s,box-shadow .15s,transform .15s,color .15s}
+.fp{border:1px solid var(--linha-forte);border-radius:999px;background:var(--folha);color:var(--tinta-2);padding:7px 12px 7px 11px;gap:7px;font-size:13px;font-weight:500}
+.fp:hover{border-color:var(--verde);color:var(--tinta);box-shadow:0 3px 10px rgba(10,107,78,.13);transform:translateY(-1px)}
+.fp svg.ic,.fp-on svg.ic{width:15px;height:15px;color:var(--verde-forte)}
+.fp .seta-f,.fp-on .seta-f{width:11px;height:11px;color:var(--tinta-3)}
+.fp-on{border:1px solid var(--verde);background:var(--verde-suave);border-radius:999px}
+.fp-on > button{padding:7px 8px 7px 11px;gap:7px;border-radius:999px 0 0 999px}
+.fp-on .fp-x{border-radius:0 999px 999px 0}
+.pop{border-radius:14px;box-shadow:0 18px 44px rgba(7,40,30,.22);animation:popEntra .16s ease-out;transform-origin:top left}
+@keyframes popEntra{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+.pop input{border-radius:10px}
+.pop-op{border-radius:9px}
+/* fila de trabalho: abas com contador + exceção (atrasadas) à parte */
+.status-cards{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px}
+.topo .busca{max-width:400px;min-width:220px}
+.topo .sync{flex-wrap:nowrap}
+.st-alerta{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:12px;background:var(--erro-fundo);color:var(--erro);
+  border:1px solid var(--erro);animation:entrar .25s ease both}
+.st-alerta svg{width:18px;height:18px;flex:none}
+.st-alerta b{font:600 16px var(--f-dado)}
+.st-alerta span{color:var(--tinta-2)}
+.st-alerta button{margin-left:auto;background:var(--erro);border-color:var(--erro);color:#fff;border-radius:999px;padding:6px 14px;font-weight:600}
+.st-alerta button[aria-pressed="true"]{background:transparent;color:var(--erro)}
+.st-tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.st-tab{border:1px solid var(--linha);background:var(--folha);border-radius:999px;padding:5px 5px 5px 12px;gap:8px;font-size:13.5px;font-weight:500;color:var(--tinta-2)}
+.st-tab .bolinha{width:9px;height:9px;border-radius:50%;background:var(--cor);flex:none}
+.st-tab .qt{font:600 12px var(--f-dado);background:var(--folha-2);border:1px solid var(--linha);border-radius:999px;padding:2px 9px;color:var(--tinta-2);min-width:30px;text-align:center}
+.st-tab:hover{border-color:var(--cor);color:var(--tinta);transform:translateY(-1px)}
+.st-tab[aria-pressed="true"]{background:var(--verde);border-color:var(--verde);color:var(--sobre-verde);box-shadow:0 4px 12px rgba(10,107,78,.22)}
+.st-tab[aria-pressed="true"] .bolinha{background:var(--sobre-verde)}
+.st-tab[aria-pressed="true"] .qt{background:rgba(255,255,255,.2);border-color:transparent;color:var(--sobre-verde)}
+.st-tab.zero{opacity:.55}
+.st-sep{width:1px;height:24px;background:var(--linha-forte);margin:0 8px}
+.st-rot{font:600 11.5px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-right:2px}
+/* listas no formato do Outlook (e-mails e notas) */
+#v-correio{grid-template-rows:auto auto minmax(0,1fr)}
+.cx-cab{padding:20px 26px 12px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.cx-sub{font-size:13px;color:var(--tinta-3)}
 #cx-mesa{grid-template-columns:minmax(0,1fr)}
-#cx-mesa.com-leitura{grid-template-columns:380px minmax(0,1fr)}
-.cx-quadro,#cx-mesa .quadro{grid-template-rows:minmax(0,1fr)}
-.cx-grupo{position:sticky;top:0;z-index:1;background:var(--folha-2);border-bottom:1px solid var(--linha);padding:5px 14px;
-  font:600 11px/1.2 var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
-.cx-l,.nf-l{display:block!important;padding:7px 14px 8px 17px;border-bottom:1px solid var(--linha);cursor:pointer;position:relative;min-height:0!important}
+#cx-mesa.com-leitura,.mesa.com-leitura{grid-template-columns:400px minmax(0,1fr)}
+.cx-quadro{grid-template-rows:minmax(0,1fr)}
+.cx-grupo{position:sticky;top:0;z-index:1;background:var(--folha-2);border-bottom:1px solid var(--linha);padding:6px 16px;
+  font:600 11.5px/1.2 var(--f-titulo);letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-3)}
+.cx-l,.nf-l{display:block!important;padding:9px 16px 10px 19px;border-bottom:1px solid var(--linha);cursor:pointer;position:relative;min-height:0!important;transition:background .12s}
 .cx-l:hover,.nf-l:hover{background:var(--folha-2)}
-.cx-l.sel,.nf-l.sel{background:var(--lateral-sel)}
+.cx-l.sel,.nf-l.sel{background:var(--verde-suave)}
 .cx-l.nao-lido::before,.cx-l.sel::before,.nf-l.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--verde)}
 .cx-l:focus-visible,.nf-l:focus-visible{outline:2px solid var(--verde);outline-offset:-2px}
 .cx-l1{display:flex;align-items:baseline;gap:8px;min-width:0}
-.cx-quem{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;color:var(--tinta)}
-.cx-n{font-size:11px;color:var(--tinta-3);border:1px solid var(--linha);padding:0 5px;font-variant-numeric:tabular-nums}
-.cx-hora{font-size:12px;color:var(--tinta-3);white-space:nowrap;font-variant-numeric:tabular-nums}
-.cx-l2{font-size:12.5px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx-l3{font-size:12px;color:var(--tinta-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx-hotel{font-weight:600;color:var(--tinta-2);margin-right:6px;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
-.cx-l4{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
-.cx-l.nao-lido .cx-quem,.cx-l.nao-lido .cx-l2{font-weight:700}
-.cx-l.nao-lido .cx-hora{color:var(--verde-forte);font-weight:700}
-.cx-l.cinza{opacity:.5}
+.cx-quem{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--tinta)}
+.cx-n{font:600 11px var(--f-dado);color:var(--tinta-3);background:var(--folha-2);border:1px solid var(--linha);border-radius:999px;padding:0 6px}
+.cx-hora{font:500 12px var(--f-dado);color:var(--tinta-3);white-space:nowrap}
+.cx-l2{font-size:13px;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.cx-l3{font-size:12.5px;color:var(--tinta-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-resumo-l{font-size:12.5px;color:var(--erro);margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cx-hotel{font:600 11px var(--f-titulo);letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-2);margin-right:6px}
+.cx-l4{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.cx-l.nao-lido .cx-quem,.cx-l.nao-lido .cx-l2{font-weight:600}
+.cx-l.nao-lido .cx-hora{color:var(--verde-forte);font-weight:600}
+.cx-l.cinza{opacity:.5;filter:grayscale(1)}
 .cx-l.cinza::before{display:none}
-.et{display:inline-block;font:600 10.5px/1 var(--f-texto);letter-spacing:.03em;padding:3px 5px;border:1px solid var(--linha);color:var(--tinta-2);background:var(--folha)}
-.et-erro{color:var(--erro);border-color:var(--erro);background:var(--erro-fundo)} .et-atencao{color:var(--atencao);border-color:var(--atencao);background:var(--atencao-fundo)}
-.et-info{color:var(--info);border-color:var(--info);background:var(--info-fundo)} .et-ok{color:var(--ok);border-color:var(--ok);background:var(--ok-fundo)}
-/* leitura: o e-mail aberto */
+.et{display:inline-flex;align-items:center;gap:4px;font:600 11.5px/1 var(--f-titulo);letter-spacing:.03em;padding:4px 8px;border-radius:6px;background:var(--folha-2);color:var(--tinta-2);border:1px solid var(--linha)}
+.et-erro{color:var(--erro);background:var(--erro-fundo);border-color:transparent} .et-atencao{color:var(--atencao);background:var(--atencao-fundo);border-color:transparent}
+.et-info{color:var(--info);background:var(--info-fundo);border-color:transparent} .et-ok{color:var(--ok);background:var(--ok-fundo);border-color:transparent}
+/* faixa de ações do e-mail aberto (no lugar dos avisos) */
+.cx-acoes{margin:0 26px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 14px 12px 16px;border-radius:14px;
+  background:var(--folha);border:1px solid var(--linha);box-shadow:var(--sombra);min-height:68px}
+.cx-acoes.vazio-acoes{background:var(--folha-2);box-shadow:none;border-style:dashed}
+.cx-acoes .av{width:42px;height:42px;border-radius:50%;background:var(--verde-suave);color:var(--verde-forte);font:600 14px var(--f-titulo);display:grid;place-items:center;flex:none}
+.cx-acoes .quem{min-width:200px;flex:1;display:grid;gap:3px}
+.cx-acoes .quem b{font:600 16px var(--f-titulo);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-acoes .quem small{color:var(--tinta-3);font-size:12.5px}
+.cx-acoes .linha-et{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.cx-acoes .botoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cx-acoes .botoes button{border-radius:10px;padding:8px 14px;gap:7px;font-weight:500}
+.cx-acoes .botoes button:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(10,107,78,.12)}
+.cx-acoes .botoes button svg{width:16px;height:16px}
+.cx-acoes .botoes .perigo:hover{background:var(--erro-fundo)}
+.cx-acoes .fechar{margin-left:2px}
+.ind{display:grid;gap:2px;padding:0 14px;border-left:1px solid var(--linha)}
+.ind:first-of-type{border-left:0;padding-left:0}
+.ind b{font:600 22px/1 var(--f-dado);color:var(--tinta)} .ind small{font-size:12px;color:var(--tinta-3)}
+.ind.urg b{color:var(--erro)}
+/* o e-mail aberto */
 #cx-leitura{display:flex;flex-direction:column;overflow:hidden;padding:0}
-.cx-barra{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--linha);background:var(--folha-2)}
-.cx-x{margin-left:auto;min-width:30px;padding:4px 8px;border-color:transparent;background:transparent;color:var(--tinta-3)}
-.cx-msg{overflow-y:auto;padding:16px 22px 30px;display:grid;gap:14px;align-content:start}
-.cx-msg h2{margin:0;font:600 17px/1.3 var(--f-texto);text-wrap:balance}
-.cx-cab{display:table}
-table.cx-cab{width:100%;border-collapse:collapse;font-size:12.5px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha);margin:0}
-table.cx-cab th{width:70px;text-align:left;font-weight:600;color:var(--tinta-3);padding:5px 10px 5px 0;vertical-align:top;font-size:12px}
-table.cx-cab td{padding:5px 0;color:var(--tinta);overflow-wrap:anywhere}
-table.cx-cab .et{margin-right:4px}
-.cx-texto{white-space:pre-wrap;font-size:14px;line-height:1.55;max-width:80ch;overflow-wrap:anywhere}
+.cx-msg{overflow-y:auto;padding:20px 24px 34px;display:grid;gap:16px;align-content:start}
+.cx-msg h2{margin:0;font:600 20px/1.3 var(--f-titulo);text-wrap:balance}
+table.cx-ficha{width:100%;border-collapse:collapse;font-size:13px;border:1px solid var(--linha);border-radius:10px;overflow:hidden;background:var(--folha-2)}
+table.cx-ficha th{width:84px;text-align:left;font:600 11.5px var(--f-titulo);letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);padding:7px 12px;vertical-align:top}
+table.cx-ficha td{padding:7px 12px 7px 0;color:var(--tinta);overflow-wrap:anywhere}
+table.cx-ficha tr + tr th,table.cx-ficha tr + tr td{border-top:1px solid var(--linha)}
+table.cx-ficha .et{margin-right:4px}
+.cx-texto{white-space:pre-wrap;font-size:14.5px;line-height:1.6;max-width:78ch;overflow-wrap:anywhere}
 .cx-citado summary{cursor:pointer;font-size:12.5px;color:var(--tinta-3)}
-.cx-citado .cx-texto{font-size:13px;color:var(--tinta-2);border-left:2px solid var(--linha);padding-left:12px;margin-top:6px}
-.cx-anexos{display:flex;gap:6px;flex-wrap:wrap}
-.cx-anexo{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);padding:5px 8px;font-size:12px;background:var(--folha-2)}
-.cx-anexo b{font-size:10px;color:var(--erro)}
-.cx-aviso-nf{border:1px solid var(--ok);border-left-width:3px;background:var(--ok-fundo);padding:10px 12px;display:grid;gap:3px;font-size:12.5px}
+.cx-citado .cx-texto{font-size:13px;color:var(--tinta-2);border-left:3px solid var(--linha);padding-left:12px;margin-top:8px}
+.cx-anexos{display:flex;gap:8px;flex-wrap:wrap}
+.cx-anexo{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--linha);border-radius:9px;padding:7px 10px;font-size:12.5px;background:var(--folha-2)}
+.cx-anexo b{font:600 10px var(--f-dado);color:var(--erro);background:var(--erro-fundo);border-radius:4px;padding:3px 4px}
+.cx-verifica{border:1px solid var(--erro);border-left-width:4px;border-radius:10px;background:var(--erro-fundo);padding:12px 14px;display:grid;gap:4px;font-size:13.5px}
+.cx-verifica b{color:var(--erro);font:600 12px var(--f-titulo);letter-spacing:.07em;text-transform:uppercase}
+.cx-aviso-nf{border:1px solid var(--ok);border-left-width:4px;border-radius:10px;background:var(--ok-fundo);padding:12px 14px;display:grid;gap:3px;font-size:13px}
 .cx-aviso-nf b{color:var(--ok)}
-.cx-hist{border-top:1px solid var(--linha);padding-top:10px}
-.cx-hist-t{font:600 11px/1 var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:6px}
-.cx-hist-t span{color:var(--tinta-2);margin-left:6px}
-.cx-h{display:grid;grid-template-columns:92px 112px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--linha);font-size:12.5px;cursor:pointer}
+.cx-hist{border-top:1px solid var(--linha);padding-top:12px}
+.cx-hist-t{font:600 12px/1 var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:8px}
+.cx-hist-t span{color:var(--verde-forte);margin-left:6px}
+.cx-h{display:grid;grid-template-columns:98px 112px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer}
 .cx-h:hover,.cx-h.aberto{background:var(--folha-2)}
-.cx-h.form{cursor:default;grid-template-columns:92px 112px minmax(0,1fr) auto}
-.cx-h-tipo{font-weight:600;font-size:11.5px;color:var(--verde-forte)}
-.cx-h-tipo.t-enviado{color:var(--tinta-2)} .cx-h-tipo.t-excluido{color:var(--tinta-3)} .cx-h.form .cx-h-tipo{color:var(--creme-tinta)}
-.cx-h-data{color:var(--tinta-3);font-variant-numeric:tabular-nums}
+.cx-h.form{cursor:default}
+.cx-h-tipo{font:600 12px var(--f-titulo);color:var(--verde-forte)}
+.cx-h-tipo.t-enviado{color:var(--info)} .cx-h-tipo.t-excluido{color:var(--tinta-3)} .cx-h.form .cx-h-tipo{color:var(--creme-tinta)}
+.cx-h-data{font:500 12px var(--f-dado);color:var(--tinta-3)}
 .cx-h-ass{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx-h-pc{color:var(--tinta-3);font-size:11.5px}
-.cx-h-corpo{padding:10px 12px 14px;border-bottom:1px solid var(--linha);background:var(--folha-2)}
-.cx-desfazer{border-radius:0}
-/* Notas fiscais: a mesma lista */
-#linhas-cab{display:flex!important;gap:14px;align-items:center;min-height:32px;padding:0 14px;grid-template-columns:none}
+.cx-h-pc{color:var(--tinta-3);font-size:12px}
+.cx-h-corpo{padding:10px 12px 14px;margin:0 0 6px;border-radius:0 0 8px 8px;background:var(--folha-2)}
+#linhas-cab{display:flex!important;gap:14px;align-items:center;min-height:38px;padding:0 16px}
 #linhas-cab > span:not(:first-child){display:none}
-#linhas-cab > span:first-child{font-size:11px}
-.mesa.com-leitura{grid-template-columns:380px minmax(0,1fr)}
 .nf-sit{font-weight:600}
+/* Visão geral: entra suave e os números contam */
+@keyframes subir{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anima .kpi-hero,.anima .kpi-b,.anima .cartao{animation:subir .4s ease both}
+.anima .kpi-b:nth-child(2){animation-delay:.05s}.anima .kpi-b:nth-child(3){animation-delay:.1s}.anima .kpi-b:nth-child(4){animation-delay:.15s}
+.anima .kpi-b:nth-child(5){animation-delay:.2s}.anima .cartao{animation-delay:.18s}
+.kpi-b:hover,.kpi-hero:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(10,107,78,.12)}
+.kpi-b,.kpi-hero{transition:transform .15s,box-shadow .15s}
+/* Máquinas: o que cada PC está fazendo agora + o log dele */
+.maq-uso{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--folha-2)}
+.maq-uso.ativo{background:var(--verde-suave);color:var(--verde-forte);font-weight:500}
+.maq-log{display:grid;gap:4px;border-top:1px solid var(--linha);padding-top:10px}
+.maq-log .rot{margin-bottom:2px}
+.maq-log div{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;font-size:12px;color:var(--tinta-2)}
+.maq-log div span:first-child{font-family:var(--f-dado);color:var(--tinta-3)}
+.maq-log div span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.carregando{position:fixed;top:0;left:0;right:0;z-index:50;height:28px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:var(--folha);border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--tinta-2);box-shadow:var(--sombra)}
+.carregando i{position:absolute;left:0;bottom:-1px;height:2px;width:30%;background:var(--verde);animation:correr 1.1s ease-in-out infinite}
+.carregando.erro{color:var(--erro)} .carregando.erro i{display:none}
 </style>
 </head>
 <body>
@@ -744,13 +747,16 @@ table.cx-cab .et{margin-right:4px}
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15m0 5v-5h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.2v.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-tema" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></symbol>
+  <symbol id="i-hotel" viewBox="0 0 24 24"><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2M2 21h20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-enc" viewBox="0 0 24 24"><path d="M14 7l6 5-6 5M20 12H10a6 6 0 0 0-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-olho" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
   <symbol id="i-seta" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
 <a class="pular" href="#lista">Pular para a lista</a>
 <div class="app">
-  <header class="faixa"><b>Painel Fiscal</b><span class="sep"></span><span>Rede Andrade · Notas fiscais dos hotéis</span>
-    <span class="dir" id="faixa-quem"></span></header>
   <aside class="lateral" aria-label="Navegação">
     <div class="marca"><div class="selo" aria-hidden="true">NF</div><div><b>Painel Fiscal</b><small>Notas fiscais dos hotéis</small></div></div>
 
@@ -792,6 +798,8 @@ table.cx-cab .et{margin-right:4px}
     <header class="topo">
       <div class="trilha-nav">Painel Fiscal / <b id="trilha">Caixa de entrada</b></div>
       <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…" aria-label="Buscar"></label>
+      <div class="topo-filtro" id="topo-filtro"></div>
+      <span class="pill demo oculta" id="pill-demo">Modo demonstração · dados fictícios</span>
       <div class="sync">
         <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
         <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
@@ -805,10 +813,8 @@ table.cx-cab .et{margin-right:4px}
     <section class="vista oculta" id="v-log"><div class="rolagem" id="log"></div></section>
     <section class="vista oculta" id="v-maquinas"><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-correio" aria-label="E-mails">
-      <div class="cx-cab">
-        <div class="cx-tit"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span></div>
-        <div class="cx-ferr"><div class="cx-avisos" id="cx-avisos"></div><div id="cx-filtros"></div></div>
-      </div>
+      <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span></div>
+      <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
       <div class="mesa" id="cx-mesa">
         <section class="quadro cx-quadro" aria-label="Lista de e-mails"><div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div></section>
         <article class="leitura oculta" id="cx-leitura" aria-live="polite"></article>
@@ -933,13 +939,13 @@ function desenharPcsCabecalho(pcs) {
 
 async function carregar(){
   try {
-    const j = await api("/api/estado?dias=" + (periodo === "0" ? 0 : 45));   // período menor é filtrado aqui
+    const j = await api("/api/estado?dias=" + (periodo === "0" ? 0 : 45) + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
-    if (j.demo) $("faixa-quem").textContent = "MODO DEMONSTRAÇÃO · dados fictícios · nada é enviado";
+    $("pill-demo").classList.toggle("oculta", !j.demo);
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento
       $("sync-txt").textContent = "lendo a planilha…"; $("lista").innerHTML = `<div class="vazio">Carregando solicitações…</div>`;
       clearTimeout(timer); timer = setTimeout(carregar, 2000); return;
@@ -1092,13 +1098,16 @@ function situacoesDaAba(busca) {
 }
 
 const MAIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+const ICONE_FILTRO = { hotel: "i-hotel", agente: "i-gente", periodo: "i-cal", envio: "i-mail" };
+const icF = campo => `<svg class="ic"><use href="#${ICONE_FILTRO[campo] || "i-busca"}"/></svg>`;
+const SETA_F = '<svg class="seta-f"><use href="#i-seta"/></svg>';
 function pilula(campo, rotulo, valor, padrao) {
   if (!valor || valor === padrao) {
     return campo === "periodo"
-      ? `<span class="fp-on"><button data-pop="periodo"><span class="fp-k">Período</span><span class="fp-v">${esc(valor)}</span></button></span>`
-      : `<button class="fp" data-pop="${campo}">${MAIS}${rotulo}</button>`;
+      ? `<span class="fp-on"><button data-pop="periodo">${icF(campo)}<span class="fp-v">${esc(valor)}</span>${SETA_F}</button></span>`
+      : `<button class="fp" data-pop="${campo}">${icF(campo)}${rotulo}${SETA_F}</button>`;
   }
-  return `<span class="fp-on"><button data-pop="${campo}"><span class="fp-k">${rotulo}</span><span class="fp-v">${esc(valor)}</span></button>` +
+  return `<span class="fp-on"><button data-pop="${campo}">${icF(campo)}<span class="fp-k">${rotulo}:</span><span class="fp-v">${esc(valor)}</span>${SETA_F}</button>` +
     `<button class="fp-x" data-limpa="${campo}" aria-label="Tirar o filtro ${rotulo}">×</button></span>`;
 }
 
@@ -1107,12 +1116,16 @@ function desenharFiltros(busca, total) {
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
       conta("origem|sit", it => it.tipo === o && passaSit(it, o === "form" ? "aberto" : "todos"), busca).toLocaleString("pt-BR")}</span></button>`).join("");
   const atual = origem === "form" ? filtro : filtroEmail;
-  const card = ([f, nome, cor, n]) => `<button class="stc ${n ? "" : "zero"} ${f === "atrasadas" && n ? "alarme" : ""}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
-      <span class="stc-r">${esc(nome)}</span><span class="stc-n">${n.toLocaleString("pt-BR")}</span></button>`;
+  // Fila em abas com contador (como Front/Zendesk); as atrasadas ficam num aviso à parte, que é a exceção do dia
+  const aba = ([f, nome, cor, n]) => `<button class="st-tab ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
+      <span class="bolinha" aria-hidden="true"></span>${esc(nome)}<span class="qt">${n.toLocaleString("pt-BR")}</span></button>`;
   const todas = situacoesDaAba(busca), hist = todas.filter(x => HISTORICO.includes(x[0]));
-  $("status-cards").innerHTML = `<div class="status-grupos">
-      <div class="grupo-st"><span class="rot">Fila de trabalho</span><div class="cards">${todas.filter(x => !HISTORICO.includes(x[0])).map(card).join("")}</div></div>
-      ${hist.length ? `<div class="grupo-st hist"><span class="rot">Histórico</span><div class="cards">${hist.map(card).join("")}</div></div>` : ""}</div>`;
+  const atras = todas.find(x => x[0] === "atrasadas");
+  $("status-cards").innerHTML = (atras && atras[3] ? `<div class="st-alerta" role="status"><svg aria-hidden="true"><use href="#i-alerta"/></svg>
+      <b>${atras[3].toLocaleString("pt-BR")}</b><span>pedido(s) esperando há mais de 7 dias sem NF</span>
+      <button data-st="${filtro === "atrasadas" ? "aberto" : "atrasadas"}" aria-pressed="${filtro === "atrasadas"}">${filtro === "atrasadas" ? "Ver todos em aberto" : "Ver os atrasados"}</button></div>` : "") +
+    `<div class="st-tabs" role="group" aria-label="Situação"><span class="st-rot">Fila</span>${todas.filter(x => !HISTORICO.includes(x[0]) && x[0] !== "atrasadas").map(aba).join("")}
+      ${hist.length ? `<span class="st-sep"></span><span class="st-rot">Resolvidas</span>${hist.map(aba).join("")}` : ""}</div>`;
   const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
   const algum = hotel || agenteF || envio !== "todos" || periodo !== "45";
   $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) + pilula("agente", "Agente", agenteF) +
@@ -1150,10 +1163,12 @@ function desenharPop() {
       agentes.map(a => op("agente", a, a, a === agenteF, conta("agente", it => agentesDo(it).includes(a), ""))).join("");
   } else if (popAberto === "periodo") {
     lista = PERIODOS_NF.map(([v, nome]) => op("periodo", v, nome, v === periodo)).join("");
+  } else if (popAberto === "cx-hotel") {
+    lista = opcoesHotelCorreio(op, buscaPop);
   } else if (popAberto === "envio") {
     lista = Object.entries(ENVIO).map(([k, [nome]]) => op("envio", k, nome, k === envio, conta("envio", it => ENVIO[k][1](it.s), ""))).join("");
   }
-  const comBusca = popAberto === "hotel";
+  const comBusca = popAberto === "hotel" || popAberto === "cx-hotel";
   if (!pop.dataset.campo || pop.dataset.campo !== popAberto) {
     pop.dataset.campo = popAberto;
     pop.innerHTML = (comBusca ? `<input id="pop-busca" type="search" placeholder="Buscar hotel…" autocomplete="off">` : "") + `<div class="pop-lista" id="pop-lista"></div>`;
@@ -1356,6 +1371,8 @@ document.addEventListener("click", async e => {
   if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
   if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
   if (d.pop) { if (popAberto === d.pop) fecharPop(); else { popAberto = d.pop; buscaPop = ""; $("pop").dataset.campo = ""; desenharPop(); } return; }
+  if (d.opv !== undefined && d.campo === "cx-hotel") { cx.hotel = d.opv; cx.sel = null; fecharPop(true); return desenharCorreio(); }
+  if (d.limpa === "cx-hotel") { cx.hotel = ""; return desenharCorreio(); }
   if (d.opv !== undefined) {
     const v = d.opv;
     if (d.campo === "hotel") hotel = v;
@@ -1466,7 +1483,6 @@ const inicial = n => (n || "?").trim().charAt(0).toUpperCase();
 let opAtual = "", opLista = [];
 function desenharOperador(atual, lista, pc) {
   $("op-pc").textContent = pc || "";
-  $("faixa-quem").textContent = `${atual || ""} · ${pc || ""}`;
   if (atual === opAtual && lista.join() === opLista.join()) return;
   opAtual = atual; opLista = lista.includes(atual) ? lista : [atual, ...lista];
   $("op-nome").textContent = atual;

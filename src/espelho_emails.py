@@ -36,7 +36,7 @@ logger = configurar_logging("espelho_emails")
 PREFIXO_ABA = "Correio_"
 PREFIXO_TEXTOS = "CorreioTexto_"
 CABECALHO = ["ID", "Pasta", "Caixa", "Hotel", "De", "Nome", "Para", "Assunto", "Quando", "Anexos", "Prévia",
-             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto"]
+             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise"]
 CAB_TEXTOS = ["ID", "Texto", "Citado"]
 ABA_EVENTOS = "Eventos_Correio"
 CAB_EVENTOS = ["Quando", "ID", "Ação", "Agente", "PC"]
@@ -118,8 +118,10 @@ def e_do_robo(de, corpo, rede, remetente_antigo=""):
 
 
 # ---------- classificação por regras (o agente de IA do usuário entra aqui depois) ----------
-_CORRIGIR = re.compile(r"\b(?:errad[oa]s?|incorret[oa]s?|retific|corrig|cancel|substitu|refaz|reemit|estorn)"
-                       r"|valor\s+(?:a\s+mais|a\s+menos|errado|divergente|diferente)", re.I)
+_CORRIGIR = re.compile(   # qualquer pedido de refazer a NF vai pra Urgência (usuário, 08/10/2026)
+    r"\b(?:errad[oa]s?|incorret[oa]s?|equivocad|retific|corrig|corre[cç][aã]o|cancel|substitu|refaz|refeita|reemit|estorn)"
+    r"|valor\s+(?:a\s+mais|a\s+menos|errado|divergente|diferente)|\bdiverg|emitir\s+(?:novamente|de\s+novo|outra)"
+    r"|\bnova\s+nota\b|\bnota\s+nova\b|\boutra\s+nota\b|n[aã]o\s+(?:confere|bate|corresponde|est[aá]\s+certo)", re.I)
 _COBRANCA = re.compile(r"\bn[aã]o\s+(?:recebi|recebemos|chegou|veio)|\bcad[eê]\b|\bainda\s+(?:aguardo|n[aã]o)|"
                        r"\breiter|\bnovamente\b|\burgente\b|\bprazo\b", re.I)
 _COMPLEMENTAR = re.compile(r"\b(?:falt\w*|outr[ao]s?|mais|restantes?|adiciona\w*|demais)\b[^.\n]{0,40}"
@@ -222,6 +224,37 @@ def quartos_dos_anexos(item):
     return melhor
 
 
+def textos_pdf_anexos(item, maximo=MAX_PDFS):
+    """[(nome, texto)] dos PDFs anexados (pequenos). Só lê; o arquivo temporário é apagado em seguida."""
+    import os
+    import tempfile
+    saida = []
+    try:
+        anexos = [item.Attachments.Item(i) for i in range(1, item.Attachments.Count + 1)]
+    except Exception:
+        return saida
+    for a in [a for a in anexos if str(a.FileName).lower().endswith(".pdf") and (a.Size or 0) <= MAX_PDF_BYTES][:maximo]:
+        pasta = tempfile.mkdtemp(prefix="nf_anexo_")
+        caminho = os.path.join(pasta, "anexo.pdf")
+        try:
+            a.SaveAsFile(caminho)
+            from pypdf import PdfReader
+            texto = "\n".join((p.extract_text() or "") for p in PdfReader(caminho).pages[:3])
+            if not texto.strip():   # PDF que é imagem (foto/scan da nota): leitor de texto do Windows
+                import conferente
+                texto = conferente._texto_ocr(caminho)
+            saida.append((str(a.FileName), texto))
+        except Exception as e:
+            logger.debug(f"anexo ilegível ({a.FileName}): {e}")
+        finally:
+            try:
+                os.remove(caminho)
+                os.rmdir(pasta)
+            except OSError:
+                pass
+    return saida
+
+
 def marcar_dividida_no_outlook(item):
     """Etiqueta azul "Nota dividida" no próprio e-mail do hóspede (a mesma dos e-mails do robô)."""
     from controle_nf import CATEGORIA_DIVIDIDA
@@ -274,7 +307,7 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
                        e["assunto"], e["quando"], ", ".join(e.get("anexos", [])), previa(e.get("texto", "")),
                        pc, carimbo, texto_quartos(e) if entrada else "",
                        reclama_falta_nota(e.get("texto", "")) if entrada else "",
-                       " ".join(e.get("classes", [])) if entrada else "", versao])
+                       " ".join(e.get("classes", [])) if entrada else "", versao, e.get("analise", "") if entrada else ""])
     # respostas: TODAS numa célula só ("endereço=quando;..."), as mais novas primeiro — 400 linhas viravam 80 KB
     limite = agora - datetime.timedelta(days=JANELA_DIAS)
     pares, tamanho = [], 0
@@ -285,7 +318,7 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
         pares.append(par)
         tamanho += len(par) + 1
     if pares:
-        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao])
+        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao, ""])
     return linhas
 
 
@@ -303,7 +336,7 @@ def ler_textos(linhas):
 def ler_aba(linhas):
     """Linhas de uma aba Correio_<PC> -> [dict] (entrada, enviado e resposta)."""
     chaves = ["id", "pasta", "caixa", "hotel", "de", "nome", "para", "assunto", "quando", "anexos", "previa",
-              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto"]
+              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto", "analise"]
     saida = []
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():
@@ -482,12 +515,29 @@ class Espelho:
                 logger.info(f"🔀 Nota dividida pelo voucher: {n} quartos ({'; '.join(nomes)}) · "
                             f"{str(item.Subject or '')[:60]} ({caixa})")
         proprio, citado = dividir_historico(corpo)
+        classes = classificar(item.Subject, proprio, anexos)
+        analise = self._analisar(item, caixas.get(caixa, ""), str(item.SenderName or ""), str(item.Subject or ""),
+                                 proprio, recebido) if "corrigir" in classes else ""
         self.itens[i] = {"id": i, "entry_id": item.EntryID, "pasta": ENTRADA, "caixa": caixa,
                          "hotel": caixas.get(caixa, ""), "de": de, "nome": str(item.SenderName or ""),
                          "para": caixa, "assunto": str(item.Subject or ""),
                          "quando": recebido.isoformat(timespec="seconds"), "anexos": anexos,
                          "texto": proprio, "citado": citado, "quartos": vouchers[i],
-                         "classes": classificar(item.Subject, proprio, anexos)}
+                         "classes": classes, "analise": analise}
+
+    def _analisar(self, item, hotel, nome, assunto, texto, recebido):
+        """Pedido de correção: abre a NF (anexada ao e-mail ou no Dropbox) e cruza com o que o cliente escreveu."""
+        try:
+            import analise_nf
+            import envio_nf
+            e = {"nome": nome, "hotel": hotel, "assunto": assunto, "texto": texto,
+                 "recebido": recebido.isoformat(timespec="seconds")}
+            itens = envio_nf.listar_notas_dropbox(self.cfg)
+            achadas = envio_nf.notas_do_email(e, self.cfg)
+            return analise_nf.analisar(e, texto, itens, achadas, textos_pdf_anexos(item))["resumo"]
+        except Exception as erro:
+            logger.debug(f"análise da NF: {erro}")
+            return ""
 
     def _tirar_excluidos(self, namespace, pastas_entrada):
         """E-mail que saiu da Caixa de Entrada (excluído ou movido) sai do espelho: conta como resolvido."""
