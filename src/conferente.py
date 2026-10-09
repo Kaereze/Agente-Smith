@@ -655,6 +655,7 @@ def main():
     proxima_confirmacao = time.monotonic() + 60
     proximo_espelho, espelho = time.monotonic() + 30, None
     proximo_vigia, vigia, ultima_completa = time.monotonic() + 40, None, -1e9
+    proxima_faxina = time.monotonic() + 5 * 60   # faxina da Central: 1x por dia, só no principal (faxina.py)
     while True:
         agora = time.monotonic()
         try:
@@ -678,6 +679,13 @@ def main():
                 proximo_sinal = agora + SINAL_ONLINE_SEGUNDOS
             if atender_pedido(backend, cfg):
                 proxima_conferencia = 0.0
+            if agora >= proxima_faxina:
+                proxima_faxina = agora + 60 * 60
+                try:
+                    import faxina
+                    faxina.rodar(backend, cfg)
+                except Exception as e:
+                    logger.warning(f"⚠️ Faxina da Central não rodou ({e}) — tento de novo em 1 h.")
         except _SoConferente:
             pass
         except Exception as e:

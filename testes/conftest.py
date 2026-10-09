@@ -42,15 +42,32 @@ class PlanilhaFalsa:
     def listar_abas(self, planilha_id):
         return list(self.planilhas.get(planilha_id, {}))
 
-    def ler_abas(self, planilha_id, nomes):
+    def ler_abas(self, planilha_id, nomes, faixas=None):
         dados, erros = {}, {}
+        self.leituras = getattr(self, "leituras", 0) + 1
         for nome in nomes:
             abas = self.planilhas.get(planilha_id, {})
             if nome in self.abas_com_erro or nome not in abas:
                 erros[nome] = f"Unable to parse range: {nome}"
+            elif faixas and nome in faixas:   # "A100:H": da linha 100 em diante (como a API: além do fim = erro)
+                inicio = int("".join(c for c in faixas[nome].split(":")[0] if c.isdigit()))
+                if inicio > max(len(abas[nome]), 1):
+                    erros[nome] = f"Range ({nome}!{faixas[nome]}) exceeds grid limits"
+                else:
+                    dados[nome] = copy.deepcopy(abas[nome][inicio - 1:])
             else:
                 dados[nome] = copy.deepcopy(abas[nome])
         return dados, erros
+
+    def substituir_aba(self, planilha_id, aba, linhas):
+        self.planilhas.setdefault(planilha_id, {})[aba] = [list(l) for l in linhas]
+
+    def apagar_linhas(self, planilha_id, aba, inicio, fim, novas=None):
+        tabela = self.planilhas[planilha_id][aba]
+        tabela[inicio - 1:fim - 1] = [list(map(str, l)) for l in (novas or [])]
+
+    def apagar_aba(self, planilha_id, aba):
+        del self.planilhas[planilha_id][aba]
 
     def escrever(self, planilha_id, atualizacoes):
         if self.falhas_escrita:
@@ -182,3 +199,11 @@ def sem_outlook_no_envio_nf(monkeypatch):
 
 
 AGORA = datetime.datetime(2026, 9, 24, 10, 0, 0)
+
+
+@pytest.fixture(autouse=True)
+def leitura_da_central_zerada(monkeypatch):
+    """O cache da leitura leve da conferência é do processo: cada teste começa do zero."""
+    import confirmar_nfs
+    monkeypatch.setattr(confirmar_nfs, "_CACHE_CENTRAL",
+                        {"hoteis_em": -1e9, "hoteis": {}, "trat": None, "trat_em": -1e9})

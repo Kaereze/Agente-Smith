@@ -27,13 +27,15 @@ CAB_FILA = ["Quando", "ID", "Evento", "PC", "Quem", "Dados (JSON)"]
 ABA_ANEXOS = "Envios_NF_Anexos"
 CAB_ANEXOS = ["ID", "Parte", "Total", "Nome", "Base64"]
 ABA_PCS = "PCs_Painel"
-CAB_PCS = ["PC", "Agente", "Contas", "Visto em", "Outlook", "Versão", "Papel", "Última conferência"]
+CAB_PCS = ["PC", "Agente", "Contas", "Visto em", "Outlook", "Versão", "Papel", "Última conferência", "Rede", "Cota"]
 
 PEDIDO, ASSUMIDO, ENVIADO, FALHOU = "PEDIDO", "ASSUMIDO", "ENVIADO", "FALHOU"
 TAMANHO_PARTE = 45_000            # limite de célula do Sheets é 50 mil caracteres
 MAX_ANEXO_BYTES = 8 * 1024 * 1024
 PC_ONLINE_SEGUNDOS = 180
 SEM_RESPOSTA_SEGUNDOS = 90
+FILA_ESPERA_HORAS = 24           # PC dono desligado: o pedido espera ele ligar por até 24 h; depois expira
+EXCLUIR, ENCAMINHAR = "excluir", "encaminhar"   # ações no Outlook do PC dono (além de enviar/responder)
 DISPID_SEND_USING_ACCOUNT = 64209
 
 MENSAGEM_PADRAO = (
@@ -555,9 +557,11 @@ def contas_do_outlook():
 PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
 
 
-def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a=""):
+def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a="",
+                        encaminhar_de=""):
     """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
-    a assinatura da caixa no Outlook), imagens embutidas, e os anexos. Levanta erro legível."""
+    a assinatura da caixa no Outlook), imagens embutidas, e os anexos. responder_a / encaminhar_de: EntryID do
+    e-mail original (resposta ou encaminhamento de verdade, com o original embaixo). Levanta erro legível."""
     import pythoncom
     import win32com.client
     pythoncom.CoInitialize()
@@ -567,12 +571,17 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     if conta is None:
         raise RuntimeError(f"a caixa {conta_de} não está no Outlook deste PC")
     original = None
-    if responder_a:   # resposta de verdade (mesma conversa), com o histórico do Outlook embaixo
+    if responder_a or encaminhar_de:   # mesma conversa, com o histórico do Outlook embaixo
         try:
-            original = ns.GetItemFromID(responder_a)
+            original = ns.GetItemFromID(responder_a or encaminhar_de)
         except Exception:
+            if encaminhar_de:
+                raise RuntimeError("o e-mail a encaminhar não está mais no Outlook deste PC")
             original = None
-    mail = original.Reply() if original is not None else outlook.CreateItem(0)
+    if original is None:
+        mail = outlook.CreateItem(0)
+    else:
+        mail = original.Forward() if encaminhar_de else original.Reply()
     historico = mail.HTMLBody if original is not None else ""
     mail.To = para
     if cc:
@@ -590,6 +599,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
         if caminho_ass:
             html_assinatura, imagens = assinatura_html(caminho_ass)
         mail.HTMLBody = corpo_do_email(mensagem, html_assinatura)
+        if historico:   # sem selo também: a resposta/encaminhamento leva o e-mail original embaixo
+            mail.HTMLBody = re.sub(r"</body>\s*</html>\s*$", "", mail.HTMLBody) + "<br>" + historico
     for arquivo, cid in imagens:
         anexo_img = mail.Attachments.Add(str(arquivo))
         anexo_img.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, cid)
@@ -601,6 +612,20 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
         ns.SendAndReceive(False)
     except Exception:
         pass
+
+
+def excluir_no_outlook(entry_id):
+    """Move o e-mail pra Itens Excluídos (o Outlook guarda; dá pra recuperar de lá)."""
+    import pythoncom
+    import win32com.client
+    pythoncom.CoInitialize()
+    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    try:
+        item = ns.GetItemFromID(entry_id)
+    except Exception:
+        return False   # já não está mais lá (alguém excluiu/moveu pelo Outlook): nada a fazer
+    item.Delete()
+    return True
 
 
 # ---------- pedido ----------
@@ -618,12 +643,13 @@ def numeros_de_nf(assunto, anexos):
     return numeros
 
 
-def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem, selo="", responder=""):
-    """anexos: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "planilha"|"local", "nome", ...}]"""
+def montar_pedido(sol, para, cc, assunto, conta_de, anexos, mensagem, selo="", responder="", acao=""):
+    """anexos: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "planilha"|"local", "nome", ...}]
+    acao: "" (enviar/responder) | "encaminhar" | "excluir" — responder = id do e-mail do espelho."""
     return {"aba": sol["aba"], "carimbo": sol["carimbo"], "email": sol["email"], "hotel": sol["hotel"],
             "nome": sol["nome"], "para": para, "cc": cc, "assunto": assunto, "conta_de": conta_de,
-            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos), "mensagem": mensagem, "selo": selo,
-            "responder": responder}
+            "anexos": anexos, "nfs": numeros_de_nf(assunto, anexos) if not acao else [], "mensagem": mensagem,
+            "selo": selo, "responder": responder, "acao": acao}
 
 
 def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
@@ -657,6 +683,7 @@ class ServicoEnvio:
         self.ao_registrar_nf = ao_registrar_nf        # (pedido, quem) -> grava NF/OBS na aba Tratamento
         # resolvidos na hora da chamada (os testes trocam as funções do módulo)
         self.enviar = enviar or (lambda *a, **k: enviar_pelo_outlook(*a, **k))
+        self.excluir = lambda entry: excluir_no_outlook(entry)
         self.ler_contas = ler_contas or (lambda: contas_do_outlook())
         self.relogio = relogio
         self.agente = ""
@@ -686,7 +713,7 @@ class ServicoEnvio:
         idx = next((i for i, l in enumerate(self.pcs_linhas[1:], start=2) if l and str(l[0]) == self.pc), None)
         from sheets import nome_intervalo
         if idx:
-            self.backend.escrever(self.central, [(f"{nome_intervalo(ABA_PCS)}!{c}{idx}", v) for c, v in zip("ABCDEFGH", linha)])
+            self.backend.escrever(self.central, [(f"{nome_intervalo(ABA_PCS)}!{c}{idx}", v) for c, v in zip("ABCDEFGHIJ", linha)])
         else:
             self.backend.anexar_linhas(self.central, ABA_PCS, [linha])
         self.publicado_em = self.relogio()
@@ -699,8 +726,9 @@ class ServicoEnvio:
                 logger.warning(f"⚠️ Não consegui ler as contas do Outlook ({e})")
             self.contas_lidas_em = self.relogio()
 
-    def destino_para(self, conta_de):
-        """-> (pc que envia | None, motivo)"""
+    def destino_para(self, conta_de, aceitar_desligado=False):
+        """-> (pc que envia | None, motivo). aceitar_desligado: o PC dono está desligado, mas o pedido pode
+        esperar na fila (até FILA_ESPERA_HORAS) e sai quando ele ligar."""
         self._ler_contas(datetime.timedelta(minutes=10))   # janela aberta antes da 1ª volta do laço
         conta_de = (conta_de or "").lower()
         if conta_de in self.contas:
@@ -708,13 +736,18 @@ class ServicoEnvio:
         pc = pcs_online(self.pcs_linhas, self.relogio()).get(conta_de)
         if pc:
             return pc, ""
+        dono = pcs_online(self.pcs_linhas, self.relogio(), segundos=10 ** 9).get(conta_de)
+        if dono and aceitar_desligado:
+            return dono, f"O PC {dono} está desligado agora: o pedido fica na fila e sai quando ele ligar (até 24 h)."
         return None, (f"Nenhum PC ligado agora tem a caixa {conta_de} no Outlook (o Painel do PC dela precisa"
                       f" estar aberto/rodando).")
 
-    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder=""):
-        """responder: id do e-mail da aba E-mails (espelho_emails) — sai como resposta, anexo opcional."""
-        """anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} | {"tipo": "arquivo", "nome", "conteudo": bytes}]"""
-        destino, motivo = self.destino_para(conta_de)
+    def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder="",
+              acao=""):
+        """responder: id do e-mail do espelho (espelho_emails) — sai como resposta, anexo opcional.
+        acao: "encaminhar" | "excluir" (no Outlook do PC dono). anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} |
+        {"tipo": "arquivo", "nome", "conteudo": bytes}]. PC dono desligado: o pedido espera na fila."""
+        destino, motivo = self.destino_para(conta_de, aceitar_desligado=True)
         if not destino:
             return {"ok": False, "motivo": motivo, "contas_locais": self.contas}
         if not anexos_entrada and not responder:
@@ -736,7 +769,7 @@ class ServicoEnvio:
         if partes:
             self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
         pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos,
-                               mensagem if responder else (mensagem or mensagem_padrao(self.cfg)), selo, responder)
+                               mensagem if responder else (mensagem or mensagem_padrao(self.cfg)), selo, responder, acao)
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
@@ -744,7 +777,7 @@ class ServicoEnvio:
             self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
                                    "assumido_por": "", "resultado": None, "detalhe": "", "pc": ""}
             threading.Thread(target=self._executar, args=(id_envio, self.fila[id_envio]), daemon=True).start()
-        return {"ok": True, "id": id_envio, "destino": destino}
+        return {"ok": True, "id": id_envio, "destino": destino, "aviso": motivo}
 
     def executar_pendentes(self):
         for id_envio, e in list(self.fila.items()):
@@ -755,6 +788,16 @@ class ServicoEnvio:
                 continue
             if e["assumido_por"] == self.pc:
                 continue   # já assumido por este PC numa volta anterior: não reenvia
+            try:
+                velho = self.relogio() - datetime.datetime.fromisoformat(e["pedido_em"]) > \
+                    datetime.timedelta(hours=FILA_ESPERA_HORAS)
+            except ValueError:
+                velho = False
+            if velho:   # ficou na fila com este PC desligado por mais de 24 h: não sai mais (pode estar desatualizado)
+                self.locais[id_envio] = {"estado": "falhou", "detalhe": "expirou", "pc": self.pc}
+                self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, FALHOU, self.pc, e["quem"],
+                                                                         {"detalhe": "expirou: o PC ficou desligado mais de 24 h"})])
+                continue
             self._executar(id_envio, e)
 
     def _executar(self, id_envio, e):
@@ -766,14 +809,23 @@ class ServicoEnvio:
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ASSUMIDO, self.pc, e["quem"])])
         na_planilha = any(a["tipo"] == "planilha" for a in p["anexos"])
         try:
-            linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
-            arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
-            extra = {}
-            if p.get("responder"):
-                import espelho_emails
-                extra["responder_a"] = espelho_emails.entry_do_email(p["responder"])
-            self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
-                        agente=self.agente, selo=p.get("selo", ""), **extra)
+            import espelho_emails
+            acao = p.get("acao", "")
+            if acao == EXCLUIR:
+                entry = espelho_emails.entry_do_email(p["responder"])
+                if entry:
+                    self.excluir(entry)
+            else:
+                linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
+                arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
+                extra = {}
+                if p.get("responder"):
+                    entry = p.get("entry") or espelho_emails.entry_do_email(p["responder"])
+                    extra["encaminhar_de" if acao == ENCAMINHAR else "responder_a"] = entry
+                    if acao == ENCAMINHAR and not entry:
+                        raise RuntimeError("o e-mail a encaminhar não está mais no espelho deste PC")
+                self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
+                            agente=self.agente, selo=p.get("selo", ""), **extra)
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")
@@ -783,9 +835,14 @@ class ServicoEnvio:
             return
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ENVIADO, self.pc, e["quem"])])
         self.locais[id_envio] = {"estado": "enviado", "pc": self.pc}
+        if p.get("acao") == EXCLUIR:
+            logger.info(f"🗑️ {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} movido pra Itens Excluídos "
+                        f"(pedido de {e['quem']})")
+            return
         logger.info(f"📧 {id_envio}: \"{p['assunto']}\" enviado de {p['conta_de']} para {p['para']}")
         try:
-            self.ao_registrar_nf(p, e["quem"])
+            if p.get("acao") != ENCAMINHAR:
+                self.ao_registrar_nf(p, e["quem"])
         except Exception:
             logger.exception("NF enviada, mas não consegui registrar na aba Tratamento")
         if na_planilha:
@@ -815,6 +872,10 @@ class ServicoEnvio:
             espera = (self.relogio() - datetime.datetime.fromisoformat(e["pedido_em"])).total_seconds()
         except ValueError:
             espera = 0
+        destino = e["pedido"].get("pc_destino", "")
+        if destino and destino not in pcs_online(self.pcs_linhas, self.relogio()).values() and destino != self.pc:
+            return {"estado": "na_fila", "pc": destino,
+                    "detalhe": f"O PC {destino} está desligado: o pedido sai quando ele ligar (até 24 h)."}
         if espera > SEM_RESPOSTA_SEGUNDOS:
             return {"estado": "sem_resposta", "contas_locais": self.contas,
                     "detalhe": f"O PC {e['pedido'].get('pc_destino')} não respondeu em {SEM_RESPOSTA_SEGUNDOS}s "

@@ -37,9 +37,10 @@ def estado_inicial():
             "historico": []}
 
 
-def dobrar_eventos(linhas):
-    """linhas da aba Tratamento (com cabeçalho) -> {chave: estado}"""
-    estados = {}
+def dobrar_eventos(linhas, estados=None):
+    """linhas da aba Tratamento (com cabeçalho) -> {chave: estado}. estados: continua de onde parou (só as
+    linhas novas — o Painel não redobra 25 mil linhas a cada 15 s)."""
+    estados = {} if estados is None else estados
     for l in linhas[1:]:
         l = list(l) + [""] * (len(CABECALHO_TRATAMENTO) - len(l))
         quando, agente, pc, aba, carimbo, email, acao, valor = (str(v).strip() for v in l[:8])
@@ -187,6 +188,28 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
                      "historico": est["historico"], "situacao": situacao(s, est, conf)})
     fila.sort(key=lambda x: (x["data"], x["carimbo"]), reverse=True)
     return fila
+
+
+def juntar_fim(atuais, fim):
+    """Leitura só do fim da Tratamento: atuais = o que eu já tinha; fim = o que veio de "A{len(atuais)}:H" (a
+    última linha conhecida de novo, pra conferir). -> a aba inteira | None (mudou por baixo: reler inteira)."""
+    if not atuais or not fim or [str(v) for v in fim[0]] != [str(v) for v in atuais[-1]]:
+        return None
+    return atuais + fim[1:] if len(fim) > 1 else atuais
+
+
+def resolvida_em(item_fila):
+    """Quando a solicitação foi resolvida (iso): a hora em que o e-mail com a NF saiu pro hóspede; sem envio
+    registrado, o registro da NF. Não a hora da anotação — a conferência do robô anota envios antigos hoje."""
+    envios = []
+    for env in item_fila.get("envios", []):
+        try:
+            envios.append(datetime.datetime.strptime(env["quando"], "%d/%m/%Y %H:%M").isoformat())
+        except (ValueError, KeyError):
+            continue
+    if envios:
+        return max(envios)
+    return max((h["quando"][:19] for h in item_fila.get("historico", []) if h["acao"] == NF), default="")
 
 
 def nfs_do_controle(registro_dict):

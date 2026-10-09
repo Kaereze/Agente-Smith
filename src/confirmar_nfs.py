@@ -386,6 +386,41 @@ def varrer_dropbox(indice, cfg, limite, vistos, textos):
     return lidos
 
 
+# Leitura leve (08/10/2026): a conferência roda a cada 2 min em cada PC e relia ~11 MB (abas dos hotéis +
+# Tratamento inteira). Agora as abas dos hotéis valem 5 min e a Tratamento vem só pelo fim (as linhas novas).
+_CACHE_CENTRAL = {"hoteis_em": -1e9, "hoteis": {}, "trat": None, "trat_em": -1e9}
+HOTEIS_CACHE_SEGUNDOS = 300
+TRATAMENTO_INTEIRA_SEGUNDOS = 1800
+
+
+def ler_central(backend, central, abas_hoteis, relogio=None):
+    """-> {aba: linhas} com as abas dos hotéis pedidas + a Tratamento, gastando o mínimo de leitura/download."""
+    import time
+    agora = (relogio or time.monotonic)()
+    c = _CACHE_CENTRAL
+    ler_hoteis = agora - c["hoteis_em"] >= HOTEIS_CACHE_SEGUNDOS or set(abas_hoteis) - set(c["hoteis"])
+    inteira = c["trat"] is None or agora - c["trat_em"] >= TRATAMENTO_INTEIRA_SEGUNDOS
+    faixas = {} if inteira else {dados.ABA_TRATAMENTO: f"A{len(c['trat'])}:H"}
+    lidas, _ = backend.ler_abas(central, (list(abas_hoteis) if ler_hoteis else []) + [dados.ABA_TRATAMENTO],
+                                faixas=faixas)
+    if ler_hoteis:
+        c["hoteis"], c["hoteis_em"] = {a: lidas.get(a, []) for a in abas_hoteis}, agora
+    trat = lidas.get(dados.ABA_TRATAMENTO)
+    if trat is not None and not inteira:
+        trat = dados.juntar_fim(c["trat"], trat)
+    if trat is None and not inteira:   # mudou por baixo (faxina) ou o fim falhou: inteira
+        trat = backend.ler_abas(central, [dados.ABA_TRATAMENTO])[0].get(dados.ABA_TRATAMENTO)
+        inteira = True
+    if trat is None:
+        if c["trat"] is None:
+            raise RuntimeError("não consegui ler a aba Tratamento")
+        trat = c["trat"]
+    elif inteira:
+        c["trat_em"] = agora
+    c["trat"] = trat
+    return {**{a: c["hoteis"].get(a, []) for a in abas_hoteis}, dados.ABA_TRATAMENTO: trat}
+
+
 def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, agora=None, desde=None, rever=False,
               ocr=True):
     agora = agora or datetime.datetime.now()
@@ -394,7 +429,7 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
     limite = datetime.datetime.fromisoformat(desde) - datetime.timedelta(days=1)
 
     hoteis, _ = ler_hoteis(backend, dict(cfg, somente_hoteis=[]))
-    lidas, _ = backend.ler_abas(cfg["planilha_central_id"], [h.aba for h in hoteis] + [dados.ABA_TRATAMENTO])
+    lidas = ler_central(backend, cfg["planilha_central_id"], [h.aba for h in hoteis])
     solicitacoes = []
     for h in hoteis:
         for s in dados.ler_solicitacoes(h.aba, h.nome, lidas.get(h.aba, []), cfg):

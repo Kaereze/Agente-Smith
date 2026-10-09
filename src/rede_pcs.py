@@ -92,7 +92,7 @@ def ler_pcs(linhas, agora=None):
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():
             continue
-        l = [str(v).strip() for v in l] + [""] * 8
+        l = [str(v).strip() for v in l] + [""] * 10
         visto = _data(l[3])
         online = bool(visto and (agora - visto).total_seconds() < PC_ONLINE_SEGUNDOS)
         conf_quando, _, conf_resumo = l[7].partition("|")
@@ -100,6 +100,7 @@ def ler_pcs(linhas, agora=None):
         pcs.append({"pc": l[0], "agente": l[1], "caixas": len([c for c in l[2].split(",") if c]),
                     "online": online, "visto": l[3], "outlook": l[4], "versao": l[5], "papel": l[6],
                     "conferencia": conf_quando, "conferencia_resumo": conf_resumo,
+                    "rede": l[8], "cota": l[9],   # "ip:porta" (busca ao vivo) e "leituras/escritas" no último minuto
                     # sem nenhuma volta ainda (PC acabou de ligar) não é "parada"
                     "conferencia_atrasada": bool(online and l[4] == "aberto" and conf_dt and
                                                  (agora - conf_dt).total_seconds() > CONFERENCIA_ATRASADA_MIN * 60)})

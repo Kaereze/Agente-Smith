@@ -1,0 +1,98 @@
+"""Caixa de correio do Painel: junta os espelhos dos 4 PCs (abas Correio_<PC>) com o lido/excluído da equipe.
+
+Regras do usuário (08/10/2026):
+- 1 linha por hóspede (o mesmo endereço), com o último e-mail e quantos são; abrir mostra a conversa toda.
+- Caixa de Entrada: o que está sem resposta. Respondido (por QUALQUER caixa da rede, de qualquer PC) some.
+- Urgência: sem resposta há mais de 7 dias, ou pedido de correção/cancelamento de NF (vai na hora).
+- Itens Enviados: 24 h. Mais de 14 dias sem resposta: já saiu do espelho no PC dono.
+- Lido / não lido vale pra equipe toda ("lido por Clara às 10:32"); não mexe no Outlook.
+- Excluir: some na hora pra todos; o PC dono move pra Itens Excluídos do Outlook dele.
+"""
+import datetime
+
+import espelho_emails as ee
+
+PRIORIDADE_CLASSES = ["corrigir", "complementar", "cobranca", "dados_tomador", "pedido_nf"]
+
+
+def _data(iso):
+    try:
+        return datetime.datetime.fromisoformat(str(iso)[:19])
+    except ValueError:
+        return None
+
+
+def juntar(emails, eventos, agora):
+    """emails: linhas de todas as Correio_<PC> (espelho_emails.ler_aba). eventos: espelho_emails.dobrar_eventos.
+    -> (entrada [e-mail], enviados [e-mail], respostas {endereço: último envio iso})"""
+    respostas = {}
+    for e in emails:
+        if e["pasta"] == ee.RESPOSTA and e["quando"] > respostas.get(e["de"], ""):
+            respostas[e["de"]] = e["quando"]
+    entrada, enviados, vistos = [], [], set()
+    for e in emails:
+        ev = eventos.get(e["id"], {})
+        if ev.get("excluido") or e["pasta"] == ee.RESPOSTA:
+            continue
+        repetido = (e["pasta"], e["caixa"], e["de"], e["assunto"], e["quando"])   # mesma caixa em 2 PCs
+        if repetido in vistos:
+            continue
+        vistos.add(repetido)
+        if e["pasta"] == ee.ENVIADO:
+            enviados.append(e)
+            continue
+        if respostas.get(e["de"], "") > e["quando"]:
+            continue   # respondido por uma caixa de outro PC: some também
+        quando = _data(e["quando"])
+        dias = (agora - quando).total_seconds() / 86400 if quando else 0
+        entrada.append({**e, "lido": ev.get("lido", False), "lido_por": ev.get("lido_por", ""),
+                        "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),
+                        "urgente": dias > ee.URGENCIA_DIAS or "corrigir" in e["classes"]})
+    entrada.sort(key=lambda e: e["quando"], reverse=True)
+    enviados.sort(key=lambda e: e["quando"], reverse=True)
+    return entrada, enviados, respostas
+
+
+def conversas(entrada):
+    """E-mails da entrada -> 1 conversa por hóspede (endereço), a mais recente primeiro."""
+    grupos = {}
+    for e in entrada:   # já vem do mais novo pro mais velho
+        g = grupos.get(e["de"])
+        if g is None:
+            g = grupos[e["de"]] = {"de": e["de"], "nome": e["nome"] or e["de"], "ultimo": e, "ids": [], "hoteis": [],
+                                   "pcs": [], "classes": [], "nao_lidos": 0, "urgente": False, "desde": e["quando"],
+                                   "quartos": 0, "falta_nota": False}
+        g["ids"].append(e["id"])
+        g["desde"] = min(g["desde"], e["quando"])
+        g["nao_lidos"] += 0 if e["lido"] else 1
+        g["urgente"] = g["urgente"] or e["urgente"]
+        g["quartos"] = max(g["quartos"], e.get("quartos") or 0)
+        g["falta_nota"] = g["falta_nota"] or bool(e.get("falta_nota"))
+        if not g["nome"] or g["nome"] == g["de"]:
+            g["nome"] = e["nome"] or g["nome"]
+        for campo, valor in (("hoteis", e["hotel"]), ("pcs", e["pc"])):
+            if valor and valor not in g[campo]:
+                g[campo].append(valor)
+        for c in e["classes"]:
+            if c not in g["classes"]:
+                g["classes"].append(c)
+    saida = list(grupos.values())
+    for g in saida:
+        g["classes"].sort(key=lambda c: PRIORIDADE_CLASSES.index(c) if c in PRIORIDADE_CLASSES else 99)
+        g["total"] = len(g["ids"])
+    return saida
+
+
+def contagem(convs):
+    """Números do menu: e-mails não lidos na Caixa de Entrada (como no Outlook) e conversas em Urgência."""
+    return {"entrada_nao_lidos": sum(c["nao_lidos"] for c in convs if not c["urgente"]),
+            "entrada": sum(1 for c in convs if not c["urgente"]),
+            "urgencia": sum(1 for c in convs if c["urgente"]),
+            "urgencia_nao_lidos": sum(c["nao_lidos"] for c in convs if c["urgente"])}
+
+
+def novas_urgencias(convs, ja_avisadas):
+    """Conversas que acabaram de entrar em Urgência (pro aviso do Windows): -> ([conversa], avisadas atualizado)."""
+    agora_urgentes = {c["de"]: c for c in convs if c["urgente"]}
+    novas = [c for de, c in agora_urgentes.items() if de not in ja_avisadas]
+    return novas, set(agora_urgentes)

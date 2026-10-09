@@ -109,32 +109,31 @@ class BackendGoogle:
             _TAMANHOS.pop((planilha_id, aba), None)
             return func(self._aba(planilha_id, aba))
 
-    def ler_abas(self, planilha_id, nomes):
-        """Uma chamada pra todas as abas; se falhar, lê uma a uma pra isolar a com problema.
-        -> ({aba: linhas}, {aba: erro})"""
-        nomes = list(dict.fromkeys(nomes))
-        if not nomes:
-            return {}, {}
-        planilha = self._planilha(planilha_id)
+    def ler_abas(self, planilha_id, nomes, faixas=None):
+        """Uma chamada pra todas as abas. faixas: {aba: "A100:H"} lê só esse pedaço (o resto, a aba inteira).
+        Se o lote falhar por causa de uma aba (apagada, renomeada), tira só ela e lê o resto de novo — nunca aba por
+        aba: 79 abas uma a uma seriam 79 leituras, 10 min da fatia da cota. -> ({aba: linhas}, {aba: erro})"""
+        faixas = faixas or {}
+        nomes, erros = list(dict.fromkeys(nomes)), {}
+        planilha = self._planilha(planilha_id) if nomes else None
         parametros = {"valueRenderOption": "FORMATTED_VALUE"}
-        try:
-            resposta = self._api("leitura", lambda: planilha.values_batch_get([nome_intervalo(n) for n in nomes],
-                                                                              params=parametros))
-            faixas = resposta.get("valueRanges", [])
-            return {nome: faixas[i].get("values", []) for i, nome in enumerate(nomes)}, {}
-        except Exception as erro_lote:
-            if len(nomes) == 1:
-                return {}, {nomes[0]: str(erro_lote)}
-            logger.warning(f"⚠️ Leitura em lote falhou ({erro_lote}) — lendo aba por aba pra achar a com problema.")
-
-        dados, erros = {}, {}
-        for nome in nomes:
+        for _tentativa in range(4):
+            if not nomes:
+                return {}, erros
+            intervalos = [nome_intervalo(n) + (f"!{faixas[n]}" if n in faixas else "") for n in nomes]
             try:
-                resposta = self._api("leitura", lambda: planilha.values_batch_get([nome_intervalo(nome)], params=parametros))
-                dados[nome] = resposta.get("valueRanges", [{}])[0].get("values", [])
-            except Exception as e:
-                erros[nome] = str(e)
-        return dados, erros
+                resposta = self._api("leitura", lambda: planilha.values_batch_get(intervalos, params=parametros))
+                lidas = resposta.get("valueRanges", [])
+                return {nome: lidas[i].get("values", []) for i, nome in enumerate(nomes)}, erros
+            except Exception as erro:
+                texto = str(erro)
+                culpada = next((n for n in sorted(nomes, key=len, reverse=True) if n in texto), None)
+                if culpada is None or e_erro_passageiro_google(erro):
+                    return {}, {**erros, **{n: texto for n in nomes}}
+                logger.warning(f"⚠️ A aba '{culpada}' não pôde ser lida ({texto[:120]}) — lendo as outras sem ela.")
+                erros[culpada] = texto
+                nomes.remove(culpada)
+        return {}, {**erros, **{n: "leitura em lote falhou" for n in nomes}}
 
     def listar_abas(self, planilha_id):
         abas = self._api("leitura", lambda: self._planilha(planilha_id).worksheets())
@@ -261,6 +260,13 @@ class BackendGoogle:
                                              "fields": "userEnteredValue"}}]
             self._api("escrita", lambda: planilha.batch_update({"requests": pedidos}))
         self._com_aba(planilha_id, aba, faxinar)
+
+    def apagar_aba(self, planilha_id, aba):
+        """Só pra abas de passagem (ex.: o espelho de e-mails antigo)."""
+        planilha = self._planilha(planilha_id)
+        self._com_aba(planilha_id, aba, lambda planilha_aba: self._api("escrita", lambda: planilha.del_worksheet(planilha_aba)))
+        _ABAS.pop((planilha_id, aba), None)
+        _TAMANHOS.pop((planilha_id, aba), None)
 
 
 def limitar_leitura():

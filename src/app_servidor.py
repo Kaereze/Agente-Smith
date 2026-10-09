@@ -31,9 +31,13 @@ import app_dados as dados
 import atividade
 import atualizador
 import avisos_windows
+import busca_outlook
 import canceladas
+import correio
+import cota_google
 import envio_nf
 import espelho_emails
+import rede_local
 import rede_pcs
 import fiscal_intelligence
 import painel_metricas as metricas
@@ -60,6 +64,11 @@ ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
 NOTAS_EMAILS_SEGUNDOS = 120   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
+# Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
+HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
+TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
+JANELA_PAINEL_DIAS = 120
+RESOLVIDA_HORAS = 24               # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
@@ -99,7 +108,7 @@ class Estado:
         self.atualizado_em, self.erro = None, ""
         self.cadastro = CadastroHoteis([])
         painel = cfg.get("painel", {})
-        self.desde = datetime.date.fromisoformat(painel.get("desde", "2026-09-01"))
+        self._desde_cfg = datetime.date.fromisoformat(painel.get("desde", "2026-09-01"))
         self.fi_id, self.fi_minutos = painel.get("fiscal_intelligence_id", ""), int(painel.get("fi_minutos", 5))
         self.ignorar = list(painel.get("ignorar_hoteis", []))
         self.fi, self.fi_lido, self.fi_erro = None, -1e9, ""
@@ -116,6 +125,17 @@ class Estado:
         self.abas_emails, self.emails = [], []
         self.avisos = avisos_windows.Avisos()
         self.notas_emails, self.notas_emails_em = {}, -1e9   # {id do e-mail: [NF do Dropbox]} — calculado em segundo plano
+        self.trat_linhas, self.trat_lido_em, self.hoteis_lidos_em = None, -1e9, -1e9
+        self.eventos_linhas, self.eventos_pendentes = [], []   # lido/não lido: gravados juntos, 1 escrita por volta
+        self.eventos_correio, self.enviados_correio, self.convs = {}, [], []
+        self.abas_textos, self.textos_cache = [], {}           # {pc: (versão, {id: (texto, citado)})}
+        self.rede_ligada, self.segredo = False, b""
+        self.urgencias_avisadas = None
+
+    @property
+    def desde(self):
+        """Primeiro dia que o Painel mostra: o do config, mas no máximo 120 dias pra trás (a faxina guarda 150)."""
+        return max(self._desde_cfg, datetime.date.today() - datetime.timedelta(days=JANELA_PAINEL_DIAS))
 
     def _abas(self):
         if self.relogio() - self.abas_lidas_em > 600:
@@ -129,7 +149,9 @@ class Estado:
             self.abas_hotel = {a: self.cadastro.canonico(nome_do_hotel_pela_aba(a)) or nome_do_hotel_pela_aba(a)
                                for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
             self.abas_emails = [a for a in todas if a.startswith(espelho_emails.PREFIXO_ABA)]
+            self.abas_textos = [a for a in todas if a.startswith(espelho_emails.PREFIXO_TEXTOS)]
             for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
+                             (espelho_emails.ABA_EVENTOS, espelho_emails.CAB_EVENTOS),
                              (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS),
                              (atividade.ABA, atividade.CABECALHO), (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS)):
                 if aba not in todas:
@@ -142,24 +164,51 @@ class Estado:
             self.abas_lidas_em = self.relogio()
         return self.abas_hotel
 
-    def atualizar(self):
+    def atualizar(self, completo=False):
+        """1 leitura (lote) por volta. As abas dos hotéis entram a cada 2 min; a Tratamento vem só do fim (linhas
+        novas): o que se baixa a cada 15 s caiu de ~11 MB pra poucos KB."""
         try:
             abas = self._abas()
+            agora = self.relogio()
             status_aba = self.cfg["aba_status"]
-            lidas, erros = self.backend.ler_abas(self.central, list(abas) + [dados.ABA_TRATAMENTO, status_aba,
-                                                                              envio_nf.ABA_FILA, envio_nf.ABA_PCS,
-                                                                              rede_pcs.ABA_COMANDOS] + self.abas_emails)
-            solicitacoes = []
-            for aba, hotel in abas.items():
-                solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
+            ler_hoteis = completo or not self.solicitacoes or agora - self.hoteis_lidos_em >= HOTEIS_SEGUNDOS
+            trat_inteira = completo or self.trat_linhas is None or agora - self.trat_lido_em >= TRATAMENTO_COMPLETO_SEGUNDOS
+            self._gravar_eventos_pendentes()
+            nomes = [dados.ABA_TRATAMENTO, status_aba, envio_nf.ABA_FILA, envio_nf.ABA_PCS, rede_pcs.ABA_COMANDOS,
+                     espelho_emails.ABA_EVENTOS] + self.abas_emails + (list(abas) if ler_hoteis else [])
+            # do fim conhecido em diante (a última linha de novo: confere que nada mudou por baixo, ex. faxina)
+            faixas = {} if trat_inteira else {dados.ABA_TRATAMENTO: f"A{len(self.trat_linhas)}:H"}
+            lidas, erros = self.backend.ler_abas(self.central, nomes, faixas=faixas)
+            if not lidas:
+                raise RuntimeError(next(iter(erros.values()), "leitura vazia"))
+            sumidas = [a for a in erros if a in self.abas_emails or a == espelho_emails.ABA_EVENTOS]
+            if sumidas:   # aba de passagem apagada/renomeada: some da lista e a lista é refeita na próxima volta
+                self.abas_emails = [a for a in self.abas_emails if a not in sumidas]
+                self.abas_lidas_em = -1e9
+            lidas_trat = lidas.get(dados.ABA_TRATAMENTO)
+            if lidas_trat is None and not trat_inteira:
+                # "exceeds grid limits": a aba ficou menor que o fim que eu conhecia (faxina) — relê inteira
+                toda = self.backend.ler_abas(self.central, [dados.ABA_TRATAMENTO])[0]
+                lidas_trat, trat_inteira = toda.get(dados.ABA_TRATAMENTO), dados.ABA_TRATAMENTO in toda
+            trat, novas = self._juntar_tratamento(lidas_trat, trat_inteira)
+            if ler_hoteis:
+                solicitacoes = []
+                for aba, hotel in abas.items():
+                    solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
+                self.hoteis_lidos_em = agora
+            else:
+                solicitacoes = self.solicitacoes
             status = {str(l[0]).strip(): (str(l[1]) if len(l) > 1 else "") for l in lidas.get(status_aba, []) if l}
             emails = [e for aba in self.abas_emails for e in espelho_emails.ler_aba(lidas.get(aba, []))]
+            if espelho_emails.ABA_EVENTOS in lidas:
+                self.eventos_linhas = lidas[espelho_emails.ABA_EVENTOS]
             with self.lock:
                 self.solicitacoes = solicitacoes
-                self.estados = dados.dobrar_eventos(lidas.get(dados.ABA_TRATAMENTO, [[]]))
+                self._aplicar_tratamento(trat, novas)
                 self.emails = emails
                 self.status = status
                 self.atualizado_em, self.erro = dados.agora(), ""
+            self._montar_correio()
         except Exception as e:
             logger.warning(f"⚠️ Não consegui ler a planilha ({e})")
             self.erro = str(e)[:200]
@@ -172,13 +221,48 @@ class Estado:
             self._rede(lidas, solicitacoes)
         except Exception:
             logger.exception("rede de PCs")
+        try:
+            self._avisar_urgencias()
+        except Exception:
+            logger.exception("aviso de urgência")
+
+    def _juntar_tratamento(self, lidas, inteira):
+        """-> (linhas da Tratamento com cabeçalho, só as novas | None = redobrar tudo).
+        Leitura que falhou NUNCA vira aba vazia: sem a Tratamento, toda NF emitida pareceria pendente."""
+        if lidas is None:
+            if self.trat_linhas is None:
+                raise RuntimeError("não consegui ler a aba Tratamento")
+            return self.trat_linhas, []   # falhou nesta volta: fica o que já tinha
+        if inteira:
+            self.trat_lido_em = self.relogio()
+            return (lidas or [dados.CABECALHO_TRATAMENTO]), None
+        ultima = [str(v) for v in self.trat_linhas[-1]] if self.trat_linhas else []
+        if lidas and [str(v) for v in lidas[0]] == ultima:
+            return (self.trat_linhas + lidas[1:], lidas[1:]) if len(lidas) > 1 else (self.trat_linhas, [])
+        # a última linha que eu conhecia mudou de lugar (faxina apagou linhas): relê inteira agora
+        logger.info("🧹 A aba Tratamento mudou (faxina) — relendo inteira.")
+        toda, erros = self.backend.ler_abas(self.central, [dados.ABA_TRATAMENTO])
+        if dados.ABA_TRATAMENTO not in toda:
+            raise RuntimeError(f"não consegui reler a aba Tratamento ({erros})")
+        self.trat_lido_em = self.relogio()
+        return (toda[dados.ABA_TRATAMENTO] or [dados.CABECALHO_TRATAMENTO]), None
+
+    def _aplicar_tratamento(self, trat, novas):
+        """Chamado com self.lock. novas=None: redobra tudo; [] nada mudou; [...] só dobra as novas."""
+        if novas is None or not self.estados:
+            self.estados = dados.dobrar_eventos(trat)
+        elif novas:
+            dados.dobrar_eventos([dados.CABECALHO_TRATAMENTO] + novas, self.estados)
+        self.trat_linhas = trat
 
     # ---------- rede de PCs ----------
     def _extras_pc(self):
-        """Colunas E-H da linha deste PC em PCs_Painel."""
+        """Colunas E-J da linha deste PC em PCs_Painel."""
         outlook = {True: "aberto", False: "fechado"}.get(self.outlook, "?")
+        leituras, escritas = cota_google.consumo_deste_pc()
         # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
-        return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia()]
+        return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia(),
+                rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}"]
 
     def _rede(self, lidas, solicitacoes):
         pc, agente = socket.gethostname(), nome_do_agente()
@@ -294,16 +378,55 @@ class Estado:
             self._indice_emails = (lista, indice)
         return self._indice_emails[1].get((de or "").lower())
 
-    def lista_emails(self):
-        pcs = {p["pc"]: p for p in self.pcs()}
+    def _montar_correio(self):
+        eventos = espelho_emails.dobrar_eventos(self.eventos_linhas + self.eventos_pendentes)
+        entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now())
+        convs = correio.conversas(entrada)
+        with self.lock:
+            self.eventos_correio, self.entrada_correio, self.enviados_correio, self.convs = eventos, entrada, enviados, convs
+
+    def _avisar_urgencias(self):
+        """Aviso do Windows só quando um e-mail das caixas DESTE PC entra em Urgência (usuário, 08/10/2026)."""
+        minhas = [c for c in self.convs if socket.gethostname() in c["pcs"]]
+        novas, self.urgencias_avisadas = (correio.novas_urgencias(minhas, self.urgencias_avisadas or set())
+                                          if self.urgencias_avisadas is not None else ([], {c["de"] for c in minhas if c["urgente"]}))
+        cfg_av = {**avisos_windows.PADRAO, **(self.cfg.get("painel", {}).get("avisos") or {})}
+        if not novas or not cfg_av["ativo"] or not (cfg_av["das"] <= datetime.datetime.now().strftime("%H:%M") < cfg_av["ate"]):
+            return
+        if len(novas) == 1:
+            c = novas[0]
+            motivo = "pedido de correção/cancelamento" if "corrigir" in c["classes"] else "mais de 7 dias sem resposta"
+            avisos_windows.mostrar("Urgência", f"{c['nome']} ({', '.join(c['hoteis'])}): {motivo}.")
+        else:
+            avisos_windows.mostrar("Urgência", f"{len(novas)} e-mails entraram em Urgência nas suas caixas.")
+
+    def _pcs_por_nome(self):
+        return {p["pc"]: p for p in self.pcs()}
+
+    def lista_correio(self):
+        """Caixa de Entrada, Urgência e Itens Enviados dos 4 PCs juntos (1 linha por hóspede)."""
+        pcs = self._pcs_por_nome()
+        with self.lock:
+            convs, enviados = list(self.convs), list(self.enviados_correio)
         saida = []
-        for e in self.emails:
-            sol = self._solicitacao_do_email(e["de"])
-            dono = pcs.get(e["pc"], {})
-            notas = self.notas_emails.get(e["id"], [])
-            saida.append({**e, "pc_online": bool(dono.get("online")), "agente_pc": dono.get("agente", ""), "notas": notas,
+        for c in convs:
+            sol = self._solicitacao_do_email(c["de"])
+            notas = [n for i in c["ids"] for n in self.notas_emails.get(i, [])]
+            saida.append({**c, "notas": list({n.get("rel", n.get("nome")): n for n in notas}.values()),
+                          "pcs_online": [pc for pc in c["pcs"] if pcs.get(pc, {}).get("online")],
+                          "agentes": [pcs.get(pc, {}).get("agente", "") for pc in c["pcs"]],
                           "solicitacao": {"chave": sol["chave"], "hotel": sol["hotel"], "data": sol["data"]} if sol else None})
-        return sorted(saida, key=lambda e: e["recebido"], reverse=True)
+        espelhos = {}
+        for e in self.emails:   # quando cada PC atualizou o espelho por último (PC desligado = espelho parado)
+            espelhos[e["pc"]] = max(espelhos.get(e["pc"], ""), e["atualizado"])
+        return {"conversas": saida, "enviados": enviados, "contagem": correio.contagem(convs),
+                "pcs": [{"pc": p["pc"], "agente": p["agente"], "online": p["online"], "espelho": espelhos.get(p["pc"], ""),
+                         "rede": bool(p.get("rede"))} for p in pcs.values()],
+                "este_pc": socket.gethostname()}
+
+    def lista_emails(self):
+        """Compatibilidade (tela antiga): e-mails da entrada, 1 por linha."""
+        return [{**e, "recebido": e["quando"]} for e in getattr(self, "entrada_correio", [])]
 
     def atualizar_notas_emails(self, forcar=False):
         """NF do Dropbox de cada e-mail espelhado (lê o Dropbox e às vezes o PDF: segundos). Roda no laço de fundo
@@ -313,21 +436,194 @@ class Estado:
         self.notas_emails_em = self.relogio()
         mapa = {}
         for e in list(self.emails):
+            if e["pasta"] != espelho_emails.ENTRADA:
+                continue
             try:
-                mapa[e["id"]] = envio_nf.notas_do_email(e, self.cfg)
+                local = espelho_emails.item_local(e["id"]) if e["pc"] == socket.gethostname() else {}
+                mapa[e["id"]] = envio_nf.notas_do_email({**e, "texto": local.get("texto") or e.get("previa", "")}, self.cfg)
             except Exception as erro:
                 logger.debug(f"NF do Dropbox pro e-mail {e['id']}: {erro}")
         self.notas_emails = mapa
 
     def _email(self, id_email):
-        e = next((x for x in self.emails if x["id"] == id_email), None)
+        e = next((x for x in self.emails if x["id"] == id_email and x["pasta"] != espelho_emails.RESPOSTA), None)
         if e is None:
-            raise KeyError("e-mail não está mais na lista (pode ter sido respondido)")
+            raise KeyError("e-mail não está mais na lista (pode ter sido respondido ou excluído)")
         return e
+
+    def _caixas_de_hotel(self):
+        """{caixa: hotel} de todos os hotéis do cadastro (a busca/leitura pela rede só abre essas caixas)."""
+        saida = {}
+        for h in self.cadastro.nomes():
+            caixa = str(self.cadastro.dados(h).get("email", "")).strip().lower()
+            if "@" in caixa:
+                saida[caixa] = saida.get(caixa, "") + (" / " if caixa in saida else "") + h
+        return saida
+
+    def _enderecos_rede(self, so_online=True):
+        return {p["pc"]: p["rede"] for p in self.pcs() if p.get("rede") and (p["online"] or not so_online)
+                and p["pc"] != socket.gethostname()}
+
+    # --- chamadas que chegam dos outros PCs (rede_local) ---
+    def rede_buscar(self, corpo):
+        import pythoncom
+        import win32com.client
+        pythoncom.CoInitialize()
+        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        r = busca_outlook.buscar(ns, self._caixas_de_hotel(), corpo.get("q", ""), socket.gethostname(),
+                                 limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
+        return {**r, "pc": socket.gethostname()}
+
+    def rede_texto(self, corpo):
+        """Texto inteiro de um e-mail das caixas deste PC: do espelho (já lido) ou direto do Outlook."""
+        local = espelho_emails.item_local(str(corpo.get("id", ""))) if corpo.get("id") else {}
+        if local and "texto" in local:
+            return {"texto": local.get("texto", ""), "citado": local.get("citado", ""), "pc": socket.gethostname()}
+        if not corpo.get("entry"):
+            raise KeyError("e-mail não está mais no espelho deste PC")
+        import pythoncom
+        import win32com.client
+        pythoncom.CoInitialize()
+        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        return busca_outlook.abrir(ns, str(corpo["entry"]), self._caixas_de_hotel(), socket.gethostname())
+
+    def rede_ping(self, _corpo):
+        return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
+
+    # --- o que a tela pede ---
+    def texto_email(self, id_email="", pc="", entry=""):
+        """Texto inteiro, pedido ao vivo pro PC dono (nada fica guardado aqui). PC dono desligado: a cópia da
+        aba CorreioTexto_<PC> (só existe enquanto o e-mail está sem resposta)."""
+        if id_email and not pc:
+            pc = self._email(id_email)["pc"]
+        if pc == socket.gethostname():
+            return {**self.rede_texto({"id": id_email, "entry": entry}), "origem": "este PC"}
+        endereco = self._enderecos_rede().get(pc)
+        if endereco and self.segredo:
+            r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "texto", {"id": id_email, "entry": entry}).get(pc, {})
+            if "erro" not in r:
+                return {**r, "origem": "ao vivo"}
+        if not id_email:
+            raise KeyError(f"o PC {pc} não respondeu pela rede agora — tente de novo em instantes")
+        return {**self._texto_da_planilha(pc, id_email), "origem": "cópia (PC dono sem rede)"}
+
+    def _texto_da_planilha(self, pc, id_email):
+        e = self._email(id_email)
+        versao, textos = self.textos_cache.get(pc, ("", {}))
+        if versao != e.get("versao_texto") or id_email not in textos:
+            aba = espelho_emails.nome_aba_textos(pc)
+            textos = espelho_emails.ler_textos(self.backend.ler_abas(self.central, [aba])[0].get(aba, []))
+            self.textos_cache[pc] = (e.get("versao_texto"), textos)
+        texto, citado = textos.get(id_email, ("", ""))
+        return {"texto": texto or e.get("previa", ""), "citado": citado, "pc": pc}
+
+    def buscar_outlook(self, termo):
+        """Pergunta aos Outlooks dos PCs ligados (este incluído) ao mesmo tempo. -> resultados + quem respondeu."""
+        termo = busca_outlook.limpar_termo(termo)
+        if len(termo) < 3:
+            return {"resultados": [], "pcs": {}, "termo": termo}
+        respostas = {}
+        enderecos = self._enderecos_rede()
+        import threading as _t
+        local = {}
+        fio = _t.Thread(target=lambda: local.update(r=self._buscar_local(termo)))
+        fio.start()
+        if enderecos and self.segredo:
+            respostas = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", {"q": termo})
+        fio.join(busca_outlook.TEMPO_MAXIMO + 3)
+        respostas[socket.gethostname()] = local.get("r", {"erro": "o Outlook deste PC não respondeu a tempo"})
+        pcs = self._pcs_por_nome()
+        for p in pcs.values():
+            if p["pc"] not in respostas:
+                respostas[p["pc"]] = {"erro": "desligado" if not p["online"] else "sem endereço de rede (atualize o Painel dele)"}
+        resultados = [r for resp in respostas.values() for r in resp.get("resultados", [])]
+        resultados.sort(key=lambda r: r["quando"], reverse=True)
+        situacao = {pc: ({"ok": True, "achados": len(r.get("resultados", [])), "completo": r.get("completo", True)}
+                         if "erro" not in r else {"ok": False, "erro": r["erro"]}) for pc, r in respostas.items()}
+        return {"resultados": resultados, "pcs": situacao, "termo": termo,
+                "agentes": {p["pc"]: p["agente"] for p in pcs.values()}}
+
+    def _buscar_local(self, termo):
+        try:
+            return self.rede_buscar({"q": termo})
+        except Exception as e:
+            return {"erro": f"Outlook deste PC: {e}"}
+
+    def conversa(self, de):
+        """Tudo do hóspede na tela: e-mails sem resposta (todos os PCs), o que saiu pra ele nas últimas 24 h, os
+        pedidos do formulário dele e as NFs já enviadas (pelo registro, conferido no PDF pelo robô)."""
+        de = (de or "").strip().lower()
+        with self.lock:
+            recebidos = [e for e in getattr(self, "entrada_correio", []) if e["de"] == de]
+            enviados = [e for e in self.enviados_correio if de in [x.strip() for x in e["para"].split(",")]]
+            fila = [s for s in dados.montar_fila([s for s in self.solicitacoes
+                                                  if de in {str(x).lower() for x in [s["email"]] + s.get("emails", [])}],
+                                                 self.estados)]
+        pcs = self._pcs_por_nome()
+        linha_do_tempo = ([{"tipo": "recebido", **e} for e in recebidos] + [{"tipo": "enviado", **e} for e in enviados] +
+                          [{"tipo": "formulario", "quando": s["data"], "chave": s["chave"], "hotel": s["hotel"],
+                            "nome": s["nome"], "situacao": s["situacao"], "nfs": s["nfs"], "envios": s["envios"]}
+                           for s in fila])
+        linha_do_tempo.sort(key=lambda x: x["quando"], reverse=True)
+        nfs_enviadas = [{"nfs": env["nfs"], "para": env["para"], "quando": env["quando"], "hotel": s["hotel"]}
+                        for s in fila for env in s["envios"]]
+        return {"de": de, "nome": next((e["nome"] for e in recebidos if e["nome"]), fila[0]["nome"] if fila else de),
+                "linha_do_tempo": linha_do_tempo, "nfs_enviadas": nfs_enviadas,
+                "pcs": {pc: {"online": p["online"], "agente": p["agente"]} for pc, p in pcs.items()}}
+
+    def evento_correio(self, ids, acao, agente):
+        """Lido / não lido (equipe toda). Gravado junto com os outros na próxima volta (1 escrita só)."""
+        if acao not in ("LIDO", "NAO_LIDO"):
+            raise ValueError("ação desconhecida")
+        pc = socket.gethostname()
+        with self.lock:
+            for i in ids[:200]:
+                atual = self.eventos_correio.get(i, {}).get("lido", False)
+                if atual != (acao == "LIDO"):
+                    self.eventos_pendentes.append(espelho_emails.evento(str(i), acao, agente, pc))
+        self._montar_correio()
+        return {"ok": True}
+
+    def _gravar_eventos_pendentes(self):
+        with self.lock:
+            pendentes, self.eventos_pendentes = self.eventos_pendentes, []
+        if not pendentes:
+            return
+        try:
+            self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, pendentes)
+            self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + pendentes
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui gravar lido/não lido ({e}) — tento na próxima volta")
+            with self.lock:
+                self.eventos_pendentes = pendentes + self.eventos_pendentes
+
+    def excluir_email(self, id_email, agente):
+        """Some na hora pra equipe toda; o PC dono move pra Itens Excluídos do Outlook dele (o "Desfazer" de 10 s
+        fica na tela: só depois dele o pedido chega aqui)."""
+        e = self._email(id_email)
+        sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+        r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.EXCLUIR)
+        if not r.get("ok"):
+            return r
+        linha = espelho_emails.evento(e["id"], "EXCLUIR", agente)
+        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
+        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
+        self._montar_correio()
+        return r
+
+    def encaminhar_email(self, corpo, quem):
+        e = self._email(str(corpo.get("id", "")))
+        para = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("para", ""))) if "@" in x)
+        if not para:
+            raise ValueError("preencha pra quem encaminhar")
+        assunto = e["assunto"] if e["assunto"].lower().startswith(("enc:", "fw:", "fwd:")) else "ENC: " + e["assunto"]
+        sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+        return self.envio_nf.pedir(sol, para, assunto, e["caixa"], [], quem, str(corpo.get("corpo", "")),
+                                   responder=e["id"], acao=envio_nf.ENCAMINHAR)
 
     def opcoes_email(self, id_email):
         e = self._email(id_email)
-        destino, motivo = self.envio_nf.destino_para(e["caixa"])
+        destino, motivo = self.envio_nf.destino_para(e["caixa"], aceitar_desligado=True)
         sol = self._solicitacao_do_email(e["de"])
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg) if sol else []
         if not sugestoes:   # e-mail sem formulário (ex.: recepção repassando o pedido): a NF achada pelo nº/nome
@@ -367,7 +663,7 @@ class Estado:
         if sol is None:
             raise KeyError("solicitação não encontrada")
         conta = self.cadastro.dados(sol["hotel"]).get("email", "")
-        destino, motivo = self.envio_nf.destino_para(conta)
+        destino, motivo = self.envio_nf.destino_para(conta, aceitar_desligado=True)
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg)
         try:
             assinatura = envio_nf.assinatura_previa(conta, nome_do_agente())
@@ -414,9 +710,13 @@ class Estado:
         return self.envio_nf.situacao(id_envio, fresca)
 
     def reler_tratamento(self):
-        lidas, _ = self.backend.ler_abas(self.central, [dados.ABA_TRATAMENTO])
+        """Depois de gravar: só o fim da aba (o que acabou de entrar)."""
+        inteira = self.trat_linhas is None
+        faixas = {} if inteira else {dados.ABA_TRATAMENTO: f"A{len(self.trat_linhas)}:H"}
+        lidas, _ = self.backend.ler_abas(self.central, [dados.ABA_TRATAMENTO], faixas=faixas)
+        trat, novas = self._juntar_tratamento(lidas.get(dados.ABA_TRATAMENTO), inteira)
         with self.lock:
-            self.estados = dados.dobrar_eventos(lidas.get(dados.ABA_TRATAMENTO, [[]]))
+            self._aplicar_tratamento(trat, novas)
 
     def registrar(self, agente, pc, chave_sol, acao, valor=""):
         sol = next((s for s in self.solicitacoes if s["chave"] == chave_sol), None)
@@ -445,6 +745,12 @@ class Estado:
             controle = {}
         with self.lock:
             return dados.montar_fila(self.solicitacoes, self.estados, dados.nfs_do_controle(controle), desde)
+
+    def fila_da_tela(self, dias=None):
+        """Lista de Formulários: resolvida (NF emitida e e-mail enviado) fica 24 h e some — o Painel mostra o que falta."""
+        limite = (datetime.datetime.now() - datetime.timedelta(hours=RESOLVIDA_HORAS)).isoformat(timespec="seconds")
+        return [s for s in self.fila(dias) if not (s["situacao"] == dados.CONCLUIDA and not s["envio_pendente"]
+                                                   and dados.resolvida_em(s) < limite)]
 
     def salvar_cache(self, forcar=False):
         """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
@@ -623,7 +929,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores,
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
-                    "status": estado.resumo_status(), "fila": estado.fila(dias), "pcs": estado.pcs(),
+                    "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "hoteis": estado.hoteis_por_agente(),
                 })
             if url.path == "/api/envio":
@@ -646,12 +952,23 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.atividade_resumo())
                 if url.path == "/api/emails":
                     return self._json({"emails": estado.lista_emails(), "este_pc": pc})
+                if url.path == "/api/correio":
+                    return self._json(estado.lista_correio())
+                if url.path == "/api/correio/conversa":
+                    return self._json(estado.conversa(q.get("de", "")))
+                if url.path == "/api/correio/texto":
+                    return self._json(estado.texto_email(q.get("id", ""), q.get("pc", ""), q.get("entry", "")))
+                if url.path == "/api/correio/buscar":
+                    return self._json(estado.buscar_outlook(q.get("q", "")))
                 if url.path == "/api/email/opcoes":
                     return self._json(estado.opcoes_email(q.get("id", "")))
             except KeyError as e:
                 return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
                 return self._json({"erro": f"parâmetro inválido: {e}"}, 400)
+            except Exception as e:
+                logger.exception("erro na API")
+                return self._json({"erro": f"não deu pra buscar agora: {e}"}, 500)
             return self._json({"erro": "não encontrado"}, 404)
 
         def do_POST(self):
@@ -688,6 +1005,13 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.pedir_envio(corpo, nome_do_agente()))
                 if path == "/api/email/responder":
                     return self._json(estado.responder_email(corpo, nome_do_agente()))
+                if path == "/api/correio/evento":
+                    return self._json(estado.evento_correio([str(i) for i in corpo.get("ids", [])], str(corpo.get("acao", "")),
+                                                            nome_do_agente()))
+                if path == "/api/correio/excluir":
+                    return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
+                if path == "/api/correio/encaminhar":
+                    return self._json(estado.encaminhar_email(corpo, nome_do_agente()))
                 if path == "/api/comando":
                     return self._json(estado.pedir_comando(str(corpo.get("para", "")), str(corpo.get("comando", "")),
                                                            f"{nome_do_agente()} ({pc})"))
@@ -749,6 +1073,9 @@ def main():
     estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
     if estado.carregar_cache():
         logger.info(f"📦 Último estado carregado do disco ({estado.atualizado_em:%d/%m %H:%M}) — atualizando em seguida.")
+    estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
+    estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
+                                                              "ping": estado.rede_ping}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
     servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))

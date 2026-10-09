@@ -1,0 +1,111 @@
+"""Busca ao vivo no Outlook DESTE PC (pedido do usuário, 08/10/2026): o Painel não guarda histórico; quando alguém
+pesquisa um hóspede, CPF, sobrenome ou frase, cada PC procura no próprio Outlook e devolve o que achou.
+
+Usa o mesmo índice da barra de pesquisa do Outlook (Windows Search, "ci_phrasematch"): rápido mesmo com anos de
+e-mail. Sem índice (Outlook sem pesquisa instantânea), cai pro LIKE, mais lento — por isso tem limite de tempo.
+Só lê: nada é marcado, movido ou apagado.
+"""
+import re
+import time
+
+import espelho_emails as ee
+from log_util import configurar_logging
+
+logger = configurar_logging("busca_outlook")
+
+PASTAS = ((6, "entrada"), (5, "enviado"), (3, "excluido"))   # Caixa de Entrada, Itens Enviados, Itens Excluídos
+LIMITE_POR_PC = 50
+TEMPO_MAXIMO = 10.0
+CAMPOS = ("urn:schemas:httpmail:subject", "urn:schemas:httpmail:textdescription", "urn:schemas:httpmail:fromemail",
+          "urn:schemas:httpmail:fromname", "urn:schemas:httpmail:displayto")
+CAMPOS_CURTOS = CAMPOS[0:1] + CAMPOS[2:]   # sem o corpo: o LIKE no corpo é lento
+
+
+def limpar_termo(termo):
+    return re.sub(r"\s+", " ", str(termo or "")).strip()[:80]
+
+
+def filtros(termo):
+    """-> (com índice, sem índice). Aspas simples dobradas: o termo nunca quebra o filtro."""
+    q = termo.replace("'", "''").replace('"', "")
+    indice = " OR ".join(f"\"{c}\" ci_phrasematch '{q}'" for c in CAMPOS)
+    parcial = " OR ".join(f"\"{c}\" LIKE '%{q}%'" for c in CAMPOS_CURTOS)
+    return f"@SQL=({indice}) OR ({parcial})", f"@SQL={parcial} OR \"{CAMPOS[1]}\" LIKE '%{q}%'"
+
+
+def resumo_do_item(item, pasta, caixa, hotel, pc):
+    corpo = str(item.Body or "")
+    proprio = ee.dividir_historico(corpo)[0]
+    if pasta == "enviado":
+        de, nome, para = caixa, "", ", ".join(sorted(ee.enderecos(item)))
+        quando = ee._data(item.SentOn)
+    else:
+        de, nome, para = ee.remetente(item), str(item.SenderName or ""), caixa
+        quando = ee._data(item.ReceivedTime)
+    return {"id": ee.id_do_email(item.EntryID), "entry": item.EntryID, "pasta": pasta, "caixa": caixa, "hotel": hotel,
+            "de": de, "nome": nome, "para": para, "assunto": str(item.Subject or ""),
+            "quando": quando.isoformat(timespec="seconds") if quando else "", "previa": ee.previa(proprio),
+            "anexos": ee.anexos_do_item(item), "pc": pc}
+
+
+def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMPO_MAXIMO, relogio=time.monotonic):
+    """caixas: {caixa: hotel} (só as caixas dos hotéis). -> {"resultados": [...], "completo": bool}"""
+    termo = limpar_termo(termo)
+    if len(termo) < 3:
+        return {"resultados": [], "completo": True}
+    com_indice, sem_indice = filtros(termo)
+    inicio, achados, completo = relogio(), [], True
+    for conta in namespace.Accounts:
+        caixa = str(conta.SmtpAddress or "").strip().lower()
+        if caixa not in caixas:
+            continue
+        for numero, pasta in PASTAS:
+            if relogio() - inicio > tempo_maximo:
+                completo = False
+                break
+            try:
+                itens_pasta = conta.DeliveryStore.GetDefaultFolder(numero).Items
+                try:
+                    itens = itens_pasta.Restrict(com_indice)
+                except Exception:
+                    itens = itens_pasta.Restrict(sem_indice)
+                itens.Sort("[ReceivedTime]", True)
+            except Exception as e:
+                logger.debug(f"busca em {caixa}/{pasta}: {e}")
+                continue
+            n = 0
+            for item in itens:
+                if n >= limite or relogio() - inicio > tempo_maximo:
+                    completo = completo and n < limite
+                    break
+                try:
+                    if getattr(item, "Class", 43) != 43:
+                        continue
+                    achados.append(resumo_do_item(item, pasta, caixa, caixas[caixa], pc))
+                    n += 1
+                except Exception as e:
+                    logger.debug(f"item ilegível na busca: {e}")
+    achados.sort(key=lambda r: r["quando"], reverse=True)
+    return {"resultados": achados[:limite], "completo": completo and len(achados) <= limite}
+
+
+def abrir(namespace, entry, caixas, pc):
+    """Texto inteiro de 1 e-mail (só lê). -> dict com texto e citado."""
+    item = namespace.GetItemFromID(entry)
+    pasta_id, loja_id = item.Parent.EntryID, item.Parent.Store.StoreID
+    caixa, pasta = "", "entrada"
+    for conta in namespace.Accounts:
+        try:
+            loja = conta.DeliveryStore
+            if loja.StoreID != loja_id:
+                continue
+            caixa = str(conta.SmtpAddress or "").strip().lower()
+            pasta = next((nome for numero, nome in PASTAS if loja.GetDefaultFolder(numero).EntryID == pasta_id), "entrada")
+            break
+        except Exception:
+            continue
+    if caixa not in caixas:   # só e-mail das caixas dos hotéis sai pela rede (nunca uma caixa pessoal)
+        raise PermissionError("esse e-mail não é de uma caixa de hotel")
+    resumo = resumo_do_item(item, pasta, caixa, caixas.get(caixa, ""), pc)
+    resumo["texto"], resumo["citado"] = ee.dividir_historico(str(item.Body or ""))
+    return resumo
