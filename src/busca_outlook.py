@@ -5,6 +5,7 @@ Usa o mesmo índice da barra de pesquisa do Outlook (Windows Search, "ci_phrasem
 e-mail. Sem índice (Outlook sem pesquisa instantânea), cai pro LIKE, mais lento — por isso tem limite de tempo.
 Só lê: nada é marcado, movido ou apagado.
 """
+import heapq
 import re
 import time
 
@@ -26,11 +27,13 @@ def limpar_termo(termo):
 
 
 def filtros(termo):
-    """-> (com índice, sem índice). Aspas simples dobradas: o termo nunca quebra o filtro."""
+    """-> (com índice, sem índice). "ci_startswith" usa o índice do Outlook e acha palavra pela metade ("Pereg"
+    acha "Perego") em centésimos de segundo; o LIKE (Outlook sem índice) varre e-mail por e-mail — por isso só
+    no assunto e no remetente. Aspas simples dobradas: o termo nunca quebra o filtro."""
     q = termo.replace("'", "''").replace('"', "")
-    indice = " OR ".join(f"\"{c}\" ci_phrasematch '{q}'" for c in CAMPOS)
-    parcial = " OR ".join(f"\"{c}\" LIKE '%{q}%'" for c in CAMPOS_CURTOS)
-    return f"@SQL=({indice}) OR ({parcial})", f"@SQL={parcial} OR \"{CAMPOS[1]}\" LIKE '%{q}%'"
+    indice = " OR ".join(f"\"{c}\" ci_startswith '{q}'" for c in CAMPOS)
+    sem_indice = " OR ".join(f"\"{c}\" LIKE '%{q}%'" for c in CAMPOS_CURTOS)
+    return f"@SQL={indice}", f"@SQL={sem_indice}"
 
 
 def resumo_do_item(item, pasta, caixa, hotel, pc):
@@ -49,12 +52,14 @@ def resumo_do_item(item, pasta, caixa, hotel, pc):
 
 
 def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMPO_MAXIMO, relogio=time.monotonic):
-    """caixas: {caixa: hotel} (só as caixas dos hotéis). -> {"resultados": [...], "completo": bool}"""
+    """caixas: {caixa: hotel} (só as caixas dos hotéis). -> {"resultados": [...], "completo": bool}
+    1º passo leve (só data e EntryID de cada achado, em todas as pastas); o texto só dos `limite` mais recentes."""
     termo = limpar_termo(termo)
     if len(termo) < 3:
         return {"resultados": [], "completo": True}
     com_indice, sem_indice = filtros(termo)
-    inicio, achados, completo = relogio(), [], True
+    inicio, candidatos, completo = relogio(), [], True
+    melhores = []   # as datas dos `limite` mais recentes até aqui (heap: a mais velha no topo)
     for conta in namespace.Accounts:
         caixa = str(conta.SmtpAddress or "").strip().lower()
         if caixa not in caixas:
@@ -73,20 +78,30 @@ def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMP
             except Exception as e:
                 logger.debug(f"busca em {caixa}/{pasta}: {e}")
                 continue
-            n = 0
-            for item in itens:
-                if n >= limite or relogio() - inicio > tempo_maximo:
-                    completo = completo and n < limite
-                    break
+            for item in itens:   # do mais novo pro mais velho
                 try:
                     if getattr(item, "Class", 43) != 43:
                         continue
-                    achados.append(resumo_do_item(item, pasta, caixa, caixas[caixa], pc))
-                    n += 1
+                    quando = ee._data(item.ReceivedTime)
+                    quando = quando.isoformat() if quando else ""
                 except Exception as e:
                     logger.debug(f"item ilegível na busca: {e}")
-    achados.sort(key=lambda r: r["quando"], reverse=True)
-    return {"resultados": achados[:limite], "completo": completo and len(achados) <= limite}
+                    continue
+                if len(melhores) >= limite and quando <= melhores[0]:
+                    completo = False   # o resto desta pasta é mais velho que os `limite` já achados
+                    break
+                candidatos.append((quando, item, pasta, caixa))
+                heapq.heappush(melhores, quando)
+                if len(melhores) > limite:
+                    heapq.heappop(melhores)
+    candidatos.sort(key=lambda c: c[0], reverse=True)
+    achados = []
+    for _quando, item, pasta, caixa in candidatos[:limite]:
+        try:
+            achados.append(resumo_do_item(item, pasta, caixa, caixas[caixa], pc))
+        except Exception as e:
+            logger.debug(f"item ilegível na busca: {e}")
+    return {"resultados": achados, "completo": completo and len(candidatos) <= limite}
 
 
 def abrir(namespace, entry, caixas, pc):

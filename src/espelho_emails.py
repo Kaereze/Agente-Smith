@@ -53,6 +53,7 @@ MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
 MAX_CITADO = 8000
 MAX_TEXTO_ENVIADO = 4000
 MAX_PREVIA = 220
+MAX_RESPOSTAS = 45000             # célula das respostas (limite do Sheets: 50 mil)
 REVARRER_HORAS = 24               # releitura completa 1x por dia
 FOLGA_MINUTOS = 10
 CADASTRO_SEGUNDOS = 30 * 60       # Cadastro_Hoteis muda pouco: relido a cada 30 min (cota)
@@ -273,11 +274,17 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
                        pc, carimbo, texto_quartos(e) if entrada else "",
                        reclama_falta_nota(e.get("texto", "")) if entrada else "",
                        " ".join(e.get("classes", [])) if entrada else "", versao])
+    # respostas: TODAS numa célula só ("endereço=quando;..."), as mais novas primeiro — 400 linhas viravam 80 KB
     limite = agora - datetime.timedelta(days=JANELA_DIAS)
-    for endereco, quando in sorted(enviados.items()):
-        if quando >= limite:
-            linhas.append([f"r:{endereco}", RESPOSTA, "", "", endereco, "", "", "", quando.isoformat(timespec="seconds"),
-                           "", "", pc, carimbo, "", "", "", versao])
+    pares, tamanho = [], 0
+    for endereco, quando in sorted(enviados.items(), key=lambda x: x[1], reverse=True):
+        par = f"{endereco}={quando.isoformat(timespec='seconds')}"
+        if quando < limite or tamanho + len(par) > MAX_RESPOSTAS:
+            break
+        pares.append(par)
+        tamanho += len(par) + 1
+    if pares:
+        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao])
     return linhas
 
 
@@ -309,6 +316,12 @@ def ler_aba(linhas):
         e["classes"] = [c for c in e["classes"].split() if c]
         e["falta_nota"] = e["falta_nota"].upper() == "TRUE"
         e["recebido"] = e["quando"]   # nome antigo (NF do Dropbox e conversa do hóspede usam)
+        if e["pasta"] == RESPOSTA and e["id"] == "r:*":
+            for par in e["previa"].split(";"):
+                endereco, _, quando = par.partition("=")
+                if endereco and quando:
+                    saida.append({**e, "id": f"r:{endereco}", "de": endereco, "quando": quando, "previa": ""})
+            continue
         saida.append(e)
     return saida
 
