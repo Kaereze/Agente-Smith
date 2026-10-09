@@ -211,7 +211,20 @@ function itemSelecionado() {
                  ...(cx.live?.resultados || [])];
   return todos.find(e => e.id === cx.sel);
 }
+// Responder / encaminhar dentro do painel de leitura, com o original citado embaixo (como o Outlook)
+function citacaoHtml(id) {
+  const e = itemSelecionado() || (cx.dados?.emails || []).find(x => x.id === id), t = cx.textos[id] || {};
+  if (!e) return "";
+  return `<div class="cx-cit-cab"><b>De:</b> ${esc(e.nome || e.de)} &lt;${esc(e.de)}&gt;<br><b>Enviado:</b> ${esc(dataLonga(e.quando))}<br>
+    <b>Para:</b> ${esc(e.caixa || e.para || "")}<br><b>Assunto:</b> ${esc(e.assunto || "")}</div><div class="cx-texto">${esc(t.texto || e.previa || "")}</div>`;
+}
+function escrever(id, modo) {   // modo: "resp" | "nf" | "enc"
+  const alvo = $("cx-leitura");
+  if (cx.sel !== id) { cx.sel = id; desenharCorreio(); }
+  abrirEnvioNF(null, { id, comNF: modo === "nf", encaminhar: modo === "enc", citacao: citacaoHtml(id) }, alvo);
+}
 function abrirEmail(id) {
+  if (typeof envNF !== "undefined" && envNF && envNF.alvo && cx.sel !== id) { toast("Envie ou descarte a mensagem que está escrevendo", true); return; }
   cx.sel = id;
   const e = itemSelecionado();
   desenharCorreio();
@@ -259,6 +272,7 @@ const anexosHtml = an => an?.length ? `<div class="cx-anexos">${an.map(a => `<sp
 function desenharLeituraCorreio() {
   desenharAcoes();
   const el = $("cx-leitura");
+  if (typeof envNF !== "undefined" && envNF && envNF.alvo === el) return;   // escrevendo uma resposta: não apaga
   const e = cx.sel && itemSelecionado();
   $("cx-mesa").classList.toggle("com-leitura", !!e);
   el.classList.toggle("oculta", !e);
@@ -404,9 +418,9 @@ document.addEventListener("click", e => {
     return desenharLeituraCorreio();
   }
   if (t.id === "cx-fechar") { cx.sel = null; return desenharCorreio(); }
-  if (d.cxResp) return abrirEnvioNF(null, { id: d.cxResp, comNF: false });
-  if (d.cxRespNf) return abrirEnvioNF(null, { id: d.cxRespNf, comNF: true });
-  if (d.cxEnc) return encaminhar(d.cxEnc);
+  if (d.cxResp) return escrever(d.cxResp, "resp");
+  if (d.cxRespNf) return escrever(d.cxRespNf, "nf");
+  if (d.cxEnc) return escrever(d.cxEnc, "enc");
   if (d.cxExcluir) return excluir(d.cxExcluir);
   if (d.cxNaolido) marcarNaoLido(d.cxNaolido);
 });
@@ -427,8 +441,8 @@ document.addEventListener("keydown", e => {
   if (pn.vista !== "correio" || digitando || janela) return;
   const aberto = cx.sel && (cx.dados?.emails || []).some(x => x.id === cx.sel) && !cx.resolvendo[cx.sel] ? cx.sel : "";
   const precisa = () => { toast("Abra um e-mail da caixa primeiro (clique ou use as setas)", true); };
-  if (e.ctrlKey && k === "r") { e.preventDefault(); return aberto ? abrirEnvioNF(null, { id: aberto, comNF: e.shiftKey }) : precisa(); }
-  if (e.ctrlKey && k === "f") { e.preventDefault(); return aberto ? encaminhar(aberto) : precisa(); }
+  if (e.ctrlKey && k === "r") { e.preventDefault(); return aberto ? escrever(aberto, e.shiftKey ? "nf" : "resp") : precisa(); }
+  if (e.ctrlKey && k === "f") { e.preventDefault(); return aberto ? escrever(aberto, "enc") : precisa(); }
   if (e.key === "Delete") { e.preventDefault(); return aberto ? excluir(aberto) : precisa(); }
   if (e.ctrlKey && k === "u") { e.preventDefault(); return aberto ? marcarNaoLido(aberto) : precisa(); }
   if (e.ctrlKey && k === "q") {
@@ -449,5 +463,5 @@ document.addEventListener("keydown", e => {
     const prox = todas[Math.max(0, Math.min(todas.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
     prox?.focus(); if (prox) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
   }
-  if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel) { cx.sel = null; desenharCorreio(); }
+  if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { cx.sel = null; desenharCorreio(); }
 });

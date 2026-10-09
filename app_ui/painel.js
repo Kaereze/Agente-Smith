@@ -454,22 +454,46 @@ function assuntoDoArquivo(nomeArquivo, nome) {
 }
 const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
-async function abrirEnvioNF(chave, resp = null) {
+// Escrever (responder, responder com NF, encaminhar, enviar NF). Com `alvo`, igual ao Outlook (usuário, 09/10/2026): abre
+// DENTRO do painel de leitura, com o e-mail original citado embaixo — sem janela por cima. Sem alvo: janela (como antes).
+async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (document.querySelector(".modal-fundo")) return;
-  const fundo = document.createElement("div");
-  fundo.className = "modal-fundo";
-  fundo.innerHTML = `<div class="modal compor">
-    <div class="compor-topo"><span>${resp ? "↩ Resposta ao hóspede" : "✉ Nova mensagem · Nota Fiscal"}</span><span id="nf-sub" class="compor-quem">carregando…</span>
-      <button class="fechar" id="nf-fechar" title="Descartar">×</button></div>
+  if (envNF && envNF.alvo) { $("nf-msg")?.focus(); toast("Termine ou descarte a mensagem que está escrevendo", true); return; }
+  const enc = !!resp?.encaminhar;
+  const titulo = enc ? "↗ Encaminhar" : resp ? (resp.comNF ? "↩ Responder com a NF" : "↩ Responder") : "✉ Nova mensagem · Nota Fiscal";
+  const miolo = `
+    <div class="compor-topo"><span>${titulo}</span><span id="nf-sub" class="compor-quem">carregando…</span>
+      ${alvo ? `<button class="descartar" id="nf-fechar" title="Descartar e voltar">Descartar</button>` : `<button class="fechar" id="nf-fechar" title="Descartar">×</button>`}</div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
     <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
     <div class="compor-rodape"><div class="anel" id="nf-anel" style="width:22px;height:22px;border-width:2px;visibility:hidden"></div>
-      <span class="res" id="nf-res"></span></div></div>`;
-  document.body.appendChild(fundo);
-  $("nf-fechar").onclick = () => { clearTimeout(envNF?.timer); fundo.remove(); envNF = null; };
+      <span class="res" id="nf-res"></span></div>`;
+  let fundo = null;
+  if (alvo) {
+    alvo.innerHTML = `<div class="compor-inline">${miolo}</div>`;
+    alvo.classList.add("compondo");
+  } else {
+    fundo = document.createElement("div");
+    fundo.className = "modal-fundo";
+    fundo.innerHTML = `<div class="modal compor">${miolo}</div>`;
+    document.body.appendChild(fundo);
+  }
+  const fechar = () => {
+    clearTimeout(envNF?.timer); envNF = null;
+    if (fundo) fundo.remove();
+    if (alvo) { alvo.classList.remove("compondo"); alvo.id === "cx-leitura" ? desenharLeituraCorreio() : desenharDetalhe(); }
+  };
+  envNF = { chave, resp, alvo, fechar, anexos: [], carregando: true };   // já reserva: a atualização de 15 s não apaga o que se escreve
+  $("nf-fechar").onclick = fechar;
   const o = await api(resp ? `/api/email/opcoes?id=${encodeURIComponent(resp.id)}` : `/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
+  if (!envNF) return;
   if (o.erro) { $("nf-corpo").innerHTML = `<div class="vazio">${esc(o.erro)}</div>`; return; }
-  envNF = { chave, resp, o, anexos: [], assuntoAuto: !resp };
+  if (enc) {   // encaminhar: pra quem a pessoa escolher, com o original anexado embaixo; sem anexo de NF nem selo
+    const orig = o.email?.assunto || "";
+    o.assunto = /^(enc|fw|fwd):/i.test(orig) ? orig : "ENC: " + orig;
+    o.para = []; o.sugestoes = []; o.selos = []; o.assinatura = ""; o.corpo = "";
+  }
+  envNF = { chave, resp, alvo, fechar, o, anexos: [], assuntoAuto: !resp };
   $("nf-sub").textContent = `${o.nome} · ${o.hotel}`;
   const de = o.destino
     ? `<div class="campo-txt"><b>${esc(o.conta_de)}</b> <span class="dica">${o.destino === o.este_pc ? "· por este PC" : "· pelo PC " + esc(o.destino)}</span></div>`
@@ -486,7 +510,7 @@ async function abrirEnvioNF(chave, resp = null) {
         <div class="linha-cab"><span class="rot">Assunto</span><input id="nf-assunto" placeholder="NF 1212 - NOME DO HÓSPEDE"></div>
       </div>
     </div>
-    <div class="soltar" id="nf-soltar"><input type="file" id="nf-arq" accept=".pdf,.xml" multiple hidden>
+    <div class="soltar ${enc ? "oculta" : ""}" id="nf-soltar"><input type="file" id="nf-arq" accept=".pdf,.xml" multiple hidden>
       <div class="soltar-txt">📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)${resp ? " · opcional numa resposta" : ""}</div>
       <div class="chips-anexo" id="nf-anexos"></div></div>
     ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
@@ -498,7 +522,9 @@ async function abrirEnvioNF(chave, resp = null) {
         `<button class="selo-op" data-nf-selo="${esc(s.id)}">${esc(s.nome)}</button>`).join("")}</div>`
     : o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
       <div class="dica">Mensagem padrão e selo da caixa ${esc(o.conta_de)}, como no Outlook (prévia deste PC; sai a do PC que enviar)</div>`
-      : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}`;
+      : enc ? "" : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}
+    ${resp?.citacao ? `<div class="cx-citacao" aria-label="Mensagem original">${resp.citacao}</div>` : ""}`;
+  if (enc) $("nf-msg").dataset.dica = "Escreva uma mensagem (opcional) — o e-mail original vai junto, embaixo.";
   $("nf-msg").innerText = resp && resp.comNF ? o.corpo_nf : o.corpo;
   if (resp) { $("nf-assunto").value = o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
   if (o.selos.length) {
@@ -521,6 +547,8 @@ async function abrirEnvioNF(chave, resp = null) {
   $("nf-ir").onclick = () => enviarNF();
   if (o.sugestoes.length === 1) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada
   desenharAnexos();
+  validarEnvioNF();
+  setTimeout(() => (enc ? $("nf-para") : $("nf-msg"))?.focus(), 50);
 }
 
 function escolherSelo(id) {
@@ -555,7 +583,7 @@ function desenharAnexos() {
 }
 
 function validarEnvioNF() {
-  const conteudo = envNF && (envNF.anexos.length || (envNF.resp && $("nf-msg").innerText.trim()));
+  const conteudo = envNF && envNF.o && (envNF.anexos.length || envNF.resp?.encaminhar || (envNF.resp && $("nf-msg").innerText.trim()));
   const ok = envNF && conteudo && $("nf-assunto").value.trim() && $("nf-para").value.includes("@") && (envNF.o.destino || $("nf-conta"));
   $("nf-ir").disabled = !ok;
 }
@@ -570,7 +598,9 @@ async function enviarNF(contaForcada) {
   const anexos = await Promise.all(envNF.anexos.map(async a => a.tipo === "arquivo"
     ? { tipo: "arquivo", nome: a.nome, b64: await lerBase64(a.file) } : { tipo: "dropbox", rel: a.rel, nome: a.nome }));
   const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
-  const r = await api(envNF.resp ? "/api/email/responder" : "/api/envio_nf", {
+  const r = envNF.resp?.encaminhar
+    ? await api("/api/correio/encaminhar", { id: envNF.resp.id, para: $("nf-para").value.trim(), corpo: $("nf-msg").innerText })
+    : await api(envNF.resp ? "/api/email/responder" : "/api/envio_nf", {
     chave: envNF.chave || undefined, id: envNF.resp ? envNF.resp.id : undefined, para: $("nf-para").value.trim(),
     cc: $("nf-cc").value.trim(), assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
     conta_de: conta || undefined, selo: envNF.selo || undefined });
@@ -587,10 +617,14 @@ async function acompanharNF(id) {
   if (!envNF) return;
   if (s.estado === "enviado") {
     $("nf-anel").className = "anel ok"; $("nf-anel").textContent = "✓"; $("nf-barra").classList.add("fim");
-    $("nf-res").textContent = envNF.resp
-      ? `Resposta enviada${s.pc ? " pelo PC " + s.pc : ""}. O e-mail sai da lista na próxima volta do robô (até 2 min).`
+    const enc = envNF.resp?.encaminhar;
+    $("nf-res").textContent = enc ? `Encaminhado${s.pc ? " pelo Outlook do PC " + s.pc : ""}.`
+      : envNF.resp ? `Resposta enviada${s.pc ? " pelo Outlook do PC " + s.pc : ""}. O e-mail fica cinza e sai da caixa em seguida.`
       : `NF enviada ao hóspede${s.pc ? " pelo PC " + s.pc : ""}. Ela já ficou marcada no pedido.`;
-    $("nf-ir").style.display = "none"; if (envNF.resp) correioRespondido(envNF.resp.id); carregar(); return;
+    $("nf-ir").style.display = "none";
+    if (envNF.resp && !enc) correioRespondido(envNF.resp.id);
+    if (envNF.alvo) { const fim = envNF.fechar; setTimeout(() => fim(), 2200); }   // igual ao Outlook: volta pro e-mail
+    carregar(); return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") return mostrarFalhaNF(s.detalhe, s.contas_locais);
   $("nf-res").textContent = s.estado === "enviando" ? `O PC ${s.pc || ""} está enviando…` : `Aguardando o PC ${s.pc || ""}…`;
@@ -609,7 +643,7 @@ function mostrarFalhaNF(motivo, contas) {
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-envnf],[data-nf-sug],[data-tirar],[data-nf-selo]");
   if (!b) return;
-  if (b.dataset.envnf) return abrirEnvioNF(b.dataset.envnf);
+  if (b.dataset.envnf) return abrirEnvioNF(b.dataset.envnf, null, $("detalhe"));
   if (!envNF) return;
   if (b.dataset.nfSug !== undefined) return escolherSugestao(Number(b.dataset.nfSug));
   if (b.dataset.nfSelo) return escolherSelo(b.dataset.nfSelo);

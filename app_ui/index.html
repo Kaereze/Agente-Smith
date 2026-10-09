@@ -782,6 +782,16 @@ body.professor .dica-prof{display:flex}
 .ajuda-corpo dd{margin:0;color:var(--tinta-2)}
 .ajuda-corpo kbd{font:600 11.5px var(--f-dado);background:var(--folha-2);border:1px solid var(--linha-forte);border-bottom-width:2px;border-radius:6px;padding:2px 6px}
 @media (max-width:760px){.ajuda-corpo{grid-template-columns:1fr}}
+/* Escrever dentro do painel de leitura (como o Outlook) */
+.compor-inline{display:flex;flex-direction:column;height:100%;min-height:0;animation:entrar .18s ease both}
+.compor-inline .compor-topo{border-radius:0}
+.compor-inline .compor-corpo{flex:1;min-height:0;overflow:auto}
+.compor-inline .descartar{margin-left:auto;background:transparent;border-color:rgba(255,255,255,.35);color:var(--mata-tinta);padding:5px 12px;border-radius:8px}
+.compor-inline .descartar:hover{background:rgba(255,255,255,.1)}
+.leitura.compondo{padding:0;display:flex;flex-direction:column;overflow:hidden}
+.cx-citacao{border-top:1px solid var(--linha);padding-top:12px;color:var(--tinta-2);font-size:13px;display:grid;gap:10px}
+.cx-cit-cab{border-left:3px solid var(--linha-forte);padding-left:10px;line-height:1.6}
+.cx-citacao .cx-texto{font-size:13.5px;color:var(--tinta-2);border-left:3px solid var(--linha-forte);padding-left:10px}
 /* Máquinas: o que cada PC está fazendo agora + o log dele */
 .maq-uso{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--folha-2)}
 .maq-uso.ativo{background:var(--verde-suave);color:var(--verde-forte);font-weight:500}
@@ -1364,6 +1374,7 @@ function desenharDetalhe() {
   $("detalhe").classList.toggle("oculta", !(s || e));
   if (e) return desenharDetalheEmail(e);
   if (!s) { $("detalhe").innerHTML = ""; return; }
+  if (typeof envNF !== "undefined" && envNF && envNF.alvo === $("detalhe")) return;   // escrevendo o e-mail da NF: não apaga
   // não redesenha enquanto alguém digita no painel de leitura (a lista atualiza sozinha a cada 15 s)
   const foco = document.activeElement;
   if (foco && $("detalhe").contains(foco) && /INPUT|TEXTAREA/.test(foco.tagName) && $("detalhe").dataset.k === s.chave) return;
@@ -1664,7 +1675,7 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   menuOperador(false);
   if (popAberto) { fecharPop(true); return; }
-  if (!document.querySelector(".modal-fundo") && (sel || emailSel)) { sel = null; emailSel = null; desenhar(); }
+  if (!document.querySelector(".modal-fundo") && (sel || emailSel) && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { sel = null; emailSel = null; desenhar(); }
 });
 </script>
 <script src="/graficos.js"></script>
