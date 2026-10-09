@@ -7,10 +7,13 @@ Regras do usuário (08/10/2026):
 - Itens Enviados: 24 h. Mais de 14 dias sem resposta: já saiu do espelho no PC dono.
 - Lido / não lido vale pra equipe toda ("lido por Clara às 10:32"); não mexe no Outlook.
 - Excluir: some na hora pra todos; o PC dono move pra Itens Excluídos do Outlook dele.
+- Etapa 2 (09/10/2026): prazo por tipo (prazos.py), contado do 1º e-mail sem resposta da conversa; a NF do hóspede
+  que saiu pra outro CPF/CNPJ põe os e-mails dele em Urgência (alertas: {endereço: texto}).
 """
 import datetime
 
 import espelho_emails as ee
+import prazos
 
 PRIORIDADE_CLASSES = ["corrigir", "complementar", "cobranca", "dados_tomador", "pedido_nf"]
 
@@ -22,9 +25,19 @@ def _data(iso):
         return None
 
 
-def juntar(emails, eventos, agora):
+def motivo_urgencia(classes, dias, alerta=""):
+    if alerta:
+        return alerta
+    if "corrigir" in classes:
+        return "Pedido de correção/cancelamento da NF"
+    return f"{int(dias)} dias sem resposta" if dias > ee.URGENCIA_DIAS else ""
+
+
+def juntar(emails, eventos, agora, alertas=None):
     """emails: linhas de todas as Correio_<PC> (espelho_emails.ler_aba). eventos: espelho_emails.dobrar_eventos.
+    alertas: {endereço: "CPF/CNPJ da NF ... diferente do pedido"} (vai pra Urgência).
     -> (entrada [e-mail], enviados [e-mail], respostas {endereço: último envio iso})"""
+    alertas = alertas or {}
     respostas = {}
     for e in emails:
         if e["pasta"] == ee.RESPOSTA and e["quando"] > respostas.get(e["de"], ""):
@@ -45,9 +58,10 @@ def juntar(emails, eventos, agora):
             continue   # respondido por uma caixa de outro PC: some também
         quando = _data(e["quando"])
         dias = (agora - quando).total_seconds() / 86400 if quando else 0
+        motivo = motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""))
         entrada.append({**e, "lido": ev.get("lido", False), "lido_por": ev.get("lido_por", ""),
                         "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),
-                        "urgente": dias > ee.URGENCIA_DIAS or "corrigir" in e["classes"]})
+                        "urgente": bool(motivo), "motivo_urgencia": motivo, "alerta_doc": alertas.get(e["de"], "")})
     entrada.sort(key=lambda e: e["quando"], reverse=True)
     enviados.sort(key=lambda e: e["quando"], reverse=True)
     return entrada, enviados, respostas
@@ -80,6 +94,7 @@ def conversas(entrada):
     for g in saida:
         g["classes"].sort(key=lambda c: PRIORIDADE_CLASSES.index(c) if c in PRIORIDADE_CLASSES else 99)
         g["total"] = len(g["ids"])
+        g["prazo"] = prazos.vencimento(g["desde"], g["classes"])   # o relógio corre desde o 1º e-mail sem resposta
     return saida
 
 

@@ -27,6 +27,7 @@ import time
 
 from arquivos import salvar_json
 from config import PASTA_ESTADO
+from analise_nf import VERSAO as VERSAO_ANALISE, ler_compacto
 from controle_nf import reclama_falta_nota
 from log_util import configurar_logging
 from tratamento import normalizar
@@ -350,6 +351,7 @@ def ler_aba(linhas):
         e["classes"] = [c for c in e["classes"].split() if c]
         e["falta_nota"] = e["falta_nota"].upper() == "TRUE"
         e["recebido"] = e["quando"]   # nome antigo (NF do Dropbox e conversa do hóspede usam)
+        e["analise"], e["analise_d"] = ler_compacto(e["analise"])
         if e["pasta"] == RESPOSTA and e["id"] == "r:*":
             for par in e["previa"].split(";"):
                 endereco, _, quando = par.partition("=")
@@ -418,6 +420,9 @@ class Espelho:
         ultima = self.estado.get("ultima_volta")
         completa = (not ultima or agora - datetime.datetime.fromisoformat(self.estado.get("ultima_completa", ultima))
                     > datetime.timedelta(hours=REVARRER_HORAS))
+        # análise de uma versão antiga da regra (ou só a frase): uma releitura completa refaz com o motivo principal (Etapa 2)
+        completa = completa or any(str(e.get("analise", "")).strip() and f'"v":{VERSAO_ANALISE},' not in str(e["analise"])
+                                   for e in self.itens.values())
         inicio = (agora - datetime.timedelta(days=JANELA_DIAS)) if completa else \
             datetime.datetime.fromisoformat(ultima) - datetime.timedelta(minutes=FOLGA_MINUTOS)
         if completa:
@@ -536,7 +541,7 @@ class Espelho:
                  "recebido": recebido.isoformat(timespec="seconds")}
             itens = envio_nf.listar_notas_dropbox(self.cfg)
             achadas = envio_nf.notas_do_email(e, self.cfg)
-            return analise_nf.analisar(e, texto, itens, achadas, textos_pdf_anexos(item))["resumo"]
+            return analise_nf.compacto(analise_nf.analisar(e, texto, itens, achadas, textos_pdf_anexos(item)))
         except Exception as erro:
             logger.debug(f"análise da NF: {erro}")
             return ""

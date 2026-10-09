@@ -169,6 +169,64 @@ _CHECK = re.compile(r"CHECK[\s-]*(IN|OUT)\s*:?\s*(\d{2})/(\d{2})/(\d{4})")
 _VALOR_SERVICO = re.compile(r"VALOR\s+D[AOE]S?\s+([A-Z ]+?)\s*:?\s*R\$\s*([\d.]+,\d{2})")
 
 
+_DOC_FORMATADO = re.compile(r"(?<![\d.])(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})(?!\d)")
+_CHAVE_ACESSO = re.compile(r"\b\d{40,60}\b")
+
+
+def documento_tomador(texto):
+    """CPF/CNPJ do tomador escrito na NF -> só os dígitos | "" (não achou).
+
+    O texto do PDF sai embaralhado: o documento do tomador fica logo antes ou logo depois do rótulo "TOMADOR".
+    O do prestador (o hotel) também está escrito ali perto, mas sempre aparece dentro da chave de acesso: fica de fora.
+    """
+    t = texto or ""
+    rotulo = re.search(r"TOMADOR", t, re.I)
+    if not rotulo:
+        return ""
+    chave = " ".join(_CHAVE_ACESSO.findall(t))
+    perto = [(abs(m.start() - rotulo.start()), re.sub(r"\D", "", m.group(1))) for m in _DOC_FORMATADO.finditer(t)]
+    perto = [(dist, doc) for dist, doc in perto if dist <= 400 and doc not in chave]
+    return min(perto)[1] if perto else ""
+
+
+def formatar_documento(digitos):
+    d = re.sub(r"\D", "", digitos or "")
+    if len(d) == 11:
+        return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+    if len(d) == 14:
+        return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+    return d
+
+
+def documento_valido(digitos):
+    """Dígitos verificadores do CPF (11) / CNPJ (14) conferem?"""
+    d = [int(c) for c in re.sub(r"\D", "", digitos or "")]
+    if len(d) not in (11, 14) or len(set(d)) == 1:
+        return False
+    pesos = ([list(range(10, 1, -1)), list(range(11, 1, -1))] if len(d) == 11
+             else [[5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]])
+    for k, p in enumerate(pesos):
+        resto = sum(a * b for a, b in zip(d, p)) % 11
+        if d[len(p)] != (0 if resto < 2 else 11 - resto):
+            return False
+    return True
+
+
+def documento_diferente(sol, texto):
+    """A NF saiu pra outro CPF/CNPJ? -> "⚠ CPF/CNPJ da NF (x) diferente do pedido (y)" | "" (bate, ou não dá pra saber).
+
+    Se o documento do formulário é inválido (dígito verificador não confere) e o da NF é válido, quem errou foi o
+    hóspede ao digitar: a nota provavelmente saiu certa. Aí o aviso é outro (sem o ⚠ que manda pra Urgência)."""
+    pedidos = sol.get("documentos") or []
+    na_nf = documento_tomador(texto)
+    if not pedidos or not na_nf or na_nf in pedidos:
+        return ""
+    lista = ", ".join(formatar_documento(d) for d in pedidos)
+    if documento_valido(na_nf) and not any(documento_valido(d) for d in pedidos if len(d) == len(na_nf)):
+        return f"CPF/CNPJ do formulário ({lista}) parece digitado errado; a NF saiu com {formatar_documento(na_nf)}"
+    return f"⚠ CPF/CNPJ da NF ({formatar_documento(na_nf)}) diferente do pedido ({lista})"
+
+
 def ler_descricao_nota(texto):
     """-> {"checkin": "dd/mm", "checkout": "dd/mm", "servicos": {com valor > 0}} | None"""
     import unicodedata
@@ -259,7 +317,9 @@ def conferir_conteudo(sol, texto):
         return "nao_confere", " · ".join(provas + [f"serviço diferente (pediu {', '.join(sorted(pedidos))}; "
                                                     f"nota de {', '.join(sorted(na_nota))})"])
     if doc or (valor and (data or nome)) or (nome and data):
-        return "confere", " · ".join(provas)
+        # é a nota do pedido (estadia, valor, nome), mas pode ter saído pra outro CPF/CNPJ (Etapa 2, 09/10/2026)
+        diferente = "" if doc else documento_diferente(sol, texto)
+        return "confere", " · ".join(provas + ([diferente] if diferente else []))
     return "nao_confere", " · ".join(provas) or "nada da solicitação aparece na nota"
 
 

@@ -19,7 +19,7 @@ R$ 190,00"""
 def test_le_o_danfse():
     d = a.dados_do_pdf(DANFSE)
     assert (d["valor"], d["competencia"], d["checkin"], d["checkout"], d["documento"]) == \
-        ("190,00", "29/09/2026", "29/09/2026", "30/09/2026", "08.183.347/0001-29")
+        ("190,00", "29/09/2026", "29/09/2026", "30/09/2026", "08183347000129")
 
 
 def test_pedido_do_cliente():

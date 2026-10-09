@@ -3,9 +3,11 @@ reemitir. O robô abre o PDF da NF (DANFSe do Dropbox), cruza com o que o client
 pro topo do e-mail (pedido do usuário, 08/10/2026): o que ele pede, o que a nota diz e se bate com a reclamação.
 Só lê: nada é alterado no Dropbox nem no Outlook.
 """
+import json
 import os
 import re
 
+from controle_nf import documento_tomador, formatar_documento
 from log_util import configurar_logging
 from tratamento import normalizar
 
@@ -20,17 +22,78 @@ _MOTIVOS = [   # (motivo, padrão no texto do cliente)
     ("mês", re.compile(r"\bm[eê]s\b|compet[eê]ncia|janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro", re.I)),
     ("nome", re.compile(r"\bnome\b|raz[aã]o social|tomador", re.I)),
     ("CPF/CNPJ", re.compile(r"\bcpf\b|\bcnpj\b|documento", re.I)),
-    ("descrição", re.compile(r"descri[cç][aã]o|discrimina|rubrica|projeto|observa[cç]", re.I)),
+    ("descrição", re.compile(r"descri[cç][aã]o|discrimina|rubrica|projeto|observa[cç]|pronac|empenho|contrato|"
+                             r"ordem de compra|centro de custo|n[uú]mero do pedido", re.I)),
     ("cancelar", re.compile(r"cancel|estorn|anula", re.I)),
     ("reemitir", re.compile(r"reemit|emitir (?:novamente|de novo|outra)|nova nota|nota nova|refaz|substitu|retific|corrig", re.I)),
 ]
 
 
+_DOC = re.compile(r"(?<![\d.])(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2})(?!\d)")
+VERSAO = 2   # muda quando a regra da análise muda: o espelho refaz as análises antigas na próxima volta
+ROTULOS = {"valor": "valor da nota", "data": "datas da hospedagem", "mês": "mês / competência",
+           "nome": "nome do tomador", "CPF/CNPJ": "CPF/CNPJ do tomador", "descrição": "descrição da nota"}
+
+
+_FIM_DO_TEXTO = re.compile(r"\n--\s*\n|aviso de confidencialidade|confidentiality notice|enviado do meu", re.I)
+_RECLAMA = re.compile(r"falt|inclu|corrig|corre[cç][aã]o|errad|incorret|equivocad|alter|constar|\bconsta\b|deveria|precis|"
+                      r"mudar|troc|ajust|diverg|n[aã]o\s+(?:saiu|veio|est[aá]|tem|consta|bate|confere)", re.I)
+_ELOGIA = re.compile(r"\bcorret[oa]s?\b|\bcert[oa]s?\b|n[aã]o\s+precisa|est[aá]\s+ok\b", re.I)
+
+
+def pontos_de_reclamacao(texto):
+    """Quantas vezes cada assunto aparece num trecho de reclamação ("faltou incluir a descrição", "valor incorreto").
+    Trecho que elogia ("o valor está correto") não conta; assinatura e aviso de confidencialidade ficam de fora.
+    Caso Natália (09/10/2026): o 1º assunto citado era o valor ("estava com o valor correto"), mas o pedido era a
+    descrição (rubrica, projeto, Pronac)."""
+    limpo = _FIM_DO_TEXTO.split(texto or "")[0]
+    pontos = {}
+    for trecho in re.split(r"[.!?;\n,]|\bno entanto\b|\bpor[ée]m\b|\bmas\b", limpo, flags=re.I):
+        if not _RECLAMA.search(trecho) or _ELOGIA.search(trecho):
+            continue
+        for m, p in _MOTIVOS:
+            if m in ROTULOS and p.search(trecho):
+                pontos[m] = pontos.get(m, 0) + 1
+    return pontos
+
+
 def pedido_do_cliente(assunto, texto):
-    """-> {"motivos": [...], "valores": ["480,00", ...], "datas": [...], "nfs": ["1254", ...]}"""
-    t = f"{assunto or ''}\n{texto or ''}"
-    return {"motivos": [m for m, p in _MOTIVOS if p.search(t)], "valores": list(dict.fromkeys(re.findall(_RS, t))),
-            "datas": list(dict.fromkeys(re.findall(_DATA, t))), "nfs": list(dict.fromkeys(_NF.findall(t)))}
+    """-> {"motivos": [...], "valores": ["480,00", ...], "datas": [...], "nfs": ["1254", ...], "documentos": [dígitos],
+    "posicoes": {motivo: onde aparece primeiro}, "termos": {motivo: [palavras achadas]}}"""
+    texto = _FIM_DO_TEXTO.split(texto or "")[0]
+    t = f"{texto}\n{assunto or ''}"   # o corpo primeiro: o assunto costuma ser genérico ("Nota fiscal")
+    posicoes, termos = {}, {}
+    for m, p in _MOTIVOS:
+        achados = list(p.finditer(t))
+        if achados:
+            posicoes[m] = achados[0].start()
+            termos[m] = list(dict.fromkeys(a.group(0).strip().lower() for a in achados))[:4]
+    return {"motivos": [m for m, _ in _MOTIVOS if m in posicoes], "valores": list(dict.fromkeys(re.findall(_RS, t))),
+            "datas": list(dict.fromkeys(re.findall(_DATA, t))), "nfs": list(dict.fromkeys(_NF.findall(t))),
+            "documentos": list(dict.fromkeys(re.sub(r"\D", "", d) for d in _DOC.findall(texto or ""))),
+            "posicoes": posicoes, "termos": termos, "pontos": pontos_de_reclamacao(texto)}
+
+
+def motivo_principal(pedido):
+    """O que o cliente quer corrigir, em destaque (usuário, 09/10/2026): o assunto que mais aparece nos trechos de
+    reclamação; empate (ou nenhum trecho claro) = o 1º que ele cita. -> (motivo, detalhe, outros motivos)"""
+    pontos, posicoes = pedido.get("pontos", {}), pedido.get("posicoes", {})
+    citados = sorted((-pontos.get(m, 0), p, m) for m, p in posicoes.items() if m in ROTULOS)
+    if pontos:   # com trecho de reclamação, os outros são só os que também foram reclamados
+        citados = [c for c in citados if c[0] < 0]
+    citados = [(p, m) for _, p, m in citados]
+    if not citados:
+        if "cancelar" in pedido["motivos"]:
+            return "cancelar a nota", "", []
+        return "refazer a nota (o cliente não disse o que mudar)", "", []
+    principal = citados[0][1]
+    detalhe = {"valor": ", ".join(f"R$ {v}" for v in pedido["valores"][:2]),
+               "data": ", ".join(pedido["datas"][:2]), "mês": ", ".join(pedido["datas"][:2]),
+               "CPF/CNPJ": ", ".join(formatar_documento(d) for d in pedido.get("documentos", [])[:2])}.get(principal, "")
+    if principal == "descrição":
+        detalhe = ", ".join(x for x in pedido["termos"].get("descrição", []) if not x.startswith(("descri", "observa")))
+    outros = [ROTULOS[m] for _, m in citados[1:]]
+    return ROTULOS[principal], detalhe, outros
 
 
 def _depois(linhas, rotulo, padrao, alcance=3):
@@ -55,7 +118,7 @@ def dados_do_pdf(texto):
         "checkin": _depois(linhas, r"check.?in", _DATA, 0),
         "checkout": _depois(linhas, r"check.?out", _DATA, 0),
         "diarias": _depois(linhas, r"quantidade de di[aá]ria", r"(\d+)", 0),
-        "documento": _depois(linhas, r"tomador.*(?:cnpj|cpf)", r"(\d{2,3}\.\d{3}\.\d{3}[/-]\d{2,4}(?:-\d{2})?)"),
+        "documento": documento_tomador(texto),
     }
 
 
@@ -89,6 +152,47 @@ def _num(v):
         return None
 
 
+def na_nf(nf, numero):
+    """Ex.: Na NF 6524: R$ 366,00 · competência 09/2026 · hospedagem 01/09 a 03/09 · CPF 123.456.789-00"""
+    if not nf:
+        return f"NF{(' ' + numero) if numero else ''} não achada no Dropbox — conferir à mão"
+    partes = [f"Na NF{(' ' + numero) if numero else ''}: {('R$ ' + nf['valor']) if nf.get('valor') else 'valor ?'}"]
+    if nf.get("competencia"):
+        partes.append(f"competência {nf['competencia']}")
+    if nf.get("checkin") and nf.get("checkout"):
+        partes.append(f"hospedagem {nf['checkin']} a {nf['checkout']}")
+    if nf.get("documento"):
+        partes.append(("CNPJ " if len(nf["documento"]) == 14 else "CPF ") + formatar_documento(nf["documento"]))
+    return " · ".join(partes)
+
+
+def comparar(pedido, nf):
+    """O que o cliente escreveu x o que a NF diz -> [frases]. Diferença de CPF/CNPJ começa com ⚠."""
+    if not nf:
+        return []
+    saida = []
+    motivos = pedido["motivos"]
+    if "valor" in motivos and pedido["valores"] and nf.get("valor"):
+        citados = [v for v in pedido["valores"] if _num(v) is not None]
+        if any(abs(_num(v) - _num(nf["valor"])) < 0.01 for v in citados):
+            outros = [v for v in citados if abs(_num(v) - _num(nf["valor"])) >= 0.01]
+            saida.append(f"cliente cita o valor da nota e pede R$ {outros[0]}" if outros else "o valor citado é o da nota")
+        elif citados:
+            saida.append(f"cliente fala em R$ {citados[0]} — diferente da nota")
+    if ("data" in motivos or "mês" in motivos) and pedido["datas"] and nf.get("checkin"):
+        fora = [d for d in pedido["datas"] if d not in (nf.get("checkin"), nf.get("checkout"), nf.get("competencia"))]
+        if fora:
+            saida.append(f"cliente cita {', '.join(fora[:2])} — não está na nota")
+    docs = [d for d in pedido.get("documentos", []) if len(d) in (11, 14)]
+    if docs and nf.get("documento"):
+        if nf["documento"] in docs:
+            saida.append("o CPF/CNPJ que o cliente escreveu é o da nota")
+        else:
+            saida.append(f"⚠ cliente escreveu {formatar_documento(docs[0])}; a nota saiu com "
+                         f"{formatar_documento(nf['documento'])}")
+    return saida
+
+
 def resumo(pedido, nf, numero, assunto=""):
     """Frase curta pro topo: o que o cliente pede · o que a NF diz · se bate."""
     motivos = pedido["motivos"]
@@ -115,17 +219,42 @@ def resumo(pedido, nf, numero, assunto=""):
     return " · ".join(partes)
 
 
+def completo(pedido, nf, numero, arquivo, origem=""):
+    """Tudo que a tela mostra: motivo em destaque, o que a NF diz, a comparação e os outros assuntos citados."""
+    motivo, detalhe, outros = motivo_principal(pedido)
+    return {"resumo": resumo(pedido, nf, numero) + origem, "nf": nf, "arquivo": arquivo, "pedido": pedido,
+            "motivo": motivo, "detalhe": detalhe, "outros": outros, "na_nf": na_nf(nf, numero) + origem,
+            "comparacao": comparar(pedido, nf)}
+
+
+def compacto(analise):
+    """Pra célula "Análise" da aba Correio_<PC> (JSON curto)."""
+    return json.dumps({"v": VERSAO, "r": analise["resumo"], "m": analise["motivo"], "d": analise["detalhe"], "o": analise["outros"],
+                       "nf": analise["na_nf"], "c": analise["comparacao"]}, ensure_ascii=False, separators=(",", ":"))
+
+
+def ler_compacto(celula):
+    """Célula "Análise" -> (resumo, {m, d, o, nf, c} | None). PC com a versão antiga grava só o resumo (texto)."""
+    celula = str(celula or "").strip()
+    if celula.startswith("{"):
+        try:
+            d = json.loads(celula)
+            return str(d.get("r", "")), d
+        except ValueError:
+            pass
+    return celula, None
+
+
 def analisar(e, texto, itens_dropbox, notas_achadas=(), pdfs_anexos=()):
     """e: e-mail do espelho; pdfs_anexos: [(nome, texto)] dos PDFs anexados (a NF que o cliente mandou de volta).
-    -> {"resumo", "nf": {...}|None, "arquivo", "pedido"}"""
+    -> {"resumo", "nf": {...}|None, "arquivo", "pedido", "motivo", "detalhe", "outros", "na_nf", "comparacao"}"""
     pedido = pedido_do_cliente(e.get("assunto", ""), texto)
     for nome, conteudo in pdfs_anexos:   # 1º: a própria NF anexada ao e-mail
         if re.search(r"nfs-?e", conteudo or "", re.I):
             nf = dados_do_pdf(conteudo)
             from controle_nf import ler_assunto_nf
             numero = nf.get("numero") or (ler_assunto_nf(os.path.splitext(nome)[0]) or ("",))[0]
-            return {"resumo": resumo(pedido, nf, numero) + " (NF anexada ao e-mail)", "nf": nf,
-                    "arquivo": nome, "pedido": pedido}
+            return completo(pedido, nf, numero, nome, " (NF anexada ao e-mail)")
     # o nome do PDF anexado ("NF 6524 - CARLA LUIZA ... .pdf") diz o nº e o nome da nota mesmo quando o PDF é imagem
     from controle_nf import ler_assunto_nf
     pelo_anexo = [x for x in (ler_assunto_nf(os.path.splitext(nome)[0]) for nome, _ in pdfs_anexos) if x]
@@ -138,5 +267,4 @@ def analisar(e, texto, itens_dropbox, notas_achadas=(), pdfs_anexos=()):
         from arquivos import so_na_nuvem
         if os.path.exists(item[1]) and not so_na_nuvem(item[1]):   # só na nuvem: não baixa (regra do usuário)
             nf = dados_do_pdf(ler_pdf(item[1]))
-    return {"resumo": resumo(pedido, nf, numero, e.get("assunto", "")), "nf": nf,
-            "arquivo": item[0] if item else "", "pedido": pedido}
+    return completo(pedido, nf, numero, item[0] if item else "")

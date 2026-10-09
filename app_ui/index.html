@@ -491,6 +491,20 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .espera{font:600 12px/1 var(--f-dado);padding:5px 8px;border-radius:6px;justify-self:start;white-space:nowrap}
 .espera.ok{background:var(--ok-fundo);color:var(--ok)} .espera.med{background:var(--atencao-fundo);color:var(--atencao)}
 .espera.alto{background:var(--erro-fundo);color:var(--erro)} .espera.fim{color:var(--tinta-3);padding-left:0}
+/* Etapa 2: prazo (SLA) — verde: mais da metade do prazo; âmbar: passou da metade; vermelho: venceu */
+.prazo{font:600 12px/1 var(--f-dado);padding:5px 8px;border-radius:6px;justify-self:start;white-space:nowrap}
+.prazo.ok{background:var(--ok-fundo);color:var(--ok)} .prazo.perto{background:var(--atencao-fundo);color:var(--atencao)}
+.prazo.vencido{background:var(--erro-fundo);color:var(--erro)} .prazo.fim{color:var(--tinta-3);padding-left:0;font-weight:500}
+.prazo.mini{font-size:11px;padding:3px 6px}
+.quadro-e2{border:1px solid var(--linha);border-left:4px solid var(--info);border-radius:10px;background:var(--info-fundo);padding:12px 14px;display:grid;gap:6px;font-size:13px}
+.quadro-e2.erro{border-color:var(--erro);background:var(--erro-fundo)} .quadro-e2.atencao{border-color:var(--atencao);background:var(--atencao-fundo)}
+.quadro-e2 > b{font:600 12px var(--f-titulo);letter-spacing:.07em;text-transform:uppercase;color:var(--info)}
+.quadro-e2.erro > b{color:var(--erro)} .quadro-e2.atencao > b{color:var(--atencao)}
+.quadro-e2 .acoes-q{display:flex;gap:8px;flex-wrap:wrap}
+.outro-ped{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:8px;border:1px solid var(--linha);background:var(--folha);cursor:pointer;font-size:12.5px}
+.outro-ped:hover{border-color:var(--verde)} .outro-ped .dado{color:var(--tinta-3)}
+.cx-motivo{font:600 15px var(--f-titulo);color:var(--tinta)} .cx-motivo small{font-weight:500;color:var(--tinta-2)}
+.cx-tambem{font-size:12px;color:var(--tinta-3)}
 .resp{font-size:12.5px;color:var(--tinta-2);display:flex;flex-direction:column;gap:3px}
 .resp.livre{color:var(--tinta-3)}
 
@@ -846,7 +860,7 @@ body.professor .dica-prof{display:flex}
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
       <button class="ln raiz" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
-      <button class="ln raiz" data-vista="correio" data-caixa="urgencia" title="Mais de 7 dias sem resposta ou pedido de correção de NF"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
+      <button class="ln raiz" data-vista="correio" data-caixa="urgencia" title="Pedido de correção de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
       <button class="ln raiz" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 24 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
     </div>
     <details class="secao" data-g="monit" open>
@@ -1031,6 +1045,8 @@ async function carregar(){
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
+    // pedido repetido (Etapa 2): conta 1 vez só; o repetido fica ligado ao principal e abre pelo detalhe dele
+    if (j.fila) { st.filaRep = j.fila.filter(s => s.repetido_de); st.fila = j.fila.filter(s => !s.repetido_de); }
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
     $("pill-demo").classList.toggle("oculta", !j.demo);
@@ -1088,6 +1104,7 @@ function passaSit(it, f) {
   if (f === "envio_pendente") return !!s.envio_pendente;
   if (f === "aberto") return s.situacao !== "concluida";
   if (f === "atrasadas") return s.situacao !== "concluida" && diasDesde(s.data) > PRAZO.med;
+  if (f === "doc_diferente") return !!(s.alerta_doc && s.alerta_doc.length);
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
   return s.situacao === f;
 }
@@ -1096,8 +1113,24 @@ function passaSit(it, f) {
 const filaBase = () => { const d = new Date(); d.setDate(d.getDate() - 45); const c = d.toLocaleDateString("sv-SE"); return st.fila.filter(s => !s.data || s.data >= c); };
 const diasDesde = iso => Math.max(0, Math.round((new Date(hojeIsoF() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 864e5));
 const PRAZO = { ok: 2, med: 7 };   // até 2 dias verde, até 7 âmbar, acima vermelho
+// Prazo (SLA) da Etapa 2 (usuário, 09/10/2026): correção e cobrança 24 h, pedido 48 h, dias corridos. O servidor manda
+// quando vence; o que falta é contado aqui, então o selo anda sozinho entre as atualizações.
+function prazoInfo(p) {
+  if (!p || !p.vence) return null;
+  const resta = (new Date(p.vence) - Date.now()) / 36e5, h = Math.abs(resta);
+  const nivel = resta <= 0 ? "vencido" : resta <= p.horas / 2 ? "perto" : "ok";
+  const tempo = h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : h < 48 ? Math.round(h) + " h" : Math.round(h / 24) + " dias";
+  return { nivel, resta, tempo, texto: resta <= 0 ? "venceu há " + tempo : "vence em " + tempo };
+}
+function prazoHtml(p, mini = false, semPrazo = "—") {
+  const i = prazoInfo(p);
+  if (!i) return `<span class="prazo fim">${semPrazo}</span>`;
+  return `<span class="prazo ${i.nivel} ${mini ? "mini" : ""}" title="Prazo de ${esc(p.nome)}: ${p.horas} h, dias corridos (${i.texto})">${
+    mini ? "⏱ " + (i.resta <= 0 ? "venceu" : i.tempo) : i.texto}</span>`;
+}
 function esperaHtml(it) {
-  const resolvido = it.tipo === "form" && it.s.situacao === "concluida" && !it.s.envio_pendente;
+  if (it.tipo === "form") return prazoHtml(it.s.prazo, false, it.s.situacao === "tratativa" ? "com o hóspede" : "—");
+  const resolvido = false;
   if (resolvido) return `<span class="espera fim">—</span>`;
   const d = diasDesde(it.quando);
   const cls = d <= PRAZO.ok ? "ok" : d <= PRAZO.med ? "med" : "alto";
@@ -1192,6 +1225,7 @@ const conta = (ign, f, busca) => TODOS.reduce((n, it) => n + (passa(it, ign, bus
 function situacoesDaAba(busca) {
   if (origem === "email") return SIT_EMAIL.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)]);
   const base = [["aberto", "Em aberto", "var(--verde)"], ["atrasadas", "Atrasadas +7 dias", "var(--erro)"],
+    ["doc_diferente", "CPF/CNPJ diferente", "var(--erro)"],
     ["na_fila", "Sem NF", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
     ["nf_parcial", "NF parcial", COR_SIT.nf_parcial], ["envio_pendente", "Envio pendente", "var(--atencao)"],
     ["concluida", "NF emitida", COR_SIT.concluida], ["em_tratamento", "Em tratamento", COR_SIT.em_tratamento],
@@ -1224,11 +1258,14 @@ function desenharFiltros(busca, total) {
   const aba = ([f, nome, cor, n]) => `<button class="st-tab ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
       <span class="bolinha" aria-hidden="true"></span>${esc(nome)}<span class="qt">${n.toLocaleString("pt-BR")}</span></button>`;
   const todas = situacoesDaAba(busca), hist = todas.filter(x => HISTORICO.includes(x[0]));
-  const atras = todas.find(x => x[0] === "atrasadas");
-  $("status-cards").innerHTML = (atras && atras[3] ? `<div class="st-alerta" role="status"><svg aria-hidden="true"><use href="#i-alerta"/></svg>
+  const atras = todas.find(x => x[0] === "atrasadas"), docDif = todas.find(x => x[0] === "doc_diferente");
+  $("status-cards").innerHTML = (docDif && docDif[3] ? `<div class="st-alerta" role="status"><svg aria-hidden="true"><use href="#i-alerta"/></svg>
+      <b>${docDif[3].toLocaleString("pt-BR")}</b><span>NF(s) saíram com CPF/CNPJ diferente do pedido — conferir antes de enviar</span>
+      <button data-st="${filtro === "doc_diferente" ? "aberto" : "doc_diferente"}" aria-pressed="${filtro === "doc_diferente"}">${filtro === "doc_diferente" ? "Ver todos em aberto" : "Ver quais"}</button></div>` : "") +
+    (atras && atras[3] ? `<div class="st-alerta" role="status"><svg aria-hidden="true"><use href="#i-alerta"/></svg>
       <b>${atras[3].toLocaleString("pt-BR")}</b><span>pedido(s) esperando há mais de 7 dias sem NF</span>
       <button data-st="${filtro === "atrasadas" ? "aberto" : "atrasadas"}" aria-pressed="${filtro === "atrasadas"}">${filtro === "atrasadas" ? "Ver todos em aberto" : "Ver os atrasados"}</button></div>` : "") +
-    `<div class="st-tabs" role="group" aria-label="Situação"><span class="st-rot">Fila</span>${todas.filter(x => !HISTORICO.includes(x[0]) && x[0] !== "atrasadas").map(aba).join("")}
+    `<div class="st-tabs" role="group" aria-label="Situação"><span class="st-rot">Fila</span>${todas.filter(x => !HISTORICO.includes(x[0]) && !["atrasadas", "doc_diferente"].includes(x[0])).map(aba).join("")}
       ${hist.length ? `<span class="st-sep"></span><span class="st-rot">Resolvidas</span>${hist.map(aba).join("")}` : ""}</div>`;
   const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
   const algum = hotel || agenteF || envio !== "todos" || periodo !== "45";
@@ -1305,7 +1342,7 @@ function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = 
 
 // Filtro de uma situação só: a coluna não repete a etiqueta, mostra quem está cuidando
 const visaoMista = () => origem === "email" ? filtroEmail === "todos"
-  : ["aberto", "todas", "minhas", "envio_pendente", "atrasadas"].includes(filtro);
+  : ["aberto", "todas", "minhas", "envio_pendente", "atrasadas", "doc_diferente"].includes(filtro);
 function colunaSituacao(s) {
   if (visaoMista()) return `<span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span>${marcaEnvio(s)}</span>`;
   return `<span class="resp ${s.dono ? "" : "livre"}">${s.dono ? "Com " + esc(s.dono) : "Livre"}${marcaEnvio(s)}</span>`;
@@ -1313,7 +1350,9 @@ function colunaSituacao(s) {
 function linhaHtml(it) {
   if (it.tipo === "form") {
     const s = it.s;
-    const marcas = [s.falta_nota ? `<span class="et et-erro" title="${esc(s.falta_nota)}">Diz que falta nota</span>` : "",
+    const marcas = [s.alerta_doc?.length ? `<span class="et et-erro" title="${esc(s.alerta_doc[0].texto)}">CPF/CNPJ diferente na NF</span>` : "",
+      s.repetidos?.length ? `<span class="et et-atencao" title="O hóspede mandou o formulário ${s.repetidos.length + 1} vezes: conta como 1">Pedido repetido · ${s.repetidos.length + 1}x</span>` : "",
+      s.falta_nota ? `<span class="et et-erro" title="${esc(s.falta_nota)}">Diz que falta nota</span>` : "",
       s.envio_pendente ? `<span class="et et-atencao">Envio pendente</span>` : "", s.dividida ? `<span class="et et-info">Dividida</span>` : "",
       s.dono ? `<span class="et">Com ${esc(s.dono)}</span>` : ""].join("");
     return `<div class="linha nf-l ${sel === s.chave ? "sel" : ""}" role="option" tabindex="0" data-k="${esc(s.chave)}">
@@ -1336,13 +1375,12 @@ function desenhar(){
   const busca = $("busca").value.trim();
   desenharLateral();
   let lista = TODOS.filter(it => passa(it, "", busca));
-  // fila de trabalho: o mais atrasado primeiro; histórico e busca: o mais recente primeiro
-  const historico = origem === "form" && HISTORICO.includes(filtro);
-  const ord = ordem || (busca || historico ? "recente" : "antigo");
+  // o mais recente primeiro (usuário, 09/10/2026); "Prazo" vira pro mais atrasado primeiro
+  const ord = ordem || "recente";
   if (ord === "antigo") lista = lista.slice().reverse();
   const seta = o => ord === o ? (o === "antigo" ? " ↓" : " ↓") : "";
   $("linhas-cab").innerHTML = `<span>Hóspede / assunto</span>
-    <button class="ord ${ord === "antigo" ? "ativo" : ""}" data-ordem="antigo" title="Mais atrasado primeiro">Espera${seta("antigo")}</button>
+    <button class="ord ${ord === "antigo" ? "ativo" : ""}" data-ordem="antigo" title="Mais atrasado primeiro">Prazo${seta("antigo")}</button>
     <span class="col-hotel">Hotel</span>
     <button class="ord col-chegou ${ord === "recente" ? "ativo" : ""}" data-ordem="recente" title="Mais recente primeiro">Chegou${seta("recente")}</button>
     <span>${visaoMista() ? "Situação" : "Responsável"}</span>`;
@@ -1369,7 +1407,7 @@ function desenhar(){
 }
 
 function desenharDetalhe() {
-  const s = sel && st.fila.find(x => x.chave === sel), e = emailSel && st.emails.find(x => x.id === emailSel);
+  const s = sel && acharPedido(sel), e = emailSel && st.emails.find(x => x.id === emailSel);
   $("mesa").classList.toggle("com-leitura", !!(s || e));
   $("detalhe").classList.toggle("oculta", !(s || e));
   if (e) return desenharDetalheEmail(e);
@@ -1398,8 +1436,9 @@ function desenharDetalhe() {
         <span class="etq">Formulário (QR code)</span><span class="etq">${esc(s.hotel)}${AG[s.hotel] ? " · " + esc(AG[s.hotel]) : ""}</span>
         <span class="etq ${s.enviado ? "" : "ruim"}">${s.enviado ? "E-mail ao hotel enviado" : "E-mail ao hotel não enviado"}</span>
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
-        ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}</div></header>
-    <div class="corpo-msg">${quadroFalta(s.falta_nota)}
+        ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}
+        ${s.prazo ? `<span class="etq">Prazo do pedido (48 h): ${prazoHtml(s.prazo)}</span>` : ""}</div></header>
+    <div class="corpo-msg">${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
       <section class="ficha"><div class="ficha-tit"><span class="rot">Ficha do formulário</span><span class="dica">${dataBr(s.data)}</span></div>
         <dl><dt>E-mail do hóspede</dt><dd>${esc(s.email)}</dd>${s.campos.map(c =>
           `<dt>${esc(c[0])}</dt><dd class="${/\d{3}[.\/-]\d/.test(c[1]) ? "dado" : ""}">${esc(c[1])}</dd>`).join("")}</dl></section>
@@ -1420,6 +1459,31 @@ function desenharDetalhe() {
         ${hist.length ? `<div class="historico">${hist.map(h => `<div class="passo-h"><span class="dado">${quando(h.quando)}</span><b>${esc(h.agente)}</b> ${esc(rotulo(h))}</div>`).join("")}</div>`
           : `<span class="dica">Sem ações ainda.</span>`}</section>
     </div>`;
+}
+
+// Etapa 2: CPF/CNPJ da NF diferente do pedido, pedido repetido e os outros pedidos do mesmo hóspede (e-mail ou CPF/CNPJ)
+const linhaPedido = o => `<div class="outro-ped" data-k="${esc(o.chave)}" role="button" tabindex="0"><span class="dado">${dataBr(o.data)} ${esc(horaDoCarimbo(o.carimbo))}</span>
+  <span>${esc(o.hotel)} · ${esc(o.nome)}${o.email ? ` <span class="dado">&lt;${esc(o.email)}&gt;</span>` : ""}</span>
+  <span style="color:${COR_SIT[o.situacao] || "inherit"}">${NOMES[o.situacao] || o.situacao}${o.nfs?.length ? " · NF " + esc(o.nfs.join(", ")) : ""}</span></div>`;
+function quadrosEtapa2(s) {
+  let h = "";
+  for (const a of s.alerta_doc || []) h += `<div class="quadro-e2 erro" role="alert"><b>⚠ NF ${esc(a.nf)}: CPF/CNPJ diferente do pedido</b>
+    <div>${esc(a.texto)}</div><div class="dica">O robô abriu a nota e comparou com o formulário. Confira antes de enviar ao hóspede (ou refaça a NF).</div>
+    <div class="acoes-q"><button data-doc-ok="${esc(a.nf)}">Está certo (o hóspede pediu assim)</button></div></div>`;
+  for (const a of s.aviso_doc || []) h += `<div class="quadro-e2"><b>CPF/CNPJ do formulário digitado errado</b><div>NF ${esc(a.nf)}: ${esc(a.texto)}</div>
+    <div class="dica">O documento do formulário não passa no dígito verificador; o da nota passa. A NF provavelmente saiu certa.</div></div>`;
+  if (s.repetido_de) {
+    const p = acharPedido(s.repetido_de);
+    h += `<div class="quadro-e2 atencao"><b>Pedido repetido</b><div>O hóspede mandou este mesmo formulário de novo (mesmo CPF/CNPJ, estadia e valor). Ele conta como 1, junto com o principal:</div>
+      ${p ? linhaPedido(p) : ""}</div>`;
+  }
+  if (s.repetidos?.length) h += `<div class="quadro-e2 atencao"><b>Pedido repetido · ${s.repetidos.length + 1}x</b>
+    <div>O hóspede mandou o formulário ${s.repetidos.length + 1} vezes (mesmo CPF/CNPJ, estadia e valor). Conta como 1 pedido: trate só este.</div>
+    ${s.repetidos.map(linhaPedido).join("")}</div>`;
+  if (s.outros_pedidos?.length) h += `<section class="ficha"><div class="ficha-tit"><span class="rot">Outros pedidos deste hóspede · ${s.outros_total}</span>
+    <span class="dica">mesmo e-mail ou mesmo CPF/CNPJ</span></div><div class="ficha-corpo" style="display:grid;gap:6px">${s.outros_pedidos.map(linhaPedido).join("")}
+    ${s.outros_total > s.outros_pedidos.length ? `<span class="dica">e mais ${s.outros_total - s.outros_pedidos.length}</span>` : ""}</div></section>`;
+  return h;
 }
 
 function desenharDetalheEmail(e) {
@@ -1457,8 +1521,9 @@ function rotulo(h){
   return m[h.acao] || h.acao;
 }
 
+const acharPedido = k => st.fila.find(x => x.chave === k) || (st.filaRep || []).find(x => x.chave === k);
 async function acao(a, valor){
-  const s = st.fila.find(x => x.chave === sel); if (!s) return;
+  const s = acharPedido(sel); if (!s) return;
   document.querySelectorAll("#detalhe button").forEach(b => b.disabled = true);
   const r = await api("/api/acao", {chave: s.chave, acao: a, valor: valor || ""});
   if (r.ok) toast("Feito ✔"); else toast(r.motivo || "Não deu certo", true);
@@ -1469,7 +1534,7 @@ async function acao(a, valor){
 const irPraCaixa = () => { if (pn.vista !== "fila") trocarVista("fila"); };
 document.addEventListener("click", async e => {
   if (popAberto && !e.target.closest("#pop,[data-pop]")) fecharPop();
-  const t = e.target.closest("[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],[data-doc-ok],#d-fechar,#d-nf-ok");
   if (!t) return;
   const d = t.dataset;
   if (d.ordem) { ordem = d.ordem; pagina = 0; return desenhar(); }
@@ -1505,10 +1570,11 @@ document.addEventListener("click", async e => {
     return acao(d.a, d.v);
   }
   if (t.id === "d-nf-ok") { const n = $("d-nf").value.trim().replace(/\D/g, ""); if (!n) return toast("Digite o número da NF", true); return acao("NF", n); }
+  if (d.docOk) { if (confirm("O CPF/CNPJ da NF " + d.docOk + " está certo? O alerta some pra equipe toda.")) return acao("OBS", `Conferido: CPF/CNPJ da NF ${d.docOk} está certo`); return; }
   if (d.desfaz) { e.preventDefault(); if (confirm("Desfazer a NF " + d.desfaz + "?")) return acao("DESFAZER_NF", d.desfaz); return; }
   if (d.txt) { const v = $("d-txt").value.trim(); if (!v) return toast("Escreva o texto primeiro", true); return acao(d.txt, v); }
   if (d.copiar) {
-    const s = st.fila.find(x => x.chave === sel);
+    const s = acharPedido(sel);
     try { await navigator.clipboard.writeText([`Hotel: ${s.hotel}`, `E-mail: ${s.email}`, ...s.campos.map(c => `${c[0]}: ${c[1]}`)].join("\n")); toast("Dados copiados"); }
     catch (err) { toast("Não consegui copiar", true); }
   }

@@ -127,6 +127,25 @@ _ENVIO_ROBO = re.compile(r"E-mail com a NF ([\d, ]+) enviado para (\S+) em (\d{2
 _ENVIO_PAINEL = re.compile(r'^"(.*?)" enviada ao h[oó]spede \((.*?)\) pela caixa')
 _CONFIRMADA = re.compile(r"^NF (\d+) confirmada automaticamente: (.*)$")
 ENVIO_PENDENTE_DIAS = 14   # = conferencia.dias_maximos: período em que o robô relê os e-mails enviados
+_CONFERIDO_DOC = re.compile(r"^Conferido: CPF/CNPJ da NF (\d+) está certo")
+
+
+def alertas_documento(est):
+    """NF que saiu pra outro CPF/CNPJ (o robô abriu a nota e comparou com o formulário) -> (urgentes, avisos).
+    urgentes: [{"nf", "texto"}] (alerta vermelho, vai pra Urgência) · avisos: o formulário é que veio digitado
+    errado (a nota saiu com o documento válido). Some quando a NF é desfeita ou alguém marca "Está certo"."""
+    ok = {m.group(1) for o in est["obs"] for m in [_CONFERIDO_DOC.match(o["texto"])] if m}
+    urgentes, avisos = [], []
+    for o in est["obs"]:
+        m = _CONFIRMADA.match(o["texto"])
+        if not m or m.group(1) not in est["nfs"] or m.group(1) in ok:
+            continue
+        for parte in m.group(2).split(" · "):
+            if parte.startswith("⚠ CPF/CNPJ da NF"):
+                urgentes.append({"nf": m.group(1), "texto": parte[2:]})
+            elif parte.startswith("CPF/CNPJ do formulário"):
+                avisos.append({"nf": m.group(1), "texto": parte})
+    return urgentes, avisos
 
 
 def _quando_br(iso):
@@ -177,6 +196,7 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
         est = estados.get(s["chave"], estado_inicial())
         conf = nfs_conferente.get((s["aba"], s["carimbo"]), [])
         envios = envios_nf(s, est)
+        alertas = alertas_documento(est)
         todas_nfs = list(dict.fromkeys(est["nfs"] + list(conf)))
         fila.append({**s, "dono": est["dono"], "dono_desde": est["dono_desde"], "envios": envios,
                      "envio_pendente": envio_pendente(todas_nfs, envios, s),
@@ -185,7 +205,8 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
                      "dividida": est["dividida"] if est["dividida"] is not None else s["partes"] > 1,
                      "partes": partes_esperadas(s, est),
                      "nota_unica": next((o["texto"] for o in est["obs"] if o["texto"].startswith("Hóspede aceita nota única:")), ""),
-                     "historico": est["historico"], "situacao": situacao(s, est, conf)})
+                     "historico": est["historico"], "situacao": situacao(s, est, conf),
+                     "alerta_doc": alertas[0], "aviso_doc": alertas[1]})
     fila.sort(key=lambda x: (x["data"], x["carimbo"]), reverse=True)
     return fila
 

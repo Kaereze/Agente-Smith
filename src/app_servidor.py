@@ -34,6 +34,7 @@ import avisos_windows
 import busca_outlook
 import canceladas
 import correio
+import hospedes
 import cota_google
 import envio_nf
 import espelho_emails
@@ -399,9 +400,25 @@ class Estado:
             self._indice_emails = (lista, indice)
         return self._indice_emails[1].get((de or "").lower())
 
+    def _alertas_documento(self):
+        """{e-mail do hóspede: alerta} das NFs que saíram pra outro CPF/CNPJ (pedidos dos últimos 45 dias)."""
+        corte = (datetime.date.today() - datetime.timedelta(days=45)).isoformat()
+        saida = {}
+        with self.lock:
+            sols, estados = list(self.solicitacoes), self.estados
+        for s in sols:
+            est = estados.get(s["chave"])
+            if not est or not est["obs"] or (s["data"] and s["data"] < corte):
+                continue
+            urgentes, _ = dados.alertas_documento(est)
+            if urgentes:
+                for x in {str(e).lower() for e in [s["email"]] + s.get("emails", []) if e}:
+                    saida[x] = f"NF {urgentes[0]['nf']}: {urgentes[0]['texto']}"
+        return saida
+
     def _montar_correio(self):
         eventos = espelho_emails.dobrar_eventos(self.eventos_linhas + self.eventos_pendentes)
-        entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now())
+        entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now(), self._alertas_documento())
         convs = correio.conversas(entrada)
         with self.lock:
             self.eventos_correio, self.entrada_correio, self.enviados_correio, self.convs = eventos, entrada, enviados, convs
@@ -416,7 +433,7 @@ class Estado:
             return
         if len(novas) == 1:
             c = novas[0]
-            motivo = "pedido de correção/cancelamento" if "corrigir" in c["classes"] else "mais de 7 dias sem resposta"
+            motivo = (c["ultimo"].get("motivo_urgencia") or "urgência").lower()
             avisos_windows.mostrar("Urgência", f"{c['nome']} ({', '.join(c['hoteis'])}): {motivo}.")
         else:
             avisos_windows.mostrar("Urgência", f"{len(novas)} e-mails entraram em Urgência nas suas caixas.")
@@ -445,6 +462,7 @@ class Estado:
         por_de = {c["de"]: c for c in saida}
         emails = [{**e, "pc_online": bool(pcs.get(e["pc"], {}).get("online")), "agente": pcs.get(e["pc"], {}).get("agente", ""),
                    "total_conversa": por_de.get(e["de"], {}).get("total", 1),
+                   "prazo": por_de.get(e["de"], {}).get("prazo"),
                    "notas": self.notas_emails.get(e["id"], []),
                    "solicitacao": por_de.get(e["de"], {}).get("solicitacao")} for e in entrada]
         return {"conversas": saida, "emails": emails, "enviados": enviados, "contagem": correio.contagem(convs),
@@ -577,26 +595,43 @@ class Estado:
         except Exception as e:
             return {"erro": f"Outlook deste PC: {e}"}
 
+    def _hospedes(self):
+        """Hóspede único (e-mail ou CPF/CNPJ): {endereço: [pedidos do mesmo hóspede]}. Refeito só quando a lista de
+        pedidos muda (como o índice por e-mail)."""
+        lista = self.solicitacoes
+        if getattr(self, "_indice_hospedes", (None,))[0] is not lista:
+            grupo = hospedes.grupos(lista)
+            membros, por_endereco = {}, {}
+            for s in lista:
+                membros.setdefault(grupo[s["chave"]], []).append(s)
+            for s in lista:
+                for x in hospedes.enderecos(s):
+                    por_endereco.setdefault(x, set()).add(grupo[s["chave"]])
+            self._indice_hospedes = (lista, {x: [s for g in gs for s in membros[g]] for x, gs in por_endereco.items()})
+        return self._indice_hospedes[1]
+
     def conversa(self, de):
         """Tudo do hóspede na tela: e-mails sem resposta (todos os PCs), o que saiu pra ele nas últimas 24 h, os
-        pedidos do formulário dele e as NFs já enviadas (pelo registro, conferido no PDF pelo robô)."""
+        pedidos do formulário dele e as NFs já enviadas (pelo registro, conferido no PDF pelo robô).
+        Hóspede único (Etapa 2): entram também os pedidos feitos com outro e-mail e o mesmo CPF/CNPJ."""
         de = (de or "").strip().lower()
+        pedidos = self._hospedes().get(de, [])
+        ligados = sorted({x for s in pedidos for x in hospedes.enderecos(s)} - {de})[:5]
         with self.lock:
             recebidos = [e for e in getattr(self, "entrada_correio", []) if e["de"] == de]
             enviados = [e for e in self.enviados_correio if de in [x.strip() for x in e["para"].split(",")]]
-            fila = [s for s in dados.montar_fila([s for s in self.solicitacoes
-                                                  if de in {str(x).lower() for x in [s["email"]] + s.get("emails", [])}],
-                                                 self.estados)]
+            fila = [s for s in dados.montar_fila(pedidos, self.estados)]
         pcs = self._pcs_por_nome()
         linha_do_tempo = ([{"tipo": "recebido", **e} for e in recebidos] + [{"tipo": "enviado", **e} for e in enviados] +
                           [{"tipo": "formulario", "quando": s["data"], "chave": s["chave"], "hotel": s["hotel"],
-                            "nome": s["nome"], "situacao": s["situacao"], "nfs": s["nfs"], "envios": s["envios"]}
+                            "nome": s["nome"], "situacao": s["situacao"], "nfs": s["nfs"], "envios": s["envios"],
+                            "email": s["email"], "alerta_doc": s["alerta_doc"]}
                            for s in fila])
         linha_do_tempo.sort(key=lambda x: x["quando"], reverse=True)
         nfs_enviadas = [{"nfs": env["nfs"], "para": env["para"], "quando": env["quando"], "hotel": s["hotel"]}
                         for s in fila for env in s["envios"]]
         return {"de": de, "nome": next((e["nome"] for e in recebidos if e["nome"]), fila[0]["nome"] if fila else de),
-                "linha_do_tempo": linha_do_tempo, "nfs_enviadas": nfs_enviadas,
+                "linha_do_tempo": linha_do_tempo, "nfs_enviadas": nfs_enviadas, "enderecos": ligados,
                 "pcs": {pc: {"online": p["online"], "agente": p["agente"]} for pc, p in pcs.items()}}
 
     def evento_correio(self, ids, acao, agente):
@@ -772,7 +807,8 @@ class Estado:
         except (FileNotFoundError, ValueError):
             controle = {}
         with self.lock:
-            return dados.montar_fila(self.solicitacoes, self.estados, dados.nfs_do_controle(controle), desde)
+            fila = dados.montar_fila(self.solicitacoes, self.estados, dados.nfs_do_controle(controle), desde)
+        return hospedes.marcar(fila)   # hóspede único, pedido repetido e prazo (Etapa 2)
 
     def fila_da_tela(self, dias=None):
         """Lista de Formulários: resolvida (NF emitida e e-mail enviado) fica 24 h e some — o Painel mostra o que falta."""

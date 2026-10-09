@@ -68,7 +68,7 @@ function itensDaTela(busca) {
   }
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
   const lista = base.filter(e => !cx.hotel || e.hotel === cx.hotel);
-  return cx.caixa === "urgencia" ? lista.sort((a, b) => a.quando.localeCompare(b.quando)) : lista;
+  return lista;   // o mais recente primeiro também na Urgência (usuário, 09/10/2026)
 }
 
 function desenharCorreio() {
@@ -80,7 +80,7 @@ function desenharCorreio() {
   $("escopo-emails").innerHTML = escopoHtml();
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "O que os hóspedes estão esperando de resposta? Clique num e-mail pra ler; as setas ↑ ↓ andam pela lista. Respondeu, ele fica cinza e some.",
-        urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
+        urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
         enviados: "O que saiu das caixas dos hotéis nas últimas 24 h (pelo Outlook ou pelo Painel)." }[cx.caixa];
   $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${lista.length} e-mail(s) no Outlook dos PCs` :
     cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${lista.length} e-mail(s)${naoLidos ? ` · ${naoLidos} não lido(s)` : ""}`)
@@ -179,10 +179,12 @@ function linhaEmail(e) {
   return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
       aria-selected="${sel}" data-id="${esc(e.id)}">
     <div class="cx-l1"><span class="cx-quem">${esc(quem)}</span>${e.total_conversa > 1 && !enviado ? `<span class="cx-n" title="e-mails sem resposta deste hóspede">${e.total_conversa}</span>` : ""}
-      <span class="cx-hora">${horaCurta(e.quando)}</span></div>
+      ${e.pasta === "entrada" && e.prazo && !cinza ? prazoHtml(e.prazo, true) : ""}<span class="cx-hora">${horaCurta(e.quando)}</span></div>
     <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}</div>
     <div class="cx-l3"><span class="cx-hotel">${esc(e.hotel || "")}</span>${esc(e.previa || "")}</div>
-    ${e.analise ? `<div class="cx-resumo-l" title="${esc(e.analise)}">⚠ ${esc(e.analise)}</div>` : ""}
+    ${e.alerta_doc ? `<div class="cx-resumo-l" title="${esc(e.alerta_doc)}">⚠ ${esc(e.alerta_doc)}</div>`
+      : e.analise_d?.m ? `<div class="cx-resumo-l" title="${esc(e.analise)}">⚠ Motivo: ${esc(e.analise_d.m)}${e.analise_d.d ? " (" + esc(e.analise_d.d) + ")" : ""}</div>`
+      : e.analise ? `<div class="cx-resumo-l" title="${esc(e.analise)}">⚠ ${esc(e.analise)}</div>` : ""}
     ${marcas ? `<div class="cx-l4">${marcas}</div>` : ""}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
 
@@ -257,6 +259,14 @@ async function carregarHistorico(de) {   // tudo do hóspede no Outlook dos PCs 
   cx.hist[de] = { resultados: (r.resultados || []).filter(x => x.de === de || (x.para || "").includes(de)), pcs: r.pcs || {},
                   agentes: r.agentes || {}, conv: conv.erro ? null : conv };
   desenharLeituraCorreio();
+  // hóspede único: os e-mails dos outros endereços dele (mesmo CPF/CNPJ) entram no histórico também
+  const outros = (conv.enderecos || []).slice(0, 2);
+  if (!outros.length) return;
+  const extras = await Promise.all(outros.map(x => api("/api/correio/buscar?q=" + encodeURIComponent(x))));
+  const vistos = new Set(cx.hist[de].resultados.map(x => x.id));
+  extras.forEach((rx, k) => (rx.resultados || []).filter(x => (x.de === outros[k] || (x.para || "").includes(outros[k])) && !vistos.has(x.id) && vistos.add(x.id))
+    .forEach(x => cx.hist[de].resultados.push(x)));
+  desenharLeituraCorreio();
 }
 
 function corpoTexto(chave) {
@@ -283,20 +293,34 @@ function desenharLeituraCorreio() {
   el.innerHTML = `
     <div class="cx-msg">
       <h2>${esc(e.assunto || "(sem assunto)")}</h2>
-      ${e.analise ? `<div class="cx-verifica"><b>Verificação da NF</b><div>${esc(e.analise)}</div>
-        <div class="dica">O robô abriu a NF (anexada ou no Dropbox) e cruzou com o que o cliente escreveu. Confira antes de reenviar.</div></div>` : ""}
+      ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
+        <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
+      ${verificacaoHtml(e)}
       <div class="cx-ficha">
         <div class="cx-fl"><span>De</span><span>${enviado ? esc(e.caixa) : `<b>${esc(e.nome || e.de)}</b> &lt;${esc(e.de)}&gt;`}</span></div>
         <div class="cx-fl"><span>Para</span><span>${esc(enviado ? e.para : e.caixa || e.para)}</span></div>
         <div class="cx-fl"><span>Data</span><span>${esc(dataLonga(e.quando))}</span></div>
         <div class="cx-fl"><span>Hotel</span><span>${esc(e.hotel || "")}${e.pc ? ` · caixa no PC de ${esc(nomeAgente(e.pc))}${e.pc && !pcOnline(e.pc) ? " (desligado: o que for pedido sai quando ele ligar)" : ""}` : ""}</span></div>
         ${(e.classes || []).length ? `<div class="cx-fl"><span>Assunto</span><span>${e.classes.map(etiqueta).join("")}</span></div>` : ""}
+        ${e.pasta === "entrada" && e.prazo ? `<div class="cx-fl"><span>Prazo</span><span>${prazoHtml(e.prazo)} · ${esc(e.prazo.nome)} (${e.prazo.horas} h, contado do 1º e-mail sem resposta)</span></div>` : ""}
         ${e.lido_por ? `<div class="cx-fl"><span>Lido</span><span>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</span></div>` : ""}
       </div>
       ${avisoNfJaEnviada(h)}
       ${corpoTexto(e.id)}${anexosHtml(e.anexos)}
       ${h ? historicoHtml(h, e) : ""}
     </div>`;
+}
+
+// Verificação da NF (Etapa 2): 1 motivo principal em destaque, o que a NF diz, a comparação e o resto que ele citou
+function verificacaoHtml(e) {
+  const a = e.analise_d;
+  if (!a) return e.analise ? `<div class="cx-verifica"><b>Verificação da NF</b><div>${esc(e.analise)}</div>
+    <div class="dica">O robô abriu a NF (anexada ou no Dropbox) e cruzou com o que o cliente escreveu. Confira antes de reenviar.</div></div>` : "";
+  return `<div class="cx-verifica"><b>Verificação da NF</b>
+    <div class="cx-motivo">Motivo: ${esc(a.m)}${a.d ? ` <small>(${esc(a.d)})</small>` : ""}</div>
+    <div>${esc(a.nf || "")}</div>${(a.c || []).map(c => `<div>${c.startsWith("⚠") ? `<b style="text-transform:none;letter-spacing:0">${esc(c)}</b>` : "· " + esc(c)}</div>`).join("")}
+    ${a.o?.length ? `<div class="cx-tambem">também citou: ${esc(a.o.join(", "))}</div>` : ""}
+    <div class="dica">O robô abriu a NF (anexada ou no Dropbox) e cruzou com o que o cliente escreveu. Confira antes de reenviar.</div></div>`;
 }
 
 function avisoNfJaEnviada(h) {
@@ -316,7 +340,9 @@ function historicoHtml(h, atual) {
       <span class="cx-h-ass">${esc(f.hotel)} · ${NOMES[f.situacao] || f.situacao}${f.nfs.length ? " · NF " + esc(f.nfs.join(", ")) : ""}</span>
       <button class="link" data-ver-pedido="${esc(f.chave)}">abrir pedido</button></div>` }))]
     .sort((a, b) => String(b.q).localeCompare(String(a.q)));
+  const outros = h.conv?.enderecos || [];
   return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook <span>${linhas.length}</span></div>
+    ${outros.length ? `<p class="dica">Mesmo hóspede (mesmo CPF/CNPJ) também usa: ${esc(outros.join(", "))}</p>` : ""}
     ${linhas.map(l => l.html).join("") || `<p class="dica">Nenhum outro e-mail deste endereço no Outlook dos PCs ligados.</p>`}
     ${sem.length ? `<p class="dica">Sem resposta de: ${esc(sem.join(", "))} (desligado).</p>` : ""}</section>`;
 }
