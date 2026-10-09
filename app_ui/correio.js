@@ -263,14 +263,14 @@ function desenharLeituraCorreio() {
       <h2>${esc(e.assunto || "(sem assunto)")}</h2>
       ${e.analise ? `<div class="cx-verifica"><b>Verificação da NF</b><div>${esc(e.analise)}</div>
         <div class="dica">O robô abriu a NF (anexada ou no Dropbox) e cruzou com o que o cliente escreveu. Confira antes de reenviar.</div></div>` : ""}
-      <table class="cx-ficha"><tbody>
-        <tr><th>De</th><td>${enviado ? esc(e.caixa) : `<b>${esc(e.nome || e.de)}</b> &lt;${esc(e.de)}&gt;`}</td></tr>
-        <tr><th>Para</th><td>${esc(enviado ? e.para : e.caixa || e.para)}</td></tr>
-        <tr><th>Data</th><td>${esc(dataLonga(e.quando))}</td></tr>
-        <tr><th>Hotel</th><td>${esc(e.hotel || "")}${e.pc ? ` · caixa no PC de ${esc(nomeAgente(e.pc))}${e.pc && !pcOnline(e.pc) ? " (desligado: o que for pedido sai quando ele ligar)" : ""}` : ""}</td></tr>
-        ${(e.classes || []).length ? `<tr><th>Assunto</th><td>${e.classes.map(etiqueta).join("")}</td></tr>` : ""}
-        ${e.lido_por ? `<tr><th>Lido</th><td>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</td></tr>` : ""}
-      </tbody></table>
+      <div class="cx-ficha">
+        <div class="cx-fl"><span>De</span><span>${enviado ? esc(e.caixa) : `<b>${esc(e.nome || e.de)}</b> &lt;${esc(e.de)}&gt;`}</span></div>
+        <div class="cx-fl"><span>Para</span><span>${esc(enviado ? e.para : e.caixa || e.para)}</span></div>
+        <div class="cx-fl"><span>Data</span><span>${esc(dataLonga(e.quando))}</span></div>
+        <div class="cx-fl"><span>Hotel</span><span>${esc(e.hotel || "")}${e.pc ? ` · caixa no PC de ${esc(nomeAgente(e.pc))}${e.pc && !pcOnline(e.pc) ? " (desligado: o que for pedido sai quando ele ligar)" : ""}` : ""}</span></div>
+        ${(e.classes || []).length ? `<div class="cx-fl"><span>Assunto</span><span>${e.classes.map(etiqueta).join("")}</span></div>` : ""}
+        ${e.lido_por ? `<div class="cx-fl"><span>Lido</span><span>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</span></div>` : ""}
+      </div>
       ${avisoNfJaEnviada(h)}
       ${corpoTexto(e.id)}${anexosHtml(e.anexos)}
       ${h ? historicoHtml(h, e) : ""}
