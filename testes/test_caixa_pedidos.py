@@ -129,3 +129,45 @@ def test_saude_tudo_normal_nao_mostra_nada():
     pcs = [{"pc": "P1", "agente": "João", "online": True, "outlook": "aberto", "versao": "v1",
             "saude": saude.ler_coluna(saude.coluna(0, "2026-10-11T13:40:00"))}]
     assert saude.problemas(pcs, agora) == []
+
+
+# ---------- relatório do dia/semana (Mail Analytics, só leitura) e cadastro completo ----------
+import relatorio_semana as rs
+
+
+def _dados_ma():
+    d = datetime.date
+    return {"João": [{"dia": d(2026, 10, 6), "hotel": "LAGOA", "recebidos": 10, "enviados": 12, "ligacoes": 1, "subst_canc": 0, "nfs": 5},
+                     {"dia": d(2026, 10, 7), "hotel": "LAGOA", "recebidos": 4, "enviados": 6, "ligacoes": 0, "subst_canc": 1, "nfs": 2},
+                     {"dia": d(2026, 9, 30), "hotel": "LAGOA", "recebidos": 7, "enviados": 7, "ligacoes": 0, "subst_canc": 0, "nfs": 3}],
+            "Clara": [{"dia": d(2026, 10, 7), "hotel": "GV", "recebidos": 20, "enviados": 5, "ligacoes": 2, "subst_canc": 0, "nfs": 8}]}
+
+
+def test_relatorio_da_semana_soma_e_compara():
+    r = rs.montar(_dados_ma(), datetime.date(2026, 10, 11), 0, [("2026-10-06", "João"), ("2026-10-01", "João")])
+    assert (r["ini"], r["fim"]) == ("2026-10-05", "2026-10-11")
+    assert r["por_agente"]["João"]["nfs"] == 7 and r["por_agente"]["João"]["pedidos"] == 1
+    assert r["total"]["recebidos"] == 34 and r["total_anterior"]["nfs"] == 3
+    assert r["hoteis"][0]["hotel"] == "GV" and "Relatório da semana — 05/10 a 11/10" in r["texto"]
+
+
+def test_relatorio_do_dia_compara_com_o_dia_anterior():
+    r = rs.montar(_dados_ma(), datetime.date(2026, 10, 11), 4, tipo="dia")   # 07/10
+    assert r["ini"] == r["fim"] == "2026-10-07" and r["total"]["nfs"] == 10 and r["total_anterior"]["nfs"] == 5
+    assert r["texto"].startswith("Relatório do dia — 07/10/2026") and "+100% vs dia anterior" in r["texto"]
+
+
+def test_cadastro_faltando_junta_planilha_e_caixa():
+    pcs = [{"agente": "Bernardo", "contas_lista": ["notafiscal@redeandradecampogrande.com.br", "notafiscal@redeandradegv.com.br"]},
+           {"agente": "João", "contas_lista": ["notafiscal@redeandradepousadajeri.com.br"]}]
+    f = saude.cadastro_faltando(pcs, ["notafiscal@redeandradegv.com.br"],
+                                ["Solicitação Nota Fiscal (CAMPO GRANDE) (respostas)", "Solicitação Nota Fiscal (IDEAL) (respostas)"])
+    assert f[0] == {"hotel": "CAMPO GRANDE", "email": "notafiscal@redeandradecampogrande.com.br", "agente": "Bernardo",
+                    "motivo": "planilha de formulário sem hotel no cadastro · caixa no Outlook do PC de Bernardo"}
+    assert f[1]["hotel"] == "IDEAL" and f[1]["email"] == ""
+    assert f[2]["hotel"] == "POUSADAJERI" and f[2]["agente"] == "João"
+
+
+def test_mail_analytics_atrasado():
+    av = saude.mail_analytics_atrasado({"João": "2026-10-08", "Clara": "2026-10-10"}, datetime.date(2026, 10, 11))
+    assert len(av) == 1 and "João desde 08/10" in av[0]["texto"]

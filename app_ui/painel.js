@@ -95,6 +95,7 @@ function logDoPc(d, p) {
 }
 function desenharMaquinas() {
   const d = at.dados, el = $("maquinas");
+  carregarCadastro();
   if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
   const a = d.atualizacao || {};
   const cards = d.pcs.map(p => {
@@ -120,6 +121,7 @@ function desenharMaquinas() {
     <div class="versao-ref"><span class="rot">Este PC</span><span class="dado">${esc(d.versao)}</span>
       <span class="dica">${a.atras ? `o GitHub tem ${a.atras} commit(s) novo(s)` : esc(a.motivo || "")}${a.verificado_em ? " · conferido " + haQuanto(a.verificado_em) : ""}</span>
       <button data-at-atualizar="TODOS" title="Cada PC puxa a versão nova do GitHub e reinicia"><svg class="ic"><use href="#i-sync"/></svg>Atualizar todos os PCs</button></div>
+    <div class="cartao" id="cad-faltando">${CAD.html}</div>
     <div class="maquinas">${cards || `<div class="vazio">Nenhum PC publicou ainda.</div>`}</div>`;
 }
 
@@ -201,7 +203,9 @@ function desenharGerencia() {
     <div class="ger-breve">
       <div><b>Canceladas e substituídas do dia</b><span>Em construção: vem das NFs marcadas (CANCELADA)/(SUBSTITUÍDA) no Dropbox.</span></div>
       <div><b>Ligações do dia</b><span>Em construção: precisa ligar o Painel ao sistema de telefone da empresa.</span></div>
-      <div><b>Tempo médio de resposta</b><span>Em construção: do e-mail chegar até a resposta sair, por agente.</span></div></div>`;
+      <div><b>Tempo médio de resposta</b><span>Em construção: do e-mail chegar até a resposta sair, por agente.</span></div></div>
+    <div class="cartao" id="ger-relatorio">${REL.html || `<div class="vazio">Carregando o relatório…</div>`}</div>`;
+  carregarRelatorio();
 }
 function contarNumeros(el) {   // os números grandes sobem do zero até o valor (0,6 s)
   el.querySelectorAll(".kpi-v").forEach(n => {
@@ -703,4 +707,99 @@ document.addEventListener("drop", async e => {
   sel = l.dataset.k; emailSel = null; desenhar();
   await abrirEnvioNF(sel, null, $("detalhe"));
   if (envNF && $("nf-soltar")) adicionarArquivos(arquivos);
+});
+
+// ---------- Relatório do dia e da semana (Gerência) — dados do Mail Analytics, só leitura (usuário, 11/10/2026) ----------
+const REL = { tipo: "dia", desl: -1, html: "", chave: "", em: 0, texto: "" };   // -1 = último dia com dados no Mail Analytics
+const COLS_REL = [["pedidos", "Pedidos (formulário)"], ["recebidos", "E-mails recebidos"], ["enviados", "E-mails enviados"],
+                  ["nfs", "NFs emitidas"], ["subst_canc", "Subst./canc."], ["ligacoes", "Ligações"]];
+async function carregarRelatorio(forcar = false) {
+  const chave = REL.tipo + ":" + REL.desl;
+  if (!forcar && REL.chave === chave && Date.now() - REL.em < 5 * 60 * 1000) return;
+  REL.chave = chave; REL.em = Date.now();
+  const r = await api(`/api/relatorio_semana?tipo=${REL.tipo}&deslocamento=${REL.desl}`);
+  if (!r.erro && REL.desl < 0) { REL.desl = r.deslocamento; REL.chave = REL.tipo + ":" + REL.desl; }
+  REL.html = r.erro ? `<div class="vazio">${esc(r.erro)}</div>` : htmlRelatorio(r);
+  REL.texto = r.texto || "";
+  if ($("ger-relatorio")) $("ger-relatorio").innerHTML = REL.html;
+}
+function htmlRelatorio(r) {
+  const n = v => (v ?? 0).toLocaleString("pt-BR");
+  const dt = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7);
+  const titulo = r.tipo === "dia" ? `Relatório do dia · ${dt(r.ini)}/${r.ini.slice(0, 4)}` : `Relatório da semana · ${dt(r.ini)} a ${dt(r.ate)}`;
+  // subir é bom em NFs e e-mails enviados, ruim em substituições/cancelamentos; volume (pedidos, recebidos, ligações) é neutro
+  const BOM_SUBIR = { nfs: true, enviados: true, subst_canc: false };
+  const seta = (a, b, k) => { if (!b) return ""; const v = Math.round(100 * (a - b) / b); if (!v) return "";
+    const cls = BOM_SUBIR[k] === undefined ? "igual" : (v > 0) === BOM_SUBIR[k] ? "bom" : "ruim";
+    return `<span class="tend ${cls}" title="antes: ${n(b)}">${v > 0 ? "▲" : "▼"} ${Math.abs(v)}%</span>`; };
+  // operador sem nenhum dia gravado pelo Mail Analytics no período: "sem dados" (não é zero)
+  const celula = (a, k) => k !== "pedidos" && !r.por_agente[a].dias ? `<span class="dica" title="o Mail Analytics ainda não gravou esse período">sem dados</span>`
+    : `${n(r.por_agente[a][k])} ${seta(r.por_agente[a][k], r.anterior[a]?.[k], k)}`;
+  const algumDado = Object.values(r.por_agente).some(d => d.dias);
+  const todosComDado = Object.keys(r.por_agente).every(a => r.por_agente[a].dias && r.anterior[a]?.dias);   // senão a seta do total compara coisas diferentes
+  const agentes = Object.keys(r.por_agente).sort((a, b) => r.por_agente[b].nfs - r.por_agente[a].nfs);
+  const atrasados = Object.entries(r.ultimo_dia || {}).filter(([, d]) => d && d < r.ate).map(([a, d]) => `${a} (até ${dt(d)})`);
+  return `<div class="cartao-topo"><div><h3>${titulo}</h3><div class="sub">Do Mail Analytics (só leitura) + pedidos de formulário do Painel · comparado com ${r.tipo === "dia" ? "o dia anterior" : "a semana anterior"}</div></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="seg" role="group" aria-label="Período"><button data-rel-tipo="dia" aria-pressed="${r.tipo === "dia"}">Dia</button><button data-rel-tipo="semana" aria-pressed="${r.tipo === "semana"}">Semana</button></div>
+        <button class="btn-ic" data-rel-mover="1" title="${r.tipo === "dia" ? "Dia" : "Semana"} anterior" aria-label="Anterior">◀</button>
+        <button class="btn-ic" data-rel-mover="-1" title="Próximo" aria-label="Próximo" ${REL.desl <= 0 ? "disabled" : ""}>▶</button>
+        <button data-rel-copiar="1" title="Copia o resumo em texto pra colar no WhatsApp ou no e-mail"><svg class="ic"><use href="#i-copiar"/></svg>Copiar resumo</button></div></div>
+    <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Operador</th>${COLS_REL.map(([, rot]) => `<th class="num">${rot}</th>`).join("")}</tr></thead><tbody>
+      ${agentes.map(a => `<tr><td><b><span class="op-av" style="background:${corOp(a)}">${esc(inicial(a))}</span>${esc(a)}</b></td>${COLS_REL.map(([k]) =>
+        `<td class="num">${celula(a, k)}</td>`).join("")}</tr>`).join("")}
+      <tr class="total"><td><b>Total</b></td>${COLS_REL.map(([k]) => `<td class="num">${k !== "pedidos" && !algumDado ? `<span class="dica">sem dados</span>`
+        : `<b>${n(r.total[k])}</b> ${k === "pedidos" || todosComDado ? seta(r.total[k], r.total_anterior[k], k) : ""}`}</td>`).join("")}</tr>
+    </tbody></table></div>
+    ${r.hoteis?.length ? `<div class="sub" style="margin:14px 0 6px"><b>Hotéis com mais movimento</b></div><div class="rel-hoteis">${r.hoteis.map(h =>
+      `<span class="etq">${esc(h.hotel)} · ${n(h.recebidos)} e-mails · ${n(h.nfs)} NFs${h.subst_canc ? ` · ${n(h.subst_canc)} subst./canc.` : ""}</span>`).join("")}</div>` : `<p class="dica">Sem movimento registrado nesse período.</p>`}
+    ${atrasados.length ? `<p class="dica" style="margin-top:10px">⚠ O Mail Analytics ainda não gravou todos os dias de: ${esc(atrasados.join(", "))} — os números desses operadores podem estar incompletos.</p>` : ""}`;
+}
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-rel-tipo],[data-rel-mover],[data-rel-copiar]");
+  if (!t) return;
+  if (t.dataset.relTipo) { REL.tipo = t.dataset.relTipo; REL.desl = REL.tipo === "dia" ? -1 : 0; }
+  if (t.dataset.relMover) REL.desl = Math.max(0, REL.desl + Number(t.dataset.relMover));
+  if (t.dataset.relCopiar) {
+    try { await navigator.clipboard.writeText(REL.texto); toast("Resumo copiado: é só colar no WhatsApp ou no e-mail"); }
+    catch (er) { toast("Não consegui copiar", true); }
+    return;
+  }
+  $("ger-relatorio").innerHTML = `<div class="vazio">Carregando o relatório…</div>`;
+  carregarRelatorio(true);
+});
+
+// ---------- Cadastro completo (Máquinas): caixas e planilhas de hotel que faltam no Cadastro_Hoteis ----------
+const CAD = { html: "", em: 0, dados: null };
+async function carregarCadastro(forcar = false) {
+  if (!forcar && Date.now() - CAD.em < 60 * 1000) return;
+  CAD.em = Date.now();
+  const r = await api("/api/cadastro/faltando");
+  CAD.dados = r;
+  CAD.html = htmlCadastro(r);
+  if ($("cad-faltando")) $("cad-faltando").innerHTML = CAD.html;
+}
+function htmlCadastro(r) {
+  const lista = r.faltando || [];
+  if (!lista.length) return `<div class="cartao-topo"><div><h3>Cadastro de hotéis</h3><div class="sub">Toda caixa de hotel do Outlook e toda planilha de formulário estão no Cadastro_Hoteis ✓</div></div></div>`;
+  const ops = a => (r.agentes || []).map(x => `<option ${x === a ? "selected" : ""}>${esc(x)}</option>`).join("");
+  return `<div class="cartao-topo"><div><h3>Cadastro de hotéis · ${lista.length} faltando</h3>
+      <div class="sub">Sem cadastro, a planilha do hotel não é copiada e a caixa fica sem agente. Confira o nome (igual ao da planilha) e cadastre.</div></div></div>
+    <div class="cad-lista">${lista.map((x, i) => `<div class="cad-linha" data-cad="${i}">
+      <input class="cad-hotel" value="${esc(x.hotel)}" aria-label="Nome do hotel" title="Nome do hotel (igual ao da planilha do formulário)">
+      <input class="cad-email" value="${esc(x.email)}" placeholder="caixa notafiscal@… (se tiver)" aria-label="E-mail da caixa">
+      <select class="cad-agente" aria-label="Agente">${x.agente ? "" : "<option value=''>Agente…</option>"}${ops(x.agente)}</select>
+      <button class="prim" data-cad-salvar="${i}">Cadastrar</button>
+      <span class="dica">${esc(x.motivo)}</span></div>`).join("")}</div>`;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-cad-salvar]");
+  if (!b) return;
+  const l = b.closest(".cad-linha");
+  const corpo = { hotel: l.querySelector(".cad-hotel").value, email: l.querySelector(".cad-email").value, agente: l.querySelector(".cad-agente").value };
+  if (!corpo.agente) return toast("Escolha o agente", true);
+  b.disabled = true;
+  const r = await api("/api/cadastro/adicionar", corpo);
+  if (r.ok) { toast(`${corpo.hotel} cadastrado ✓ (a cópia dos hotéis pega na próxima volta)`); carregarCadastro(true); }
+  else { b.disabled = false; toast(r.motivo || r.erro || "Não deu certo", true); }
 });

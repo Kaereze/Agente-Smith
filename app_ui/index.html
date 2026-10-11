@@ -694,6 +694,13 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .saude .s-linha{display:flex;gap:8px;align-items:center}
 .saude .s-linha.aviso{color:var(--atencao)}
 .saude b{font-weight:600}
+/* relatório e cadastro (Gerência / Máquinas) */
+.ger-tab tr.total td{border-top:2px solid var(--linha-forte)}
+.rel-hoteis{display:flex;flex-wrap:wrap;gap:6px}
+.cad-lista{display:grid;gap:8px;margin-top:10px}
+.cad-linha{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(160px,1.6fr) minmax(110px,.8fr) auto;gap:8px;align-items:center}
+.cad-linha .dica{grid-column:1/-1;margin-top:-4px}
+@media (max-width: 900px){.cad-linha{grid-template-columns:1fr 1fr}}
 .dica-bt{display:none}
 body:not(.professor) .com-dica{display:contents}
 body.professor .com-dica{display:inline-flex;flex-direction:column;align-items:center;gap:4px;vertical-align:top}

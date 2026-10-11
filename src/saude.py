@@ -11,11 +11,15 @@ SAIDA_TRAVADA_MIN = 10           # e-mail parado na Caixa de Saída há mais que
 HORARIO_COPIA = ("07:00", "23:30")
 
 
-def coluna(saida_travada, ultima_copia=""):
-    """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38"."""
+def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo=""):
+    """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso"."""
     partes = [f"saida={int(saida_travada or 0)}"]
     if ultima_copia:
         partes.append(f"copia={ultima_copia}")
+    if sem_cadastro:
+        partes.append("cad=" + "|".join(str(x).replace(";", ",").replace("=", "-") for x in sem_cadastro))
+    if robo:
+        partes.append(f"robo={robo}")
     return ";".join(partes)
 
 
@@ -29,6 +33,39 @@ def ler_coluna(texto):
         saida["saida"] = int(saida.get("saida") or 0)
     except ValueError:
         saida["saida"] = 0
+    saida["cad"] = [x for x in str(saida.get("cad", "")).split("|") if x]
+    return saida
+
+
+def nome_da_caixa(caixa):
+    """notafiscal@redeandradecampogrande.com.br -> "CAMPOGRANDE" (sugestão; dá pra corrigir antes de cadastrar)."""
+    import re
+    dominio = caixa.split("@", 1)[-1].split(".")[0]
+    return (re.sub(r"^(redeandrade|hotel)", "", dominio) or dominio).upper()
+
+
+def cadastro_faltando(pcs, emails_cadastrados, planilhas_sem_cadastro):
+    """Caixas de hotel (notafiscal@) que estão no Outlook de algum PC e planilhas de hotel na pasta que não estão no
+    Cadastro_Hoteis. -> [{"hotel", "email", "agente", "motivo"}] com sugestão de linha (planilha + caixa juntas)."""
+    import re
+    from tratamento import normalizar
+    cadastrados = {e.lower() for e in emails_cadastrados if e}
+    caixas = []
+    for p in pcs:
+        for c in p.get("contas_lista", []):
+            if c.startswith("notafiscal@") and c not in cadastrados and c not in [x["email"] for x in caixas]:
+                caixas.append({"email": c, "agente": p.get("agente", ""), "hotel": nome_da_caixa(c)})
+    saida = []
+    for nome in planilhas_sem_cadastro:
+        m = re.search(r"\(([^()]+)\)\s*\(respostas\)", nome)
+        hotel = (m.group(1) if m else nome).strip().upper()
+        chave = normalizar(hotel).replace(" ", "")
+        par = next((c for c in caixas if normalizar(c["hotel"]).replace(" ", "") == chave), None)
+        if par:
+            caixas.remove(par)
+        saida.append({"hotel": hotel, "email": par["email"] if par else "", "agente": par["agente"] if par else "",
+                      "motivo": "planilha de formulário sem hotel no cadastro" + (" · caixa no Outlook do PC de " + par["agente"] if par else "")})
+    saida += [{**c, "motivo": f"caixa no Outlook do PC de {c['agente']} sem hotel no cadastro"} for c in caixas]
     return saida
 
 
@@ -70,4 +107,27 @@ def problemas(pcs, agora=None):
         if versao_da_maioria and p.get("versao") and p["versao"] != versao_da_maioria and len(versoes) > 1:
             saida.append({"nivel": "aviso", "pc": p["pc"], "texto": f"PC de {quem} rodando outra versão ({p['versao']}): "
                           "use \"Atualizar todos os PCs\" em Máquinas"})
+    robos = [r for r in (_data(p.get("saude", {}).get("robo")) for p in pcs) if r]
+    if robos and HORARIO_COPIA[0] <= agora.strftime("%H:%M") <= HORARIO_COPIA[1] and \
+            agora - max(robos) > datetime.timedelta(minutes=COPIA_ATRASADA_MIN):
+        saida.append({"nivel": "erro", "pc": "", "texto": f"O robô de envio não roda desde {max(robos):%d/%m %H:%M}: "
+                      "solicitações novas não estão indo para os hotéis"})
+    faltam = sorted({x for p in pcs for x in p.get("saude", {}).get("cad", [])})
+    if faltam:
+        saida.append({"nivel": "aviso", "pc": "", "texto": f"Cadastro incompleto: {len(faltam)} planilha(s) de hotel sem cadastro "
+                      f"({', '.join(faltam[:3])}{'…' if len(faltam) > 3 else ''}) — veja em Máquinas"})
     return sorted(saida, key=lambda x: x["nivel"] != "erro")
+
+
+def mail_analytics_atrasado(ultimo_dia, hoje):
+    """Último dia com dados de cada operador na planilha do Mail Analytics -> [aviso] de quem está 2+ dias atrás."""
+    saida = []
+    for agente, dia in sorted((ultimo_dia or {}).items()):
+        try:
+            d = datetime.date.fromisoformat(dia)
+        except (TypeError, ValueError):
+            continue
+        if (hoje - d).days >= 2:
+            saida.append({"nivel": "aviso", "pc": "", "texto": f"Mail Analytics: a planilha não tem dados de {agente} desde "
+                          f"{d:%d/%m} (o relatório da semana fica incompleto)"})
+    return saida

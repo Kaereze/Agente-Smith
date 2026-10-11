@@ -40,6 +40,7 @@ import envio_nf
 import espelho_emails
 import rede_local
 import rede_pcs
+import relatorio_semana
 import saude
 import fiscal_intelligence
 import painel_metricas as metricas
@@ -307,7 +308,65 @@ class Estado:
         return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia(),
                 rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
                 f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
-                saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia())]
+                saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia(), self._planilhas_sem_cadastro(),
+                             self._ultimo_robo())]
+
+    def _planilhas_sem_cadastro(self):
+        if not e_principal(self.cfg):
+            return []
+        try:
+            return json.load(open(PASTA_ESTADO / "planilhas_sem_cadastro.json", encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+
+    def _ultimo_robo(self):
+        """Quando o robô de envio (main.py, a cada 30 min no principal) terminou por último: aba Status (coluna B)."""
+        if not e_principal(self.cfg):
+            return ""
+        q = str((self.status or {}).get("ultima_execucao", "")).strip()
+        try:
+            return datetime.datetime.strptime(q[:19], "%d/%m/%Y %H:%M:%S").isoformat(timespec="seconds")
+        except ValueError:
+            return ""
+
+    def problemas_de_saude(self):
+        """Faixa de saúde: o que os PCs publicam + o atraso do Mail Analytics (do relatório guardado)."""
+        lista = saude.problemas(self.pcs())
+        rel = getattr(self, "_ultimo_relatorio", None)
+        if rel:
+            lista += saude.mail_analytics_atrasado(rel.get("ultimo_dia"), datetime.date.today())
+        return lista
+
+    def relatorio_semana(self, deslocamento=0, tipo="semana"):
+        """Relatório do dia ou da semana: Mail Analytics (só leitura) + pedidos de formulário do Painel."""
+        dados_ma = relatorio_semana.ler(self.backend, self.cfg.get("mail_analytics_planilha", relatorio_semana.PLANILHA_MAIL_ANALYTICS))
+        with self.lock:
+            pedidos = [(s["data"], self.cadastro.dados(s["hotel"]).get("agente", "")) for s in self.solicitacoes if s.get("data")]
+        rel = relatorio_semana.montar(dados_ma, datetime.date.today(), deslocamento, pedidos, "dia" if tipo == "dia" else "semana")
+        self._ultimo_relatorio = rel
+        return rel
+
+    def cadastro_faltando(self):
+        with self.lock:
+            emails = [self.cadastro.dados(h).get("email", "") for h in self.cadastro.nomes()]
+        faltam_planilhas = sorted({x for p in self.pcs() for x in p.get("saude", {}).get("cad", [])})
+        return saude.cadastro_faltando(self.pcs(), emails, faltam_planilhas)
+
+    def adicionar_cadastro(self, corpo, quem):
+        """Cadastrar com um clique (usuário, 11/10/2026): acrescenta 1 linha [hotel, e-mail, agente] na aba
+        Cadastro_Hoteis da Central. Não mexe em nenhuma planilha de hotel."""
+        hotel = str(corpo.get("hotel", "")).strip().upper()
+        email = str(corpo.get("email", "")).strip().lower()
+        agente = str(corpo.get("agente", "")).strip()
+        if not hotel or not agente or (email and "@" not in email):
+            raise ValueError("preencha o hotel e o agente (e o e-mail da caixa, se tiver)")
+        with self.lock:
+            if self.cadastro.canonico(hotel):
+                raise ValueError(f"{hotel} já está no cadastro")
+        self.backend.anexar_linhas(self.central, self.cfg["aba_cadastro_hoteis"], [[hotel, email, agente]])
+        logger.info(f"🏨 Cadastro_Hoteis: {hotel} ({email or 'sem caixa'}) → {agente} — por {quem}")
+        self.abas_lidas_em = -1e9   # relê o cadastro na próxima volta
+        return {"ok": True}
 
     def _ultima_copia(self):
         """Quando a cópia dos hotéis deu certo pela última vez (só o PC principal copia)."""
@@ -350,6 +409,27 @@ class Estado:
 
         threading.Thread(target=rodar, daemon=True).start()
 
+    def _conferencia_diaria(self, agente):
+        """Teste diário automático (usuário, 11/10/2026): 1 vez por dia, depois das 8h, o PC principal confere a
+        cópia dos hotéis, o robô de envio, a Caixa de Saída, o Outlook e o robô de cada PC, a versão e o Mail
+        Analytics, e deixa o resultado no Log. Os mesmos problemas aparecem na hora na faixa de saúde."""
+        hoje = datetime.date.today().isoformat()
+        if not e_principal(self.cfg) or datetime.datetime.now().strftime("%H:%M") < "08:00" or                 getattr(self, "_conferido_em", "") == hoje:
+            return []
+        self._conferido_em = hoje
+        try:
+            self.relatorio_semana(0)   # lê o Mail Analytics (só leitura) pra saber se ele está em dia
+        except Exception as e:
+            logger.warning(f"⚠️ Conferência diária: não li a planilha do Mail Analytics ({e})")
+        problemas = self.problemas_de_saude()
+        if problemas:
+            texto = f"conferência diária: {len(problemas)} problema(s) — " + " · ".join(p["texto"] for p in problemas)[:180]
+            logger.warning(f"⚠️ Conferência diária: {len(problemas)} problema(s)")
+            return [atividade.linha(atividade.FALHA, detalhe=texto, agente=agente)]
+        logger.info("✅ Conferência diária: tudo funcionando")
+        return [atividade.linha(atividade.ATUALIZADO, detalhe="conferência diária: tudo funcionando ✓ (cópia, envio, "
+                                "Caixa de Saída, Outlook, robôs, versões e Mail Analytics)", agente=agente)]
+
     def _conferir_reinicio(self, agente):
         """O código na pasta mudou e este Painel ainda roda o velho (o reinício não aconteceu): depois de
         REINICIO_PENDENTE_MIN avisa no Log e pede o reinício de novo, 1 vez por versão (11/10/2026)."""
@@ -382,6 +462,10 @@ class Estado:
             linhas += self._conferir_reinicio(agente)
         except Exception:
             logger.debug("conferir reinício", exc_info=True)
+        try:
+            linhas += self._conferencia_diaria(agente)
+        except Exception:
+            logger.debug("conferência diária", exc_info=True)
         if not self.versao_registrada:   # 1ª volta depois de ligar: registra se a versão mudou
             try:
                 anterior = CAMINHO_VERSAO.read_text(encoding="utf-8").strip()
@@ -1230,7 +1314,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
-                    "caixa_pcs": estado.resumo_caixa(), "saude": saude.problemas(estado.pcs()),
+                    "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
@@ -1250,6 +1334,17 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.painel(q.get("ini"), q.get("fim")))
                 if url.path == "/api/hotel":
                     return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
+                if url.path == "/api/relatorio_semana":
+                    try:
+                        q = parse_qs(url.query)
+                        return self._json(estado.relatorio_semana(int(q.get("deslocamento", q.get("semana", ["0"]))[0] or 0),
+                                                                  q.get("tipo", ["semana"])[0]))
+                    except Exception as e:
+                        logger.warning(f"⚠️ Relatório da semana: {e}")
+                        return self._json({"erro": f"não consegui ler a planilha do Mail Analytics ({str(e)[:120]})"})
+                if url.path == "/api/cadastro/faltando":
+                    return self._json({"faltando": estado.cadastro_faltando(),
+                                       "agentes": sorted({p["agente"] for p in estado.pcs() if p.get("agente")})})
                 if url.path == "/api/atividade":
                     return self._json(estado.atividade_resumo())
                 if url.path == "/api/emails":
@@ -1314,6 +1409,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json({"ok": True, "modo": "remoto"})
                 if path == "/api/envio_nf":
                     return self._json(estado.pedir_envio(corpo, nome_do_agente()))
+                if path == "/api/cadastro/adicionar":
+                    return self._json(estado.adicionar_cadastro(corpo, nome_do_agente()))
                 if path == "/api/envio_nf/conferir":
                     return self._json(estado.conferir_anexos(corpo))
                 if path == "/api/email/responder":

@@ -390,6 +390,7 @@ def rodar_agendado():
                     f"{sum(r['pendentes'] for r in copiados)} pendente(s) neles.")
         if sem_hotel:
             logger.warning(f"⚠️ Planilhas na pasta sem hotel no cadastro (não copiadas): {', '.join(sem_hotel)}")
+        salvar_json(PASTA_ESTADO / "planilhas_sem_cadastro.json", sorted(sem_hotel))   # o Painel mostra "Cadastro completo"
         return 0
     except Exception:
         logger.exception("❌ A cópia dos hotéis deu erro — nada foi perdido, tento de novo em 30 min.")

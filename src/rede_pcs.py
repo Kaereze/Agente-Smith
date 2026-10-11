@@ -99,6 +99,7 @@ def ler_pcs(linhas, agora=None):
         conf_quando, _, conf_resumo = l[7].partition("|")
         conf_dt = _data(conf_quando)
         pcs.append({"pc": l[0], "agente": l[1], "caixas": len([c for c in l[2].split(",") if c]),
+                    "contas_lista": [c.strip().lower() for c in l[2].split(",") if c.strip()],
                     "online": online, "visto": l[3], "outlook": l[4], "versao": l[5], "papel": l[6],
                     "conferencia": conf_quando, "conferencia_resumo": conf_resumo,
                     "rede": l[8], "cota": l[9], "uso": l[10], "saude": saude.ler_coluna(l[11]),   # "aberto|E-mails|hh:mm" = Painel aberto agora, em qual tela   # "ip:porta" (busca ao vivo) e "leituras/escritas" no último minuto
