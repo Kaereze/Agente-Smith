@@ -40,6 +40,7 @@ import envio_nf
 import espelho_emails
 import rede_local
 import rede_pcs
+import contagem_painel
 import relatorio_semana
 import saude
 import fiscal_intelligence
@@ -342,9 +343,25 @@ class Estado:
         dados_ma = relatorio_semana.ler(self.backend, self.cfg.get("mail_analytics_planilha", relatorio_semana.PLANILHA_MAIL_ANALYTICS))
         with self.lock:
             pedidos = [(s["data"], self.cadastro.dados(s["hotel"]).get("agente", "")) for s in self.solicitacoes if s.get("data")]
-        rel = relatorio_semana.montar(dados_ma, datetime.date.today(), deslocamento, pedidos, "dia" if tipo == "dia" else "semana")
+        rel = relatorio_semana.montar(dados_ma, datetime.date.today(), deslocamento, pedidos, "dia" if tipo == "dia" else "semana",
+                                      self._contagem_fim_de_semana())
         self._ultimo_relatorio = rel
         return rel
+
+    def _contagem_fim_de_semana(self):
+        """Abas ContagemPainel_<PC> da Central (o fim de semana de João e Cristian contado pelo Painel), 10 min."""
+        guardada = getattr(self, "_contagem_fds", None)
+        if guardada and time.monotonic() - guardada[0] < 600:
+            return guardada[1]
+        try:
+            abas = [a for a in self.backend.listar_abas(self.central) if a.startswith(contagem_painel.PREFIXO_ABA)]
+            lidas = self.backend.ler_abas(self.central, abas)[0] if abas else {}
+            dados_fds = contagem_painel.ler_abas(lidas.values())
+        except Exception as e:
+            logger.debug(f"contagem do fim de semana: {e}")
+            dados_fds = guardada[1] if guardada else {}
+        self._contagem_fds = (time.monotonic(), dados_fds)
+        return dados_fds
 
     def cadastro_faltando(self):
         with self.lock:

@@ -76,6 +76,37 @@ def _somar(regs, ini, fim):
     return total
 
 
+AGENTES_FIM_DE_SEMANA = ("João", "Cristian")
+
+
+def juntar_fontes(ma, painel, tipo):
+    """Mail Analytics + contagem do fim de semana do Painel, sem contar em dobro (usuário, 11/10/2026).
+    O Mail Analytics de João e Cristian grava sexta+sábado+domingo numa linha só (a do domingo), na segunda de manhã.
+    - Semana: se a linha do domingo já existe, vale a dela; se não, entra a contagem do Painel daqueles dias.
+    - Dia: sexta, sábado e domingo vêm da contagem do Painel (separada por dia); a linha somada do domingo sai.
+    -> ({agente: [registros]}, [agentes com dias contados pelo Painel])"""
+    saida, usou = {}, []
+    for agente in set(ma) | set(painel or {}):
+        regs = list(ma.get(agente, []))
+        p = (painel or {}).get(agente, [])
+        if p and agente in AGENTES_FIM_DE_SEMANA:
+            dias_ma = {r["dia"] for r in regs}
+            blocos = {}
+            for r in p:
+                blocos.setdefault(r["dia"] + datetime.timedelta(days=6 - r["dia"].weekday()), []).append(r)
+            for domingo, rp in blocos.items():
+                if tipo == "dia":
+                    regs = [r for r in regs if r["dia"] != domingo] + rp
+                elif domingo not in dias_ma:
+                    regs += rp
+                else:
+                    continue
+                if agente not in usou:
+                    usou.append(agente)
+        saida[agente] = regs
+    return saida, sorted(usou)
+
+
 def periodo(hoje, tipo="semana", deslocamento=0):
     """-> (ini, fim, ini_anterior, fim_anterior). Dia: o dia (hoje - deslocamento) contra o dia anterior."""
     if tipo == "dia":
@@ -85,8 +116,10 @@ def periodo(hoje, tipo="semana", deslocamento=0):
     return (ini, fim) + semana(hoje, deslocamento + 1)
 
 
-def montar(dados, hoje, deslocamento=0, pedidos=None, tipo="semana"):
-    """dados: ler(). pedidos: [(data iso, agente)] dos formulários do Painel. tipo: "semana" | "dia". -> dict pro Painel."""
+def montar(dados, hoje, deslocamento=0, pedidos=None, tipo="semana", painel=None):
+    """dados: ler() (Mail Analytics). pedidos: [(data iso, agente)] dos formulários do Painel. tipo: "semana" | "dia".
+    painel: contagem do fim de semana do Painel (contagem_painel.ler_abas). -> dict pro Painel."""
+    dados, contado_painel = juntar_fontes(dados, painel, tipo)
     if tipo == "dia" and deslocamento < 0:   # "auto": o último dia que o Mail Analytics já gravou
         ultimo = max((r["dia"] for regs in dados.values() for r in regs if r["dia"] <= hoje), default=hoje)
         deslocamento = (hoje - ultimo).days
@@ -114,7 +147,8 @@ def montar(dados, hoje, deslocamento=0, pedidos=None, tipo="semana"):
     return {"ini": ini.isoformat(), "fim": fim.isoformat(), "ate": fim_real.isoformat(), "deslocamento": deslocamento,
             "por_agente": por_agente, "anterior": anterior, "total": total, "total_anterior": total_ant,
             "hoteis": top, "ultimo_dia": {a: d.isoformat() if d else "" for a, d in ultimo_dia.items()},
-            "tipo": tipo, "texto": resumo_texto(ini, fim_real, por_agente, total, total_ant, top, tipo)}
+            "tipo": tipo, "contado_painel": [a for a in contado_painel if por_agente.get(a, {}).get("dias")],
+            "texto": resumo_texto(ini, fim_real, por_agente, total, total_ant, top, tipo)}
 
 
 def _var(agora, antes, tipo="semana"):

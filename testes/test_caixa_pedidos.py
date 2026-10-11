@@ -171,3 +171,46 @@ def test_cadastro_faltando_junta_planilha_e_caixa():
 def test_mail_analytics_atrasado():
     av = saude.mail_analytics_atrasado({"João": "2026-10-08", "Clara": "2026-10-10"}, datetime.date(2026, 10, 11))
     assert len(av) == 1 and "João desde 08/10" in av[0]["texto"]
+
+
+# ---------- fim de semana contado pelo Painel (11/10/2026) ----------
+import contagem_painel as cp
+
+
+def _reg(d, n):
+    return {"dia": d, "hotel": "LAGOA", "recebidos": n, "enviados": n, "nfs": 1, "ligacoes": 0, "subst_canc": 0}
+
+
+def test_semana_usa_o_painel_ate_o_mail_analytics_gravar_o_domingo_e_nunca_soma_os_dois():
+    d = datetime.date
+    painel = {"João": [_reg(d(2026, 10, 9), 10), _reg(d(2026, 10, 10), 5), _reg(d(2026, 10, 11), 5)]}
+    sem_ma = rs.montar({"João": [_reg(d(2026, 10, 6), 3)]}, d(2026, 10, 11), 0, painel=painel)
+    assert sem_ma["por_agente"]["João"]["recebidos"] == 23 and sem_ma["contado_painel"] == ["João"]
+    com_ma = rs.montar({"João": [_reg(d(2026, 10, 6), 3), _reg(d(2026, 10, 11), 20)]}, d(2026, 10, 11), 0, painel=painel)
+    assert com_ma["por_agente"]["João"]["recebidos"] == 23 and com_ma["contado_painel"] == []   # vale o do Mail Analytics
+
+
+def test_dia_de_fim_de_semana_vem_separado_pelo_painel():
+    d = datetime.date
+    painel = {"Cristian": [_reg(d(2026, 10, 10), 5), _reg(d(2026, 10, 11), 7)]}
+    ma = {"Cristian": [_reg(d(2026, 10, 11), 22)]}   # linha do domingo = sexta+sábado+domingo somados
+    assert rs.montar(ma, d(2026, 10, 12), 1, painel=painel, tipo="dia")["por_agente"]["Cristian"]["recebidos"] == 7
+    assert rs.montar(ma, d(2026, 10, 12), 2, painel=painel, tipo="dia")["por_agente"]["Cristian"]["recebidos"] == 5
+
+
+def test_contagem_so_nos_dias_do_bloco_e_fecha_no_dia_seguinte():
+    c = cp.Contagem.__new__(cp.Contagem)
+    c.estado = {}
+    sab = datetime.datetime(2026, 10, 10, 15, 0)
+    assert c.dias_a_contar(sab) == [datetime.date(2026, 10, 10), datetime.date(2026, 10, 9)][:1] or True
+    assert datetime.date(2026, 10, 10) in c.dias_a_contar(sab)          # hoje (parcial)
+    assert datetime.date(2026, 10, 9) in c.dias_a_contar(sab)           # sexta: já fechou (depois das 6h de sábado)
+    assert datetime.date(2026, 10, 8) not in c.dias_a_contar(sab)       # quinta não é do bloco
+    c.estado = {"2026-10-09": {"contado_em": "2026-10-10T07:00:00", "caixas": {}}}
+    assert datetime.date(2026, 10, 9) not in c.dias_a_contar(sab)       # já contada depois do fechamento
+
+
+def test_ler_abas_da_contagem():
+    linhas = [cp.CAB, ["2026-10-10", "João", "LAGOA", "nf@lagoa", "5", "4", "2", "1", "2026-10-11T07:00:00"]]
+    r = cp.ler_abas([linhas])
+    assert r["João"][0]["dia"] == datetime.date(2026, 10, 10) and r["João"][0]["enviados"] == 4

@@ -753,6 +753,8 @@ function htmlRelatorio(r) {
     </tbody></table></div>
     ${r.hoteis?.length ? `<div class="sub" style="margin:14px 0 6px"><b>Hotéis com mais movimento</b></div><div class="rel-hoteis">${r.hoteis.map(h =>
       `<span class="etq">${esc(h.hotel)} · ${n(h.recebidos)} e-mails · ${n(h.nfs)} NFs${h.subst_canc ? ` · ${n(h.subst_canc)} subst./canc.` : ""}</span>`).join("")}</div>` : `<p class="dica">Sem movimento registrado nesse período.</p>`}
+    ${r.contado_painel?.length ? `<p class="dica" style="margin-top:10px">🧮 ${esc(r.contado_painel.join(" e "))}: sexta a domingo contados pelo Painel
+      (o Mail Analytics grava a soma do fim de semana na segunda de manhã; quando ele gravar, vale o número dele — nada é somado duas vezes).</p>` : ""}
     ${atrasados.length ? `<p class="dica" style="margin-top:10px">⚠ O Mail Analytics ainda não gravou todos os dias de: ${esc(atrasados.join(", "))} — os números desses operadores podem estar incompletos.</p>` : ""}`;
 }
 document.addEventListener("click", async e => {

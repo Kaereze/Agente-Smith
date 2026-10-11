@@ -653,7 +653,7 @@ def main():
     backend = None
     proxima_conferencia = proximo_sinal = proxima_identidade = proxima_dividida = 0.0
     proxima_confirmacao = time.monotonic() + 60
-    proximo_espelho, espelho = time.monotonic() + 30, None
+    proximo_espelho, espelho, contagem = time.monotonic() + 30, None, None
     proximo_vigia, vigia, ultima_completa = time.monotonic() + 40, None, -1e9
     dropbox_antes = None   # marca das pastas de notas: mudou = NF nova (etiqueta "NF emitida" no e-mail do hóspede)
     proxima_faxina = time.monotonic() + 5 * 60   # faxina da Central: 1x por dia, só no principal (faxina.py)
@@ -775,6 +775,14 @@ def main():
                 except Exception as e:
                     logger.warning(f"⚠️ Espelho de e-mails falhou ({e}) — tento de novo em 2 min.")
                     espelho = None
+                try:   # fim de semana de João e Cristian contado pelo Painel (o Mail Analytics só grava na segunda)
+                    import contagem_painel
+                    if espelho is not None:
+                        contagem = contagem or contagem_painel.Contagem()
+                        contagem.talvez(namespace, espelho._caixas_do_outlook(namespace, espelho._caixas()),
+                                        contagem_painel.agente_deste_pc(), espelho.backend, espelho.central)
+                except Exception as e:
+                    logger.warning(f"⚠️ Contagem do fim de semana falhou ({e})")
                 proximo_espelho = time.monotonic() + ESPELHO_EMAILS_SEGUNDOS
 
         if uma_vez:
