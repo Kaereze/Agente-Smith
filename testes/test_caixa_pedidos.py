@@ -103,3 +103,29 @@ def test_copia_dos_hoteis_le_a_planilha_do_hotel():
     cliente = types.SimpleNamespace(http_client=http)
     aba, linhas = sincronizar._ler_planilha_hotel(cliente, {"id": "planilha1"}, {})
     assert linhas == [["Carimbo"], ["x"]] and chamadas
+
+
+# ---------- saúde do sistema (11/10/2026) ----------
+import saude
+
+
+def test_saude_avisa_copia_parada_saida_travada_e_versao():
+    agora = datetime.datetime(2026, 10, 11, 14, 0)
+    pcs = [{"pc": "P1", "agente": "João", "online": True, "outlook": "aberto", "versao": "d7ca623",
+            "saude": saude.ler_coluna(saude.coluna(0, "2026-10-08T21:36:00"))},
+           {"pc": "P2", "agente": "Clara", "online": True, "outlook": "aberto", "versao": "d7ca623",
+            "saude": saude.ler_coluna(saude.coluna(3))},
+           {"pc": "P3", "agente": "Bernardo", "online": True, "outlook": "fechado", "versao": "8ddda4c", "saude": {}},
+           {"pc": "P4", "agente": "Cristian", "online": True, "outlook": "aberto", "versao": "d7ca623", "saude": {}}]
+    textos = [p["texto"] for p in saude.problemas(pcs, agora)]
+    assert textos[0].startswith("A cópia dos hotéis não roda desde 08/10 21:36")
+    assert any("Caixa de Saída do Outlook de Clara travada: 3" in t for t in textos)
+    assert any("Outlook fechado no PC de Bernardo" in t for t in textos)
+    assert any("PC de Bernardo rodando outra versão" in t for t in textos)
+
+
+def test_saude_tudo_normal_nao_mostra_nada():
+    agora = datetime.datetime(2026, 10, 11, 14, 0)
+    pcs = [{"pc": "P1", "agente": "João", "online": True, "outlook": "aberto", "versao": "v1",
+            "saude": saude.ler_coluna(saude.coluna(0, "2026-10-11T13:40:00"))}]
+    assert saude.problemas(pcs, agora) == []

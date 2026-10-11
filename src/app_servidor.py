@@ -40,6 +40,7 @@ import envio_nf
 import espelho_emails
 import rede_local
 import rede_pcs
+import saude
 import fiscal_intelligence
 import painel_metricas as metricas
 from arquivos import salvar_json
@@ -305,7 +306,49 @@ class Estado:
         tela = TELAS.get(getattr(self, "vista_atual", ""), "")
         return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia(),
                 rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
-                f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado"]
+                f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
+                saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia())]
+
+    def _ultima_copia(self):
+        """Quando a cópia dos hotéis deu certo pela última vez (só o PC principal copia)."""
+        if not e_principal(self.cfg):
+            return ""
+        try:
+            return (PASTA_ESTADO / "ultima_copia.txt").read_text(encoding="utf-8").strip()[:19]
+        except OSError:
+            return ""
+
+    def vigiar_caixa_de_saida(self):
+        """A cada 2 min conta os e-mails parados há mais de 10 min na Caixa de Saída do Outlook deste PC (só lê)."""
+        def rodar():
+            import pythoncom
+            import win32com.client
+            pythoncom.CoInitialize()
+            while True:
+                try:
+                    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                    limite = datetime.datetime.now() - datetime.timedelta(minutes=saude.SAIDA_TRAVADA_MIN)
+                    vistos, presos = set(), 0
+                    for pasta in [ns.GetDefaultFolder(4)] + [c.DeliveryStore.GetDefaultFolder(4) for c in ns.Accounts]:
+                        try:
+                            if pasta.EntryID in vistos:
+                                continue
+                            vistos.add(pasta.EntryID)
+                            for item in pasta.Items:
+                                quando = item.LastModificationTime
+                                if datetime.datetime(quando.year, quando.month, quando.day, quando.hour, quando.minute) < limite:
+                                    presos += 1
+                        except Exception:
+                            continue
+                    if presos and presos != getattr(self, "saida_travada", 0):
+                        logger.warning(f"⚠️ Caixa de Saída do Outlook: {presos} e-mail(s) parado(s) há mais de "
+                                       f"{saude.SAIDA_TRAVADA_MIN} min")
+                    self.saida_travada = presos
+                except Exception:
+                    logger.debug("Caixa de Saída", exc_info=True)
+                time.sleep(120)
+
+        threading.Thread(target=rodar, daemon=True).start()
 
     def _conferir_reinicio(self, agente):
         """O código na pasta mudou e este Painel ainda roda o velho (o reinício não aconteceu): depois de
@@ -879,6 +922,50 @@ class Estado:
         return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
                                    selo if envio_nf.caminho_selo(selo) else "")
 
+    def conferir_anexos(self, corpo):
+        """Antes de enviar (usuário, 11/10/2026): abre cada PDF anexado e confere com o pedido (CPF/CNPJ, valor, nome,
+        datas — a mesma regra do robô). -> {"avisos": [texto], "conferidas": n}. Só lê; não envia nada."""
+        import base64
+        import io
+        import types
+        from controle_nf import conferir_conteudo, documento_diferente, provas_da_solicitacao
+        sol = next((s for s in self.solicitacoes if s["chave"] == corpo.get("chave")), None) if corpo.get("chave") else None
+        if sol is None and corpo.get("id"):
+            e = next((x for x in self.emails if x["id"] == corpo.get("id")), None)
+            sol = self._solicitacao_do_email(e["de"]) if e else None
+        if sol is None:
+            return {"avisos": [], "conferidas": 0, "sem_pedido": True}
+        provas = {**provas_da_solicitacao(types.SimpleNamespace(campos=sol.get("campos", []))), "nomes": sol.get("nomes", [])}
+        raiz = envio_nf.raiz_dropbox(self.cfg)
+        avisos, conferidas = [], 0
+        for a in corpo.get("anexos") or []:
+            nome = os.path.basename(str(a.get("nome") or a.get("rel") or "nota.pdf"))
+            if not nome.lower().endswith(".pdf"):
+                continue
+            texto = ""
+            try:
+                from pypdf import PdfReader
+                if a.get("tipo") == "arquivo":
+                    leitor = PdfReader(io.BytesIO(base64.b64decode(a.get("b64", ""))))
+                    texto = "\n".join((p.extract_text() or "") for p in leitor.pages[:3])
+                elif a.get("tipo") == "dropbox" and a.get("rel"):
+                    caminho = os.path.join(str(raiz), a["rel"]) if raiz else a["rel"]
+                    from arquivos import so_na_nuvem
+                    if os.path.exists(caminho) and not so_na_nuvem(caminho):   # só na nuvem: não baixa (regra do usuário)
+                        texto = envio_nf._texto_da_nota_rapido(caminho, os.path.getmtime(caminho))
+            except Exception as erro:
+                logger.debug(f"conferir anexo {nome}: {erro}")
+            resultado, prova = conferir_conteudo(provas, texto)
+            if resultado == "sem_texto":
+                continue   # PDF escaneado: não dá pra conferir aqui (o robô confere depois com OCR)
+            conferidas += 1
+            diferente = documento_diferente(provas, texto)
+            if resultado == "nao_confere":
+                avisos.append(f"{nome}: não parece ser a nota deste pedido ({prova})")
+            elif diferente.startswith("⚠"):
+                avisos.append(f"{nome}: {diferente[2:]}")
+        return {"avisos": avisos, "conferidas": conferidas, "pedido": sol.get("nome", "")}
+
     def situacao_envio(self, id_envio):
         local = self.envio_nf.locais.get(id_envio)
         if local and local["estado"] != "enviando":
@@ -1143,7 +1230,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
-                    "caixa_pcs": estado.resumo_caixa(),
+                    "caixa_pcs": estado.resumo_caixa(), "saude": saude.problemas(estado.pcs()),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
@@ -1227,6 +1314,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json({"ok": True, "modo": "remoto"})
                 if path == "/api/envio_nf":
                     return self._json(estado.pedir_envio(corpo, nome_do_agente()))
+                if path == "/api/envio_nf/conferir":
+                    return self._json(estado.conferir_anexos(corpo))
                 if path == "/api/email/responder":
                     return self._json(estado.responder_email(corpo, nome_do_agente()))
                 if path == "/api/correio/evento":
@@ -1336,6 +1425,8 @@ def main():
                 time.sleep(1)
 
     threading.Thread(target=laco, daemon=True).start()
+    if not modo_demo:
+        estado.vigiar_caixa_de_saida()
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
     if not sem_janela:
         abrir_janela()

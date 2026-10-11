@@ -487,6 +487,8 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
       <div class="chips-anexo" id="nf-anexos"></div></div>
     ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
       `<button class="sug forte" data-nf-sug="${i}" title="${esc(a.prova || "")}">📄 ${esc(a.nome)}</button>`).join("")}</div>` : ""}
+    <div class="quadro-e2 erro oculta" id="nf-conferir" role="alert"></div>
+    ${enc ? "" : linhaModelos()}
     <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
       data-dica="${o.assinatura_com_mensagem ? "Escreva aqui só se quiser acrescentar algo — a mensagem padrão já vem na assinatura abaixo." : ""}"></div>
     ${o.selos.length ? `<div class="selo-previa"><img id="nf-selo-img" alt="Selo"></div>
@@ -565,10 +567,54 @@ const lerBase64 = f => new Promise((ok, erro) => {
   r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = erro; r.readAsDataURL(f);
 });
 
-async function enviarNF(contaForcada) {
+// Respostas prontas (usuário, 11/10/2026): um clique preenche a mensagem com o nome, o hotel e o nº da NF
+const MODELOS_RESPOSTA = [
+  ["Segue a NF", d => `Olá, ${d.nome}! Segue em anexo a nota fiscal${d.nf ? " " + d.nf : ""} da sua hospedagem no ${d.hotel}. Qualquer dúvida, estamos à disposição.`],
+  ["NF corrigida", d => `Olá, ${d.nome}! Segue em anexo a nota fiscal${d.nf ? " " + d.nf : ""} corrigida, conforme solicitado. Pedimos desculpas pelo transtorno.`],
+  ["Pedir CPF/CNPJ", d => `Olá, ${d.nome}! Para emitir a nota fiscal da sua hospedagem no ${d.hotel}, precisamos do CPF ou CNPJ correto do tomador (e a razão social, se for empresa). Pode nos enviar?`],
+  ["Pedir dados da reserva", d => `Olá, ${d.nome}! Para localizar sua hospedagem no ${d.hotel}, pode nos informar as datas de check-in e check-out e o nome do titular da reserva?`],
+  ["NF sai até amanhã", d => `Olá, ${d.nome}! Recebemos seu pedido. A nota fiscal da sua hospedagem no ${d.hotel} será emitida e enviada até amanhã.`],
+];
+function dadosDoModelo() {
+  const o = envNF?.o || {};
+  const nome = String(o.nome || "").trim().split(/\s+/)[0] || "";
+  const nf = (envNF?.anexos || []).map(a => (String(a.nome).match(/NF\s*(\d+)/i) || [])[1]).filter(Boolean);
+  return { nome: nome ? nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase() : "", hotel: o.hotel || "o hotel",
+           nf: nf.length ? (nf.length > 1 ? "s " : "") + nf.join(", ") : "" };
+}
+function linhaModelos() {
+  return `<div class="sug-linha modelos"><span class="dica">Respostas prontas:</span>${MODELOS_RESPOSTA.map(([rot], i) =>
+    `<button class="sug" data-modelo="${i}" title="Preenche a mensagem (dá pra editar depois)">${esc(rot)}</button>`).join("")}</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-modelo]");
+  if (!b || !envNF) return;
+  const d = dadosDoModelo();
+  $("nf-msg").innerText = MODELOS_RESPOSTA[Number(b.dataset.modelo)][1](d).replace("Olá, !", "Olá!");
+  $("nf-msg").dispatchEvent(new Event("input")); $("nf-msg").focus();
+  if (typeof validarEnvioNF === "function") validarEnvioNF();
+});
+
+async function enviarNF(contaForcada, jaConferido = false) {
   $("nf-ir").disabled = true;
   const anexos = await Promise.all(envNF.anexos.map(async a => a.tipo === "arquivo"
     ? { tipo: "arquivo", nome: a.nome, b64: await lerBase64(a.file) } : { tipo: "dropbox", rel: a.rel, nome: a.nome }));
+  // confere a NF anexada com o pedido antes de mandar (CPF/CNPJ, valor, nome) — avisa e deixa a pessoa decidir
+  if (!jaConferido && !envNF.resp?.encaminhar && anexos.length) {
+    $("nf-res").textContent = "Conferindo a NF com o pedido…";
+    const c = await api("/api/envio_nf/conferir", { chave: envNF.chave || undefined, id: envNF.resp ? envNF.resp.id : undefined, anexos });
+    $("nf-res").textContent = c.conferidas ? `NF conferida com o pedido${c.avisos?.length ? "" : " ✓"}` : "";
+    if (c.avisos?.length) {
+      $("nf-ir").disabled = false;
+      const box = $("nf-conferir");
+      box.innerHTML = `<b>⚠ Confira antes de enviar</b>${c.avisos.map(a => `<div>${esc(a)}</div>`).join("")}
+        <div class="acoes-q"><button class="perigo" id="nf-enviar-mesmo">Enviar mesmo assim</button><button id="nf-corrigir">Voltar e corrigir</button></div>`;
+      box.classList.remove("oculta"); box.scrollIntoView({ block: "nearest" });
+      $("nf-enviar-mesmo").onclick = () => { box.classList.add("oculta"); enviarNF(contaForcada, true); };
+      $("nf-corrigir").onclick = () => box.classList.add("oculta");
+      return;
+    }
+  }
   const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
   const r = envNF.resp?.encaminhar
     ? await api("/api/correio/encaminhar", { id: envNF.resp.id, para: $("nf-para").value.trim(), corpo: $("nf-msg").innerText })
@@ -609,7 +655,7 @@ function mostrarFalhaNF(motivo, contas) {
   $("nf-res").innerHTML = `<b>Não deu pra enviar pela caixa do hotel.</b> ${esc(motivo || "")}` + ((contas || []).length
     ? ` <span style="white-space:nowrap">Enviar por: <select id="nf-conta-alt">${contas.map(c => `<option>${esc(c)}</option>`).join("")}</select>
        <button class="creme" id="nf-alt">Enviar por esta</button></span>` : "");
-  if ($("nf-alt")) $("nf-alt").onclick = () => enviarNF($("nf-conta-alt").value);
+  if ($("nf-alt")) $("nf-alt").onclick = () => enviarNF($("nf-conta-alt").value, true);   // já conferida na 1ª tentativa
 }
 
 document.addEventListener("click", e => {
@@ -636,3 +682,25 @@ document.addEventListener("click", e => {
 });
 window.addEventListener("resize", () => { clearTimeout(pn.rz); pn.rz = setTimeout(() => pn.vista === "visao" && desenharVisao(), 200); });
 trocarVista(location.hash.slice(1) || "visao");
+
+// Arrastar o PDF da NF em cima de uma solicitação da lista (usuário, 11/10/2026): seleciona, abre o envio ali mesmo e
+// já anexa a nota (o envio confere a NF com o pedido antes de sair, como sempre)
+document.addEventListener("dragover", e => {
+  const l = e.target.closest?.("#lista .nf-l");
+  if (!l || !Array.from(e.dataTransfer?.types || []).includes("Files")) return;
+  e.preventDefault();
+  document.querySelectorAll("#lista .soltar-aqui").forEach(x => x !== l && x.classList.remove("soltar-aqui"));
+  l.classList.add("soltar-aqui");
+});
+document.addEventListener("dragleave", e => { const l = e.target.closest?.("#lista .nf-l"); if (l && !l.contains(e.relatedTarget)) l.classList.remove("soltar-aqui"); });
+document.addEventListener("drop", async e => {
+  const l = e.target.closest?.("#lista .nf-l");
+  if (!l || !e.dataTransfer?.files?.length) return;
+  e.preventDefault();
+  l.classList.remove("soltar-aqui");
+  const arquivos = Array.from(e.dataTransfer.files);   // o navegador esvazia a lista depois do evento
+  if (envNF && envNF.alvo) { toast("Termine ou descarte a mensagem que está escrevendo", true); return; }
+  sel = l.dataset.k; emailSel = null; desenhar();
+  await abrirEnvioNF(sel, null, $("detalhe"));
+  if (envNF && $("nf-soltar")) adicionarArquivos(arquivos);
+});

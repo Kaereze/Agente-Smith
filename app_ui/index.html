@@ -93,7 +93,8 @@ svg.ic{width:17px;height:17px;flex:none}
 .lateral .rodape{padding:14px 14px 0;display:grid;gap:12px;border-top:1px solid rgba(255,255,255,.08)}
 .lateral .rodape > button{justify-content:center}
 
-.palco{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0}
+.palco{display:grid;grid-template-rows:auto auto minmax(0,1fr);min-width:0;min-height:0}
+.palco > .topo{grid-row:1} .palco > .saude{grid-row:2} .palco > .vista{grid-row:3}
 .topo{display:flex;align-items:center;gap:16px;padding:12px 26px;border-bottom:1px solid var(--linha);background:var(--folha);flex-wrap:wrap}
 .trilha-nav{font-size:13px;color:var(--tinta-3);white-space:nowrap}
 .trilha-nav b{color:var(--tinta);font-weight:500}
@@ -681,11 +682,18 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .cx-ponto{width:8px;height:8px;border-radius:50%;background:var(--erro);flex:none;align-self:center}
 .cx-l2 .cx-onde{color:var(--tinta-3);font-size:12px}
 .nf-l.nao-lido .cx-quem{font-weight:700}
+.nf-l.soltar-aqui{outline:2px dashed var(--verde);outline-offset:-3px;background:var(--verde-suave)}
 .nf-l.nao-lido::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--verde)}
 .aviso-pcs{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:10px;background:var(--atencao-fundo);color:var(--atencao);font-size:13px}
 .no-outlook{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;color:var(--tinta-2);padding:8px 12px;border:1px solid var(--linha);border-radius:10px;background:var(--folha-2)}
 .no-outlook b{color:var(--tinta)}
 /* modo professor (usuário, 11/10/2026): frase azul embaixo de cada botão dizendo o que ele faz */
+/* saúde do sistema (usuário, 11/10/2026): o que saiu do normal, no topo de todas as telas */
+.saude{display:flex;flex-direction:column;gap:4px;margin:10px 26px 0;padding:9px 14px;border-radius:12px;background:var(--erro-fundo);
+  border:1px solid var(--erro);color:var(--erro);font-size:13px;cursor:pointer}
+.saude .s-linha{display:flex;gap:8px;align-items:center}
+.saude .s-linha.aviso{color:var(--atencao)}
+.saude b{font-weight:600}
 .dica-bt{display:none}
 body:not(.professor) .com-dica{display:contents}
 body.professor .com-dica{display:inline-flex;flex-direction:column;align-items:center;gap:4px;vertical-align:top}
@@ -952,6 +960,7 @@ body.professor .dica-prof{display:flex}
       </div>
     </header>
 
+    <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta" id="v-log"><div class="rolagem" id="log"></div></section>
     <section class="vista oculta" id="v-maquinas"><div class="rolagem" id="maquinas"></div></section>
@@ -975,7 +984,7 @@ body.professor .dica-prof{display:flex}
           <div class="abas-origem" role="tablist" id="abas-origem"></div>
         </div>
         <div class="op-cartoes" role="group" aria-label="Caixa de Entrada de cada operador" id="op-cartoes-notas"></div>
-        <p class="dica-prof">Igual ao Outlook: aqui ficam as solicitações do robô que estão na Caixa de Entrada dos 4 PCs. Tirou o e-mail da Caixa de Entrada (moveu ou excluiu), ele some daqui. Cada linha: o hóspede e a hora em que chegou; embaixo, a situação e o hotel. Em negrito = não lido · ponto vermelho = tem aviso. Clique numa solicitação pra abrir a ficha; as abas filtram pela situação (vermelho = sem NF, azul = em andamento, verde = emitida).</p>
+        <p class="dica-prof">Igual ao Outlook: aqui ficam as solicitações do robô que estão na Caixa de Entrada dos 4 PCs. Tirou o e-mail da Caixa de Entrada (moveu ou excluiu), ele some daqui. Cada linha: o hóspede e a hora em que chegou; embaixo, a situação e o hotel. Em negrito = não lido · ponto vermelho = tem aviso. Clique numa solicitação pra abrir a ficha (ou arraste o PDF da NF em cima dela: já abre o envio com a nota); as abas filtram pela situação (vermelho = sem NF, azul = em andamento, verde = emitida).</p>
         <div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
         <div class="filtros-linha" id="filtros-linha"></div>
       </div>
@@ -1070,6 +1079,13 @@ function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.classNam
   clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", erro ? 5000 : 2500); }
 
 // Cabeçalho: PCs da equipe — Outlook fechado ou conferente parado em algum PC acende o aviso
+function desenharSaude(lista) {
+  const el = $("saude");
+  el.classList.toggle("oculta", !lista.length);
+  el.title = "Clique pra ver as máquinas";
+  el.innerHTML = lista.map(p => `<div class="s-linha ${p.nivel}"><svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><b>${esc(p.texto)}</b></div>`).join("");
+}
+document.addEventListener("click", e => { if (e.target.closest("#saude")) trocarVista("maquinas"); });
 function desenharPcsCabecalho(pcs) {
   const on = pcs.filter(p => p.online);
   const fechados = on.filter(p => p.outlook === "fechado"), parados = on.filter(p => p.conferencia_atrasada);
@@ -1112,6 +1128,7 @@ async function carregar(){
     $("robo-txt").textContent = "robô " + (s.ligado ? "ligado" : "desligado") + (s.comando ? " · " + s.comando.toLowerCase() : "");
     $("robo").title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "");
     desenharPcsCabecalho(j.pcs || []);
+    desenharSaude(j.saude || []);
     // pedidos aparecem já; os e-mails (outra rota) entram em seguida, sem segurar a tela
     montarTodos();
     try { const em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}

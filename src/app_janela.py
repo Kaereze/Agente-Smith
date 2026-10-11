@@ -7,6 +7,8 @@ janela. Se a janela já estiver aberta, só traz ela pra frente.
 
 Abrir rápido (usuário, 11/10/2026): o X só ESCONDE a janela; clicar no atalho de novo mostra na hora, já carregada.
 Desligar/reiniciar o Windows fecha normal. Fechar de vez: "Fechar o Painel" no menu do operador (canto de baixo).
+Liga junto com o Windows, escondido (atalho na pasta Inicializar do usuário, sem administrador): o 1º clique do dia
+já mostra o Painel carregado.
 """
 import ctypes
 import os
@@ -139,6 +141,22 @@ def esperar_pedido_de_mostrar():
                 pass
 
 
+def garantir_inicio_com_windows():
+    """Atalho na pasta Inicializar deste usuário: o Painel liga escondido junto com o Windows."""
+    import win32com.client
+    pasta = os.path.join(os.environ.get("APPDATA", ""), "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+    atalho = os.path.join(pasta, "Painel Notas Fiscais (liga escondido).lnk")
+    if not os.path.isdir(pasta) or os.path.exists(atalho):
+        return
+    a = win32com.client.Dispatch("WScript.Shell").CreateShortcut(atalho)
+    a.TargetPath = str(PASTA_PROJETO / ".venv" / "Scripts" / "pythonw.exe")
+    a.Arguments = f'"{PASTA_PROJETO / "src" / "app_janela.py"}" --escondida'
+    a.WorkingDirectory = str(PASTA_PROJETO)
+    a.IconLocation = str(ICONE)
+    a.Description = "Liga o Painel Notas Fiscais escondido ao entrar no Windows (clique no atalho da Área de Trabalho pra ver)"
+    a.Save()
+
+
 def main():
     import msvcrt
     os.makedirs(PASTA_ESTADO, exist_ok=True)
@@ -155,6 +173,10 @@ def main():
                                          TITULO, 0x10)
         return 1
 
+    try:
+        garantir_inicio_com_windows()
+    except Exception:
+        pass   # sem o atalho, só não liga sozinho com o Windows
     import webview
     try:
         esconder_em_vez_de_fechar()
@@ -162,7 +184,7 @@ def main():
         pass   # versão do pywebview diferente: o X fecha como antes
     ESTADO["janela"] = webview.create_window(TITULO, f"http://127.0.0.1:{PORTA}/", width=1440, height=900,
                                              min_size=(1000, 640), background_color="#0f2e2a", text_select=True,
-                                             js_api=Api())
+                                             js_api=Api(), hidden="--escondida" in sys.argv)
     threading.Thread(target=esperar_pedido_de_mostrar, daemon=True).start()
     webview.start(aplicar_icone, gui="edgechromium", private_mode=False,
                   storage_path=str(PASTA_ESTADO / "app_webview"))
