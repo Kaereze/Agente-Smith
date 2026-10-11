@@ -71,6 +71,7 @@ TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas
 JANELA_PAINEL_DIAS = 120
 TELAS = {"visao": "Visão geral", "fila": "Notas fiscais", "correio": "E-mails", "log": "Log", "maquinas": "Máquinas"}   # pra Máquinas mostrar onde cada um está
 RESOLVIDA_HORAS = 24               # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
+REINICIO_PENDENTE_MIN = 5          # código novo na pasta e o Painel ainda no velho por mais que isso: pede o reinício de novo
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
@@ -306,9 +307,38 @@ class Estado:
                 rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
                 f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado"]
 
+    def _conferir_reinicio(self, agente):
+        """O código na pasta mudou e este Painel ainda roda o velho (o reinício não aconteceu): depois de
+        REINICIO_PENDENTE_MIN avisa no Log e pede o reinício de novo, 1 vez por versão (11/10/2026)."""
+        if time.monotonic() < getattr(self, "_proximo_conferir_versao", 0):
+            return []
+        self._proximo_conferir_versao = time.monotonic() + 60
+        na_pasta = envio_nf.versao_do_codigo()
+        if not na_pasta or not self.versao or na_pasta.startswith(self.versao[:7]):
+            self._versao_nova_desde = None
+            return []
+        desde = getattr(self, "_versao_nova_desde", None)
+        if desde is None or desde[0] != na_pasta:
+            self._versao_nova_desde = (na_pasta, time.monotonic(), False)
+            return []
+        if desde[2] or time.monotonic() - desde[1] < REINICIO_PENDENTE_MIN * 60:
+            return []
+        self._versao_nova_desde = (na_pasta, desde[1], True)
+        logger.warning(f"⚠️ Código novo na pasta ({na_pasta}), mas este Painel ainda roda o {self.versao}: pedindo o reinício de novo")
+        try:
+            como = atualizador.pedir_reinicio()
+        except Exception as e:
+            como = f"o Agendador recusou ({str(e)[:80]})"
+        return [atividade.linha(atividade.FALHA, detalhe=f"código {na_pasta} baixado, mas o PC continuava no {self.versao}: {como}",
+                                agente=agente)]
+
     def _rede(self, lidas, solicitacoes):
         pc, agente = socket.gethostname(), nome_do_agente()
         linhas = []
+        try:
+            linhas += self._conferir_reinicio(agente)
+        except Exception:
+            logger.debug("conferir reinício", exc_info=True)
         if not self.versao_registrada:   # 1ª volta depois de ligar: registra se a versão mudou
             try:
                 anterior = CAMINHO_VERSAO.read_text(encoding="utf-8").strip()
