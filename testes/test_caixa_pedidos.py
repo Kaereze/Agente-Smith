@@ -214,3 +214,13 @@ def test_ler_abas_da_contagem():
     linhas = [cp.CAB, ["2026-10-10", "João", "LAGOA", "nf@lagoa", "5", "4", "2", "1", "2026-10-11T07:00:00"]]
     r = cp.ler_abas([linhas])
     assert r["João"][0]["dia"] == datetime.date(2026, 10, 10) and r["João"][0]["enviados"] == 4
+
+
+def test_pagina_inteira_espera_arquivo_completo(tmp_path, monkeypatch):
+    # página lida no meio de uma atualização (sem </html>) = tenta de novo, não entrega pela metade
+    import app_servidor
+    monkeypatch.setattr(app_servidor, "PASTA_UI", tmp_path)
+    monkeypatch.setattr(app_servidor.time, "sleep", lambda s: None)
+    leituras = iter(["<html><script>let a = `", "<html><body>ok</body></html>\n"])
+    monkeypatch.setattr(type(tmp_path), "read_text", lambda self, **k: next(leituras))
+    assert app_servidor._pagina_inteira().endswith("</html>\n")

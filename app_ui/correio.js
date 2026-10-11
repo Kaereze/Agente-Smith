@@ -85,8 +85,9 @@ function desenharCorreio() {
     : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
         enviados: "O que saiu das caixas dos hotéis nas últimas 24 h (pelo Outlook ou pelo Painel)." }[cx.caixa];
-  $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${lista.length} e-mail(s) no Outlook dos PCs` :
-    cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${lista.length} e-mail(s)${naoLidos ? ` · ${naoLidos} não lido(s)` : ""}`)
+  const nEm = x => `${x.toLocaleString("pt-BR")} e-mail${x === 1 ? "" : "s"}`;
+  $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${nEm(lista.length)} no Outlook dos PCs` :
+    cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${nEm(lista.length)}${naoLidos ? ` · ${naoLidos} não lido${naoLidos === 1 ? "" : "s"}` : ""}`)
     + (cx.hotel ? ` · ${esc(cx.hotel)}` : "") + statusBusca(busca);
   desenharFiltroHotel();
   // a lista é refeita a cada 15 s: quem estava com o foco numa linha continua nela

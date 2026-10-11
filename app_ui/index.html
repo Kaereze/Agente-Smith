@@ -1092,6 +1092,19 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .avisos-tela:empty{display:none}
 .notas-cab,.cx-cab{row-gap:12px!important}
 .notas-cab .abas-op,.notas-cab .det-op,.cx-cab .abas-linha,.cx-cab .det-op{margin-top:0}
+/* limpeza (11/10/2026: "não deixa muita poluição") */
+.saude{gap:6px;padding:8px 14px;border-radius:var(--raio);border:0;border-left:3px solid var(--erro);font-size:12.5px;flex-direction:row;flex-wrap:wrap;align-items:center}
+.saude .s-linha{flex:1 1 100%}
+.saude:not(.aberta) .s-linha:nth-child(n+2){display:none}
+.saude:not(.aberta) .s-linha:first-child{flex:1 1 auto;min-width:0}
+.saude .s-mais{border:0;background:transparent;color:inherit;font:600 12px var(--f-texto);text-decoration:underline;cursor:pointer;padding:0 2px;margin-left:auto}
+.saude.aberta .s-mais{flex:0 0 auto}
+.det-op{background:transparent;border:0;border-radius:0;padding:2px 0 0;margin-top:0;font-size:12.5px;color:var(--tinta-2);gap:4px 16px}
+.det-op b{font-size:12.5px}
+.det-op .det-quem{color:var(--creme-tinta)}
+@container (min-width: 701px){
+  #mesa.um-op .nf-cab,#mesa.um-op .nf-l.col{grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,.8fr) 64px}
+  #mesa.um-op .c-op,#mesa.um-op #linhas-cab.nf-cab > .c-op{display:none!important}}
 </style>
 </head>
 <body>
@@ -1307,9 +1320,17 @@ function desenharSaude(lista) {
   const el = $("saude");
   el.classList.toggle("oculta", !lista.length);
   el.title = "Clique pra ver as máquinas";
-  el.innerHTML = lista.map(p => `<div class="s-linha ${p.nivel}"><svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><b>${esc(p.texto)}</b></div>`).join("");
+  el.innerHTML = lista.map(p => `<div class="s-linha ${p.nivel}"><svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><b>${esc(p.texto)}</b></div>`).join("") +
+    (lista.length > 1 ? `<button class="s-mais" type="button" aria-expanded="${el.classList.contains("aberta")}">${
+      el.classList.contains("aberta") ? "mostrar menos" : `+${lista.length - 1} aviso${lista.length > 2 ? "s" : ""}`}</button>` : "");
 }
-document.addEventListener("click", e => { if (e.target.closest("#saude")) trocarVista("maquinas"); });
+document.addEventListener("click", e => {
+  const mais = e.target.closest("#saude .s-mais");
+  if (mais) { const el = $("saude"); el.classList.toggle("aberta");
+    mais.setAttribute("aria-expanded", el.classList.contains("aberta"));
+    mais.textContent = el.classList.contains("aberta") ? "mostrar menos" : `+${el.querySelectorAll(".s-linha").length - 1} avisos`; return; }
+  if (e.target.closest("#saude")) trocarVista("maquinas");
+});
 function desenharPcsCabecalho(pcs) {
   const on = pcs.filter(p => p.online);
   const fechados = on.filter(p => p.outlook === "fechado"), parados = on.filter(p => p.conferencia_atrasada);
@@ -1529,10 +1550,11 @@ function segOperadores(contar) {
 // abas de operador (11/10/2026): só nome + número; os detalhes do escolhido ficam numa linha embaixo
 function detalheOperador() {
   const v = escopoAtual(), temCx = typeof emailsDa === "function";
+  if (v === "todos") return "";   // usuário: os detalhes aparecem quando clica no agente
   const solic = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length;
   const meus = temCx ? emailsDa("entrada", v) : [], urg = temCx ? emailsDa("urgencia", v).length : 0;
   const naoLidos = meus.filter(e => e.lido === false).length, fmt = x => x.toLocaleString("pt-BR");
-  return `<span class="det-quem">${v === "todos" ? "Os 4 PCs" : "Caixa de " + esc(v)}</span>` +
+  return `<span class="det-quem">Caixa de ${esc(v)}</span>` +
     `<span><b>${fmt(solic)}</b> ${solic === 1 ? "solicitação" : "solicitações"}</span>` +
     `<span><b>${fmt(meus.length)}</b> e-mails na caixa</span><span><b>${fmt(naoLidos)}</b> não lidos</span>` +
     `<span class="${urg ? "urg" : ""}"><b>${fmt(urg)}</b> urgente${urg === 1 ? "" : "s"}</span>`;
@@ -1597,6 +1619,7 @@ function pilula(campo, rotulo, valor, padrao) {
 
 function desenharFiltros(busca, total) {
   desenharAbasNotas();
+  $("mesa").classList.toggle("um-op", escopoAtual() !== "todos");   // um agente escolhido: a coluna Operador só repetiria o nome
   // resumo de 1 linha (do operador escolhido)
   const minhas = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it)));
   const semNf = minhas.filter(it => ["na_fila", "aguardando_envio"].includes(it.s.situacao)).length;
@@ -2167,10 +2190,20 @@ document.addEventListener("keydown", e => {
   if (popAberto) { fecharPop(true); return; }
   if (!document.querySelector(".modal-fundo") && (sel || emailSel) && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { sel = null; emailSel = null; desenhar(); }
 });
+window.__painelOk = true;
 </script>
 <script src="/graficos.js"></script>
 <script src="/correio.js"></script>
 <script src="/painel.js"></script>
-<script>carregar();</script>
+<script>
+// se a página veio pela metade (lida enquanto a atualização regravava o arquivo), recarrega sozinha: até 3 vezes seguidas
+(function () {
+  let n = 0; try { n = +sessionStorage.getItem("painel.recargas") || 0; } catch (e) {}
+  const ok = window.__painelOk && typeof carregar === "function" && typeof desenharCorreio === "function" && typeof abrirEnvio === "function";
+  if (!ok) { if (n < 3) { try { sessionStorage.setItem("painel.recargas", n + 1); } catch (e) {} setTimeout(() => location.reload(), 1500); } return; }
+  try { sessionStorage.removeItem("painel.recargas"); } catch (e) {}
+  carregar();
+})();
+</script>
 </body>
 </html>

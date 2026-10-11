@@ -58,6 +58,17 @@ logger = configurar_logging("app")
 PORTA = 8765
 PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = PASTA_ESTADO / "app.json"
+
+
+def _pagina_inteira(tentativas=6):
+    """index.html lido inteiro: durante uma atualização o arquivo pode estar sendo regravado (lido pela metade = página quebrada)."""
+    html = ""
+    for _ in range(tentativas):
+        html = (PASTA_UI / "index.html").read_text(encoding="utf-8", errors="replace")
+        if html.rstrip().endswith("</html>"):
+            return html
+        time.sleep(0.25)
+    return html
 JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
 CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
 CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
@@ -1295,7 +1306,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self._json({"erro": "host"}, 403)
             url = urlparse(self.path)
             if url.path in ("/", "/index.html"):
-                html = (PASTA_UI / "index.html").read_text(encoding="utf-8").replace("__TOKEN__", token)
+                html = _pagina_inteira().replace("__TOKEN__", token)
                 corpo = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
