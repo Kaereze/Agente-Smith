@@ -211,6 +211,59 @@ def montar_fila(solicitacoes, estados, nfs_conferente=None, desde=None):
     return fila
 
 
+def _hora_do_formulario(texto):
+    for formato in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+        try:
+            return datetime.datetime.strptime(str(texto).strip(), formato)
+        except ValueError:
+            pass
+    return None
+
+
+def ligar_caixa(solicitacoes, caixas):
+    """Solicitações do robô na Caixa de Entrada dos PCs -> pedidos da planilha.
+    caixas: {pc: espelho_emails.ler_pedidos(...)}. Liga pelo e-mail do hóspede + hora do formulário ("Enviado em").
+    -> ({chave: {"pc", "caixa", "hotel", "recebido", "lido", "emails", "id"}}, [pedido mínimo dos que não achei])"""
+    import hospedes
+    por_email = {}
+    for s in solicitacoes:
+        for x in {str(e).lower() for e in [s["email"]] + s.get("emails", []) if e}:
+            por_email.setdefault(x, []).append(s)
+    ligados, sem = {}, {}
+    for pc, emails in caixas.items():
+        for e in emails:
+            for p in e.get("pedidos", []):
+                hora = _hora_do_formulario(p.get("carimbo", ""))
+                sem_segundos = len(str(p.get("carimbo", "")).strip()) <= 16   # "08/10/2026 19:01"
+                candidatos = [s for s in por_email.get(p.get("email", ""), []) if hora and (inicio := hospedes.inicio_do_pedido(s))
+                              and (inicio == hora or (sem_segundos and inicio.replace(second=0) == hora))]
+                info = {"pc": pc, "caixa": e["caixa"], "hotel": e["hotel"], "recebido": e["recebido"], "lido": e["lido"],
+                        "id": e["id"], "emails": 1}
+                if candidatos:
+                    k = candidatos[0]["chave"]
+                    if k in ligados:   # o robô mandou o mesmo pedido mais de uma vez: fica 1, "não lido" se algum for
+                        info = {**ligados[k], "emails": ligados[k]["emails"] + 1, "lido": ligados[k]["lido"] and e["lido"],
+                                "recebido": max(ligados[k]["recebido"], e["recebido"])}
+                    ligados[k] = info
+                else:
+                    chave = f"caixa:{pc}:{p.get('ref') or p.get('email')}:{p.get('carimbo')}"
+                    sem[chave] = pedido_sem_formulario(chave, p, info)
+    return ligados, list(sem.values())
+
+
+def pedido_sem_formulario(chave, p, info):
+    """Solicitação na Caixa de Entrada cujo formulário não achei na planilha: aparece igual (espelho), com aviso."""
+    hora = _hora_do_formulario(p.get("carimbo", ""))
+    return {"chave": chave, "aba": "", "hotel": info["hotel"].split(" / ")[0] if info["hotel"] else "", "linha": 0,
+            "carimbo": p.get("carimbo", ""), "email": p.get("email", ""), "nome": p.get("nome", "") or "(sem nome)",
+            "data": hora.date().isoformat() if hora else info["recebido"][:10], "enviado": True, "partes": 1,
+            "emails": [p.get("email", "")], "nomes": [], "campos": [], "dono": "", "dono_desde": "", "envios": [],
+            "envio_pendente": False, "nfs": [], "nfs_conferente": [], "tratativas": [], "obs": [], "dividida": False,
+            "nota_unica": "", "historico": [], "situacao": NA_FILA, "alerta_doc": [], "aviso_doc": [], "hospede": chave,
+            "repetido_de": "", "repetidos": [], "outros_pedidos": [], "outros_total": 0, "prazo": None,
+            "na_caixa": info, "sem_formulario": True}
+
+
 def juntar_fim(atuais, fim):
     """Leitura só do fim da Tratamento: atuais = o que eu já tinha; fim = o que veio de "A{len(atuais)}:H" (a
     última linha conhecida de novo, pra conferir). -> a aba inteira | None (mudou por baixo: reler inteira)."""

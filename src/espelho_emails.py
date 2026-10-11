@@ -15,6 +15,9 @@ em abas de passagem da Central, reescritas a cada volta (só quando muda). Nada 
   normal é o Painel pedir o texto ao vivo pro PC dono pela rede — esta aba é a reserva com o PC dono desligado).
 - Linhas "resposta": último envio de cada caixa deste PC pra cada endereço (14 dias). O Painel junta as dos
   4 PCs: e-mail respondido pela caixa de OUTRO PC também some.
+- Solicitações do robô na Caixa de Entrada (usuário, 11/10/2026: "o que estiver no meu e-mail vai aparecer ali"):
+  aba CaixaPedidos_<PC>, refeita a cada volta com o que ESTÁ na Caixa de Entrada agora (qualquer data). Saiu da
+  caixa (movida, excluída), sai do Painel. Aba separada: o Painel antigo dos outros PCs não lê e não se confunde.
 - Lido / não lido / excluído pelo Painel ficam na aba Eventos_Correio (valem pra equipe toda; não mexem no
   Outlook, a não ser Excluir, que vira um pedido pro PC dono). Faxina: 3 dias.
 """
@@ -40,6 +43,8 @@ CABECALHO = ["ID", "Pasta", "Caixa", "Hotel", "De", "Nome", "Para", "Assunto", "
              "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise"]
 CAB_TEXTOS = ["ID", "Texto", "Citado"]
 ABA_EVENTOS = "Eventos_Correio"
+PREFIXO_PEDIDOS = "CaixaPedidos_"
+CAB_PEDIDOS = ["ID", "Caixa", "Hotel", "Assunto", "Recebido", "Lido", "PC", "Atualizado", "Pedidos"]
 CAB_EVENTOS = ["Quando", "ID", "Ação", "Agente", "PC"]
 EVENTOS = ("LIDO", "NAO_LIDO", "EXCLUIR")
 ENTRADA, ENVIADO, RESPOSTA = "entrada", "enviado", "resposta"
@@ -71,6 +76,51 @@ _HISTORICO = re.compile(   # "Em qui., 8 de out. ... <x@y>\nescreveu:" (o Gmail 
 
 def nome_aba(pc=None):
     return PREFIXO_ABA + (pc or socket.gethostname())
+
+
+def nome_aba_pedidos(pc=None):
+    return PREFIXO_PEDIDOS + (pc or socket.gethostname())
+
+
+_SOLICITACAO_N = re.compile(r"(?m)^\s*Solicitação \d+ de \d+\s*[—–-]\s*")
+
+
+def pedidos_do_robo(corpo):
+    """Corpo do e-mail "Solicitação NF - ..." do robô -> [{"nome", "email", "carimbo", "ref"}] (1 por solicitação).
+    "Enviado por" é o e-mail do hóspede e "Enviado em" a hora do formulário: é o que liga ao pedido da planilha."""
+    saida = []
+    for bloco in _SOLICITACAO_N.split(corpo or "")[1:]:
+        email = re.search(r"Enviado por:\s*([^\s<>]+@[^\s<>]+)", bloco)
+        quando = re.search(r"Enviado em:\s*(\d{1,2}/\d{1,2}/\d{4}[ T]\d{1,2}:\d{2}(?::\d{2})?)", bloco)
+        ref = re.search(r"\[ref (NF-[\w-]+)\]", bloco)
+        saida.append({"nome": bloco.strip().splitlines()[0].strip() if bloco.strip() else "",
+                      "email": email.group(1).strip().lower().rstrip(".,;") if email else "",
+                      "carimbo": quando.group(1) if quando else "", "ref": ref.group(1) if ref else ""})
+    return saida
+
+
+def linhas_pedidos(pedidos_caixa, pc, agora):
+    carimbo = agora.isoformat(timespec="seconds")
+    corpo = sorted(pedidos_caixa.values(), key=lambda e: e["recebido"], reverse=True)
+    return [CAB_PEDIDOS] + [[e["id"], e["caixa"], e["hotel"], e["assunto"], e["recebido"], "TRUE" if e["lido"] else "",
+                             pc, carimbo, json.dumps(e["pedidos"], ensure_ascii=False, separators=(",", ":"))]
+                            for e in corpo]
+
+
+def ler_pedidos(linhas):
+    """Aba CaixaPedidos_<PC> -> [{"id", "caixa", "hotel", "assunto", "recebido", "lido", "pc", "atualizado", "pedidos"}]"""
+    saida = []
+    for l in (linhas or [])[1:]:
+        if not l or not str(l[0]).strip():
+            continue
+        l = [str(v) for v in l] + [""] * (len(CAB_PEDIDOS) - len(l))
+        try:
+            pedidos = json.loads(l[8]) if l[8].strip() else []
+        except ValueError:
+            pedidos = []
+        saida.append({"id": l[0], "caixa": l[1], "hotel": l[2], "assunto": l[3], "recebido": l[4],
+                      "lido": l[5].upper() == "TRUE", "pc": l[6], "atualizado": l[7], "pedidos": pedidos})
+    return saida
 
 
 def nome_aba_textos(pc=None):
@@ -456,6 +506,7 @@ class Espelho:
                     logger.debug(f"e-mail ilegível em {caixa}: {e}")
         if not completa:
             self._tirar_excluidos(namespace, pastas_entrada)
+        self.pedidos_caixa = self._pedidos_na_caixa(namespace, caixas)
         nf_marcadas = self._marcar_nf_emitida(namespace)
         enviados_dt = {e: datetime.datetime.fromisoformat(q) for e, q in enviados.items()}
         self.itens = resolver(self.itens, enviados_dt, agora)
@@ -466,7 +517,9 @@ class Espelho:
                        "vouchers": {i: v for i, v in vouchers.items() if i in self.itens},
                        "publicado": self.estado.get("publicado", ""),
                        "publicado_textos": self.estado.get("publicado_textos", ""),
-                       "nf_marcadas": {i: v for i, v in nf_marcadas.items() if i in self.itens}}
+                       "nf_marcadas": {i: v for i, v in nf_marcadas.items() if i in self.itens},
+                       "pedidos_caixa": self.pedidos_caixa,
+                       "publicado_pedidos": self.estado.get("publicado_pedidos", "")}
         salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
         self.publicar(enviados_dt)
         return len(self.itens)
@@ -580,6 +633,43 @@ class Espelho:
         self._checadas = checadas
         return marcadas
 
+    def _pedidos_na_caixa(self, namespace, caixas):
+        """Solicitações do robô que estão AGORA na Caixa de Entrada de cada caixa de hotel (qualquer data).
+        Só lê: o corpo de cada e-mail é lido 1 vez (fica guardado); lido/não lido é conferido toda volta."""
+        antes = self.estado.get("pedidos_caixa", {}) or {}
+        saida = {}
+        for conta in namespace.Accounts:
+            caixa = str(conta.SmtpAddress or "").strip().lower()
+            if caixa not in caixas:
+                continue
+            try:
+                pasta = conta.DeliveryStore.GetDefaultFolder(6)
+                try:
+                    itens = pasta.Items.Restrict('@SQL="urn:schemas:httpmail:subject" LIKE \'Solicitação NF%\'')
+                except Exception:
+                    itens = pasta.Items
+                for item in itens:
+                    try:
+                        if getattr(item, "Class", 0) != 43 or not str(item.Subject or "").startswith("Solicitação NF"):
+                            continue
+                        i = id_do_email(item.EntryID)
+                        pedidos = (antes.get(i) or {}).get("pedidos")
+                        if pedidos is None:
+                            corpo = str(item.Body or "")
+                            if "Código de envio: NF-" not in corpo:
+                                continue
+                            pedidos = pedidos_do_robo(corpo)
+                        recebido = _data(item.ReceivedTime)
+                        saida[i] = {"id": i, "caixa": caixa, "hotel": caixas.get(caixa, ""), "assunto": str(item.Subject or ""),
+                                    "recebido": recebido.isoformat(timespec="seconds") if recebido else "",
+                                    "lido": not bool(item.UnRead), "pedidos": pedidos}
+                    except Exception as e:
+                        logger.debug(f"solicitação ilegível em {caixa}: {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ Não li as solicitações da Caixa de Entrada de {caixa}: {e}")
+                saida.update({i: x for i, x in antes.items() if x.get("caixa") == caixa})   # mantém o que já sabia
+        return saida
+
     def _tirar_excluidos(self, namespace, pastas_entrada):
         """E-mail que saiu da Caixa de Entrada (excluído ou movido) sai do espelho: conta como resolvido."""
         for i, e in list(self.itens.items()):
@@ -616,6 +706,16 @@ class Espelho:
                 mudou = True
             except Exception as e:
                 logger.warning(f"⚠️ Não consegui publicar o espelho de e-mails ({e})")
+        linhas_p = linhas_pedidos(getattr(self, "pedidos_caixa", self.estado.get("pedidos_caixa", {})) or {}, pc, self.relogio())
+        assinatura_p = hashlib.sha1(json.dumps([l[:7] + l[8:] for l in linhas_p], ensure_ascii=False).encode()).hexdigest()
+        if assinatura_p != self.estado.get("publicado_pedidos"):
+            try:
+                self.backend.substituir_aba(self.central, nome_aba_pedidos(pc), linhas_p)
+                self.estado["publicado_pedidos"] = assinatura_p
+                mudou = True
+                logger.info(f"📥 Solicitações na Caixa de Entrada deste PC: {len(linhas_p) - 1} e-mail(s) do robô")
+            except Exception as e:
+                logger.warning(f"⚠️ Não consegui publicar as solicitações da Caixa de Entrada ({e})")
         if mudou:
             salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
 

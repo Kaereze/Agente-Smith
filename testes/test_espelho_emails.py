@@ -228,7 +228,7 @@ def test_espelho_nao_regrava_a_aba_se_nada_mudou(tmp_path, monkeypatch):
     esp.volta(ol)
     agora[0] = D(2026, 10, 8, 9, 2)
     esp.volta(ol)
-    assert len(gravacoes) == 2   # resumo + textos na 1ª volta; na 2ª, nada mudou: zero escritas
+    assert len(gravacoes) == 3   # resumo + textos + solicitações na 1ª volta; na 2ª, nada mudou: zero escritas
 
 
 def test_nf_no_dropbox_vira_etiqueta_no_email_do_hospede(tmp_path, monkeypatch):

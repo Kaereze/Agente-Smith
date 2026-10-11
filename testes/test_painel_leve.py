@@ -129,10 +129,10 @@ def test_solicitacao_resolvida_fica_24h_e_some_da_lista(cfg, planilha):
     ontem = d.agora() - datetime.timedelta(hours=30)
     planilha.anexar_linhas(CENTRAL, d.ABA_TRATAMENTO, [
         _ev("Clara", d.NF, "1", s_hoje["carimbo"], s_hoje["email"]),
-        _ev("Clara", d.OBS, f"E-mail com a NF 1 enviado para {s_hoje['email']} em 08/10/2026 10:00",
+        _ev("Clara", d.OBS, f"E-mail com a NF 1 enviado para {s_hoje['email']} em {d.agora():%d/%m/%Y %H:%M}",
             s_hoje["carimbo"], s_hoje["email"]),
         _ev("Clara", d.NF, "2", s_velha["carimbo"], s_velha["email"], quando=ontem),
-        _ev("Clara", d.OBS, f"E-mail com a NF 2 enviado para {s_velha['email']} em 07/10/2026 04:00",
+        _ev("Clara", d.OBS, f"E-mail com a NF 2 enviado para {s_velha['email']} em {ontem:%d/%m/%Y %H:%M}",
             s_velha["carimbo"], s_velha["email"], quando=ontem)])
     e.atualizar(completo=True)
     chaves = {s["chave"] for s in e.fila_da_tela(0)}

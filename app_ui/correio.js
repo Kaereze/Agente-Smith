@@ -79,7 +79,7 @@ function desenharCorreio() {
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
   $("escopo-emails").innerHTML = escopoHtml();
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
-    : { entrada: "O que os hóspedes estão esperando de resposta? Clique num e-mail pra ler; as setas ↑ ↓ andam pela lista. Respondeu, ele fica cinza e some.",
+    : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
         enviados: "O que saiu das caixas dos hotéis nas últimas 24 h (pelo Outlook ou pelo Painel)." }[cx.caixa];
   $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${lista.length} e-mail(s) no Outlook dos PCs` :
@@ -167,25 +167,19 @@ function desenharAcoes() {
     ${noEspelho && !cinza ? `<span class="dica-prof so-texto" style="flex-basis:100%">Atalhos: Ctrl+R responder · Ctrl+Shift+R com NF · Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido</span>` : ""}`;
 }
 
+// Lista limpa (usuário, 11/10/2026: "muita informação dentro de uma só"): 2 linhas como o Outlook — quem mandou e a
+// hora; o assunto e o hotel pequeno. Prazo, etiquetas, análise da NF e prévia ficam no e-mail aberto.
 function linhaEmail(e) {
   const enviado = e.pasta === "enviado", excluido = e.pasta === "excluido";
   const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
   const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de);
-  const marcas = (e.classes || []).filter(k => k !== "pedido_nf").map(etiqueta).join("") +
-    (e.notas?.length ? `<span class="et et-ok">NF ${esc(e.notas.map(n => n.nf).join(", "))} emitida</span>` : "") +
-    (e.quartos >= 2 ? `<span class="et et-info">${e.quartos} quartos</span>` : "") +
-    (excluido ? `<span class="et">Excluído</span>` : "") + (cinza ? `<span class="et">Respondido</span>` : "") +
-    (e.pasta === "entrada" && e.pc && !pcOnline(e.pc) ? `<span class="et et-atencao" title="PC dono desligado: o que for pedido sai quando ele ligar">PC desligado</span>` : "");
+  const situacao = cinza ? " · respondido" : excluido ? " · excluído" : "";
   return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
-      aria-selected="${sel}" data-id="${esc(e.id)}">
-    <div class="cx-l1"><span class="cx-quem">${esc(quem)}</span>${e.total_conversa > 1 && !enviado ? `<span class="cx-n" title="e-mails sem resposta deste hóspede">${e.total_conversa}</span>` : ""}
-      ${e.pasta === "entrada" && e.prazo && !cinza ? prazoHtml(e.prazo, true) : ""}<span class="cx-hora">${horaCurta(e.quando)}</span></div>
-    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}</div>
-    <div class="cx-l3"><span class="cx-hotel">${esc(e.hotel || "")}</span>${esc(e.previa || "")}</div>
-    ${e.alerta_doc ? `<div class="cx-resumo-l" title="${esc(e.alerta_doc)}">⚠ ${esc(e.alerta_doc)}</div>`
-      : e.analise_d?.m ? `<div class="cx-resumo-l" title="${esc(e.analise)}">⚠ Motivo: ${esc(e.analise_d.m)}${e.analise_d.d ? " (" + esc(e.analise_d.d) + ")" : ""}</div>`
-      : e.analise ? `<div class="cx-resumo-l" title="${esc(e.analise)}">⚠ ${esc(e.analise)}</div>` : ""}
-    ${marcas ? `<div class="cx-l4">${marcas}</div>` : ""}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
+      aria-selected="${sel}" data-id="${esc(e.id)}" title="${e.urgente ? esc(e.motivo_urgencia || "Urgente") : ""}">
+    <div class="cx-l1">${e.urgente && !cinza ? `<span class="cx-ponto" aria-label="urgente"></span>` : ""}<span class="cx-quem">${esc(quem)}</span>
+      <span class="cx-hora">${horaCurta(e.quando)}</span></div>
+    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}<span class="cx-onde"> · ${esc(e.hotel || "")}${situacao}</span></div>
+    ${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
 
 // ---------- busca: direto no Outlook dos 4 PCs ----------

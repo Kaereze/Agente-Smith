@@ -77,7 +77,9 @@ ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/graficos.js": ("graficos.js", "text/javascript; charset=utf-8"),
     "/painel.js": ("painel.js", "text/javascript; charset=utf-8"),
     "/correio.js": ("correio.js", "text/javascript; charset=utf-8"),
+    "/fontes/fontes.css": ("fontes/fontes.css", "text/css; charset=utf-8"),
 }
+ESTATICOS.update({f"/fontes/{f.name}": (f"fontes/{f.name}", "font/woff2") for f in (PASTA_UI / "fontes").glob("*.woff2")})
 EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"]
 
@@ -156,7 +158,9 @@ class Estado:
         return max(self._desde_cfg, datetime.date.today() - datetime.timedelta(days=JANELA_PAINEL_DIAS))
 
     def _abas(self):
-        if self.relogio() - self.abas_lidas_em > 600:
+        # PC sem a aba CaixaPedidos_ (ainda não atualizou): procura abas novas a cada 2 min em vez de 10
+        faltam = len(getattr(self, "abas_pedidos", [])) < len(getattr(self, "abas_emails", [])) or not getattr(self, "abas_pedidos", [])
+        if self.relogio() - self.abas_lidas_em > (120 if faltam else 600):
             marcador = normalizar(self.cfg.get("marcador_aba_respostas", "(respostas)"))
             ignoradas = {normalizar(a) for a in self.cfg.get("abas_ignoradas", [])}
             todas = self.backend.listar_abas(self.central)
@@ -168,6 +172,7 @@ class Estado:
                                for a in todas if marcador in normalizar(a) and normalizar(a) not in ignoradas}
             self.abas_emails = [a for a in todas if a.startswith(espelho_emails.PREFIXO_ABA)]
             self.abas_textos = [a for a in todas if a.startswith(espelho_emails.PREFIXO_TEXTOS)]
+            self.abas_pedidos = [a for a in todas if a.startswith(espelho_emails.PREFIXO_PEDIDOS)]
             for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
                              (espelho_emails.ABA_EVENTOS, espelho_emails.CAB_EVENTOS),
                              (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS),
@@ -193,15 +198,18 @@ class Estado:
             trat_inteira = completo or self.trat_linhas is None or agora - self.trat_lido_em >= TRATAMENTO_COMPLETO_SEGUNDOS
             self._gravar_eventos_pendentes()
             nomes = [dados.ABA_TRATAMENTO, status_aba, envio_nf.ABA_FILA, envio_nf.ABA_PCS, rede_pcs.ABA_COMANDOS,
-                     espelho_emails.ABA_EVENTOS] + self.abas_emails + (list(abas) if ler_hoteis else [])
+                     espelho_emails.ABA_EVENTOS] + self.abas_emails + list(getattr(self, "abas_pedidos", [])) + \
+                (list(abas) if ler_hoteis else [])
             # do fim conhecido em diante (a última linha de novo: confere que nada mudou por baixo, ex. faxina)
             faixas = {} if trat_inteira else {dados.ABA_TRATAMENTO: f"A{len(self.trat_linhas)}:H"}
             lidas, erros = self.backend.ler_abas(self.central, nomes, faixas=faixas)
             if not lidas:
                 raise RuntimeError(next(iter(erros.values()), "leitura vazia"))
-            sumidas = [a for a in erros if a in self.abas_emails or a == espelho_emails.ABA_EVENTOS]
+            sumidas = [a for a in erros if a in self.abas_emails or a == espelho_emails.ABA_EVENTOS
+                       or a in getattr(self, "abas_pedidos", [])]
             if sumidas:   # aba de passagem apagada/renomeada: some da lista e a lista é refeita na próxima volta
                 self.abas_emails = [a for a in self.abas_emails if a not in sumidas]
+                self.abas_pedidos = [a for a in getattr(self, "abas_pedidos", []) if a not in sumidas]
                 self.abas_lidas_em = -1e9
             lidas_trat = lidas.get(dados.ABA_TRATAMENTO)
             if lidas_trat is None and not trat_inteira:
@@ -218,15 +226,22 @@ class Estado:
                 solicitacoes = self.solicitacoes
             status = {str(l[0]).strip(): (str(l[1]) if len(l) > 1 else "") for l in lidas.get(status_aba, []) if l}
             emails = [e for aba in self.abas_emails for e in espelho_emails.ler_aba(lidas.get(aba, []))]
+            pedidos_caixa = {aba[len(espelho_emails.PREFIXO_PEDIDOS):]: espelho_emails.ler_pedidos(lidas.get(aba, []))
+                             for aba in getattr(self, "abas_pedidos", []) if aba in lidas}
             if espelho_emails.ABA_EVENTOS in lidas:
                 self.eventos_linhas = lidas[espelho_emails.ABA_EVENTOS]
             with self.lock:
                 self.solicitacoes = solicitacoes
                 self._aplicar_tratamento(trat, novas)
                 self.emails = emails
+                self.pedidos_caixa = pedidos_caixa
                 self.status = status
                 self.atualizado_em, self.erro = dados.agora(), ""
             self._montar_correio()
+            try:   # deixa a lista da tela pronta: quem abre o Painel não espera o cálculo (usuário, 11/10/2026)
+                self.fila_da_tela(60)
+            except Exception:
+                logger.debug("lista pronta da tela", exc_info=True)
         except Exception as e:
             logger.warning(f"⚠️ Não consegui ler a planilha ({e})")
             self.erro = str(e)[:200]
@@ -266,6 +281,7 @@ class Estado:
         return (toda[dados.ABA_TRATAMENTO] or [dados.CABECALHO_TRATAMENTO]), None
 
     def _aplicar_tratamento(self, trat, novas):
+        self.versao_dados = getattr(self, "versao_dados", 0) + 1   # a lista pronta da tela (fila_da_tela) vale até aqui
         """Chamado com self.lock. novas=None: redobra tudo; [] nada mudou; [...] só dobra as novas."""
         if novas is None or not self.estados:
             self.estados = dados.dobrar_eventos(trat)
@@ -811,10 +827,44 @@ class Estado:
         return hospedes.marcar(fila)   # hóspede único, pedido repetido e prazo (Etapa 2)
 
     def fila_da_tela(self, dias=None):
-        """Lista de Formulários: resolvida (NF emitida e e-mail enviado) fica 24 h e some — o Painel mostra o que falta."""
+        """Pedidos pra tela. Notas fiscais = espelho da Caixa de Entrada (usuário, 11/10/2026): cada pedido cuja
+        solicitação do robô está na Caixa de Entrada de algum PC vem com "na_caixa" (e entra mesmo se for antigo ou
+        resolvido). Os outros continuam indo pra Visão geral e Gerência (resolvida some depois de 24 h)."""
+        chave = (dias, getattr(self, "versao_dados", 0), id(getattr(self, "pedidos_caixa", None)),
+                 datetime.datetime.now().strftime("%Y%m%d%H"))   # a hora entra: "resolvida há 24 h" muda com o relógio
+        pronta = getattr(self, "_fila_pronta", None)
+        if pronta and pronta[0] == chave:
+            return pronta[1]
         limite = (datetime.datetime.now() - datetime.timedelta(hours=RESOLVIDA_HORAS)).isoformat(timespec="seconds")
-        return [s for s in self.fila(dias) if not (s["situacao"] == dados.CONCLUIDA and not s["envio_pendente"]
-                                                   and dados.resolvida_em(s) < limite)]
+        with self.lock:
+            sols, caixas = list(self.solicitacoes), dict(getattr(self, "pedidos_caixa", {}) or {})
+        na_caixa, sem_pedido = dados.ligar_caixa(sols, caixas)
+        saida, vistos = [], set()
+        for s in self.fila(dias):
+            vistos.add(s["chave"])
+            if s["chave"] in na_caixa:
+                saida.append({**s, "na_caixa": na_caixa[s["chave"]]})
+            elif not (s["situacao"] == dados.CONCLUIDA and not s["envio_pendente"] and dados.resolvida_em(s) < limite):
+                saida.append(s)
+        faltam = {k for k in na_caixa if k not in vistos}   # pedido antigo ainda na Caixa de Entrada
+        if faltam:
+            with self.lock:
+                extra = dados.montar_fila([s for s in sols if s["chave"] in faltam], self.estados)
+            saida += [{**s, "na_caixa": na_caixa[s["chave"]]} for s in hospedes.marcar(extra)]
+        saida += sem_pedido
+        self._fila_pronta = (chave, saida)
+        return saida
+
+    def resumo_caixa(self):
+        """Que PCs já espelham as solicitações da Caixa de Entrada (versão nova) e quando atualizaram."""
+        with self.lock:
+            caixas = dict(getattr(self, "pedidos_caixa", {}) or {})
+        saida = {}
+        for p in self.pcs():
+            linhas = caixas.get(p["pc"])
+            saida[p["pc"]] = {"agente": p["agente"], "online": p["online"], "espelho": linhas is not None,
+                              "emails": len(linhas or []), "atualizado": max((l["atualizado"] for l in linhas or []), default="")}
+        return saida
 
     def salvar_cache(self, forcar=False):
         """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
@@ -981,7 +1031,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 corpo = (PASTA_UI / arquivo).read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", tipo)
-                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Cache-Control", "max-age=31536000" if arquivo.startswith("fontes/") else "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)
@@ -995,6 +1045,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
+                    "caixa_pcs": estado.resumo_caixa(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
