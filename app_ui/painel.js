@@ -13,8 +13,7 @@ function trocarVista(v) {
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
     b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba)
                                           && (v !== "correio" || b.dataset.caixa === cx.caixa))));
-  $("busca").placeholder = v === "correio" ? "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, sobrenome, frase…"
-    : "Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…";
+  $("busca").placeholder = "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…";
   if (v !== "correio") $("topo-filtro").innerHTML = "";   // o filtro do topo é dos e-mails
   if (v === "correio") { desenharCorreio(); return; }
   desenhar();

@@ -736,8 +736,9 @@ def main():
                     proximo_espelho = min(proximo_espelho, max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS))
                 dropbox_antes = marca
                 if any(novos.values()):
-                    logger.info(f"👁️ Outlook: {novos['enviado']} enviado(s) e {novos['recebido']} recebido(s) novo(s) "
-                                f"— conferindo agora")
+                    logger.info(f"👁️ Outlook: {novos['enviado']} enviado(s), {novos['recebido']} recebido(s) novo(s)"
+                                f"{' e ' + str(novos.get('saiu', 0)) + ' saiu(saíram) da Caixa de Entrada' if novos.get('saiu') else ''}"
+                                f" — conferindo agora")
                     quando = max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS)
                     proxima_confirmacao = min(proxima_confirmacao, quando)
                     proximo_espelho = min(proximo_espelho, quando)

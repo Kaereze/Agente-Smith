@@ -4,8 +4,11 @@ Pedido do usuário (08/10/2026): o Painel é uma ponte entre os 4 computadores e
 é o Outlook. Cada PC só tem no Outlook as caixas dos hotéis dele; o robô (conferente) de cada PC reflete as caixas
 em abas de passagem da Central, reescritas a cada volta (só quando muda). Nada se acumula.
 
-- Caixa de Entrada: o que segue SEM RESPOSTA até 14 dias (de 7 a 14 dias vira "Urgência" no Painel). Passou de
-  14 dias, sai do espelho (o Outlook não é mexido).
+- Caixa de Entrada (usuário, 11/10/2026: "exatamente a minha caixa de entrada"): TUDO que está na Caixa de Entrada,
+  de qualquer data e de qualquer remetente, menos o que já foi respondido e as solicitações do robô (essas vão pra
+  Notas fiscais). Excluiu/moveu no Outlook, some. Mais de 7 dias sem resposta vira "Urgência" no Painel.
+- Lido / não lido vem do Outlook. Lido no Outlook só vale depois de LIDO_CONFIRMA_MINUTOS (às vezes marca sem
+  querer e volta atrás); não lido vale na hora.
 - Itens Enviados: últimas 24 h.
 - Resolvido = respondido (saiu e-mail de uma caixa deste PC pra quem escreveu, depois que ele escreveu) OU
   excluído (saiu da Caixa de Entrada). Resolvido some do espelho.
@@ -40,7 +43,7 @@ logger = configurar_logging("espelho_emails")
 PREFIXO_ABA = "Correio_"
 PREFIXO_TEXTOS = "CorreioTexto_"
 CABECALHO = ["ID", "Pasta", "Caixa", "Hotel", "De", "Nome", "Para", "Assunto", "Quando", "Anexos", "Prévia",
-             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise"]
+             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise", "Lido Outlook"]
 CAB_TEXTOS = ["ID", "Texto", "Citado"]
 ABA_EVENTOS = "Eventos_Correio"
 PREFIXO_PEDIDOS = "CaixaPedidos_"
@@ -54,13 +57,15 @@ URGENCIA_DIAS = 7                 # sem resposta há mais que isso: aba Urgênci
 MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
-VERSAO_ESTADO = 2
+VERSAO_ESTADO = 3   # 3: Caixa de Entrada inteira + lido do Outlook (11/10/2026) — relê tudo 1 vez
 MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
 MAX_CITADO = 8000
 MAX_TEXTO_ENVIADO = 4000
 MAX_PREVIA = 220
 MAX_RESPOSTAS = 45000             # célula das respostas (limite do Sheets: 50 mil)
 REVARRER_HORAS = 24               # releitura completa 1x por dia
+RESPOSTAS_DIAS = 120              # até onde olha os Itens Enviados pra saber se um e-mail antigo da caixa já foi respondido
+LIDO_CONFIRMA_MINUTOS = 5         # lido no Outlook só passa pro Painel depois de 5 min lido (usuário, 11/10/2026)
 FOLGA_MINUTOS = 10
 CADASTRO_SEGUNDOS = 30 * 60       # Cadastro_Hoteis muda pouco: relido a cada 30 min (cota)
 REMETENTES_AUTOMATICOS = ("no-reply", "noreply", "naoresponda", "nao-responda", "nao_responda", "donotreply",
@@ -337,8 +342,7 @@ def resolver(itens, enviados, agora):
         resposta = enviados.get(e["de"])
         if resposta and resposta > quando:
             continue
-        if idade <= datetime.timedelta(days=JANELA_DIAS):
-            saida[i] = e
+        saida[i] = e   # está na Caixa de Entrada e sem resposta: fica, de qualquer data (espelho fiel)
     return saida
 
 
@@ -347,7 +351,15 @@ def versao_textos(itens):
                                    ensure_ascii=False).encode()).hexdigest()[:10]
 
 
-def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
+def lido_confirmado(e, lido_desde, agora):
+    """Lido no Outlook há pelo menos LIDO_CONFIRMA_MINUTOS -> True; não lido (ou lido agora há pouco) -> False."""
+    desde = (lido_desde or {}).get(e["id"])
+    if not e.get("lido_outlook") or not desde:
+        return False
+    return agora - datetime.datetime.fromisoformat(desde) >= datetime.timedelta(minutes=LIDO_CONFIRMA_MINUTOS)
+
+
+def linhas_da_aba(itens, enviados, pc, agora=None, versao="", lido_desde=None):
     agora = agora or datetime.datetime.now()
     carimbo = agora.isoformat(timespec="seconds")
     corpo = sorted(itens.values(), key=lambda e: e["quando"], reverse=True)
@@ -358,9 +370,10 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
                        e["assunto"], e["quando"], ", ".join(e.get("anexos", [])), previa(e.get("texto", "")),
                        pc, carimbo, texto_quartos(e) if entrada else "",
                        reclama_falta_nota(e.get("texto", "")) if entrada else "",
-                       " ".join(e.get("classes", [])) if entrada else "", versao, e.get("analise", "") if entrada else ""])
+                       " ".join(e.get("classes", [])) if entrada else "", versao, e.get("analise", "") if entrada else "",
+                       ("TRUE" if lido_confirmado(e, lido_desde, agora) else "FALSE") if entrada else ""])
     # respostas: TODAS numa célula só ("endereço=quando;..."), as mais novas primeiro — 400 linhas viravam 80 KB
-    limite = agora - datetime.timedelta(days=JANELA_DIAS)
+    limite = agora - datetime.timedelta(days=RESPOSTAS_DIAS)
     pares, tamanho = [], 0
     for endereco, quando in sorted(enviados.items(), key=lambda x: x[1], reverse=True):
         par = f"{endereco}={quando.isoformat(timespec='seconds')}"
@@ -369,7 +382,7 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao=""):
         pares.append(par)
         tamanho += len(par) + 1
     if pares:
-        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao, ""])
+        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao, "", ""])
     return linhas
 
 
@@ -387,7 +400,7 @@ def ler_textos(linhas):
 def ler_aba(linhas):
     """Linhas de uma aba Correio_<PC> -> [dict] (entrada, enviado e resposta)."""
     chaves = ["id", "pasta", "caixa", "hotel", "de", "nome", "para", "assunto", "quando", "anexos", "previa",
-              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto", "analise"]
+              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto", "analise", "lido_outlook"]
     saida = []
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():
@@ -402,6 +415,8 @@ def ler_aba(linhas):
         e["falta_nota"] = e["falta_nota"].upper() == "TRUE"
         e["recebido"] = e["quando"]   # nome antigo (NF do Dropbox e conversa do hóspede usam)
         e["analise"], e["analise_d"] = ler_compacto(e["analise"])
+        # PC na versão antiga não tem a coluna: None (o Painel usa o lido da equipe, como antes)
+        e["lido_outlook"] = {"TRUE": True, "FALSE": False}.get(e["lido_outlook"].strip().upper())
         if e["pasta"] == RESPOSTA and e["id"] == "r:*":
             for par in e["previa"].split(";"):
                 endereco, _, quando = par.partition("=")
@@ -420,11 +435,12 @@ def dobrar_eventos(linhas):
         quando, i, acao, agente, _pc = l[:5]
         if not i or acao not in EVENTOS:
             continue
-        e = estado.setdefault(i, {"lido": False, "lido_por": "", "lido_em": "", "excluido": False, "excluido_por": ""})
+        e = estado.setdefault(i, {"lido": False, "lido_por": "", "lido_em": "", "excluido": False, "excluido_por": "",
+                                  "lido_mudou_em": ""})
         if acao == "LIDO":
-            e.update(lido=True, lido_por=agente, lido_em=quando)
+            e.update(lido=True, lido_por=agente, lido_em=quando, lido_mudou_em=quando)
         elif acao == "NAO_LIDO":
-            e.update(lido=False, lido_por="", lido_em="")
+            e.update(lido=False, lido_por="", lido_em="", lido_mudou_em=quando)
         elif acao == "EXCLUIR":
             e.update(excluido=True, excluido_por=agente)
     return estado
@@ -445,7 +461,8 @@ class Espelho:
         except (FileNotFoundError, ValueError):
             self.estado = {}
         if self.estado.get("versao") != VERSAO_ESTADO:
-            self.estado = {"vouchers": self.estado.get("vouchers", {})}   # formato antigo: relê tudo
+            # formato antigo: relê tudo (guarda o que é caro refazer: quartos do voucher e etiquetas "NF emitida")
+            self.estado = {"vouchers": self.estado.get("vouchers", {}), "nf_marcadas": self.estado.get("nf_marcadas", {})}
         self.itens = self.estado.get("itens", {})
         self._cadastro = None
 
@@ -456,20 +473,34 @@ class Espelho:
         aba = self.cfg["aba_cadastro_hoteis"]
         linhas = self.backend.ler_abas(self.central, [aba])[0].get(aba, [])
         por_caixa = {}
-        for l in linhas[1:]:
+        for l in linhas:   # a aba não tem cabeçalho: a 1ª linha já é hotel (a CECOMTUR ficava de fora); "@" separa
             if len(l) > 1 and "@" in str(l[1]):
                 por_caixa.setdefault(str(l[1]).strip().lower(), []).append(str(l[0]).strip())
         self._cadastro = (time.monotonic(), {c: " / ".join(dict.fromkeys(h)) for c, h in por_caixa.items()})
         return self._cadastro[1]
 
+    @staticmethod
+    def _caixas_do_outlook(namespace, caixas):
+        """Caixa de hotel que está no Outlook deste PC mas não no Cadastro_Hoteis (ex.: Pousada Jeri): entra também
+        (espelho fiel), com o nome tirado do endereço. Só caixas "notafiscal@" (as dos hotéis)."""
+        saida = dict(caixas)
+        for conta in namespace.Accounts:
+            caixa = str(getattr(conta, "SmtpAddress", "") or "").strip().lower()
+            if caixa.startswith("notafiscal@") and caixa not in saida:
+                dominio = caixa.split("@", 1)[1].split(".")[0]
+                saida[caixa] = re.sub(r"^(redeandrade|hotel)", "", dominio).upper() or dominio.upper()
+        return saida
+
     def volta(self, namespace):
         agora = self.relogio()
-        caixas = self._caixas()
+        caixas = self._caixas_do_outlook(namespace, self._caixas())
         antigo = str((self.cfg.get("robo_antigo") or {}).get("remetente", "")).lower()
         rede = set(caixas) | {str(self.cfg.get("conta_remetente", "")).lower(), antigo}
         ultima = self.estado.get("ultima_volta")
         completa = (not ultima or agora - datetime.datetime.fromisoformat(self.estado.get("ultima_completa", ultima))
                     > datetime.timedelta(hours=REVARRER_HORAS))
+        # caixa nova (entrou no cadastro ou no Outlook): relê tudo pra trazer os e-mails antigos dela
+        completa = completa or bool(set(caixas) - set(self.estado.get("caixas", [])))
         # análise de uma versão antiga da regra (ou só a frase): uma releitura completa refaz com o motivo principal (Etapa 2)
         completa = completa or any(str(e.get("analise", "")).strip() and f'"v":{VERSAO_ANALISE},' not in str(e["analise"])
                                    for e in self.itens.values())
@@ -477,7 +508,7 @@ class Espelho:
             datetime.datetime.fromisoformat(ultima) - datetime.timedelta(minutes=FOLGA_MINUTOS)
         if completa:
             self.itens = {}
-        limite = agora - datetime.timedelta(days=JANELA_DIAS)
+        limite = agora - datetime.timedelta(days=RESPOSTAS_DIAS)
         enviados = {e: q for e, q in self.estado.get("enviados", {}).items() if q >= limite.isoformat()}
         vouchers = dict(self.estado.get("vouchers", {}))   # {id: [quartos, nomes]} — PDF lido uma vez só
         pastas_entrada = {}   # caixa -> EntryID da Caixa de Entrada (pra saber se o e-mail foi excluído/movido)
@@ -489,8 +520,13 @@ class Espelho:
                 loja = conta.DeliveryStore
                 pasta_entrada = loja.GetDefaultFolder(6)
                 pastas_entrada[caixa] = pasta_entrada.EntryID
-                recebidos = pasta_entrada.Items.Restrict(f"[ReceivedTime] >= '{inicio:%d/%m/%Y %H:%M}'")
-                saidos = loja.GetDefaultFolder(5).Items.Restrict(f"[SentOn] >= '{inicio:%d/%m/%Y %H:%M}'")
+                if completa:   # a caixa inteira; Enviados desde o e-mail mais antigo dela (pra saber o que já foi respondido)
+                    recebidos = pasta_entrada.Items
+                    inicio_saidos = max(limite, min(inicio, self._mais_antigo(pasta_entrada) - datetime.timedelta(days=1)))
+                else:
+                    recebidos = pasta_entrada.Items.Restrict(f"[ReceivedTime] >= '{inicio:%d/%m/%Y %H:%M}'")
+                    inicio_saidos = inicio
+                saidos = loja.GetDefaultFolder(5).Items.Restrict(f"[SentOn] >= '{inicio_saidos:%d/%m/%Y %H:%M}'")
             except Exception as e:
                 logger.warning(f"⚠️ Não abri as pastas de {caixa}: {e}")
                 continue
@@ -510,6 +546,14 @@ class Espelho:
         nf_marcadas = self._marcar_nf_emitida(namespace)
         enviados_dt = {e: datetime.datetime.fromisoformat(q) for e, q in enviados.items()}
         self.itens = resolver(self.itens, enviados_dt, agora)
+        # lido no Outlook: desde quando (só vale pro Painel depois de LIDO_CONFIRMA_MINUTOS)
+        lido_desde = dict(self.estado.get("lido_desde", {}))
+        for i, e in self.itens.items():
+            if e["pasta"] == ENTRADA and e.get("lido_outlook"):
+                lido_desde.setdefault(i, agora.isoformat(timespec="seconds"))
+            else:
+                lido_desde.pop(i, None)
+        lido_desde = {i: q for i, q in lido_desde.items() if i in self.itens}
         self.estado = {"versao": VERSAO_ESTADO, "ultima_volta": agora.isoformat(timespec="seconds"),
                        "ultima_completa": agora.isoformat(timespec="seconds") if completa
                        else self.estado.get("ultima_completa", agora.isoformat(timespec="seconds")),
@@ -518,7 +562,7 @@ class Espelho:
                        "publicado": self.estado.get("publicado", ""),
                        "publicado_textos": self.estado.get("publicado_textos", ""),
                        "nf_marcadas": {i: v for i, v in nf_marcadas.items() if i in self.itens},
-                       "pedidos_caixa": self.pedidos_caixa,
+                       "pedidos_caixa": self.pedidos_caixa, "lido_desde": lido_desde, "caixas": sorted(caixas),
                        "publicado_pedidos": self.estado.get("publicado_pedidos", "")}
         salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
         self.publicar(enviados_dt)
@@ -553,13 +597,7 @@ class Espelho:
         de = remetente(item)
         corpo = str(item.Body or "")
         if e_do_robo(de, corpo, rede, antigo):
-            return
-        try:
-            cabecalhos = item.PropertyAccessor.GetProperty(PR_CABECALHOS)
-        except Exception:
-            cabecalhos = ""
-        if e_automatico(de, cabecalhos):
-            return
+            return   # solicitação do robô: aparece em Notas fiscais (aba CaixaPedidos_<PC>)
         recebido = _data(item.ReceivedTime)
         if not recebido:
             return
@@ -583,7 +621,7 @@ class Espelho:
                          "para": caixa, "assunto": str(item.Subject or ""),
                          "quando": recebido.isoformat(timespec="seconds"), "anexos": anexos,
                          "texto": proprio, "citado": citado, "quartos": vouchers[i],
-                         "classes": classes, "analise": analise}
+                         "classes": classes, "analise": analise, "lido_outlook": not bool(getattr(item, "UnRead", True))}
 
     def _analisar(self, item, hotel, nome, assunto, texto, recebido):
         """Pedido de correção: abre a NF (anexada ao e-mail ou no Dropbox) e cruza com o que o cliente escreveu."""
@@ -679,8 +717,21 @@ class Espelho:
                 item = namespace.GetItemFromID(e["entry_id"])
                 if item.Parent.EntryID != pastas_entrada[e["caixa"]]:
                     del self.itens[i]
+                else:
+                    e["lido_outlook"] = not bool(getattr(item, "UnRead", True))
             except Exception:
                 del self.itens[i]
+
+    @staticmethod
+    def _mais_antigo(pasta):
+        """Data do e-mail mais antigo da pasta (Sort + GetFirst: não varre a pasta)."""
+        try:
+            itens = pasta.Items
+            itens.Sort("[ReceivedTime]")
+            primeiro = itens.GetFirst()
+            return _data(primeiro.ReceivedTime) or datetime.datetime.now()
+        except Exception:
+            return datetime.datetime.now()
 
     def publicar(self, enviados_dt=None):
         """Duas abas, cada uma só regravada quando muda: o resumo (leve) e os textos (pesada, muda menos)."""
@@ -697,7 +748,7 @@ class Espelho:
             except Exception as e:
                 logger.warning(f"⚠️ Não consegui publicar os textos dos e-mails ({e})")
                 versao = self.estado.get("publicado_textos", "")
-        linhas = linhas_da_aba(self.itens, enviados_dt, pc, self.relogio(), versao)
+        linhas = linhas_da_aba(self.itens, enviados_dt, pc, self.relogio(), versao, self.estado.get("lido_desde"))
         assinatura = hashlib.sha1(json.dumps([l[:12] + l[13:] for l in linhas], ensure_ascii=False).encode()).hexdigest()
         if assinatura != self.estado.get("publicado"):
             try:

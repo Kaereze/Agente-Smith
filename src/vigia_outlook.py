@@ -20,6 +20,7 @@ class Vigia:
         self.relogio = relogio
         self.ultima = None
         self.vistos = {}   # EntryID -> quando foi visto (só pra não avisar duas vezes)
+        self.tamanhos = {}  # caixa -> quantos itens na Caixa de Entrada (diminuiu = excluiu/moveu no Outlook)
 
     def novidades(self, namespace):
         """-> {"enviado": n, "recebido": n} de e-mails novos desde a última olhada. A 1ª olhada só
@@ -28,8 +29,16 @@ class Vigia:
         primeira = self.ultima is None
         desde = (agora - datetime.timedelta(minutes=FOLGA_MINUTOS)) if primeira \
             else self.ultima - datetime.timedelta(minutes=FOLGA_MINUTOS)
-        novos = {"enviado": 0, "recebido": 0}
+        novos = {"enviado": 0, "recebido": 0, "saiu": 0}
         for conta in namespace.Accounts:
+            try:
+                n = conta.DeliveryStore.GetDefaultFolder(6).Items.Count
+                caixa = str(conta.SmtpAddress or "").lower()
+                if caixa in self.tamanhos and n < self.tamanhos[caixa]:
+                    novos["saiu"] += self.tamanhos[caixa] - n
+                self.tamanhos[caixa] = n
+            except Exception:
+                pass
             for pasta, tipo in PASTAS.items():
                 campo = "SentOn" if pasta == 5 else "ReceivedTime"
                 try:

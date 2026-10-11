@@ -22,13 +22,13 @@ async function carregarCorreio() {
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 
-const doEscopo = e => escopo === "equipe" || meuHotel(e.hotel) || nomeAgente(e.pc) === st.agente;
-const emailsDa = caixa => (cx.dados?.emails || []).filter(e => !cx.escondidos[e.id] && doEscopo(e) && (caixa === "urgencia" ? e.urgente : !e.urgente));
+const doEscopo = (e, alvo) => doAgente([nomeAgente(e.pc)], alvo);   // a caixa é do PC de quem (filtro dos 4 agentes)
+const emailsDa = (caixa, alvo) => (cx.dados?.emails || []).filter(e => !cx.escondidos[e.id] && doEscopo(e, alvo) && (caixa === "urgencia" ? e.urgente : !e.urgente));
 function desenharLateralCorreio() {
   const c = cx.dados?.contagem || {};
   const n = (id, v, alerta) => { const el = $(id); if (!el) return; el.textContent = v ? v.toLocaleString("pt-BR") : "";
     el.classList.toggle("alerta-n", !!(alerta && v)); };
-  n("nav-entrada-n", escopo === "equipe" ? c.entrada_nao_lidos : emailsDa("entrada").filter(e => e.lido === false).length);
+  n("nav-entrada-n", emailsDa("entrada").filter(e => e.lido === false).length);   // não lidos do Outlook, do agente escolhido
   n("nav-urgencia-n", emailsDa("urgencia").length, true);
 }
 
@@ -77,7 +77,8 @@ function desenharCorreio() {
   const lista = itensDaTela(busca);
   const naoLidos = lista.filter(e => e.pasta !== "enviado" && e.lido === false).length;
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
-  $("escopo-emails").innerHTML = escopoHtml();
+  $("escopo-emails").innerHTML = escopoHtml(v => cx.caixa === "enviados"
+    ? (cx.dados?.enviados || []).filter(e => doEscopo(e, v)).length : emailsDa(cx.caixa, v).length);
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
@@ -141,9 +142,10 @@ function desenharAcoes() {
   if (!e) {
     el.classList.add("vazio-acoes");
     const c = cx.dados?.contagem || {};
-    el.innerHTML = `<div class="ind"><b>${(c.entrada_nao_lidos || 0).toLocaleString("pt-BR")}</b><small>não lidos na entrada</small></div>
+    const quem = escopoAtual() === "todos" ? "nas 4 caixas" : "de " + escopoAtual();
+    el.innerHTML = `<div class="ind"><b>${emailsDa("entrada").filter(e => e.lido === false).length.toLocaleString("pt-BR")}</b><small>não lidos na entrada ${esc(quem)}</small></div>
       <div class="ind urg"><b>${emailsDa("urgencia").length.toLocaleString("pt-BR")}</b><small>em urgência</small></div>
-      <div class="ind"><b>${(cx.dados?.enviados || []).length.toLocaleString("pt-BR")}</b><small>enviados nas últimas 24 h</small></div>
+      <div class="ind"><b>${(cx.dados?.enviados || []).filter(e => doEscopo(e)).length.toLocaleString("pt-BR")}</b><small>enviados nas últimas 24 h</small></div>
       <span class="dica-prof so-texto" style="margin-left:auto">Clique num e-mail pra ler e responder · ↑ ↓ andam pela lista · tecla ? = ajuda</span>`;
     return;
   }

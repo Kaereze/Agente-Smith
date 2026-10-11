@@ -59,3 +59,35 @@ def test_solicitacao_sem_formulario_aparece_com_aviso():
     ligados, sem = dados.ligar_caixa([], caixas)
     assert ligados == {} and len(sem) == 1
     assert sem[0]["sem_formulario"] and sem[0]["nome"] == "Nivaldo Anderson Chaves da Silva" and sem[0]["na_caixa"]["pc"] == "PC1"
+
+
+# ---------- Caixa de entrada fiel ao Outlook (11/10/2026) ----------
+import correio
+
+
+def test_lido_no_outlook_so_vale_depois_de_5_minutos():
+    agora = datetime.datetime(2026, 10, 11, 12, 0)
+    e = {"id": "x", "lido_outlook": True}
+    assert not ee.lido_confirmado(e, {"x": "2026-10-11T11:57:00"}, agora)   # marcou há 3 min: pode ter sido sem querer
+    assert ee.lido_confirmado(e, {"x": "2026-10-11T11:54:00"}, agora)
+    assert not ee.lido_confirmado({"id": "x", "lido_outlook": False}, {"x": "2026-10-11T11:00:00"}, agora)
+
+
+def test_clique_no_painel_vale_ate_o_outlook_confirmar():
+    e = {"lido_outlook": False, "atualizado": "2026-10-11T12:00:00"}
+    assert correio.lido_atual(e, {"lido": True, "lido_mudou_em": "2026-10-11T12:01:00"}) is True    # abriu no Painel
+    assert correio.lido_atual(e, {"lido": True, "lido_mudou_em": "2026-10-11T11:00:00"}) is False   # o Outlook é mais novo
+    assert correio.lido_atual({"lido_outlook": True, "atualizado": "2026-10-11T12:00:00"}, {}) is True
+    assert correio.lido_atual({"lido_outlook": None}, {"lido": True}) is True   # PC na versão antiga: lido da equipe
+
+
+def test_coluna_lido_outlook_vai_e_volta():
+    agora = datetime.datetime(2026, 10, 11, 12, 0)
+    itens = {"a": {"id": "a", "pasta": "entrada", "caixa": "nf@h", "hotel": "H", "de": "ana@x.com", "assunto": "NF",
+                   "quando": "2026-10-11T10:00:00", "lido_outlook": True},
+             "b": {"id": "b", "pasta": "entrada", "caixa": "nf@h", "hotel": "H", "de": "bia@x.com", "assunto": "NF",
+                   "quando": "2026-10-11T10:00:00", "lido_outlook": False}}
+    linhas = ee.linhas_da_aba(itens, {}, "PC1", agora, "v", {"a": "2026-10-11T11:00:00"})
+    lidos = {e["id"]: e["lido_outlook"] for e in ee.ler_aba(linhas)}
+    assert lidos == {"a": True, "b": False}
+    assert ee.ler_aba([ee.CABECALHO[:18], ["z", "entrada"] + [""] * 16])[0]["lido_outlook"] is None   # versão antiga

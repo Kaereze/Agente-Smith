@@ -238,6 +238,10 @@ class Estado:
                 self.status = status
                 self.atualizado_em, self.erro = dados.agora(), ""
             self._montar_correio()
+            try:
+                self._lido_no_outlook()
+            except Exception:
+                logger.debug("lido no Outlook", exc_info=True)
             try:   # deixa a lista da tela pronta: quem abre o Painel não espera o cálculo (usuário, 11/10/2026)
                 self.fila_da_tela(60)
             except Exception:
@@ -438,6 +442,65 @@ class Estado:
         convs = correio.conversas(entrada)
         with self.lock:
             self.eventos_correio, self.entrada_correio, self.enviados_correio, self.convs = eventos, entrada, enviados, convs
+
+    LIDO_APLICADO = PASTA_ESTADO / "lido_aplicado.json"
+    LIDO_OUTLOOK_DESDE = "2026-10-11T11:55:36"   # clique de antes desta regra não vai pro Outlook (era só o lido da equipe)
+
+    def _lido_no_outlook(self):
+        """Abriu (ou "Não lido") no Painel -> o PC dono da caixa marca igual no Outlook dele (usuário, 11/10/2026).
+        Cada PC só mexe nos e-mails das próprias caixas; cada clique é levado 1 vez só (lido_aplicado.json), até
+        24 h depois (PC que estava desligado leva quando ligar). Só muda a marca de lido, nada mais no e-mail."""
+        if getattr(self, "demo", False) or getattr(self, "_lido_rodando", False):
+            return
+        pc = socket.gethostname()
+        if not hasattr(self, "_lido_aplicado"):
+            try:
+                self._lido_aplicado = json.load(open(self.LIDO_APLICADO, encoding="utf-8"))
+            except (FileNotFoundError, ValueError):
+                self._lido_aplicado = {}
+        with self.lock:
+            eventos = espelho_emails.dobrar_eventos(self.eventos_linhas + self.eventos_pendentes)
+            meus = [e for e in self.emails if e["pc"] == pc and e["pasta"] == espelho_emails.ENTRADA]
+        corte = max(self.LIDO_OUTLOOK_DESDE,
+                    (datetime.datetime.now() - datetime.timedelta(hours=24)).isoformat(timespec="seconds"))
+        tarefas = []
+        for e in meus:
+            ev = eventos.get(e["id"]) or {}
+            q = ev.get("lido_mudou_em", "")
+            if q and q >= corte and self._lido_aplicado.get(e["id"]) != q:
+                tarefas.append((e["id"], bool(ev.get("lido")), q))
+        if not tarefas:
+            return
+        self._lido_rodando = True
+
+        def rodar():
+            try:
+                import pythoncom
+                import win32com.client
+                pythoncom.CoInitialize()
+                ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                for i, lido, q in tarefas:
+                    entry = espelho_emails.entry_do_email(i)
+                    try:
+                        if entry:
+                            item = ns.GetItemFromID(entry)
+                            if bool(item.UnRead) == lido:
+                                item.UnRead = not lido
+                                item.Save()
+                                logger.info(f"📬 Outlook: marcado como {'lido' if lido else 'não lido'} (pedido pelo Painel) · "
+                                            f"{str(item.Subject or '')[:60]}")
+                    except Exception as erro:
+                        logger.debug(f"lido no Outlook ({i}): {erro}")
+                    self._lido_aplicado[i] = q
+                corte_local = (datetime.datetime.now() - datetime.timedelta(hours=48)).isoformat(timespec="seconds")
+                self._lido_aplicado = {k: v for k, v in self._lido_aplicado.items() if v >= corte_local}
+                salvar_json(self.LIDO_APLICADO, self._lido_aplicado)
+            except Exception:
+                logger.exception("lido no Outlook")
+            finally:
+                self._lido_rodando = False
+
+        threading.Thread(target=rodar, daemon=True).start()
 
     def _avisar_urgencias(self):
         """Aviso do Windows só quando um e-mail das caixas DESTE PC entra em Urgência (usuário, 08/10/2026)."""
@@ -656,11 +719,16 @@ class Estado:
             raise ValueError("ação desconhecida")
         pc = socket.gethostname()
         with self.lock:
+            na_tela = {x["id"]: x["lido"] for x in getattr(self, "entrada_correio", [])}   # o que aparece (vem do Outlook)
             for i in ids[:200]:
-                atual = self.eventos_correio.get(i, {}).get("lido", False)
+                atual = na_tela.get(i, self.eventos_correio.get(i, {}).get("lido", False))
                 if atual != (acao == "LIDO"):
                     self.eventos_pendentes.append(espelho_emails.evento(str(i), acao, agente, pc))
         self._montar_correio()
+        try:   # e-mail das caixas deste PC: já marca no Outlook (sem esperar a próxima volta)
+            self._lido_no_outlook()
+        except Exception:
+            logger.debug("lido no Outlook", exc_info=True)
         return {"ok": True}
 
     def _gravar_eventos_pendentes(self):

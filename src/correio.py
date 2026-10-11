@@ -33,6 +33,16 @@ def motivo_urgencia(classes, dias, alerta=""):
     return f"{int(dias)} dias sem resposta" if dias > ee.URGENCIA_DIAS else ""
 
 
+def lido_atual(e, ev):
+    """Lido/não lido do Outlook (usuário, 11/10/2026). Um clique no Painel mais novo que a última leitura do
+    espelho vale até o PC dono levar pro Outlook. PC na versão antiga (sem a coluna): o lido da equipe."""
+    if e.get("lido_outlook") is None:
+        return ev.get("lido", False)
+    if ev.get("lido_mudou_em") and ev["lido_mudou_em"] >= e.get("atualizado", ""):
+        return ev.get("lido", False)
+    return bool(e["lido_outlook"])
+
+
 def juntar(emails, eventos, agora, alertas=None):
     """emails: linhas de todas as Correio_<PC> (espelho_emails.ler_aba). eventos: espelho_emails.dobrar_eventos.
     alertas: {endereço: "CPF/CNPJ da NF ... diferente do pedido"} (vai pra Urgência).
@@ -59,7 +69,7 @@ def juntar(emails, eventos, agora, alertas=None):
         quando = _data(e["quando"])
         dias = (agora - quando).total_seconds() / 86400 if quando else 0
         motivo = motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""))
-        entrada.append({**e, "lido": ev.get("lido", False), "lido_por": ev.get("lido_por", ""),
+        entrada.append({**e, "lido": lido_atual(e, ev), "lido_por": ev.get("lido_por", ""),
                         "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),
                         "urgente": bool(motivo), "motivo_urgencia": motivo, "alerta_doc": alertas.get(e["de"], "")})
     entrada.sort(key=lambda e: e["quando"], reverse=True)

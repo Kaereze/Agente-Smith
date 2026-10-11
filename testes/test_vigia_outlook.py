@@ -22,14 +22,14 @@ def test_so_avisa_o_que_e_novo_e_nao_conta_duas_vezes():
     ns = types.SimpleNamespace(Accounts=[caixa])
     vig = v.Vigia(relogio=lambda: relogio[0])
     caixa.chega(5, "velho")
-    assert vig.novidades(ns) == {"enviado": 0, "recebido": 0}   # 1ª olhada só memoriza
+    assert vig.novidades(ns) == {"enviado": 0, "recebido": 0, "saiu": 0}   # 1ª olhada só memoriza
     caixa.chega(5, "E1")
     caixa.chega(6, "R1")
     caixa.chega(6, "convite", classe=26)                        # não é e-mail: ignora
     relogio[0] += datetime.timedelta(seconds=20)
-    assert vig.novidades(ns) == {"enviado": 1, "recebido": 1}
+    assert vig.novidades(ns) == {"enviado": 1, "recebido": 1, "saiu": 0}
     relogio[0] += datetime.timedelta(seconds=20)
-    assert vig.novidades(ns) == {"enviado": 0, "recebido": 0}   # os mesmos e-mails não avisam de novo
+    assert vig.novidades(ns) == {"enviado": 0, "recebido": 0, "saiu": 0}   # os mesmos e-mails não avisam de novo
 
 
 def test_pasta_que_falha_nao_derruba_o_vigia():

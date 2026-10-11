@@ -29,8 +29,9 @@ def test_respondido_some_e_enviado_fica_so_24h():
              "env_hoje": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-06T08:00:00"},
              "env_ontem": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-05T08:00:00"}}
     enviados = {"ana@x.com": D(2026, 10, 6, 11, 0), "bia@x.com": D(2026, 10, 6, 9, 0)}
-    # ana respondida depois do e-mail (some); bia respondida ANTES (segue); sem data e +14 dias saem
-    assert sorted(ee.resolver(itens, enviados, D(2026, 10, 6, 12, 0))) == ["b", "env_hoje"]
+    # ana respondida depois do e-mail (some); bia respondida ANTES (segue); sem data sai; antigo na caixa FICA
+    # (espelho fiel da Caixa de Entrada, usuário 11/10/2026)
+    assert sorted(ee.resolver(itens, enviados, D(2026, 10, 6, 12, 0))) == ["b", "env_hoje", "velho"]
 
 
 def test_aba_ida_e_volta():
@@ -193,7 +194,8 @@ def test_volta_espelha_entrada_e_enviados_e_some_o_resolvido(tmp_path, monkeypat
     esp = ee.Espelho(central, cfg, relogio=lambda: agora[0])
     esp.volta(ol)
     resumo = ee.ler_aba(central.abas["Correio_PC-A"])
-    assert sorted(e["de"] for e in resumo if e["pasta"] == "entrada") == ["ana@gmail.com", "bia@gmail.com"]
+    # o robô vai pra Notas fiscais; a Booking está na Caixa de Entrada, então aparece (espelho fiel, 11/10/2026)
+    assert sorted(e["de"] for e in resumo if e["pasta"] == "entrada") == ["ana@gmail.com", "bia@gmail.com", "noreply@booking.com"]
     textos = ee.ler_textos(central.abas["CorreioTexto_PC-A"])
     assert textos[ee.id_do_email("E1")] == ("Preciso da nota fiscal", "De: antigo\nxx")
     assert "pedido_nf" in next(e for e in resumo if e["de"] == "ana@gmail.com")["classes"]
@@ -204,15 +206,16 @@ def test_volta_espelha_entrada_e_enviados_e_some_o_resolvido(tmp_path, monkeypat
     ol.excluir(bia)
     esp.volta(ol)
     resumo = ee.ler_aba(central.abas["Correio_PC-A"])
-    assert [e["pasta"] for e in resumo] == ["enviado", "resposta"]
-    assert resumo[0]["para"] == "ana@gmail.com" and resumo[1]["de"] == "ana@gmail.com"
-    assert ee.ler_textos(central.abas["CorreioTexto_PC-A"]).keys() == {ee.id_do_email("S1")}
+    assert [(e["pasta"], e["de"]) for e in resumo if e["pasta"] != "enviado"] == [("entrada", "noreply@booking.com"),
+                                                                              ("resposta", "ana@gmail.com")]   # a Booking segue na caixa
+    assert next(e for e in resumo if e["pasta"] == "enviado")["para"] == "ana@gmail.com"
+    assert ee.ler_textos(central.abas["CorreioTexto_PC-A"]).keys() == {ee.id_do_email("S1"), ee.id_do_email("E4")}
     assert central.leituras == 1   # o cadastro é lido 1 vez e guardado (cota)
 
     # dia seguinte, 11:00 — o enviado passou de 24 h: some também; o espelho fica vazio, nada acumula
     agora[0] = D(2026, 10, 9, 11, 0)
     esp.volta(ol)
-    assert [e["pasta"] for e in ee.ler_aba(central.abas["Correio_PC-A"])] == ["resposta"]
+    assert [e["pasta"] for e in ee.ler_aba(central.abas["Correio_PC-A"])] == ["entrada", "resposta"]   # só o que está na caixa
 
 
 def test_espelho_nao_regrava_a_aba_se_nada_mudou(tmp_path, monkeypatch):

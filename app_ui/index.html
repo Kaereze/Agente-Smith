@@ -905,7 +905,7 @@ body.professor .dica-prof{display:flex}
   <div class="palco" role="main">
     <header class="topo">
       <div class="trilha-nav">Painel Fiscal / <b id="trilha">Caixa de entrada</b></div>
-      <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Buscar hóspede, e-mail, CPF/CNPJ, nº da NF, hotel…" aria-label="Buscar"></label>
+      <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…" aria-label="Pesquisar no Outlook"></label>
       <div class="topo-filtro" id="topo-filtro"></div>
       <span class="pill demo oculta" id="pill-demo">Modo demonstração · dados fictícios</span>
       <div class="sync">
@@ -1199,7 +1199,7 @@ function passa(it, ignorar = "", busca) {   // ignorar: "origem|sit"...
   if (busca) return termosDaBusca(busca).every(re => re.test(textoDo(it)));
   if (!ignorar.includes("sit") && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
   if (!ignorar.includes("agente") && agenteF && !agentesDo(it).includes(agenteF)) return false;
-  if (!ignorar.includes("escopo") && escopo === "meus" && !agentesDo(it).includes(st.agente)) return false;
+  if (!ignorar.includes("escopo") && !doAgente(agentesDo(it))) return false;
   if (!ignorar.includes("hotel") && hotel && !it.hoteis.includes(hotel)) return false;
   if (it.tipo === "form") return true;   // espelho da caixa: sem período nem "e-mail ao hotel" (está tudo no Outlook)
   if (!ignorar.includes("envio") && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
@@ -1232,16 +1232,24 @@ const tagQuartos = m => m.quartos >= 2
 const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s.nota_unica)}">1 nota a pedido do hóspede</span>` : "";
 
 // "Equipe toda" (padrão) ou "Meus hotéis" — vale pra Notas, E-mails e os números da lateral; lembrado neste PC
-let escopo = "equipe";
-try { if (localStorage.getItem("painel.escopo") === "meus") escopo = "meus"; } catch (e) {}
+// Filtro dos 4 agentes (usuário, 11/10/2026): Todos · João · Clara · Cristian · Bernardo. Cada um vê a própria
+// Caixa de Entrada do Outlook (o agente do PC dono da caixa). Abre no agente deste PC; a escolha fica guardada.
+let escopo = "";
+try { escopo = localStorage.getItem("painel.agenteFiltro") || ""; } catch (e) {}
+const ORDEM_AGENTES = ["João", "Clara", "Cristian", "Bernardo"];
+const agentesEquipe = () => { const da = (st.pcs || []).map(p => p.agente).filter(Boolean);
+  return [...ORDEM_AGENTES.filter(a => da.includes(a)), ...da.filter(a => !ORDEM_AGENTES.includes(a)).sort()]; };
+const escopoAtual = () => { const e = escopo || st.agente || "todos"; return e === "todos" || agentesEquipe().includes(e) ? e : "todos"; };
+const doAgente = (agentes, alvo = escopoAtual()) => alvo === "todos" || agentes.includes(alvo);
 const meuHotel = h => String(h || "").split(" / ").some(x => AG[x] === st.agente);
-function escopoHtml() {
-  const meus = (st.hoteis || []).filter(h => h.agente === st.agente).length, todos = (st.hoteis || []).length;
-  return `<button data-escopo="equipe" aria-pressed="${escopo === "equipe"}">Equipe toda <span class="qt">${todos}</span></button>` +
-    `<button data-escopo="meus" aria-pressed="${escopo === "meus"}" title="Só os hotéis de ${esc(st.agente || "")}">Meus hotéis <span class="qt">${meus}</span></button>`;
+function escopoHtml(contar) {
+  const atual = escopoAtual();
+  return [["todos", "Todos"], ...agentesEquipe().map(a => [a, a])].map(([v, rotulo]) =>
+    `<button data-escopo="${esc(v)}" aria-pressed="${atual === v}" title="${v === "todos" ? "As caixas dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}">${esc(rotulo)}${
+      contar ? ` <span class="qt">${contar(v).toLocaleString("pt-BR")}</span>` : ""}</button>`).join("");
 }
 function desenharLateral() {   // como o Outlook: o número é de solicitações não lidas na Caixa de Entrada
-  const n = TODOS.filter(it => it.tipo === "form" && !it.s.na_caixa?.lido && (escopo === "equipe" || agentesDo(it).includes(st.agente))).length;
+  const n = TODOS.filter(it => it.tipo === "form" && !it.s.na_caixa?.lido && doAgente(agentesDo(it))).length;
   $("nav-notas-n").textContent = n ? n.toLocaleString("pt-BR") : "";
   $("nav-notas-n").title = "Solicitações não lidas na Caixa de Entrada";
 }
@@ -1275,7 +1283,7 @@ function pilula(campo, rotulo, valor, padrao) {
 }
 
 function desenharFiltros(busca, total) {
-  $("escopo-notas").innerHTML = escopoHtml();
+  $("escopo-notas").innerHTML = escopoHtml(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
   $("abas-origem").innerHTML = ORIGENS.map(([o, nome]) =>
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
       conta("origem|sit", it => it.tipo === o, busca).toLocaleString("pt-BR")}</span></button>`).join("");
@@ -1300,7 +1308,7 @@ function desenharFiltros(busca, total) {
       ${hist.length ? `<span class="st-sep"></span><span class="st-rot">Resolvidas</span>${hist.map(aba).join("")}` : ""}</div>`;
   const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
   const algum = hotel || agenteF;
-  $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) + pilula("agente", "Agente", agenteF) +
+  $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) +
     (algum ? `<button class="fp-limpar" data-limpa="tudo">Limpar filtros</button>` : "") +
     (busca ? `<span class="aviso-busca">Buscando em toda a aba: situação e filtros não valem enquanto pesquisa</span>` : "") +
     `<span class="resultado">${total.toLocaleString("pt-BR")} ${total === 1 ? "resultado" : "resultados"}</span>`;
@@ -1365,7 +1373,7 @@ function fecharPop(volta = false) {
 // Visão geral e outros atalhos abrem a tela de notas já filtrada
 function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = {}) {
   origem = o; if (o === "form") filtro = f; else filtroEmail = f;
-  agenteF = agente; hotel = ""; envio = "todos"; pagina = 0; sel = null; emailSel = null;
+  agenteF = ""; if (agente) escopo = agente; hotel = ""; envio = "todos"; pagina = 0; sel = null; emailSel = null;
   $("busca").value = ""; guardarCaixa(); trocarVista("fila");
 }
 
@@ -1617,8 +1625,10 @@ document.addEventListener("keydown", e => {
   if (l && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); l.click(); }
 });
 $("busca").addEventListener("input", () => {
-  if (pn.vista === "correio") return agendarBusca();   // nos e-mails, a busca vai direto ao Outlook dos 4 PCs
-  pagina = 0; irPraCaixa(); desenhar();
+  // a busca de cima vai sempre direto ao Outlook dos 4 PCs (usuário, 11/10/2026): nada fica guardado no Painel
+  if (pn.vista !== "correio" && $("busca").value.trim().length >= 3) trocarVista("correio");
+  if (pn.vista === "correio") return agendarBusca();
+  pagina = 0; desenhar();
 });
 // Tema: segue o Windows (padrão), claro ou escuro — fica guardado neste PC
 const TEMAS = [["", "Sistema"], ["light", "Claro"], ["dark", "Escuro"]];
@@ -1738,7 +1748,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-escopo]");
   if (!b) return;
   escopo = b.dataset.escopo;
-  try { localStorage.setItem("painel.escopo", escopo); } catch (er) {}
+  try { localStorage.setItem("painel.agenteFiltro", escopo); } catch (er) {}
   pagina = 0; desenharLateral(); desenhar();
   if (typeof desenharCorreio === "function") { desenharLateralCorreio(); desenharCorreio(); }
 });
