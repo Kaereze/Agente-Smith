@@ -19,6 +19,7 @@ async function carregarCorreio() {
     for (const [k, t] of Object.entries(cx.resolvendo)) if (agora - t > RESOLVENDO_MS) delete cx.resolvendo[k];
     desenharLateralCorreio();
     if (pn.vista === "correio") desenharCorreio();
+    else if (pn.vista === "fila" && $("op-cartoes-notas")) $("op-cartoes-notas").innerHTML = cartoesOperadores();   // e-mails chegaram
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 
@@ -77,8 +78,7 @@ function desenharCorreio() {
   const lista = itensDaTela(busca);
   const naoLidos = lista.filter(e => e.pasta !== "enviado" && e.lido === false).length;
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
-  $("escopo-emails").innerHTML = escopoHtml(v => cx.caixa === "enviados"
-    ? (cx.dados?.enviados || []).filter(e => doEscopo(e, v)).length : emailsDa(cx.caixa, v).length);
+  $("op-cartoes-emails").innerHTML = cartoesOperadores();
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
@@ -96,9 +96,11 @@ function desenharCorreio() {
     if (g && g !== grupo) { html += `<div class="cx-grupo">${g}</div>`; grupo = g; }
     html += linhaEmail(e);
   }
+  const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
   const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
-    : cx.caixa === "entrada" ? "Nenhum e-mail esperando resposta." : cx.caixa === "urgencia" ? "Nenhum e-mail em urgência." : "Nada enviado nas últimas 24 h.";
-  $("cx-lista").innerHTML = html || `<div class="vazio">${vazio}</div>`;
+    : cx.caixa === "enviados" ? "Nada enviado nas últimas 24 h." : "";
+  $("cx-lista").innerHTML = html || (vazio ? `<div class="vazio">${vazio}</div>`
+    : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Nenhum e-mail esperando resposta na caixa${quem}.`));
   if (idFoco) $("cx-lista").querySelector(`.cx-l[data-id="${CSS.escape(idFoco)}"]`)?.focus();
   desenharLeituraCorreio();
 }
@@ -180,7 +182,7 @@ function linhaEmail(e) {
       aria-selected="${sel}" data-id="${esc(e.id)}" title="${e.urgente ? esc(e.motivo_urgencia || "Urgente") : ""}">
     <div class="cx-l1">${e.urgente && !cinza ? `<span class="cx-ponto" aria-label="urgente"></span>` : ""}<span class="cx-quem">${esc(quem)}</span>
       <span class="cx-hora">${horaCurta(e.quando)}</span></div>
-    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}<span class="cx-onde"> · ${esc(e.hotel || "")}${situacao}</span></div>
+    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}<span class="cx-onde"> · ${esc(e.hotel || "")}${situacao}</span>${e.pc ? opMini(nomeAgente(e.pc)) : ""}</div>
     ${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
 

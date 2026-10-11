@@ -105,7 +105,7 @@ function desenharMaquinas() {
       : p.versao === d.versao ? `<span class="dado">${esc(p.versao)}</span> · igual a este PC` : `<span class="dado">${esc(p.versao)}</span> · <span class="alerta-txt">diferente deste PC</span>`;
     const conf = antigo ? "sem informação" : p.conferencia_atrasada ? `<span class="ruim-txt">parada (${haQuanto(p.conferencia)})</span>`
       : p.conferencia ? haQuanto(p.conferencia) : "aguardando a primeira volta";
-    return `<article class="maq ${cls}"><div class="maq-cab"><div><b>${esc(p.agente || "?")}</b><span class="dado">${esc(p.pc)}${p.pc === d.este_pc ? " · este PC" : ""}</span></div>
+    return `<article class="maq ${cls}"><div class="maq-cab"><div><b><span class="op-av" style="background:${corOp(p.agente)}">${esc(inicial(p.agente))}</span>${esc(p.agente || "?")}</b><span class="dado">${esc(p.pc)}${p.pc === d.este_pc ? " · este PC" : ""}</span></div>
         <span class="pill"><span class="dot ${ponto}"></span>${p.online ? "No ar" : "Desligado"}</span></div>
       <dl><dt>Visto</dt><dd>${haQuanto(p.visto.replace(" ", "T"))}</dd>
         <dt>Outlook</dt><dd>${antigo ? "sem informação" : p.outlook === "aberto" ? `<span style="color:var(--ok)">aberto</span>` : `<span class="ruim-txt">${esc(p.outlook || "?")}</span>`}</dd>
@@ -159,63 +159,6 @@ function categoriaVisao(s) {
 }
 const diasAtras = iso => Math.round((new Date(hojeIso() + "T12:00") - new Date(String(iso).slice(0, 10) + "T12:00")) / 86400000);
 
-// Faixa do topo (usuário, 08/10/2026): 5 indicadores compactos com %, a tendência contra o período anterior (mesmo
-// tamanho) e a linha dos pedidos de cada dia. Pra baixo é bom em tudo, menos nas NFs emitidas (pra cima é bom).
-function faixaResumo({ abertos, emailsSem, velhos, naoEmitida, envioPend, tratativas, comNf, pedidos, ini, hoje }) {
-  const n = v => (v ?? 0).toLocaleString("pt-BR");
-  const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
-  const dias = [];
-  for (const d = new Date(ini); d <= hoje; d.setDate(d.getDate() + 1)) dias.push(d.toLocaleDateString("sv-SE"));
-  const antesIni = new Date(ini); antesIni.setDate(antesIni.getDate() - dias.length);
-  const corteAntes = antesIni.toLocaleDateString("sv-SE"), corte = dias[0];
-  const anteriores = st.fila.filter(s => s.data >= corteAntes && s.data < corte);
-  // Só compara com o período anterior se ele existe INTEIRO nos dados (senão a seta mente: ▲ 635%)
-  const inicioDados = st.fila.reduce((m, s) => s.data && s.data < m ? s.data : m, "9999");
-  const comparavel = inicioDados <= corteAntes;
-  const serie = f => dias.map(dia => pedidos.filter(s => s.data === dia && f(s)).length);
-  const tendencia = (agora, antes, bomSubir, rotulo) => {
-    if (!comparavel || !antes) return "";
-    const v = Math.round(100 * (agora - antes) / antes);
-    const dica = `${rotulo}: ${agora.toLocaleString("pt-BR")} contra ${antes.toLocaleString("pt-BR")} nos ${dias.length} dias anteriores`;
-    if (!v) return `<span class="tend igual" title="${dica}">= 0%</span>`;
-    const cls = bomSubir === null ? "igual" : (v > 0) === bomSubir ? "bom" : "ruim";
-    return `<span class="tend ${cls}" title="${dica}">${v > 0 ? "▲" : "▼"} ${Math.abs(v)}%</span>`;
-  };
-  // NF enviada ao hóspede, pela data REAL do envio (o e-mail com a nota): mede o que a equipe entregou em cada período
-  const dataEnvio = q => { const m = String(q).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
-  const enviadasEntre = (a, b) => st.fila.reduce((t, s) => t + (s.envios || []).filter(v => { const d = dataEnvio(v.quando); return d >= a && d < b; }).length, 0);
-  const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
-  const enviadasAgora = enviadasEntre(corte, amanha.toLocaleDateString("sv-SE")), enviadasAntes = enviadasEntre(corteAntes, corte);
-  const semNf = s => ["na_fila", "aguardando_envio"].includes(s.situacao);
-  const abertoF = s => s.situacao !== "concluida";
-  const itens = [
-    { ir: "aberto", rot: "Em aberto", v: abertos.length + emailsSem.length, cor: COR_VIZ.andamento,
-      extra: tendencia(pedidos.length, anteriores.length, null, "Pedidos recebidos"),
-      sub: `<b>${n(velhos)}</b> há mais de 7 dias · ${n(emailsSem.length)} e-mails`, linha: serie(abertoF) },
-    { ir: "na_fila", rot: "Sem NF", v: naoEmitida, cor: COR_VIZ.sem_nf, pct: pct(naoEmitida, abertos.length), extra: "",
-      sub: "dos pedidos em aberto", linha: serie(semNf) },
-    { ir: "envio_pendente", rot: "Envio pendente", v: envioPend, cor: COR_VIZ.envio, extra: "",
-      sub: "nota pronta, e-mail não saiu", linha: serie(s => s.envio_pendente) },
-    { ir: "tratativa", rot: "Tratativas", v: tratativas, cor: COR_VIZ.andamento, pct: pct(tratativas, abertos.length), extra: "",
-      sub: "dos em aberto · esperando o hóspede", linha: serie(s => s.situacao === "tratativa") },
-    { ir: "concluida", rot: `NFs · ${dias.length} dias`, v: comNf, cor: COR_VIZ.emitida, pct: pct(comNf, pedidos.length),
-      extra: tendencia(enviadasAgora, enviadasAntes, true, "NFs enviadas aos hóspedes"),
-      sub: `dos ${n(pedidos.length)} pedidos já têm NF · ${n(enviadasAgora)} enviadas`, linha: serie(s => s.nfs.length > 0) },
-  ];
-  return `<div class="faixa-resumo" role="group" aria-label="Resumo do período">${itens.map(i => `
-    <button class="fr-item" data-ir="${i.ir}" style="--cor:${i.cor}" title="Abrir a lista: ${esc(i.rot)}">
-      <span class="fr-rot">${esc(i.rot)}</span>
-      <span class="fr-num"><span class="kpi-v">${n(i.v)}</span>${i.pct !== undefined ? `<span class="fr-pct">${i.pct}%</span>` : ""}${i.extra}</span>
-      ${miniLinha(i.linha)}
-      <span class="fr-sub">${i.sub}</span></button>`).join("")}</div>`;
-}
-function miniLinha(valores) {   // linha dos pedidos de cada dia, com área clara embaixo; se desenha ao abrir
-  const L = 120, A = 28, max = Math.max(1, ...valores), passo = valores.length > 1 ? L / (valores.length - 1) : L;
-  const pts = valores.map((v, k) => `${(k * passo).toFixed(1)},${(A - 2 - (v / max) * (A - 6)).toFixed(1)}`).join(" ");
-  return `<svg class="fr-linha" viewBox="0 0 ${L} ${A}" preserveAspectRatio="none" aria-hidden="true">
-    <polygon points="0,${A} ${pts} ${L},${A}" fill="var(--cor)" opacity=".13"/>
-    <polyline points="${pts}" fill="none" stroke="var(--cor)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" pathLength="100"/></svg>`;
-}
 // ---------- Gerência (em teste) — pedido do usuário, 08/10/2026 ----------
 // O gerente vê tudo o que a equipe está fazendo, em tempo real: o dia de hoje (pedidos e e-mails recebidos, e-mails
 // enviados, NFs emitidas e o cruzamento dos três) e cada PC. Depois: só o gerente acessa (login), ligações e
@@ -270,6 +213,37 @@ function contarNumeros(el) {   // os números grandes sobem do zero até o valor
     requestAnimationFrame(passo);
   });
 }
+// Visão geral = o que está AGORA no Outlook dos 4 PCs (usuário, 11/10/2026), igual às telas Notas e Caixa de
+// entrada (mesmos números, mesmo filtro de operador). O gráfico dos pedidos de cada dia fica como histórico.
+function faixaAgora(sol, mails, enviados) {
+  const n = v => (v ?? 0).toLocaleString("pt-BR");
+  const abertas = sol.filter(it => it.s.situacao !== "concluida");
+  const itens = [
+    { ir: "notas:todas", rot: "Solicitações na caixa", v: sol.length, cor: COR_VIZ.andamento,
+      sub: `<b>${n(sol.filter(it => ["na_fila", "aguardando_envio"].includes(it.s.situacao)).length)}</b> sem NF · ${n(sol.filter(it => !it.s.na_caixa?.lido).length)} não lidas` },
+    { ir: "notas:atrasadas", rot: "Atrasadas +7 dias", v: abertas.filter(it => diasAtras(it.s.data) > 7).length, cor: COR_VIZ.sem_nf,
+      sub: "solicitações sem NF há mais de 7 dias" },
+    { ir: "correio:entrada", rot: "E-mails na caixa", v: mails.length, cor: COR_VIZ.email,
+      sub: `<b>${n(mails.filter(e => e.lido === false).length)}</b> não lidos` },
+    { ir: "correio:urgencia", rot: "Urgentes", v: mails.filter(e => e.urgente).length, cor: COR_VIZ.sem_nf,
+      sub: "correção de NF ou +7 dias sem resposta" },
+    { ir: "correio:enviados", rot: "Enviados · 24 h", v: enviados.length, cor: COR_VIZ.emitida,
+      sub: "o que saiu das caixas dos hotéis" },
+  ];
+  return `<div class="faixa-resumo" role="group" aria-label="Agora, no Outlook dos 4 PCs">${itens.map(i => `
+    <button class="fr-item" data-ir-agora="${i.ir}" style="--cor:${i.cor}" title="Abrir: ${esc(i.rot)}">
+      <span class="fr-rot">${esc(i.rot)}</span>
+      <span class="fr-num"><span class="kpi-v">${n(i.v)}</span></span>
+      <span class="fr-sub">${i.sub}</span></button>`).join("")}</div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-ir-agora]");
+  if (!b) return;
+  const [tela, qual] = b.dataset.irAgora.split(":");
+  if (tela === "notas") return abrirNotas({ filtro: qual, agente: escopoAtual() === "todos" ? "" : escopoAtual() });
+  trocarVista("correio"); abrirCaixa(qual);
+});
+
 function desenharVisao() {
   const el = $("visao");
   if (!st.atualizado_em) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
@@ -277,15 +251,11 @@ function desenharVisao() {
   const hoje = new Date(hojeIso() + "T12:00"), ini = new Date(hoje);
   ini.setDate(ini.getDate() - (pn.janela - 1));
   const corte = ini.toLocaleDateString("sv-SE");
-  const pedidos = st.fila.filter(s => s.data >= corte);
-  const base = filaBase();   // contadores: os 45 dias de sempre (os dias a mais só servem pra comparar períodos)
-  const abertos = base.filter(s => s.situacao !== "concluida");
-  const emailsSem = st.emails.filter(m => !m.notas?.length);
-  const naoEmitida = base.filter(s => ["na_fila", "aguardando_envio"].includes(s.situacao)).length;
-  const envioPend = base.filter(s => s.envio_pendente).length;
-  const tratativas = base.filter(s => s.situacao === "tratativa").length;   // mesmo critério do cartão "Tratativa"
-  const velhos = abertos.filter(s => diasAtras(s.data) > 7).length;
-  const comNf = pedidos.filter(s => s.nfs.length).length;
+  const pedidos = st.fila.filter(s => s.data >= corte);   // histórico: pedidos dos formulários no período
+  // agora, no Outlook: solicitações da Caixa de Entrada (Notas) e e-mails (Caixa de entrada), do operador escolhido
+  const sol = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it)));
+  const mails = (cx.dados?.emails || []).filter(e => doEscopo(e));
+  const enviados = (cx.dados?.enviados || []).filter(e => doEscopo(e));
   // gráfico 1: os pedidos de cada dia e o que aconteceu com eles
   const porDia = {};
   for (const d = new Date(ini); d <= hoje; d.setDate(d.getDate() + 1)) porDia[d.toLocaleDateString("sv-SE")] = {};
@@ -293,40 +263,42 @@ function desenharVisao() {
   const dias = Object.entries(porDia).map(([data, partes]) => ({
     rotulo: data.slice(8, 10) + "/" + data.slice(5, 7), partes,
     titulo: new Date(data + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) }));
-  // gráfico 2: o que está em aberto, por agente (clicar abre as notas dele)
+  // gráfico 2: o que está na Caixa de Entrada de cada operador (clicar abre as notas dele)
   const ag = {};
   const somar = (a, k) => { (ag[a] ||= {})[k] = (ag[a][k] || 0) + 1; };
-  base.forEach(s => { if (s.situacao !== "concluida" || s.envio_pendente) somar(AG[s.hotel] || "Sem agente", categoriaVisao(s)); });
-  emailsSem.forEach(m => somar(m.hotel.split(" / ").map(h => AG[h]).find(Boolean) || m.agente_pc || "Sem agente", "email"));
+  sol.forEach(it => { if (it.s.situacao !== "concluida" || it.s.envio_pendente) somar(agentesDo(it)[0] || "Sem agente", categoriaVisao(it.s)); });
+  mails.forEach(m => somar(nomeAgente(m.pc) || "Sem agente", "email"));
   const total = p => SERIES_AGENTE.reduce((a, s) => a + (p[s.k] || 0), 0);
   const porAgente = Object.entries(ag).map(([rotulo, partes]) => ({ rotulo, partes })).sort((a, b) => total(b.partes) - total(a.partes));
   // espera dos pedidos em aberto
   const faixas = [["Até 2 dias", 0, 2], ["3 a 7 dias", 3, 7], ["8 a 15 dias", 8, 15], ["Mais de 15 dias", 16, 1e9]];
   // cores do prazo (as mesmas da coluna Espera): até 2 dias verde, até 7 âmbar, acima vermelho
   const corFaixa = [COR_VIZ.emitida, COR_VIZ.envio, COR_VIZ.sem_nf, COR_VIZ.sem_nf];
+  const esperando = [...sol.filter(it => it.s.situacao !== "concluida").map(it => it.s.data), ...mails.map(e => e.quando)];
   const idade = faixas.map(([rotulo, a, b], k) => ({ rotulo, cor: corFaixa[k], atrasada: a > 7,
-    n: abertos.filter(s => { const d = diasAtras(s.data); return d >= a && d <= b; }).length }));
+    n: esperando.filter(q => { const d = diasAtras(q); return d >= a && d <= b; }).length }));
   const botaoTabela = id => `<button class="link" data-vt="${id}">${pn.tabela[id] ? "Ver gráfico" : "Ver em tabela"}</button>`;
   const kpi = (alvo, rot, v, sub, cor) => `<button class="kpi-b" data-ir="${alvo}" style="--cor:${cor}">
       <span class="kpi-r">${rot}</span><span class="kpi-v">${n(v)}</span><span class="kpi-s">${sub}</span></button>`;
+  const quem = escopoAtual() === "todos" ? "nas caixas dos 4 PCs" : "na Caixa de Entrada de " + escopoAtual();
   el.innerHTML = `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
-      <span class="dica">Pedidos da Planilha Central e e-mails dos hóspedes · atualiza sozinho</span></div>
-      <div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
-        `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div></div>
-    <p class="dica-prof" style="margin:-6px 0 14px">Como estamos? A faixa abaixo resume o período escolhido (7 a 45 dias): clique num indicador pra abrir a lista. A seta compara com o período anterior; a linha mostra os pedidos de cada dia.</p>
-    ${faixaResumo({ abertos, emailsSem, velhos, naoEmitida, envioPend, tratativas, comNf, pedidos, ini, hoje })}
-    <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
-      <div class="sub">Cada coluna é o dia em que o hóspede pediu; as cores mostram a situação da nota hoje. Passe o mouse.</div></div>
-      ${botaoTabela("dias")}</div>
-      <div id="leg-dias" style="margin:4px 0 10px"></div><div id="graf-dias"></div></div>
+      <span class="dica">Agora, no Outlook · ${esc(quem)} · atualiza sozinho</span></div></div>
+    <div class="op-cartoes" role="group" aria-label="Caixa de Entrada de cada operador" style="margin-bottom:14px">${cartoesOperadores()}</div>
+    <p class="dica-prof" style="margin:0 0 14px">Como estamos agora? Os números são os mesmos das telas Notas fiscais e Caixa de entrada: o que está no Outlook neste momento. Clique num operador pra ver só a caixa dele, ou num indicador pra abrir a lista.</p>
+    ${faixaAgora(sol, mails, enviados)}
     <div class="grade2">
-      <div class="cartao"><div class="cartao-topo"><div><h3>Em aberto por agente</h3><div class="sub">Clique num agente para ver as notas dele</div></div>
+      <div class="cartao"><div class="cartao-topo"><div><h3>Na Caixa de Entrada, por operador</h3><div class="sub">Solicitações e e-mails esperando. Clique num operador para ver as notas dele</div></div>
         ${botaoTabela("agentes")}</div>
         <div id="leg-agentes" style="margin:4px 0 10px"></div><div id="graf-agentes"></div></div>
-      <div class="cartao"><div class="cartao-topo"><div><h3>Há quanto tempo esperam</h3><div class="sub">Pedidos em aberto, pelo dia em que foram feitos. Clique para ver.</div></div>
+      <div class="cartao"><div class="cartao-topo"><div><h3>Há quanto tempo esperam</h3><div class="sub">Solicitações sem NF e e-mails na caixa, pelo dia em que chegaram</div></div>
         ${botaoTabela("idade")}</div>
         <div id="graf-idade" style="margin-top:14px"></div></div>
-    </div>`;
+    </div>
+    <div class="cartao"><div class="cartao-topo"><div><h3>Histórico: pedidos de cada dia e o que aconteceu com eles</h3>
+      <div class="sub">Formulários da Planilha Central (inclui os já resolvidos e fora do Outlook). Cada coluna é o dia em que o hóspede pediu.</div></div>
+      <div style="display:flex;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
+        `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div>${botaoTabela("dias")}</div></div>
+      <div id="leg-dias" style="margin:4px 0 10px"></div><div id="graf-dias"></div></div>`;
   if (pn.animar && !matchMedia("(prefers-reduced-motion: reduce)").matches) { pn.animar = false; el.classList.add("anima"); contarNumeros(el); }
   else el.classList.remove("anima");
   // cada gráfico também como tabela (leitor de tela, teclado e quem prefere números)
@@ -342,9 +314,10 @@ function desenharVisao() {
   if (pn.tabela.agentes) $("graf-agentes").innerHTML = tabela(["Agente", ...SERIES_AGENTE.map(s => s.nome), "Total"],
     porAgente.map(a => [a.rotulo, ...SERIES_AGENTE.map(s => a.partes[s.k] || 0), somaSeries(a.partes, SERIES_AGENTE)]));
   else graficoBarrasEmpilhadas($("graf-agentes"), porAgente, SERIES_AGENTE, {
-    aoClicar: it => { abrirNotas({ agente: it.rotulo === "Sem agente" ? "" : it.rotulo, filtro: "aberto" }); } });
+    aoClicar: it => { abrirNotas({ agente: it.rotulo === "Sem agente" ? "" : it.rotulo, filtro: "todas" }); } });
   if (pn.tabela.idade) $("graf-idade").innerHTML = tabela(["Espera", "Pedidos em aberto"], idade.map(i => [i.rotulo, i.n]));
-  else graficoBarrasH($("graf-idade"), idade, { aoClicar: it => abrirNotas({ filtro: it.atrasada ? "atrasadas" : "aberto" }) });
+  else graficoBarrasH($("graf-idade"), idade, { aoClicar: it => abrirNotas({ filtro: it.atrasada ? "atrasadas" : "aberto",
+    agente: escopoAtual() === "todos" ? "" : escopoAtual() }) });
 }
 
 // ---------- Enviar pendentes: o caminho que o robô faz, com as linhas reais do log ----------

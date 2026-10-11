@@ -91,3 +91,15 @@ def test_coluna_lido_outlook_vai_e_volta():
     lidos = {e["id"]: e["lido_outlook"] for e in ee.ler_aba(linhas)}
     assert lidos == {"a": True, "b": False}
     assert ee.ler_aba([ee.CABECALHO[:18], ["z", "entrada"] + [""] * 16])[0]["lido_outlook"] is None   # versão antiga
+
+
+def test_copia_dos_hoteis_le_a_planilha_do_hotel():
+    """11/10/2026: a leitura da planilha do hotel passava um argumento a mais pro _api (e um nome não importado):
+    a cópia dos hotéis parou por 2,5 dias. Aqui a leitura roda com um cliente falso."""
+    import types
+    import sincronizar
+    chamadas = []
+    http = types.SimpleNamespace(values_batch_get=lambda *a, **k: chamadas.append(a) or {"valueRanges": [{"values": [["Carimbo"], ["x"]]}]})
+    cliente = types.SimpleNamespace(http_client=http)
+    aba, linhas = sincronizar._ler_planilha_hotel(cliente, {"id": "planilha1"}, {})
+    assert linhas == [["Carimbo"], ["x"]] and chamadas

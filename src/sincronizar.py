@@ -189,8 +189,7 @@ def _ler_planilha_hotel(cliente, arquivo, cfg):
     preferida = cfg.get("fontes_hoteis", {}).get("aba_respostas", "Respostas ao formulário 1")
     try:
         r = _api("leitura", lambda: cliente.http_client.values_batch_get(
-            arquivo["id"], [nome_intervalo(preferida)], params={"valueRenderOption": "FORMATTED_VALUE"}),
-            e_erro_passageiro_google)
+            arquivo["id"], [nome_intervalo(preferida)], params={"valueRenderOption": "FORMATTED_VALUE"}))   # _api já repete o erro passageiro
         return preferida, r["valueRanges"][0].get("values", [])
     except Exception as e:
         if "unable to parse range" not in str(e).lower() and "400" not in str(e):

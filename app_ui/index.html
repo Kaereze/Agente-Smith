@@ -193,6 +193,25 @@ label.sel::after{content:"";position:absolute;right:14px;top:50%;width:7px;heigh
 .ficha dt{color:var(--tinta-3);font-size:13px}
 .ficha dd{overflow-wrap:anywhere}
 .ficha dl > :nth-last-child(-n+2){border-bottom:0}
+/* ficha enxuta (usuário, 11/10/2026): dados do formulário em 2 colunas quando cabe; Anotar e Histórico fechados */
+#detalhe{container-type:inline-size}
+@container (min-width: 760px){
+  .ficha-form dl{grid-template-columns:minmax(120px,170px) minmax(0,1fr) minmax(120px,170px) minmax(0,1fr)}
+  .ficha-form dl > :nth-last-child(-n+4){border-bottom:0}
+}
+details.dobra > summary{cursor:pointer;list-style:none}
+details.dobra > summary::-webkit-details-marker{display:none}
+details.dobra > summary .rot::before{content:"▸ ";color:var(--tinta-3)}
+details.dobra[open] > summary .rot::before{content:"▾ "}
+details.dobra:not([open]) > summary{border-bottom:0}
+/* cor de cada operador (avatar com a inicial) */
+.op-av{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;color:#fff;font:700 11px var(--f-dado);flex:none;vertical-align:middle;margin-right:7px}
+.op-cartao{border-left:4px solid var(--cor-op,var(--linha))}
+.op-mini{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;color:#fff;font:700 9.5px var(--f-dado);vertical-align:1px;margin-left:6px}
+/* caixa em dia */
+.vazio.feliz{gap:6px;color:var(--tinta-2)}
+.vazio.feliz .feliz-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--ok-fundo);color:var(--ok);font-size:24px;margin:0 auto 4px}
+.vazio.feliz b{font:600 17px var(--f-titulo);color:var(--tinta)}
 .anexos{display:flex;gap:10px;flex-wrap:wrap}
 .anexo{display:flex;align-items:center;gap:10px;border:1px solid var(--linha);border-radius:9px;padding:9px 12px;background:var(--folha-2);min-width:0}
 .anexo .ext{width:30px;height:36px;border-radius:4px;background:var(--erro-fundo);color:var(--erro);display:grid;place-items:center;font:600 9px var(--f-dado);flex:none}
@@ -801,6 +820,20 @@ body.professor .dica-prof{display:flex}
 .escopo button .qt{font:600 11.5px var(--f-dado);opacity:.8}
 .escopo button[aria-pressed="true"]{background:var(--verde);color:var(--sobre-verde);box-shadow:0 2px 8px rgba(10,107,78,.2)}
 .notas-topo .escopo,.cx-cab .escopo{margin-left:auto;align-self:center}
+/* faixa dos operadores (usuário, 11/10/2026): solicitações e e-mails da Caixa de Entrada de cada um; clicou, filtra */
+.op-cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%}
+.op-cartao{display:grid;gap:3px;text-align:left;padding:10px 14px;border:1px solid var(--linha);border-radius:12px;background:var(--folha);
+  color:var(--tinta);cursor:pointer;transition:border-color .15s,background .15s;font:inherit}
+.op-cartao:hover{border-color:var(--verde)}
+.op-cartao[aria-pressed="true"]{background:var(--verde);border-color:var(--verde);color:var(--sobre-verde)}
+.op-cartao .op-nome{font:600 14px var(--f-titulo)}
+.op-cartao .op-linha{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline;font-size:12.5px;color:var(--tinta-2);min-width:0}
+.op-cartao[aria-pressed="true"] .op-linha{color:inherit;opacity:.9}
+.op-cartao .op-linha b{font:600 16px var(--f-dado);color:var(--tinta)}
+.op-cartao[aria-pressed="true"] .op-linha b{color:inherit}
+.op-cartao .op-urg{color:var(--erro);font-weight:600}
+.op-cartao[aria-pressed="true"] .op-urg{color:inherit}
+.cx-cab .op-cartoes{flex-basis:100%}
 .notas-topo{align-items:center}
 .ajuda{width:min(760px,94vw)}
 .ajuda-corpo{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 22px;overflow-y:auto}
@@ -925,7 +958,7 @@ body.professor .dica-prof{display:flex}
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta" id="v-correio" aria-label="E-mails">
       <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span>
-        <div class="escopo" role="group" aria-label="De quem" id="escopo-emails"></div>
+        <div class="op-cartoes" role="group" aria-label="Caixa de Entrada de cada operador" id="op-cartoes-emails"></div>
         <p class="dica-prof" id="cx-dica"></p></div>
       <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
       <div class="mesa" id="cx-mesa">
@@ -940,8 +973,8 @@ body.professor .dica-prof{display:flex}
         <div class="notas-topo">
           <h1><span id="titulo-caixa">Notas fiscais</span> <span class="n" id="titulo-n"></span></h1>
           <div class="abas-origem" role="tablist" id="abas-origem"></div>
-          <div class="escopo" role="group" aria-label="De quem" id="escopo-notas"></div>
         </div>
+        <div class="op-cartoes" role="group" aria-label="Caixa de Entrada de cada operador" id="op-cartoes-notas"></div>
         <p class="dica-prof">Igual ao Outlook: aqui ficam as solicitações do robô que estão na Caixa de Entrada dos 4 PCs. Tirou o e-mail da Caixa de Entrada (moveu ou excluiu), ele some daqui. Cada linha: o hóspede e a hora em que chegou; embaixo, a situação e o hotel. Em negrito = não lido · ponto vermelho = tem aviso. Clique numa solicitação pra abrir a ficha; as abas filtram pela situação (vermelho = sem NF, azul = em andamento, verde = emitida).</p>
         <div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
         <div class="filtros-linha" id="filtros-linha"></div>
@@ -1112,6 +1145,9 @@ function espelhoCaixa() {
   return st.fila.filter(s => s.na_caixa).concat((st.filaRep || []).filter(s => s.na_caixa && !principais.has(s.repetido_de)));
 }
 const nomePc = pc => (st.pcs || []).find(p => p.pc === pc)?.agente || pc;
+// bolinha com a inicial e a cor do operador dono da caixa (só no "Todos": com um operador escolhido é redundante)
+const opMini = nome => nome && escopoAtual() === "todos"
+  ? `<span class="op-mini" style="background:${corOp(nome)}" title="Caixa de ${esc(nome)}">${esc(inicial(nome))}</span>` : "";
 function agentesDo(it) {
   if (it.tipo === "form" && it.s.na_caixa?.pc) return [nomePc(it.s.na_caixa.pc)];   // quem tem a caixa no Outlook
   const a = it.hoteis.map(h => AG[h]).filter(Boolean);
@@ -1242,11 +1278,25 @@ const agentesEquipe = () => { const da = (st.pcs || []).map(p => p.agente).filte
 const escopoAtual = () => { const e = escopo || st.agente || "todos"; return e === "todos" || agentesEquipe().includes(e) ? e : "todos"; };
 const doAgente = (agentes, alvo = escopoAtual()) => alvo === "todos" || agentes.includes(alvo);
 const meuHotel = h => String(h || "").split(" / ").some(x => AG[x] === st.agente);
-function escopoHtml(contar) {
+// Cartões dos operadores: solicitações (Notas fiscais) e e-mails da Caixa de Entrada de cada um, nas duas telas
+function cartoesOperadores() {
   const atual = escopoAtual();
-  return [["todos", "Todos"], ...agentesEquipe().map(a => [a, a])].map(([v, rotulo]) =>
-    `<button data-escopo="${esc(v)}" aria-pressed="${atual === v}" title="${v === "todos" ? "As caixas dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}">${esc(rotulo)}${
-      contar ? ` <span class="qt">${contar(v).toLocaleString("pt-BR")}</span>` : ""}</button>`).join("");
+  const emails = (typeof cx !== "undefined" && cx.dados?.emails) || [];
+  const agenteDoPc = pc => (st.pcs || []).find(p => p.pc === pc)?.agente || pc;
+  const de = v => {
+    const solic = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length;
+    const meus = emails.filter(e => doAgente([agenteDoPc(e.pc)], v));
+    return { solic, emails: meus.length, naoLidos: meus.filter(e => e.lido === false).length, urg: meus.filter(e => e.urgente).length };
+  };
+  return [["todos", "Todos"], ...agentesEquipe().map(a => [a, a])].map(([v, rotulo]) => {
+    const n = de(v), fmt = x => x.toLocaleString("pt-BR");
+    return `<button class="op-cartao" data-escopo="${esc(v)}" aria-pressed="${atual === v}" style="--cor-op:${v === "todos" ? "var(--linha-forte)" : corOp(v)}"
+        title="${v === "todos" ? "As Caixas de Entrada dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}: clique pra ver só ${v === "todos" ? "tudo" : "o dele(a)"}">
+      <span class="op-nome">${v === "todos" ? `<span class="op-av" style="background:var(--tinta-3)">4</span>` : `<span class="op-av" style="background:${corOp(v)}">${esc(inicial(v))}</span>`}${esc(rotulo)}</span>
+      <span class="op-linha"><b>${fmt(n.solic)}</b> ${n.solic === 1 ? "solicitação" : "solicitações"}</span>
+      <span class="op-linha"><b>${fmt(n.emails)}</b> e-mails · ${fmt(n.naoLidos)} não lidos${n.urg ? ` · <span class="op-urg">${fmt(n.urg)} urgente${n.urg > 1 ? "s" : ""}</span>` : ""}</span>
+    </button>`;
+  }).join("");
 }
 function desenharLateral() {   // como o Outlook: o número é de solicitações não lidas na Caixa de Entrada
   const n = TODOS.filter(it => it.tipo === "form" && !it.s.na_caixa?.lido && doAgente(agentesDo(it))).length;
@@ -1283,7 +1333,7 @@ function pilula(campo, rotulo, valor, padrao) {
 }
 
 function desenharFiltros(busca, total) {
-  $("escopo-notas").innerHTML = escopoHtml(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
+  $("op-cartoes-notas").innerHTML = cartoesOperadores();
   $("abas-origem").innerHTML = ORIGENS.map(([o, nome]) =>
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
       conta("origem|sit", it => it.tipo === o, busca).toLocaleString("pt-BR")}</span></button>`).join("");
@@ -1394,7 +1444,7 @@ function linhaHtml(it) {
         title="${alerta ? "Tem um aviso: abra pra ver" : ""}">
       <div class="cx-l1">${alerta ? `<span class="cx-ponto" aria-label="tem aviso"></span>` : ""}<span class="cx-quem">${esc(s.nome)}</span><span class="cx-hora">${chegou(it.quando)}</span></div>
       <div class="cx-l2"><span class="nf-sit" style="color:${COR_SIT[s.situacao] || "inherit"}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span>
-        <span class="cx-onde"> · ${esc(s.hotel)}</span>${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div></div>`;
+        <span class="cx-onde"> · ${esc(s.hotel)}</span>${opMini(agentesDo(it)[0])}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div></div>`;
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
@@ -1423,13 +1473,14 @@ function desenhar(){
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   pagina = Math.min(pagina, paginas - 1);
   $("titulo-caixa").textContent = busca ? `Busca: “${busca}”` : "Notas fiscais";
-  if (!lista.length && !busca && !TODOS.length) { $("lista").innerHTML = `<div class="vazio">Nenhuma solicitação na Caixa de Entrada dos PCs.<br>Igual ao Outlook: quando o robô mandar uma, ela aparece aqui.</div>`; }
   $("titulo-n").textContent = "";
   const p = periodo === "0" ? "" : ` dos últimos ${periodo} dias`;
   $("lista").innerHTML = lista.length ? lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA).map(linhaHtml).join("")
     : busca ? `<div class="vazio">Nada com “${esc(busca)}” ${origem === "form" ? "nos formulários" + (periodo === "0" ? "" : " carregados") : "nos e-mails sem resposta"}.<br>
         Veja a outra aba${origem === "email" ? "; e-mail já respondido só aparece no Outlook" : ""}.</div>`
-    : `<div class="vazio">Nada com esses filtros${p}.<br>Escolha outra situação ou tire um filtro.</div>`;
+    : filtro === "todas" && !hotel ? caixaEmDia(escopoAtual() === "todos"
+      ? "Nenhuma solicitação na Caixa de Entrada dos 4 PCs." : `Nenhuma solicitação na Caixa de Entrada de ${escopoAtual()}.`)
+    : `<div class="vazio">Nada com esses filtros.<br>Escolha outra situação ou tire um filtro.</div>`;
   const de = lista.length ? pagina * POR_PAGINA + 1 : 0, ate = Math.min(lista.length, (pagina + 1) * POR_PAGINA);
   $("pag-txt").textContent = `Mostrando ${de.toLocaleString("pt-BR")}–${ate.toLocaleString("pt-BR")} de ${lista.length.toLocaleString("pt-BR")}` +
     (busca ? " · busca na aba inteira" : hotel ? " · " + hotel : agenteF ? " · hotéis de " + agenteF : "");
@@ -1467,11 +1518,10 @@ function desenharDetalhe() {
         <span class="quando">${esc(s.carimbo)}<br><span class="dado">linha ${s.linha}</span></span>
         <span class="de">&lt;${esc(s.email)}&gt;</span></div>
       <div class="etiquetas"><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span>
-        <span class="etq">Formulário (QR code)</span><span class="etq">${esc(s.hotel)}${AG[s.hotel] ? " · " + esc(AG[s.hotel]) : ""}</span>
-        <span class="etq ${s.enviado ? "" : "ruim"}">${s.enviado ? "E-mail ao hotel enviado" : "E-mail ao hotel não enviado"}</span>
+        ${s.prazo ? prazoHtml(s.prazo) : ""}
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
         ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}
-        ${s.prazo ? `<span class="etq">Prazo do pedido (48 h): ${prazoHtml(s.prazo)}</span>` : ""}</div></header>
+        ${s.enviado ? "" : `<span class="etq ruim">E-mail ao hotel não enviado</span>`}</div></header>
     <div class="corpo-msg">${noOutlookHtml(s)}${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
       <section class="ficha ficha-form"><div class="ficha-tit"><span class="rot">Ficha do formulário</span><span class="dica">${dataBr(s.data)}</span></div>
         <dl><dt>E-mail do hóspede</dt><dd>${esc(s.email)}</dd>${s.campos.map(c =>
@@ -1486,12 +1536,12 @@ function desenharDetalhe() {
             : `<span class="dica">Envio por e-mail não registrado (pedido de mais de 14 dias)</span>`) : ""}
           <div class="linha-form"><input id="d-nf" placeholder="Número da NF emitida" inputmode="numeric"><button class="prim" id="d-nf-ok">Marcar NF</button></div>
         </div></section>
-      <section class="ficha ficha-trat"><div class="ficha-tit"><span class="rot">Tratativa / observação</span></div>
+      <details class="ficha ficha-trat dobra" data-dobra="trat" ${DOBRA.trat ? "open" : ""}><summary class="ficha-tit"><span class="rot">Anotar / registrar tratativa</span><span class="dica">clique pra abrir</span></summary>
         <div class="ficha-corpo"><textarea id="d-txt" placeholder="Ex.: pedi o CNPJ correto por e-mail"></textarea>
-          <div class="linha-form" style="justify-content:flex-end"><button data-txt="OBS">Anotar</button><button class="creme" data-txt="TRATATIVA">Registrar tratativa</button></div></div></section>
-      <section><div class="rot" style="margin-bottom:10px">Histórico</div>
-        ${hist.length ? `<div class="historico">${hist.map(h => `<div class="passo-h"><span class="dado">${quando(h.quando)}</span><b>${esc(h.agente)}</b> ${esc(rotulo(h))}</div>`).join("")}</div>`
-          : `<span class="dica">Sem ações ainda.</span>`}</section>
+          <div class="linha-form" style="justify-content:flex-end"><button data-txt="OBS">Anotar</button><button class="creme" data-txt="TRATATIVA">Registrar tratativa</button></div></div></details>
+      <details class="ficha dobra" data-dobra="hist" ${DOBRA.hist ? "open" : ""}><summary class="ficha-tit"><span class="rot">Histórico · ${hist.length}</span><span class="dica">quem fez o quê</span></summary>
+        <div class="ficha-corpo">${hist.length ? `<div class="historico">${hist.map(h => `<div class="passo-h"><span class="dado">${quando(h.quando)}</span><b>${esc(h.agente)}</b> ${esc(rotulo(h))}</div>`).join("")}</div>`
+          : `<span class="dica">Sem ações ainda.</span>`}</div></details>
     </div>`;
 }
 
@@ -1499,6 +1549,12 @@ function desenharDetalhe() {
 const linhaPedido = o => `<div class="outro-ped" data-k="${esc(o.chave)}" role="button" tabindex="0"><span class="dado">${dataBr(o.data)} ${esc(horaDoCarimbo(o.carimbo))}</span>
   <span>${esc(o.hotel)} · ${esc(o.nome)}${o.email ? ` <span class="dado">&lt;${esc(o.email)}&gt;</span>` : ""}</span>
   <span style="color:${COR_SIT[o.situacao] || "inherit"}">${NOMES[o.situacao] || o.situacao}${o.nfs?.length ? " · NF " + esc(o.nfs.join(", ")) : ""}</span></div>`;
+function caixaEmDia(texto) {
+  return `<div class="vazio feliz"><div class="feliz-ic" aria-hidden="true">✓</div><b>Caixa em dia!</b><span>${esc(texto)}</span></div>`;
+}
+// seções que abrem e fecham (Anotar, Histórico): ficam como você deixou, mesmo com a lista atualizando a cada 15 s
+const DOBRA = { trat: false, hist: false };
+document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.dobra) DOBRA[d.dataset.dobra] = d.open; }, true);
 function noOutlookHtml(s) {
   const c = s.na_caixa;
   if (!c) return `<div class="no-outlook"><span>Esta solicitação <b>não está</b> na Caixa de Entrada de nenhum PC (já foi tratada no Outlook).</span></div>`;
@@ -1751,6 +1807,7 @@ document.addEventListener("click", e => {
   try { localStorage.setItem("painel.agenteFiltro", escopo); } catch (er) {}
   pagina = 0; desenharLateral(); desenhar();
   if (typeof desenharCorreio === "function") { desenharLateralCorreio(); desenharCorreio(); }
+  if (pn.vista === "visao") desenharVisao();
 });
 window.addEventListener("resize", () => { if (popAberto) desenharPop(); });
 
