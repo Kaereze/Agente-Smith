@@ -1067,6 +1067,31 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .tab-op tr[data-escopo]:hover td{background:var(--folha-2)}
 .tab-op tr.sel td{background:var(--creme)!important;color:var(--creme-tinta)}
 
+
+/* Operadores em abas acima da tabela (usuário, 11/10/2026: escolheu "abas acima da tabela") */
+.abas-op{display:flex;gap:4px 26px;flex-wrap:wrap;border-bottom:1px solid var(--linha);margin-top:6px;width:100%}
+.abas-op button{border:0!important;border-radius:0!important;background:transparent!important;padding:9px 2px 10px;margin-bottom:-1px;
+  font:500 14px var(--f-texto);color:var(--tinta-2);gap:8px;box-shadow:none}
+.abas-op button:hover{color:var(--tinta)}
+.abas-op button[aria-pressed="true"]{color:var(--tinta);font-weight:600;box-shadow:inset 0 -2px 0 var(--verde)}
+.abas-op .qt{font:500 12px var(--f-dado);color:var(--tinta-3);background:var(--folha-2);border:1px solid var(--linha);border-radius:4px;padding:1px 6px}
+.abas-op button[aria-pressed="true"] .qt{background:var(--creme);border-color:var(--creme-borda);color:var(--creme-tinta)}
+.linha-filtros{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:8px 0 2px;width:100%}
+.linha-filtros .fim{margin-left:auto;display:flex;align-items:center;gap:10px}
+.linha-filtros .st-tab{font-size:13px;padding:4px 2px}
+.cx-cab .linha-filtros:has(.fim:only-child){padding-top:6px}
+.det-op{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;padding:9px 12px;margin-top:8px;width:100%;
+  background:var(--creme);border:1px solid var(--creme-borda);border-radius:var(--raio);font-size:13px;color:var(--creme-tinta)}
+.det-op b{font:600 13px var(--f-dado);color:var(--tinta)}
+.det-op .det-quem{font-weight:600;color:var(--tinta)}
+.det-op .urg,.det-op .urg b{color:var(--erro)}
+.det-op:empty{display:none}
+.abas-linha{display:flex;align-items:center;gap:12px;width:100%;border-bottom:1px solid var(--linha);margin-top:6px}
+.abas-linha .abas-op{border-bottom:0;margin-top:0;width:auto;flex:1}
+.abas-linha #cx-filtro-hotel{margin-left:auto;padding-bottom:4px}
+.avisos-tela:empty{display:none}
+.notas-cab,.cx-cab{row-gap:12px!important}
+.notas-cab .abas-op,.notas-cab .det-op,.cx-cab .abas-linha,.cx-cab .det-op{margin-top:0}
 </style>
 </head>
 <body>
@@ -1161,10 +1186,8 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
     <section class="vista oculta" id="v-correio" aria-label="E-mails">
       <div class="cx-cab"><h1 id="cx-titulo">Caixa de entrada</h1><span class="cx-sub" id="cx-sub"></span>
         <p class="dica-prof" id="cx-dica"></p>
-        <div class="barra-tela" role="toolbar" aria-label="Filtros">
-          <div class="grupo"><span class="rot-barra">Operador</span><div class="seg-op" role="group" aria-label="Operador" id="op-cartoes-emails"></div></div>
-          <div class="grupo fim"><div id="cx-filtro-hotel"></div></div>
-        </div></div>
+        <div class="abas-linha"><div class="abas-op" role="tablist" aria-label="Operador" id="op-cartoes-emails"></div><div id="cx-filtro-hotel"></div></div>
+        <div class="det-op" id="det-op-emails" aria-live="polite"></div></div>
       <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
       <div class="mesa" id="cx-mesa">
         <section class="quadro cx-quadro" aria-label="Lista de e-mails"><div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div></section>
@@ -1182,10 +1205,11 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
         </div>
         <p class="dica-prof">Igual ao Outlook: aqui ficam as solicitações do robô que estão na Caixa de Entrada dos 4 PCs. Tirou o e-mail da Caixa de Entrada (moveu ou excluiu), ele some daqui. Cada linha: o hóspede e a hora em que chegou; embaixo, a situação e o hotel. Em negrito = não lido · ponto vermelho = tem aviso. Clique numa solicitação pra abrir a ficha (ou arraste o PDF da NF em cima dela: já abre o envio com a nota); as abas filtram pela situação (vermelho = sem NF, azul = em andamento, verde = emitida).</p>
         <div class="avisos-tela" id="notas-avisos"></div>
-        <div class="barra-tela" role="toolbar" aria-label="Filtros">
-          <div class="grupo"><span class="rot-barra">Operador</span><div class="seg-op" role="group" aria-label="Operador" id="op-cartoes-notas"></div></div>
-          <div class="grupo"><span class="rot-barra">Situação</span><div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div></div>
-          <div class="grupo fim filtros-linha" id="filtros-linha"></div>
+        <div class="abas-op" role="tablist" aria-label="Operador" id="op-cartoes-notas"></div>
+        <div class="det-op" id="det-op-notas" aria-live="polite"></div>
+        <div class="linha-filtros" role="toolbar" aria-label="Filtros">
+          <span class="rot-barra">Situação</span><div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
+          <div class="fim filtros-linha" id="filtros-linha"></div>
         </div>
       </div>
       <div class="pop oculta" id="pop" role="dialog" aria-label="Escolher filtro"></div>
@@ -1499,9 +1523,25 @@ const meuHotel = h => String(h || "").split(" / ").some(x => AG[x] === st.agente
 function segOperadores(contar) {
   const atual = escopoAtual();
   return [["todos", "Todos"], ...agentesEquipe().map(a => [a, a])].map(([v, rotulo]) =>
-    `<button data-escopo="${esc(v)}" aria-pressed="${atual === v}" title="${v === "todos" ? "As caixas dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}">${esc(rotulo)}${contar ? `<span class="qt">${contar(v).toLocaleString("pt-BR")}</span>` : ""}</button>`).join("");
+    `<button role="tab" aria-selected="${atual === v}" data-escopo="${esc(v)}" aria-pressed="${atual === v}" title="${v === "todos" ? "As caixas dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}">${esc(rotulo)}${contar ? `<span class="qt">${contar(v).toLocaleString("pt-BR")}</span>` : ""}</button>`).join("");
 }
 // Cartões dos operadores: solicitações (Notas fiscais) e e-mails da Caixa de Entrada de cada um, nas duas telas
+// abas de operador (11/10/2026): só nome + número; os detalhes do escolhido ficam numa linha embaixo
+function detalheOperador() {
+  const v = escopoAtual(), temCx = typeof emailsDa === "function";
+  const solic = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length;
+  const meus = temCx ? emailsDa("entrada", v) : [], urg = temCx ? emailsDa("urgencia", v).length : 0;
+  const naoLidos = meus.filter(e => e.lido === false).length, fmt = x => x.toLocaleString("pt-BR");
+  return `<span class="det-quem">${v === "todos" ? "Os 4 PCs" : "Caixa de " + esc(v)}</span>` +
+    `<span><b>${fmt(solic)}</b> ${solic === 1 ? "solicitação" : "solicitações"}</span>` +
+    `<span><b>${fmt(meus.length)}</b> e-mails na caixa</span><span><b>${fmt(naoLidos)}</b> não lidos</span>` +
+    `<span class="${urg ? "urg" : ""}"><b>${fmt(urg)}</b> urgente${urg === 1 ? "" : "s"}</span>`;
+}
+function desenharAbasNotas() {
+  if (!$("op-cartoes-notas")) return;
+  $("op-cartoes-notas").innerHTML = segOperadores(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
+  $("det-op-notas").innerHTML = detalheOperador();
+}
 function cartoesOperadores() {
   const atual = escopoAtual();
   const emails = (typeof cx !== "undefined" && cx.dados?.emails) || [];
@@ -1556,7 +1596,7 @@ function pilula(campo, rotulo, valor, padrao) {
 }
 
 function desenharFiltros(busca, total) {
-  $("op-cartoes-notas").innerHTML = segOperadores(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
+  desenharAbasNotas();
   // resumo de 1 linha (do operador escolhido)
   const minhas = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it)));
   const semNf = minhas.filter(it => ["na_fila", "aguardando_envio"].includes(it.s.situacao)).length;

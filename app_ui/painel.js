@@ -304,7 +304,7 @@ function desenharVisao() {
           `<td class="num">${(k === 2 || k === 5) && x ? `<span class="ruim-txt">${n(x)}</span>` : n(x)}</td>`).join("")}</tr>`; }).join("")}</tbody></table></div>`;
   el.innerHTML = `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
       <span class="resumo-tela">Agora, no Outlook · ${esc(quem)}</span></div>
-      <div class="grupo" style="display:flex;align-items:center;gap:10px"><span class="rot-barra">Operador</span>
+      <div class="grupo" style="display:flex;align-items:center;gap:10px">
         <div class="seg-op" role="group" aria-label="Operador">${segOperadores(null)}</div></div></div>
     <p class="dica-prof" style="margin:0 0 14px">Como estamos agora? Os números são os mesmos das telas Notas fiscais e Caixa de entrada: o que está no Outlook neste momento. Clique num indicador pra abrir a lista.</p>
     <div class="sec-tit">Agora</div>

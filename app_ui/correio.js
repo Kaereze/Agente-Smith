@@ -19,7 +19,7 @@ async function carregarCorreio() {
     for (const [k, t] of Object.entries(cx.resolvendo)) if (agora - t > RESOLVENDO_MS) delete cx.resolvendo[k];
     desenharLateralCorreio();
     if (pn.vista === "correio") desenharCorreio();
-    else if (pn.vista === "fila" && $("op-cartoes-notas")) $("op-cartoes-notas").innerHTML = cartoesOperadores();   // e-mails chegaram
+    else if (pn.vista === "fila") desenharAbasNotas();   // e-mails chegaram: atualiza os números das abas
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 
@@ -80,6 +80,7 @@ function desenharCorreio() {
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
   $("op-cartoes-emails").innerHTML = segOperadores(v => cx.caixa === "enviados"
     ? (cx.dados?.enviados || []).filter(e => doEscopo(e, v)).length : emailsDa(cx.caixa, v).length);
+  $("det-op-emails").innerHTML = detalheOperador();
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
