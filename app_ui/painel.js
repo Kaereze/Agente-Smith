@@ -140,7 +140,8 @@ document.addEventListener("click", async e => {
 const JANELAS = [7, 15, 30, 45];
 // cores validadas (dataviz, tema claro e escuro) na ordem em que aparecem empilhadas
 // validadas (dataviz) contra o branco e o verde-petróleo do tema escuro (#ffffff e #1b3a34)
-const COR_VIZ = { emitida: "#1f9d6b", envio: "#b97a12", andamento: "#3987e5", sem_nf: "#e04f43", email: "#8b6fd6" };
+// paleta fiscal (11/10/2026): verde da marca = emitida; âmbar = pendente; cinza-azulado = em andamento; vermelho = sem NF
+const COR_VIZ = { emitida: "#2b7a5f", envio: "#c08a2b", andamento: "#7d8896", sem_nf: "#c4473c", email: "#aab3be" };
 const SERIES_DIA = [
   { k: "emitida", nome: "NF emitida e enviada", cor: COR_VIZ.emitida },
   { k: "envio", nome: "NF emitida, envio pendente", cor: COR_VIZ.envio },
@@ -753,7 +754,7 @@ function htmlRelatorio(r) {
     </tbody></table></div>
     ${r.hoteis?.length ? `<div class="sub" style="margin:14px 0 6px"><b>Hotéis com mais movimento</b></div><div class="rel-hoteis">${r.hoteis.map(h =>
       `<span class="etq">${esc(h.hotel)} · ${n(h.recebidos)} e-mails · ${n(h.nfs)} NFs${h.subst_canc ? ` · ${n(h.subst_canc)} subst./canc.` : ""}</span>`).join("")}</div>` : `<p class="dica">Sem movimento registrado nesse período.</p>`}
-    ${r.contado_painel?.length ? `<p class="dica" style="margin-top:10px">🧮 ${esc(r.contado_painel.join(" e "))}: sexta a domingo contados pelo Painel
+    ${r.contado_painel?.length ? `<p class="dica" style="margin-top:10px">${esc(r.contado_painel.join(" e "))}: sexta a domingo contados pelo Painel
       (o Mail Analytics grava a soma do fim de semana na segunda de manhã; quando ele gravar, vale o número dele — nada é somado duas vezes).</p>` : ""}
     ${atrasados.length ? `<p class="dica" style="margin-top:10px">⚠ O Mail Analytics ainda não gravou todos os dias de: ${esc(atrasados.join(", "))} — os números desses operadores podem estar incompletos.</p>` : ""}`;
 }

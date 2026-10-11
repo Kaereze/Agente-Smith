@@ -881,6 +881,137 @@ body.professor .dica-prof{display:flex}
   background:var(--folha);border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--tinta-2);box-shadow:var(--sombra)}
 .carregando i{position:absolute;left:0;top:-1px;height:2px;width:30%;background:var(--verde);animation:correr 1.1s ease-in-out infinite}
 .carregando.erro{color:var(--erro)} .carregando.erro i{display:none}
+/* ================= Design fiscal (usuário, 11/10/2026) =================
+   "Parece um jogo, cheio de cores sem paleta; informação espalhada; símbolos sem sentido."
+   Paleta única de painel financeiro: grafite/cinzas neutros + 1 verde escuro (só ação principal e item selecionado)
+   + vermelho/âmbar/verde SÓ pra estado. Sem roxo, laranja, rosa nem cor por operador. Cantos de 6 px, selos em texto
+   com pontinho, uma família de texto (Plex Sans) e números em Plex Mono. Esta camada vale por cima das regras antigas. */
+:root{
+  --chao:#f3f4f6; --folha:#ffffff; --folha-2:#f8f9fb; --linha:#e2e5ea; --linha-forte:#c8cdd5;
+  --tinta:#171b22; --tinta-2:#454e5c; --tinta-3:#6a7380;
+  --mata:#14261f; --mata-2:#1b3129; --mata-tinta:#eef3f0; --mata-suave:#a9bdb4;
+  --verde:#1d6a52; --verde-forte:#155540; --verde-suave:#e6efeb; --verde-texto:#1d6a52;
+  --creme:#f6f7f9; --creme-forte:#1d6a52; --creme-tinta:#454e5c;
+  --ok:#2b7a4f; --ok-fundo:#eaf4ee; --atencao:#94660f; --atencao-fundo:#faf3e3; --erro:#b2382e; --erro-fundo:#fbecea;
+  --info:#454e5c; --info-fundo:#f1f3f6; --roxo:#5b6573; --roxo-fundo:#f1f3f6;
+  --sobre-verde:#ffffff; --borda-campo:#b9c0ca;
+  --sombra:0 1px 2px rgba(16,24,40,.05);
+  --f-titulo:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif;
+  --raio:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --chao:#111316; --folha:#181b1f; --folha-2:#1e2227; --linha:#2a2f36; --linha-forte:#3a414b;
+  --tinta:#e6e8eb; --tinta-2:#b3b9c2; --tinta-3:#868e99;
+  --mata:#14171b; --mata-2:#1c2026; --mata-tinta:#e6e8eb; --mata-suave:#8e979f;
+  --verde:#2b7a5f; --verde-forte:#348d6e; --verde-suave:#1c2a25; --verde-texto:#7cbfa4;
+  --creme:#1e2227; --creme-forte:#2b7a5f; --creme-tinta:#b3b9c2;
+  --ok:#74c095; --ok-fundo:#18261f; --atencao:#d7a650; --atencao-fundo:#2a2416; --erro:#e8837a; --erro-fundo:#2e1c1b;
+  --info:#b3b9c2; --info-fundo:#1e2227; --roxo:#a5adb7; --roxo-fundo:#1e2227;
+  --sobre-verde:#ffffff; --borda-campo:#4a525d;
+  --sombra:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --chao:#111316; --folha:#181b1f; --folha-2:#1e2227; --linha:#2a2f36; --linha-forte:#3a414b;
+  --tinta:#e6e8eb; --tinta-2:#b3b9c2; --tinta-3:#868e99;
+  --mata:#14171b; --mata-2:#1c2026; --mata-tinta:#e6e8eb; --mata-suave:#8e979f;
+  --verde:#2b7a5f; --verde-forte:#348d6e; --verde-suave:#1c2a25; --verde-texto:#7cbfa4;
+  --creme:#1e2227; --creme-forte:#2b7a5f; --creme-tinta:#b3b9c2;
+  --ok:#74c095; --ok-fundo:#18261f; --atencao:#d7a650; --atencao-fundo:#2a2416; --erro:#e8837a; --erro-fundo:#2e1c1b;
+  --info:#b3b9c2; --info-fundo:#1e2227; --roxo:#a5adb7; --roxo-fundo:#1e2227;
+  --sobre-verde:#ffffff; --borda-campo:#4a525d;
+  --sombra:none; color-scheme:dark}
+
+body{font-size:13.5px}
+/* formas: cantos de 6 px em tudo que é caixa; nada de pílula */
+button,input,select,textarea,.quadro,.cartao,.ficha,.leitura,.cx-quadro,.op-cartao,.fr-item,.faixa-resumo,.st-tab,.fp,.fp-on,.fp-on button,
+.seg,.seg button,.escopo,.escopo button,.st-alerta,.aviso-pcs,.saude,.no-outlook,.quadro-e2,.cx-verifica,.cx-aviso-nf,.outro-ped,.maq,
+.pop,.modal,.compor-inline,.editor,.soltar,.sug,.selo-op,.chips-anexo > *,.cx-ficha,.ger-dia > div,.ger-aviso,.versao-ref,.tabela-wrap{border-radius:var(--raio)!important}
+.quadro,.cartao,.op-cartao,.leitura,.maq{box-shadow:none!important}
+button{font-weight:500;padding:7px 12px}
+button.prim{background:var(--verde);border-color:var(--verde)}
+button.creme{background:var(--folha);border-color:var(--linha-forte);color:var(--tinta);font-weight:500}
+/* selos: texto com pontinho, sem bloco colorido */
+.pilula,.prazo,.et,.etq,.nf-num,.tag{background:transparent!important;border:0!important;padding:0!important;border-radius:0!important;
+  font:500 12px/1.3 var(--f-texto)!important;letter-spacing:0!important;text-transform:none!important;color:var(--tinta-2)}
+.pilula::before,.et::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.etiquetas{gap:6px 16px}
+.p-na_fila,.p-aguardando_envio{color:var(--erro)!important} .p-concluida{color:var(--ok)!important}
+.p-tratativa,.p-em_tratamento,.p-nf_parcial,.p-sem_resposta{color:var(--tinta-2)!important}
+.et-erro{color:var(--erro)!important} .et-atencao{color:var(--atencao)!important} .et-ok{color:var(--ok)!important} .et-info{color:var(--tinta-2)!important}
+.prazo{font-family:var(--f-dado)!important;font-size:12px!important}
+.prazo.ok{color:var(--tinta-3)!important} .prazo.perto{color:var(--atencao)!important} .prazo.vencido{color:var(--erro)!important;font-weight:600!important}
+.prazo.fim{color:var(--tinta-3)!important}
+/* cartões dos operadores: neutros, selecionado com traço verde embaixo (sem fundo cheio) */
+.op-cartoes{gap:0;border:1px solid var(--linha);border-radius:var(--raio);background:var(--folha);overflow:hidden}
+.op-cartao{border:0!important;border-right:1px solid var(--linha)!important;border-radius:0!important;background:transparent;padding:10px 16px;gap:2px}
+.op-cartao:last-child{border-right:0!important}
+.op-cartao:hover{background:var(--folha-2)}
+.op-cartao[aria-pressed="true"]{background:var(--verde-suave)!important;color:var(--tinta)!important;box-shadow:inset 0 -3px 0 var(--verde)}
+.op-cartao[aria-pressed="true"] .op-linha,.op-cartao[aria-pressed="true"] .op-linha b{color:var(--tinta)!important}
+.op-cartao .op-nome{font:600 11.5px var(--f-texto);letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3)}
+.op-cartao .op-linha b{font:600 15px var(--f-dado)}
+.op-urg{color:var(--erro)!important}
+/* faixa de indicadores: sem barras coloridas, número escuro */
+.fr-item{border-top:0!important}
+.fr-item::before,.fr-item::after{display:none!important}
+.fr-rot{font:600 11px var(--f-texto)!important;letter-spacing:.06em;color:var(--tinta-3)!important}
+.kpi-v{color:var(--tinta)!important}
+/* abas de situação e filtros: discretos */
+.st-tab{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0!important;padding:6px 4px;color:var(--tinta-2)}
+.st-tab[aria-pressed="true"]{background:transparent!important;color:var(--tinta)!important;border-bottom-color:var(--verde)!important;font-weight:600}
+.st-tab .bolinha{display:none}
+.st-tab .qt{background:var(--folha-2)!important;color:var(--tinta-2)!important;border-radius:4px!important}
+.st-tabs{gap:18px}
+.fp,.fp-on button{border-style:solid}
+/* avisos: borda lateral, fundo leve */
+.st-alerta,.aviso-pcs,.quadro-e2,.cx-verifica,.saude{border:1px solid var(--linha)!important;border-left:3px solid currentColor!important}
+.st-alerta button{background:var(--folha)!important;color:var(--erro)!important;border:1px solid var(--erro)!important}
+.aviso-pcs{background:var(--atencao-fundo)!important}
+/* modo professor: nota cinza, não caixa azul */
+.dica-prof{background:transparent!important;color:var(--tinta-3)!important;border-left:2px solid var(--linha-forte);border-radius:0!important;padding:2px 0 2px 10px!important;font-size:12.5px}
+.dica-prof::before{display:none!important}
+body.professor .dica-bt{color:var(--tinta-3)!important;font-weight:400!important}
+/* títulos: uma família só, hierarquia por tamanho e peso */
+h1{font:600 20px/1.2 var(--f-texto)!important;letter-spacing:-.01em}
+h2{font:600 17px/1.25 var(--f-texto)!important}
+h3{font:600 14px/1.3 var(--f-texto)!important}
+.rot,.ficha-tit .rot,.linhas-cab span,.linhas-cab button,.cx-grupo{font:600 11px var(--f-texto)!important;letter-spacing:.06em!important;text-transform:uppercase;color:var(--tinta-3)!important}
+.cx-quem{font-weight:500}
+.cx-hora,.dado{color:var(--tinta-3)}
+/* nada de símbolo decorativo: avatares de iniciais saem */
+.op-av,.op-mini,.avatar,.cx-acoes .av,.cx-av,.remet .avatar{display:none!important}
+.remet{grid-template-columns:1fr auto!important}
+.vazio.feliz .feliz-ic{display:none}
+.vazio.feliz b{font:500 14px var(--f-texto)!important;color:var(--tinta-2)!important}
+/* barra lateral: grafite, item ativo com traço verde */
+.lateral{background:var(--mata)!important}
+.ln[aria-current="true"]{background:var(--mata-2)!important;box-shadow:inset 3px 0 0 var(--verde-texto)}
+.ln .n{background:transparent!important;color:var(--mata-suave)!important}
+.ln .n.alerta-n,#nav-urgencia-n{color:var(--erro)!important}
+/* Notas fiscais em colunas alinhadas (como planilha) */
+.nf-cab,.nf-l.col{display:grid!important;grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,.8fr) 64px;gap:12px;align-items:center}
+.nf-cab{padding:0 16px 0 19px;min-height:36px;background:var(--folha-2);border-bottom:1px solid var(--linha)}
+.nf-cab span{font:600 11px var(--f-texto);letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3)}
+.nf-l.col{padding:9px 16px 9px 19px!important}
+.nf-l.col > *{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nf-l.col .c-nome{font-weight:500;color:var(--tinta)}
+.nf-l.col.nao-lido .c-nome{font-weight:700}
+.nf-l.col .c-hora{text-align:right;font:12px var(--f-dado);color:var(--tinta-3)}
+.nf-l.col .c-hotel,.nf-l.col .c-op{color:var(--tinta-2);font-size:13px}
+.nf-l.col .c-aviso{color:var(--erro);margin-left:6px}
+@container (max-width: 700px){.nf-cab,.nf-l.col{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 56px}
+  .nf-cab .c-op,.nf-cab .c-prazo,.nf-l.col .c-op,.nf-l.col .c-prazo{display:none}}
+#v-fila .quadro{container-type:inline-size}
+#linhas-cab.nf-cab{display:grid!important}
+#linhas-cab.nf-cab > *{display:block!important;min-width:0}
+.nf-l.col .so-leitor{position:absolute!important}
+@container (max-width: 700px){#linhas-cab.nf-cab > .c-op,#linhas-cab.nf-cab > .c-prazo{display:none!important}}
+/* lista estreita (ficha aberta): 2 linhas — hóspede e hora; hotel e situação */
+@container (max-width: 520px){
+  .nf-l.col{grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"nome hora" "hotel sit";row-gap:2px!important}
+  .nf-l.col .c-nome{grid-area:nome} .nf-l.col .c-hora{grid-area:hora} .nf-l.col .c-hotel{grid-area:hotel;font-size:12px}
+  .nf-l.col .c-sit{grid-area:sit;justify-self:end}
+  #linhas-cab.nf-cab{grid-template-columns:1fr auto!important} #linhas-cab.nf-cab > .c-hotel,#linhas-cab.nf-cab > .c-sit{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -1461,14 +1592,17 @@ function colunaSituacao(s) {
 function linhaHtml(it) {
   if (it.tipo === "form") {
     const s = it.s;
-    // 2 linhas (usuário, 11/10/2026): quem e quando chegou; situação e hotel. O resto fica na ficha ao abrir.
+    // colunas alinhadas (design fiscal, 11/10/2026): hóspede · hotel · operador · situação · prazo · chegou
     const alerta = s.alerta_doc?.length || s.falta_nota || s.sem_formulario;
     const naoLido = s.na_caixa && !s.na_caixa.lido;
-    return `<div class="linha nf-l ${sel === s.chave ? "sel" : ""} ${naoLido ? "nao-lido" : ""}" role="option" tabindex="0" data-k="${esc(s.chave)}"
+    return `<div class="linha nf-l col ${sel === s.chave ? "sel" : ""} ${naoLido ? "nao-lido" : ""}" role="option" tabindex="0" data-k="${esc(s.chave)}"
         title="${alerta ? "Tem um aviso: abra pra ver" : ""}">
-      <div class="cx-l1">${alerta ? `<span class="cx-ponto" aria-label="tem aviso"></span>` : ""}<span class="cx-quem">${esc(s.nome)}</span><span class="cx-hora">${chegou(it.quando)}</span></div>
-      <div class="cx-l2"><span class="nf-sit" style="color:${COR_SIT[s.situacao] || "inherit"}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span>
-        <span class="cx-onde"> · ${esc(s.hotel)}</span>${opMini(agentesDo(it)[0])}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div></div>`;
+      <span class="c-nome">${esc(s.nome)}${alerta ? `<span class="c-aviso" aria-label="tem aviso">●</span>` : ""}</span>
+      <span class="c-hotel">${esc(s.hotel)}</span>
+      <span class="c-op">${esc(agentesDo(it)[0] || "")}</span>
+      <span class="c-sit"><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span></span>
+      <span class="c-prazo">${s.prazo ? prazoHtml(s.prazo) : `<span class="prazo fim">—</span>`}</span>
+      <span class="c-hora">${chegou(it.quando)}</span>${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
@@ -1488,9 +1622,10 @@ function desenhar(){
   const ord = ordem || "recente";
   if (ord === "antigo") lista = lista.slice().reverse();
   const seta = o => ord === o ? (o === "antigo" ? " ↓" : " ↓") : "";
-  $("linhas-cab").innerHTML = `<span>Solicitação</span>
-    <button class="ord ${ord === "recente" ? "ativo" : ""}" data-ordem="recente" title="Mais recente primeiro">Mais recente${seta("recente")}</button>
-    <button class="ord ${ord === "antigo" ? "ativo" : ""}" data-ordem="antigo" title="Mais antiga primeiro">Mais antiga${seta("antigo")}</button>`;
+  $("linhas-cab").className = "nf-cab";
+  $("linhas-cab").innerHTML = `<span class="c-nome">Hóspede</span><span class="c-hotel">Hotel</span><span class="c-op">Operador</span>
+    <span class="c-sit">Situação</span><span class="c-prazo">Prazo</span>
+    <button class="ord c-hora" data-ordem="${ord === "recente" ? "antigo" : "recente"}" title="Inverter a ordem" style="justify-self:end;border:0;background:none;padding:0">Chegou ${ord === "recente" ? "↓" : "↑"}</button>`;
   desenharFiltros(busca, lista.length);
   const aviso = `${lista.length.toLocaleString("pt-BR")} ${lista.length === 1 ? "resultado" : "resultados"}`;
   if ($("anuncio").textContent !== aviso) $("anuncio").textContent = aviso;
@@ -1574,7 +1709,7 @@ const linhaPedido = o => `<div class="outro-ped" data-k="${esc(o.chave)}" role="
   <span>${esc(o.hotel)} · ${esc(o.nome)}${o.email ? ` <span class="dado">&lt;${esc(o.email)}&gt;</span>` : ""}</span>
   <span style="color:${COR_SIT[o.situacao] || "inherit"}">${NOMES[o.situacao] || o.situacao}${o.nfs?.length ? " · NF " + esc(o.nfs.join(", ")) : ""}</span></div>`;
 function caixaEmDia(texto) {
-  return `<div class="vazio feliz"><div class="feliz-ic" aria-hidden="true">✓</div><b>Caixa em dia!</b><span>${esc(texto)}</span></div>`;
+  return `<div class="vazio feliz"><b>Nada pendente</b><span>${esc(texto)}</span></div>`;
 }
 // seções que abrem e fecham (Anotar, Histórico): ficam como você deixou, mesmo com a lista atualizando a cada 15 s
 const DOBRA = { trat: false, hist: false };
@@ -1878,7 +2013,7 @@ document.addEventListener("keydown", e => {
   else if (!e.shiftKey && i === lista.length - 1) { e.preventDefault(); lista[0].focus(); }
 });
 // Seletor de operador: avatar com cor fixa por pessoa
-const COR_OP = {"João": "#3987e5", "Cristian": "#d95926", "Clara": "#199e70", "Bernardo": "#9085e9"};
+const COR_OP = {};   // design fiscal (11/10/2026): sem cor por operador — a identificação é pelo nome
 const corOp = n => COR_OP[n] || "#5f7a73";
 const inicial = n => (n || "?").trim().charAt(0).toUpperCase();
 let opAtual = "", opLista = [];

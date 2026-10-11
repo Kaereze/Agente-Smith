@@ -112,10 +112,11 @@ def problemas(pcs, agora=None):
             agora - max(robos) > datetime.timedelta(minutes=COPIA_ATRASADA_MIN):
         saida.append({"nivel": "erro", "pc": "", "texto": f"O robô de envio não roda desde {max(robos):%d/%m %H:%M}: "
                       "solicitações novas não estão indo para os hotéis"})
-    faltam = sorted({x for p in pcs for x in p.get("saude", {}).get("cad", [])})
+    import re
+    faltam = sorted({(re.search(r"\(([^()]+)\)\s*\(respostas\)", x) or [None, x])[1] for p in pcs for x in p.get("saude", {}).get("cad", [])})
     if faltam:
-        saida.append({"nivel": "aviso", "pc": "", "texto": f"Cadastro incompleto: {len(faltam)} planilha(s) de hotel sem cadastro "
-                      f"({', '.join(faltam[:3])}{'…' if len(faltam) > 3 else ''}) — veja em Máquinas"})
+        saida.append({"nivel": "aviso", "pc": "", "texto": f"Cadastro incompleto: {', '.join(faltam[:4])}{'…' if len(faltam) > 4 else ''} sem cadastro — "
+                      "as planilhas desses hotéis não são copiadas (veja em Máquinas)"})
     return sorted(saida, key=lambda x: x["nivel"] != "erro")
 
 
