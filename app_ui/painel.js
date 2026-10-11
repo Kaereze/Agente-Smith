@@ -286,20 +286,39 @@ function desenharVisao() {
   const kpi = (alvo, rot, v, sub, cor) => `<button class="kpi-b" data-ir="${alvo}" style="--cor:${cor}">
       <span class="kpi-r">${rot}</span><span class="kpi-v">${n(v)}</span><span class="kpi-s">${sub}</span></button>`;
   const quem = escopoAtual() === "todos" ? "nas caixas dos 4 PCs" : "na Caixa de Entrada de " + escopoAtual();
+  // tabela por operador (organização, 11/10/2026): o que cada caixa tem agora, numa grade só
+  const todosMails = cx.dados?.emails || [], todosEnv = cx.dados?.enviados || [];
+  const linhaOp = v => {
+    const s = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v));
+    const m = todosMails.filter(e => doEscopo(e, v));
+    return [s.length, s.filter(it => ["na_fila", "aguardando_envio"].includes(it.s.situacao)).length,
+            s.filter(it => it.s.situacao !== "concluida" && diasAtras(it.s.data) > 7).length,
+            m.length, m.filter(e => e.lido === false).length, m.filter(e => e.urgente).length,
+            todosEnv.filter(e => doEscopo(e, v)).length];
+  };
+  const tabOp = `<div class="tabela-wrap"><table class="ger-tab tab-op"><thead><tr><th>Operador</th><th class="num">Solicitações</th>
+      <th class="num">Sem NF</th><th class="num">Atrasadas</th><th class="num">E-mails</th><th class="num">Não lidos</th><th class="num">Urgentes</th>
+      <th class="num">Enviados 24 h</th></tr></thead><tbody>${[...agentesEquipe(), "todos"].map(v => {
+        const c = linhaOp(v);
+        return `<tr data-escopo="${esc(v)}" class="${escopoAtual() === v ? "sel" : ""}"><td>${v === "todos" ? "Total" : esc(v)}</td>${c.map((x, k) =>
+          `<td class="num">${(k === 2 || k === 5) && x ? `<span class="ruim-txt">${n(x)}</span>` : n(x)}</td>`).join("")}</tr>`; }).join("")}</tbody></table></div>`;
   el.innerHTML = `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
-      <span class="dica">Agora, no Outlook · ${esc(quem)} · atualiza sozinho</span></div></div>
-    <div class="op-cartoes" role="group" aria-label="Caixa de Entrada de cada operador" style="margin-bottom:14px">${cartoesOperadores()}</div>
-    <p class="dica-prof" style="margin:0 0 14px">Como estamos agora? Os números são os mesmos das telas Notas fiscais e Caixa de entrada: o que está no Outlook neste momento. Clique num operador pra ver só a caixa dele, ou num indicador pra abrir a lista.</p>
+      <span class="resumo-tela">Agora, no Outlook · ${esc(quem)}</span></div>
+      <div class="grupo" style="display:flex;align-items:center;gap:10px"><span class="rot-barra">Operador</span>
+        <div class="seg-op" role="group" aria-label="Operador">${segOperadores(null)}</div></div></div>
+    <p class="dica-prof" style="margin:0 0 14px">Como estamos agora? Os números são os mesmos das telas Notas fiscais e Caixa de entrada: o que está no Outlook neste momento. Clique num indicador pra abrir a lista.</p>
+    <div class="sec-tit">Agora</div>
     ${faixaAgora(sol, mails, enviados)}
+    <div class="sec-tit" style="margin-top:18px">Por operador</div>
     <div class="grade2">
-      <div class="cartao"><div class="cartao-topo"><div><h3>Na Caixa de Entrada, por operador</h3><div class="sub">Solicitações e e-mails esperando. Clique num operador para ver as notas dele</div></div>
-        ${botaoTabela("agentes")}</div>
-        <div id="leg-agentes" style="margin:4px 0 10px"></div><div id="graf-agentes"></div></div>
+      <div class="cartao"><div class="cartao-topo"><div><h3>O que cada caixa tem agora</h3><div class="sub">Clique numa linha pra ver só a caixa daquele operador</div></div></div>
+        ${tabOp}</div>
       <div class="cartao"><div class="cartao-topo"><div><h3>Há quanto tempo esperam</h3><div class="sub">Solicitações sem NF e e-mails na caixa, pelo dia em que chegaram</div></div>
         ${botaoTabela("idade")}</div>
         <div id="graf-idade" style="margin-top:14px"></div></div>
     </div>
-    <div class="cartao"><div class="cartao-topo"><div><h3>Histórico: pedidos de cada dia e o que aconteceu com eles</h3>
+    <div class="sec-tit" style="margin-top:4px">Histórico</div>
+    <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
       <div class="sub">Formulários da Planilha Central (inclui os já resolvidos e fora do Outlook). Cada coluna é o dia em que o hóspede pediu.</div></div>
       <div style="display:flex;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
         `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div>${botaoTabela("dias")}</div></div>
@@ -315,11 +334,6 @@ function desenharVisao() {
   if (pn.tabela.dias) $("graf-dias").innerHTML = tabela(["Dia", ...SERIES_DIA.map(s => s.nome), "Total"],
     dias.map(d => [d.titulo, ...SERIES_DIA.map(s => d.partes[s.k] || 0), somaSeries(d.partes, SERIES_DIA)]));
   else graficoColunas($("graf-dias"), dias, SERIES_DIA);
-  legendaCores($("leg-agentes"), SERIES_AGENTE);
-  if (pn.tabela.agentes) $("graf-agentes").innerHTML = tabela(["Agente", ...SERIES_AGENTE.map(s => s.nome), "Total"],
-    porAgente.map(a => [a.rotulo, ...SERIES_AGENTE.map(s => a.partes[s.k] || 0), somaSeries(a.partes, SERIES_AGENTE)]));
-  else graficoBarrasEmpilhadas($("graf-agentes"), porAgente, SERIES_AGENTE, {
-    aoClicar: it => { abrirNotas({ agente: it.rotulo === "Sem agente" ? "" : it.rotulo, filtro: "todas" }); } });
   if (pn.tabela.idade) $("graf-idade").innerHTML = tabela(["Espera", "Pedidos em aberto"], idade.map(i => [i.rotulo, i.n]));
   else graficoBarrasH($("graf-idade"), idade, { aoClicar: it => abrirNotas({ filtro: it.atrasada ? "atrasadas" : "aberto",
     agente: escopoAtual() === "todos" ? "" : escopoAtual() }) });

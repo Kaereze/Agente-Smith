@@ -78,7 +78,8 @@ function desenharCorreio() {
   const lista = itensDaTela(busca);
   const naoLidos = lista.filter(e => e.pasta !== "enviado" && e.lido === false).length;
   $("cx-titulo").textContent = busca ? "Resultado da pesquisa" : CAIXAS[cx.caixa];
-  $("op-cartoes-emails").innerHTML = cartoesOperadores();
+  $("op-cartoes-emails").innerHTML = segOperadores(v => cx.caixa === "enviados"
+    ? (cx.dados?.enviados || []).filter(e => doEscopo(e, v)).length : emailsDa(cx.caixa, v).length);
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "O que os hóspedes estão esperando de resposta. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente. Clique pra ler (as setas ↑ ↓ andam pela lista); respondeu, ele fica cinza e some.",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
@@ -117,7 +118,7 @@ function statusBusca(busca) {
 // Filtro de hotel no topo, ao lado da pesquisa (botão com ícone + menu com busca, agrupado por agente)
 function desenharFiltroHotel() {
   if (pn.vista !== "correio") return;
-  $("topo-filtro").innerHTML = pilula("cx-hotel", "Hotel", cx.hotel).replace(/#i-busca/, "#i-hotel");
+  ($("cx-filtro-hotel") || $("topo-filtro")).innerHTML = pilula("cx-hotel", "Hotel", cx.hotel).replace(/#i-busca/, "#i-hotel");
 }
 function contarHoteisCorreio() {   // quantos e-mails cada hotel tem na caixa aberta (sem o filtro de hotel)
   const hotel = cx.hotel; cx.hotel = "";
