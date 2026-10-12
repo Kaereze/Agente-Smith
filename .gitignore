@@ -11,3 +11,7 @@ FALHA_CRITICA.txt
 *.tmp
 # config só deste PC (papel principal/conferente)
 config.local.json
+
+# Obsidian: estado da janela de cada PC
+Segundo Cérebro/.obsidian/workspace*.json
+Segundo Cérebro/.trash/

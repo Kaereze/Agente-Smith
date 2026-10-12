@@ -1,0 +1,465 @@
+<title>Guia do Painel Fiscal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Tokens: os mesmos do Painel hoje (paleta fiscal + verde no fundo + creme) */
+:root{
+  --chao:#eaf0ec; --folha:#ffffff; --folha-2:#f8f5ec; --linha:#dde5df; --linha-forte:#c3cec7;
+  --tinta:#171b22; --tinta-2:#454e5c; --tinta-3:#646d7a;
+  --verde:#1d6a52; --verde-forte:#155540; --verde-suave:#e3eee9; --verde-texto:#1d6a52; --sobre-verde:#ffffff;
+  --creme:#f1e8d3; --creme-tinta:#6d5a2e; --creme-borda:#e2d4b1;
+  --mata:#163a30; --mata-2:#1f4a3e; --mata-tinta:#eef3ef; --nav-ativo:#f1e3bf;
+  --ok:#2b7a4f; --ok-fundo:#eaf4ee; --atencao:#8f620c; --atencao-fundo:#faf3e3; --erro:#b2382e; --erro-fundo:#fbecea;
+  --sombra:0 1px 2px rgba(16,24,40,.05);
+  --f-texto:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif;
+  --f-dado:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --raio:6px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --chao:#0e1a15; --folha:#14231d; --folha-2:#1a2c25; --linha:#263b33; --linha-forte:#355046;
+  --tinta:#e6e8eb; --tinta-2:#b3b9c2; --tinta-3:#8d96a1;
+  --verde:#2b7a5f; --verde-forte:#348d6e; --verde-suave:#1c2f28; --verde-texto:#7cbfa4; --sobre-verde:#ffffff;
+  --creme:#2b2819; --creme-tinta:#e5d3a6; --creme-borda:#4a4128;
+  --mata:#0b1612; --mata-2:#163029; --mata-tinta:#e6ebe7; --nav-ativo:#e5d3a6;
+  --ok:#74c095; --ok-fundo:#18261f; --atencao:#d7a650; --atencao-fundo:#2a2416; --erro:#e8837a; --erro-fundo:#2e1c1b;
+  --sombra:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --chao:#0e1a15; --folha:#14231d; --folha-2:#1a2c25; --linha:#263b33; --linha-forte:#355046;
+  --tinta:#e6e8eb; --tinta-2:#b3b9c2; --tinta-3:#8d96a1;
+  --verde:#2b7a5f; --verde-forte:#348d6e; --verde-suave:#1c2f28; --verde-texto:#7cbfa4; --sobre-verde:#ffffff;
+  --creme:#2b2819; --creme-tinta:#e5d3a6; --creme-borda:#4a4128;
+  --mata:#0b1612; --mata-2:#163029; --mata-tinta:#e6ebe7; --nav-ativo:#e5d3a6;
+  --ok:#74c095; --ok-fundo:#18261f; --atencao:#d7a650; --atencao-fundo:#2a2416; --erro:#e8837a; --erro-fundo:#2e1c1b;
+  --sombra:none; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--chao);color:var(--tinta);font:400 14px/1.5 var(--f-texto);margin:0}
+.pagina{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:grid;gap:28px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.num,td.num,.mono{font-family:var(--f-dado);font-variant-numeric:tabular-nums}
+
+/* topo do guia */
+.topo{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 24px;border-bottom:1px solid var(--linha);padding-bottom:18px}
+.topo h1{font-size:26px;font-weight:600;letter-spacing:-.01em}
+.topo p{margin:4px 0 0;color:var(--tinta-2);max-width:62ch}
+.topo .fim{margin-left:auto;display:flex;gap:8px;align-items:center}
+.sumario{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.sumario a{color:var(--verde-texto);text-decoration:none}
+.sumario a:hover{text-decoration:underline}
+
+/* seções */
+.secao{display:grid;gap:14px}
+.secao > header{display:grid;gap:4px}
+.rotulo{font:600 11px var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--creme-tinta)}
+.secao h2{font-size:20px;font-weight:600}
+.secao > header p{margin:0;color:var(--tinta-2);max-width:68ch}
+.quadro{background:var(--folha);border:1px solid var(--linha);border-radius:var(--raio);box-shadow:var(--sombra);padding:20px;display:grid;gap:16px;min-width:0}
+.regra{font-size:12.5px;color:var(--tinta-3);border-top:1px dashed var(--linha);padding-top:10px;margin:0}
+.regra b{color:var(--tinta-2);font-weight:600}
+.grade2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+
+/* princípios */
+.principios{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:1px solid var(--linha);border-radius:var(--raio);background:var(--folha);overflow:hidden}
+.principio{padding:16px 18px;border-right:1px solid var(--linha);display:grid;gap:6px;align-content:start}
+.principio:last-child{border-right:0}
+.principio .n{font:600 12px var(--f-dado);color:var(--verde-texto)}
+.principio b{font-size:14.5px;font-weight:600}
+.principio span{font-size:13px;color:var(--tinta-2)}
+
+/* cores */
+.cores{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.cor{border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--folha)}
+.cor i{display:block;height:54px;border-bottom:1px solid var(--linha)}
+.cor div{padding:8px 10px;display:grid;gap:1px}
+.cor b{font-size:13px;font-weight:600}
+.cor span{font-size:12px;color:var(--tinta-3)}
+
+/* letras */
+.escala{display:grid;gap:0}
+.escala > div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--linha)}
+.escala > div:last-child{border-bottom:0}
+.escala .q{font-size:12px;color:var(--tinta-3)}
+.escala .q b{display:block;color:var(--tinta-2);font-weight:600;font-size:12.5px}
+
+/* espaços */
+.espacos{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}
+.espacos div{display:grid;gap:6px;justify-items:center;font-size:12px;color:var(--tinta-3)}
+.espacos i{display:block;background:var(--verde-suave);border:1px solid var(--verde);border-radius:2px}
+
+/* ===== componentes do Painel ===== */
+.cab-tela{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.cab-tela h3{font-size:22px;font-weight:600}
+.resumo{color:var(--tinta-2);font-size:13.5px}
+.resumo b{color:var(--tinta);font-weight:600}
+.resumo .ruim{color:var(--erro);font-weight:600}
+
+.abas{display:flex;flex-wrap:wrap;gap:4px 26px;border-bottom:1px solid var(--linha)}
+.abas button{border:0;background:transparent;padding:9px 2px 10px;margin-bottom:-1px;font:500 14px var(--f-texto);color:var(--tinta-2);display:inline-flex;gap:8px;align-items:center;cursor:pointer;transition:color .15s,box-shadow .15s}
+.abas button:hover{color:var(--tinta)}
+.abas button[aria-selected="true"]{color:var(--tinta);font-weight:600;box-shadow:inset 0 -2px 0 var(--verde)}
+.qt{font:500 12px var(--f-dado);color:var(--tinta-3);background:var(--folha-2);border:1px solid var(--linha);border-radius:4px;padding:0 6px}
+.abas button[aria-selected="true"] .qt{background:var(--creme);border-color:var(--creme-borda);color:var(--creme-tinta)}
+.detalhe{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--tinta-2)}
+.detalhe b{font:600 12.5px var(--f-dado);color:var(--tinta)}
+.detalhe .quem{color:var(--creme-tinta);font-weight:600}
+
+.filtros{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--folha)}
+.seg button{border:0;border-right:1px solid var(--linha);background:transparent;padding:6px 12px;font:500 13px var(--f-texto);color:var(--tinta-2);display:inline-flex;gap:7px;align-items:center;cursor:pointer;transition:background .15s}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--folha-2)}
+.seg button[aria-pressed="true"]{background:var(--verde-suave);color:var(--tinta);font-weight:600}
+.seg button.vermelho .qt{color:var(--erro);border-color:color-mix(in srgb,var(--erro) 35%,var(--linha))}
+.filtros .fim{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--tinta-3)}
+
+.bt{font:500 13.5px var(--f-texto);border-radius:var(--raio);padding:8px 14px;border:1px solid var(--linha-forte);background:var(--folha);color:var(--tinta);cursor:pointer;transition:background .15s,border-color .15s,transform .1s;display:inline-flex;gap:8px;align-items:center}
+.bt:hover{background:var(--folha-2);border-color:var(--tinta-3)}
+.bt:active{transform:translateY(1px)}
+.bt.principal{background:var(--verde);border-color:var(--verde);color:var(--sobre-verde)}
+.bt.principal:hover{background:var(--verde-forte)}
+.bt.discreto{border-color:transparent;background:transparent;color:var(--verde-texto)}
+.bt.discreto:hover{background:var(--verde-suave)}
+.bt.perigo{color:var(--erro);border-color:color-mix(in srgb,var(--erro) 45%,var(--linha))}
+.bt:focus-visible,.abas button:focus-visible,.seg button:focus-visible{outline:2px solid var(--verde);outline-offset:2px}
+.linha-bts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+.selo{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-texto)}
+.selo::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.selo.ruim{color:var(--erro)} .selo.atencao{color:var(--atencao)} .selo.ok{color:var(--ok)} .selo.neutro{color:var(--tinta-3)}
+
+.aviso{display:flex;align-items:center;gap:10px;padding:8px 14px;border-left:3px solid var(--erro);background:var(--erro-fundo);color:var(--erro);border-radius:var(--raio);font-size:12.5px;font-weight:600}
+.aviso.atencao{border-color:var(--atencao);background:var(--atencao-fundo);color:var(--atencao)}
+.aviso .mais{margin-left:auto;text-decoration:underline;font-weight:600;background:none;border:0;color:inherit;cursor:pointer;font-size:12px}
+
+.tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:var(--raio)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+thead th{background:var(--creme);color:var(--creme-tinta);font:600 11px var(--f-texto);letter-spacing:.07em;text-transform:uppercase;text-align:left;padding:10px 14px}
+th.num,td.num{text-align:right}
+tbody td{padding:10px 14px;border-top:1px solid var(--linha);color:var(--tinta-2)}
+tbody td:first-child{color:var(--tinta);font-weight:600}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--folha-2)}
+tr.total td{border-top:2px solid var(--linha-forte);color:var(--tinta);font-weight:600}
+.var-sobe{color:var(--ok)} .var-desce{color:var(--erro)} .var-igual{color:var(--tinta-3)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--folha)}
+.kpi{padding:14px 16px;border-right:1px solid var(--linha);display:grid;gap:4px}
+.kpi:last-child{border-right:0}
+.kpi .r{font-size:12.5px;color:var(--tinta-2)}
+.kpi .v{font:600 26px var(--f-dado);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .c{font-size:12px;color:var(--tinta-3)}
+.kpi .c b{font-family:var(--f-dado);font-weight:600}
+
+.grafico{display:grid;gap:10px}
+.grafico h4{margin:0;font-size:14px;font-weight:600}
+.grafico .sub{font-size:12.5px;color:var(--tinta-3);margin-top:-6px}
+.barras{display:grid;gap:8px}
+.barra{display:grid;grid-template-columns:76px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px}
+.barra .trilho{height:14px;background:var(--folha-2);border-radius:3px;overflow:hidden}
+.barra .enche{height:100%;background:var(--verde);border-radius:0 3px 3px 0;transform-origin:left;animation:crescer .6s cubic-bezier(.2,.7,.2,1) both}
+.barra .val{font:500 12.5px var(--f-dado);text-align:right;color:var(--tinta-2)}
+.barra .val b{color:var(--tinta)}
+svg text{font-family:var(--f-dado);font-size:11px;fill:var(--tinta-3)}
+svg .ponto-txt{fill:var(--tinta);font-weight:600}
+
+.vazio{display:grid;justify-items:center;gap:6px;padding:28px 16px;text-align:center;color:var(--tinta-3);border:1px dashed var(--linha-forte);border-radius:var(--raio)}
+.vazio b{color:var(--tinta);font-size:14.5px}
+.esqueleto{display:grid;gap:8px}
+.esqueleto i{display:block;height:12px;border-radius:3px;background:linear-gradient(90deg,var(--folha-2) 0%,var(--linha) 50%,var(--folha-2) 100%);background-size:200% 100%;animation:brilho 1.2s linear infinite}
+.carregando{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--tinta-2)}
+.carregando .giro{width:14px;height:14px;border:2px solid var(--linha-forte);border-top-color:var(--verde);border-radius:50%;animation:girar .8s linear infinite}
+
+/* ficha-resumo */
+.ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;border:1px solid var(--creme-borda);border-radius:var(--raio);overflow:hidden;background:var(--folha)}
+.ficha > section{padding:14px 16px;border-right:1px solid var(--linha);display:grid;gap:8px;align-content:start}
+.ficha > section:last-child{border-right:0}
+.ficha h5{margin:0;font:600 11px var(--f-texto);letter-spacing:.07em;text-transform:uppercase;color:var(--creme-tinta)}
+.ficha dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;font-size:13px}
+.ficha dt{color:var(--tinta-3)}
+.ficha dd{margin:0;color:var(--tinta);font-weight:500;overflow-wrap:anywhere}
+.ficha dd.falta{color:var(--atencao);font-weight:600}
+.ficha-topo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 16px;background:var(--creme);border:1px solid var(--creme-borda);border-bottom:0;border-radius:var(--raio) var(--raio) 0 0}
+.ficha-topo b{font-size:15px}
+.ficha-topo + .ficha{border-radius:0 0 var(--raio) var(--raio)}
+.hist{display:grid;gap:6px;font-size:12.5px}
+.hist div{display:grid;grid-template-columns:44px 72px minmax(0,1fr);gap:8px;color:var(--tinta-2)}
+.hist .mono{color:var(--tinta-3)}
+
+/* não fazer */
+.lista-nao{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.lista-nao li{padding:10px 12px;border:1px solid var(--linha);border-left:3px solid var(--erro);border-radius:var(--raio);background:var(--folha);font-size:13px;color:var(--tinta-2)}
+.lista-nao b{color:var(--tinta)}
+
+.entra{animation:entrar .25s ease both}
+@keyframes entrar{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes crescer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes brilho{to{background-position:-200% 0}}
+@keyframes girar{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:640px){
+  .escala > div{grid-template-columns:1fr;gap:4px}
+  .principio,.kpi,.ficha > section{border-right:0;border-bottom:1px solid var(--linha)}
+  .barra{grid-template-columns:64px minmax(0,1fr) 80px}
+}
+</style>
+
+<main class="pagina">
+  <header class="topo">
+    <div>
+      <div class="rotulo">Rede Andrade · Setor fiscal</div>
+      <h1>Guia do Painel Fiscal</h1>
+      <p>O padrão fixo de todas as telas: as mesmas letras, cores, abas, tabelas e gráficos em todo lugar. Depois de aprovado, nenhuma tela foge dele.</p>
+    </div>
+    <div class="fim"><button class="bt" id="tema" type="button">Ver no tema escuro</button></div>
+    <nav class="sumario" aria-label="Seções">
+      <a href="#principios">Princípios</a><a href="#cores">Cores</a><a href="#letras">Letras</a><a href="#espacos">Espaços</a>
+      <a href="#cabecalho">Cabeçalho</a><a href="#filtros">Abas e filtros</a><a href="#botoes">Botões e selos</a>
+      <a href="#tabela">Tabela</a><a href="#numeros">Números e gráficos</a><a href="#ficha">Ficha-resumo</a>
+      <a href="#estados">Vazio e carregando</a><a href="#nao">O que não fazer</a>
+    </nav>
+  </header>
+
+  <section class="secao" id="principios">
+    <header><div class="rotulo">01</div><h2>Princípios</h2></header>
+    <div class="principios">
+      <div class="principio"><span class="n">1</span><b>Uma tela, uma ordem</b><span>Título com resumo de uma linha, depois abas, depois filtros, depois o conteúdo. Sempre nessa ordem.</span></div>
+      <div class="principio"><span class="n">2</span><b>Cor só com motivo</b><span>Verde = ação principal e item escolhido. Vermelho, âmbar e verde-claro = situação. O resto é cinza.</span></div>
+      <div class="principio"><span class="n">3</span><b>Número é dado</b><span>Todo número em letra de dado (alinhada), com comparação honesta: % e contra qual período.</span></div>
+      <div class="principio"><span class="n">4</span><b>O mais urgente primeiro</b><span>O que venceu aparece antes; detalhe só quando a pessoa clica.</span></div>
+      <div class="principio"><span class="n">5</span><b>Rápido de ler</b><span>Sem emojis, sem iniciais em bolinha, sem enfeite. Se não ajuda a emitir a nota, sai.</span></div>
+    </div>
+  </section>
+
+  <section class="secao" id="cores">
+    <header><div class="rotulo">02</div><h2>Cores</h2><p>Uma família só: verde-mata, creme e cinzas. As três cores de situação nunca são usadas para enfeite.</p></header>
+    <div class="quadro">
+      <div class="cores">
+        <div class="cor"><i style="background:var(--mata)"></i><div><b>Mata</b><span>menu lateral</span></div></div>
+        <div class="cor"><i style="background:var(--verde)"></i><div><b>Verde</b><span>ação principal, selecionado</span></div></div>
+        <div class="cor"><i style="background:var(--creme)"></i><div><b>Creme</b><span>cabeçalho de tabela, faixa do dia</span></div></div>
+        <div class="cor"><i style="background:var(--chao)"></i><div><b>Fundo</b><span>atrás de tudo, toque de verde</span></div></div>
+        <div class="cor"><i style="background:var(--folha)"></i><div><b>Folha</b><span>quadros e tabelas</span></div></div>
+        <div class="cor"><i style="background:var(--tinta)"></i><div><b>Tinta</b><span>texto principal</span></div></div>
+        <div class="cor"><i style="background:var(--tinta-3)"></i><div><b>Tinta clara</b><span>texto de apoio</span></div></div>
+        <div class="cor"><i style="background:var(--erro)"></i><div><b>Vermelho</b><span>sem NF, venceu, urgente</span></div></div>
+        <div class="cor"><i style="background:var(--atencao)"></i><div><b>Âmbar</b><span>em andamento, falta dado</span></div></div>
+        <div class="cor"><i style="background:var(--ok)"></i><div><b>Verde-claro</b><span>NF emitida, em dia</span></div></div>
+      </div>
+      <p class="regra"><b>Regra:</b> operador não tem cor própria. Gráfico usa só verde (e cinza para comparação). Situação sempre com texto ao lado da cor, nunca só a cor.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="letras">
+    <header><div class="rotulo">03</div><h2>Letras</h2><p>IBM Plex Sans para texto e IBM Plex Mono para números. Seis tamanhos, nenhum outro.</p></header>
+    <div class="quadro escala">
+      <div><span class="q"><b>Título da tela</b>22 px · 600</span><span style="font-size:22px;font-weight:600">Notas fiscais</span></div>
+      <div><span class="q"><b>Título de seção</b>16 px · 600</span><span style="font-size:16px;font-weight:600">Pedidos de cada dia</span></div>
+      <div><span class="q"><b>Texto</b>14 px · 400</span><span>Walter Joaquim Ferreira von Sohsten · ONDINA</span></div>
+      <div><span class="q"><b>Apoio</b>12,5 px · 400</span><span style="font-size:12.5px;color:var(--tinta-2)">Chegou hoje às 13:15 pelo formulário</span></div>
+      <div><span class="q"><b>Rótulo</b>11 px · maiúsculas</span><span class="rotulo">Hóspede · Hotel · Prazo</span></div>
+      <div><span class="q"><b>Número</b>Plex Mono</span><span class="mono" style="font-size:22px;font-weight:600">387 <span style="font-size:14px;color:var(--erro)">−21%</span></span></div>
+    </div>
+  </section>
+
+  <section class="secao" id="espacos">
+    <header><div class="rotulo">04</div><h2>Espaços e cantos</h2><p>Medidas fixas de 4 em 4. Todo canto arredondado tem 6 px.</p></header>
+    <div class="quadro">
+      <div class="espacos">
+        <div><i style="width:4px;height:4px"></i>4</div><div><i style="width:8px;height:8px"></i>8</div>
+        <div><i style="width:12px;height:12px"></i>12</div><div><i style="width:16px;height:16px"></i>16</div>
+        <div><i style="width:24px;height:24px"></i>24</div><div><i style="width:32px;height:32px"></i>32</div>
+      </div>
+      <p class="regra"><b>Regra:</b> 8 entre itens de uma linha · 16 entre blocos · 24 entre seções · 26 de margem lateral da tela.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="cabecalho">
+    <header><div class="rotulo">05</div><h2>Cabeçalho de toda tela</h2><p>Título e resumo na mesma linha. Aviso do sistema em uma linha só, acima.</p></header>
+    <div class="quadro">
+      <div class="aviso"><span>Cadastro incompleto: CAMPO GRANDE, IDEAL, PALACE sem cadastro</span><button class="mais" type="button">+2 avisos</button></div>
+      <div class="cab-tela"><h3>Notas fiscais</h3><span class="resumo"><b>35</b> solicitações nas caixas dos 4 PCs · <b>33</b> sem NF · <span class="ruim">10 atrasadas</span></span></div>
+      <p class="regra"><b>Regra:</b> o resumo responde "quanto tem e quanto está atrasado". Nada de cartões grandes repetindo os mesmos números.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="filtros">
+    <header><div class="rotulo">06</div><h2>Abas de agente e filtros</h2><p>Abas = de quem é a caixa. Filtros = qual situação. Os detalhes do agente só aparecem quando ele é escolhido.</p></header>
+    <div class="quadro">
+      <div class="abas" role="tablist" aria-label="Agente" id="abas-demo">
+        <button role="tab" aria-selected="false" data-ag="todos">Todos <span class="qt">35</span></button>
+        <button role="tab" aria-selected="true" data-ag="João">João <span class="qt">3</span></button>
+        <button role="tab" aria-selected="false" data-ag="Clara">Clara <span class="qt">22</span></button>
+        <button role="tab" aria-selected="false" data-ag="Cristian">Cristian <span class="qt">0</span></button>
+        <button role="tab" aria-selected="false" data-ag="Bernardo">Bernardo <span class="qt">10</span></button>
+      </div>
+      <div class="detalhe" id="detalhe-demo" aria-live="polite"></div>
+      <div class="filtros">
+        <div class="seg" role="group" aria-label="Situação">
+          <button aria-pressed="true">Todas <span class="qt">35</span></button>
+          <button aria-pressed="false">Sem NF <span class="qt">33</span></button>
+          <button aria-pressed="false" class="vermelho">Atrasadas <span class="qt">10</span></button>
+          <button aria-pressed="false">NF emitida <span class="qt">2</span></button>
+        </div>
+        <div class="fim"><button class="bt" type="button">Hotel ▾</button><span class="mono">35 resultados</span></div>
+      </div>
+      <p class="regra"><b>Regra:</b> abas sublinhadas para agente; botões colados para situação. Contagem sempre ao lado, em letra de dado. Clique nas abas acima para ver.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="botoes">
+    <header><div class="rotulo">07</div><h2>Botões e selos</h2><p>Um botão verde por tela, no máximo. Selos de situação: pontinho + texto.</p></header>
+    <div class="grade2">
+      <div class="quadro">
+        <div class="linha-bts">
+          <button class="bt principal" type="button">Enviar NF</button>
+          <button class="bt" type="button">Responder</button>
+          <button class="bt discreto" type="button">Copiar resumo</button>
+          <button class="bt perigo" type="button">Cancelar envio</button>
+        </div>
+        <p class="regra"><b>Principal</b> = o próximo passo · <b>Normal</b> = outras ações · <b>Discreto</b> = atalhos · <b>Perigo</b> = desfaz algo.</p>
+      </div>
+      <div class="quadro">
+        <div class="linha-bts">
+          <span class="selo ruim">Sem NF</span><span class="selo ruim">Venceu há 6 h</span>
+          <span class="selo atencao">Aguardando hóspede</span><span class="selo ok">NF emitida · 494</span><span class="selo neutro">Respondido</span>
+        </div>
+        <p class="regra"><b>Regra:</b> sem fundo colorido, sem pílula. A cor reforça; o texto explica.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao" id="tabela">
+    <header><div class="rotulo">08</div><h2>Tabela</h2><p>Toda lista do Painel é uma tabela com cabeçalho creme. Números à direita, comparação em %.</p></header>
+    <div class="quadro">
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Agente</th><th class="num">Recebidos</th><th class="num">Enviados</th><th class="num">NFs emitidas</th><th class="num">vs. semana anterior</th></tr></thead>
+          <tbody>
+            <tr><td>João</td><td class="num">247</td><td class="num">490</td><td class="num">152</td><td class="num var-desce">−18%</td></tr>
+            <tr><td>Bernardo</td><td class="num">315</td><td class="num">264</td><td class="num">123</td><td class="num var-desce">−16%</td></tr>
+            <tr><td>Cristian</td><td class="num">131</td><td class="num">221</td><td class="num">104</td><td class="num var-desce">−33%</td></tr>
+            <tr><td>Clara</td><td class="num">260</td><td class="num">233</td><td class="num">8</td><td class="num var-sobe">+100%</td></tr>
+            <tr class="total"><td>Total</td><td class="num">953</td><td class="num">1.208</td><td class="num">387</td><td class="num var-desce">−21%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="regra"><b>Exemplo real:</b> semana de 05 a 11/10 no Mail Analytics, comparada com 28/09 a 04/10. Linha passa o mouse = fundo leve; total com linha mais forte.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="numeros">
+    <header><div class="rotulo">09</div><h2>Números e gráficos</h2><p>Indicadores numa faixa só, com % e período. Gráficos em verde, desenhados em escala.</p></header>
+    <div class="quadro">
+      <div class="kpis">
+        <div class="kpi"><span class="r">NFs emitidas na semana</span><span class="v">387</span><span class="c"><b class="var-desce">−21%</b> vs. 491 na anterior</span></div>
+        <div class="kpi"><span class="r">E-mails recebidos</span><span class="v">953</span><span class="c"><b class="var-desce">−18%</b> vs. 1.159</span></div>
+        <div class="kpi"><span class="r">Solicitações sem NF</span><span class="v">33</span><span class="c">de 35 na caixa · <b>94%</b></span></div>
+        <div class="kpi"><span class="r">Atrasadas (+7 dias)</span><span class="v" style="color:var(--erro)">10</span><span class="c"><b>29%</b> das abertas</span></div>
+      </div>
+      <div class="grade2">
+        <div class="grafico">
+          <h4>NFs emitidas por agente</h4><div class="sub">Semana 05–11/10 · % do total</div>
+          <div class="barras" id="barras"></div>
+        </div>
+        <div class="grafico">
+          <h4>NFs emitidas por dia</h4><div class="sub">Semana 05–11/10 · sexta a domingo somados, como no Mail Analytics</div>
+          <svg id="linha" viewBox="0 0 420 190" role="img" aria-label="NFs por dia: segunda 70, terça 82, quarta 48, quinta 95, sexta a domingo 92" style="width:100%;height:auto;max-width:100%"></svg>
+        </div>
+      </div>
+      <p class="regra"><b>Regra:</b> um eixo só; rótulo direto no valor; nada de 3D, pizza ou cor por agente. Animação curta ao aparecer (0,6 s) e nenhuma em quem pede menos movimento.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="ficha">
+    <header><div class="rotulo">10</div><h2>Ficha-resumo (nova)</h2><p>No topo da ficha da solicitação, no Painel: tudo o que precisa para emitir, sem rolar a tela. O que falta aparece em âmbar.</p></header>
+    <div>
+      <div class="ficha-topo"><b>Walter Joaquim Ferreira von Sohsten</b><span class="selo ruim">Sem NF · venceu há 6 h</span><span class="resumo">ONDINA · chegou 11/10 13:15 · João</span></div>
+      <div class="ficha">
+        <section><h5>Tomador da nota</h5><dl><dt>Nome</dt><dd>Walter J. F. von Sohsten</dd><dt>CPF</dt><dd class="mono">123.456.789-00</dd><dt>CEP</dt><dd class="falta">falta</dd><dt>Endereço</dt><dd class="falta">falta</dd></dl></section>
+        <section><h5>Estadia</h5><dl><dt>Hotel</dt><dd>ONDINA</dd><dt>Reserva</dt><dd class="mono">224245</dd><dt>Datas</dt><dd class="mono">07/10 → 10/10</dd><dt>Valor</dt><dd class="mono">R$ 1.284,00</dd></dl></section>
+        <section><h5>Como quer a nota</h5><dl><dt>Tipo</dt><dd>Uma nota só</dd><dt>Itens</dt><dd>Hospedagem e consumo</dd><dt>Enviar para</dt><dd>walter@exemplo.com.br</dd></dl></section>
+        <section><h5>Situação e histórico</h5><div class="hist">
+          <div><span class="mono">11/10</span><span>Hóspede</span><span>Pediu a NF pelo formulário</span></div>
+          <div><span class="mono">11/10</span><span>João</span><span>Pediu o CEP por e-mail</span></div>
+          <div><span class="mono">—</span><span>Prazo</span><span>Vence em 26 h</span></div>
+        </div></section>
+      </div>
+      <p class="regra" style="margin-top:10px"><b>Dados de exemplo.</b> O histórico é montado por regra (data, quem e assunto de cada e-mail), sem IA e sem o texto sair do PC.</p>
+    </div>
+  </section>
+
+  <section class="secao" id="estados">
+    <header><div class="rotulo">11</div><h2>Vazio e carregando</h2><p>Toda tela diz o que está acontecendo. Nunca uma área em branco.</p></header>
+    <div class="grade2">
+      <div class="quadro"><div class="vazio"><b>Nada pendente</b><span>Nenhuma solicitação na caixa de Cristian agora.</span></div></div>
+      <div class="quadro">
+        <div class="carregando"><span class="giro" aria-hidden="true"></span>Buscando no Outlook dos 4 PCs…</div>
+        <div class="esqueleto" aria-hidden="true"><i style="width:92%"></i><i style="width:78%"></i><i style="width:85%"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao" id="nao">
+    <header><div class="rotulo">12</div><h2>O que não fazer</h2></header>
+    <ul class="lista-nao">
+      <li><b>Cor por agente</b> ou roxo, laranja, rosa.</li>
+      <li><b>Emojis, ícones soltos</b> e bolinhas com inicial.</li>
+      <li><b>Cartões grandes</b> repetindo números do resumo.</li>
+      <li><b>Mais de um botão verde</b> na mesma tela.</li>
+      <li><b>Outro tamanho de letra</b> fora dos seis.</li>
+      <li><b>Número sem período</b>: todo % diz contra o quê.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+// abas de exemplo: detalhes só quando escolhe um agente
+const AG = { "João": [3, 12, 9, 2], "Clara": [22, 57, 55, 13], "Cristian": [0, 18, 16, 3], "Bernardo": [10, 69, 69, 3] };
+function detalhe(ag) {
+  const el = document.getElementById("detalhe-demo");
+  if (ag === "todos") { el.innerHTML = ""; return; }
+  const [s, e, n, u] = AG[ag];
+  el.innerHTML = `<span class="quem">Caixa de ${ag}</span><span><b>${s}</b> solicitações</span><span><b>${e}</b> e-mails na caixa</span><span><b>${n}</b> não lidos</span><span style="color:var(--erro)"><b style="color:inherit">${u}</b> urgentes</span>`;
+  el.classList.remove("entra"); void el.offsetWidth; el.classList.add("entra");
+}
+document.getElementById("abas-demo").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.querySelectorAll("#abas-demo button").forEach(x => x.setAttribute("aria-selected", x === b));
+  detalhe(b.dataset.ag);
+});
+detalhe("João");
+
+// barras: NFs por agente (dados reais, semana 05–11/10)
+const NFS = [["João", 152], ["Bernardo", 123], ["Cristian", 104], ["Clara", 8]];
+const tot = NFS.reduce((a, [, v]) => a + v, 0), max = Math.max(...NFS.map(x => x[1]));
+document.getElementById("barras").innerHTML = NFS.map(([n, v], i) =>
+  `<div class="barra"><span>${n}</span><span class="trilho"><span class="enche" style="display:block;width:${(v / max * 100).toFixed(1)}%;animation-delay:${i * 60}ms"></span></span><span class="val"><b>${v}</b> · ${Math.round(v / tot * 100)}%</span></div>`).join("");
+
+// linha: NFs por dia, um eixo, escala de 0 a 100
+(function () {
+  const dados = [["Seg", 70], ["Ter", 82], ["Qua", 48], ["Qui", 95], ["Sex–Dom", 92]];
+  const L = 40, R = 400, T = 18, B = 160, y = v => B - v / 100 * (B - T), x = i => L + i * (R - L) / (dados.length - 1);
+  const css = getComputedStyle(document.documentElement);
+  let s = "";
+  for (const t of [0, 25, 50, 75, 100]) s += `<line x1="${L}" x2="${R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--linha)" stroke-width="1"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  const pts = dados.map(([, v], i) => `${x(i)},${y(v)}`).join(" ");
+  s += `<polyline points="${pts}" fill="none" stroke="var(--verde)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pathLength="1" style="stroke-dasharray:1;stroke-dashoffset:1;animation:desenhar .9s ease forwards"/>`;
+  dados.forEach(([d, v], i) => {
+    s += `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="var(--verde)" stroke="var(--folha)" stroke-width="2"/>`;
+    s += `<text class="ponto-txt" x="${x(i)}" y="${y(v) - 10}" text-anchor="middle">${v}</text>`;
+    s += `<text x="${x(i)}" y="${B + 20}" text-anchor="middle">${d}</text>`;
+  });
+  const svg = document.getElementById("linha");
+  svg.innerHTML = `<style>@keyframes desenhar{to{stroke-dashoffset:0}}@media (prefers-reduced-motion: reduce){polyline{stroke-dashoffset:0!important}}</style>` + s;
+})();
+
+// ver no outro tema
+document.getElementById("tema").addEventListener("click", e => {
+  const r = document.documentElement;
+  const escuroAgora = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = escuroAgora ? "light" : "dark";
+  e.currentTarget.textContent = escuroAgora ? "Ver no tema escuro" : "Ver no tema claro";
+});
+if (matchMedia("(prefers-color-scheme: dark)").matches) document.getElementById("tema").textContent = "Ver no tema claro";
+</script>
