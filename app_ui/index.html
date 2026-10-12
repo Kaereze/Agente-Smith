@@ -1180,6 +1180,7 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
       <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…" aria-label="Pesquisar no Outlook"></label>
       <div class="topo-filtro" id="topo-filtro"></div>
       <span class="pill demo oculta" id="pill-demo">Modo demonstração · dados fictícios</span>
+      <span class="pill demo oculta" id="pill-casa" title="Este PC só vê os dados reais: responder, enviar NF e marcar lido ficam nos PCs do trabalho">Modo casa · só visualização</span>
       <div class="sync">
         <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
         <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
@@ -1359,6 +1360,7 @@ async function carregar(){
 
     desenharOperador(j.agente, j.operadores || [], j.pc);
     $("pill-demo").classList.toggle("oculta", !j.demo);
+    $("pill-casa").classList.toggle("oculta", !j.so_ver);
     if (j.professor !== undefined && j.professor !== professorServidor) { professorServidor = j.professor; aplicarProfessor(!!j.professor); }
     if (j.tema !== undefined && j.tema !== temaServidor) { temaServidor = j.tema; if (j.tema !== (document.documentElement.dataset.theme || "")) aplicarTema(j.tema); }
     if (!j.atualizado_em && !j.erro) {   // primeira leitura da planilha ainda em andamento

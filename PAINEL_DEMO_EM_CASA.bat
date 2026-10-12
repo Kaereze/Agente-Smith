@@ -1,7 +1,8 @@
 @echo off
 setlocal EnableExtensions
-:: PAINEL_DEMO_EM_CASA.bat - abre o Painel Fiscal no PC de casa com DADOS FICTICIOS (modo demonstracao).
-:: Nao precisa de Outlook, chave do Google nem Dropbox. Nada e enviado: so pra ver e testar a tela.
+:: PAINEL_DEMO_EM_CASA.bat - abre o Painel Fiscal no PC de casa.
+:: Com a chave do Google de casa: dados reais, so visualizacao (nao grava nada). Sem a chave: dados ficticios.
+:: Nao precisa de Outlook nem Dropbox.
 :: 1a vez: baixa o projeto do GitHub, instala o Python se faltar e cria o ambiente. Depois: atualiza e abre.
 title Painel Fiscal - modo demonstracao
 set "REPO=https://github.com/Kaereze/Notas-Fiscais.git"
@@ -56,9 +57,20 @@ echo        Instalando as bibliotecas (1a vez demora alguns minutos)...
 ".venv\Scripts\python.exe" -m pip install -q --disable-pip-version-check -r requirements.txt >>"%LOGDEMO%" 2>&1
 if errorlevel 1 echo        [AVISO] Alguma biblioteca nao instalou - tento abrir mesmo assim. Detalhes: %LOGDEMO%
 
-echo [4/4] Abrindo o Painel em modo demonstracao (dados ficticios)...
+:: Com a chave do Google de casa (so leitura) em %APPDATA%\SolicitacoesNF\chave-api.json: dados REAIS, so visualizacao.
+:: Sem a chave: dados ficticios (modo demonstracao), como antes.
+set "MODO=--demo"
+if exist "%APPDATA%\SolicitacoesNF\chave-api.json" set "MODO=--visualizar"
+if "%MODO%"=="--visualizar" (
+  echo [4/4] Abrindo o Painel com os DADOS REAIS, so visualizacao ^(modo casa^)...
+  echo        Responder, enviar NF e marcar lido continuam so nos PCs do trabalho.
+) else (
+  echo [4/4] Abrindo o Painel em modo demonstracao ^(dados ficticios^)...
+  echo        Para ver os dados reais, coloque a chave do Google de casa em:
+  echo        %APPDATA%\SolicitacoesNF\chave-api.json
+)
 echo        Para fechar: feche a janela do Painel e esta janela preta.
-".venv\Scripts\python.exe" src\app_servidor.py --demo
+".venv\Scripts\python.exe" src\app_servidor.py %MODO%
 if errorlevel 1 goto :erro_painel
 exit /b 0
 

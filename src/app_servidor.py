@@ -484,6 +484,8 @@ class Estado:
                                 agente=agente)]
 
     def _rede(self, lidas, solicitacoes):
+        if getattr(self, "so_ver", False):   # modo casa: só olha; não executa comando nem se registra como PC
+            return
         pc, agente = socket.gethostname(), nome_do_agente()
         linhas = []
         try:
@@ -635,7 +637,7 @@ class Estado:
         """Abriu (ou "Não lido") no Painel -> o PC dono da caixa marca igual no Outlook dele (usuário, 11/10/2026).
         Cada PC só mexe nos e-mails das próprias caixas; cada clique é levado 1 vez só (lido_aplicado.json), até
         24 h depois (PC que estava desligado leva quando ligar). Só muda a marca de lido, nada mais no e-mail."""
-        if getattr(self, "demo", False) or getattr(self, "_lido_rodando", False):
+        if getattr(self, "demo", False) or getattr(self, "so_ver", False) or getattr(self, "_lido_rodando", False):
             return
         pc = socket.gethostname()
         if not hasattr(self, "_lido_aplicado"):
@@ -1343,7 +1345,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
-                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)),
+                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "so_ver": bool(getattr(estado, "so_ver", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
             if url.path == "/api/envio":
@@ -1406,6 +1408,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             except ValueError:
                 return self._json({"erro": "JSON inválido"}, 400)
             path = urlparse(self.path).path
+            if getattr(estado, "so_ver", False) and path not in ("/api/professor", "/api/agente", "/api/atualizar"):
+                return self._json({"ok": False, "motivo": "Modo casa: só visualização. Faça isso no PC do trabalho."})
             try:
                 if path == "/api/acao":
                     r = estado.registrar(nome_do_agente(), pc, corpo["chave"], corpo["acao"], corpo.get("valor", ""))
@@ -1509,6 +1513,7 @@ def main():
     cota_google.configurar("painel")
     cfg = carregar_config()
     modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/demo.py)
+    so_ver = "--visualizar" in sys.argv and not modo_demo   # PC de casa com a chave: dados reais, só leitura
     if modo_demo:
         import demo
         global CAMINHO_CACHE
@@ -1518,12 +1523,18 @@ def main():
         estado = Estado(backend_demo, cfg)
         demo.preparar(estado, backend_demo)
         logger.info("🧪 MODO DEMONSTRAÇÃO: dados fictícios, nada vai pro Google nem pro Outlook")
+    elif so_ver:
+        from sheets import BackendSoLeitura
+        CAMINHO_CACHE = PASTA_ESTADO / "painel_cache_casa.pkl"
+        estado = Estado(BackendSoLeitura(caminho_chave_google(cfg)), cfg)
+        logger.info("🏠 MODO CASA: dados reais, só visualização (não grava na Central, não mexe no Outlook)")
     else:
         estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
     estado.demo = modo_demo
+    estado.so_ver = so_ver
     if not modo_demo and estado.carregar_cache():
         logger.info(f"📦 Último estado carregado do disco ({estado.atualizado_em:%d/%m %H:%M}) — atualizando em seguida.")
-    if not modo_demo:
+    if not modo_demo and not so_ver:
         estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
         estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
                                                                   "ping": estado.rede_ping}).iniciar()
@@ -1533,6 +1544,8 @@ def main():
     servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))
     app = cfg.get("app", {})
     em_uso, em_fundo = int(app.get("atualizar_segundos", 15)), int(app.get("atualizar_segundos_fundo", 60))
+    if so_ver:   # a cota do Google é dos 4 PCs do trabalho: em casa relê bem mais devagar
+        em_uso, em_fundo = max(em_uso, 60), max(em_fundo, 300)
 
     def laco():
         """Fica rodando enquanto o PC estiver ligado. Janela aberta: relê rápido; fechada: devagar (cota da API)."""
@@ -1550,7 +1563,7 @@ def main():
                 time.sleep(1)
 
     threading.Thread(target=laco, daemon=True).start()
-    if not modo_demo:
+    if not modo_demo and not so_ver:
         estado.vigiar_caixa_de_saida()
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
     if not sem_janela:

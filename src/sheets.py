@@ -269,6 +269,20 @@ class BackendGoogle:
         _TAMANHOS.pop((planilha_id, aba), None)
 
 
+class BackendSoLeitura(BackendGoogle):
+    """Modo casa (usuário, 12/10/2026): o Painel do PC de casa só VÊ os dados reais. Toda gravação é ignorada aqui,
+    então ele não aparece como PC da equipe, não grava na Central e não mexe em nada (e a chave pode ser só leitura)."""
+
+    def __init__(self, caminho_chave):
+        super().__init__(caminho_chave, somente_leitura=True)
+
+    def _ignorar(self, *args, **kwargs):
+        return None
+
+    escrever = criar_aba_status = criar_aba_log = inserir_no_topo = substituir_aba = _ignorar
+    garantir_colunas = anexar_linhas = apagar_linhas = apagar_aba = _ignorar
+
+
 def limitar_leitura():
     """Pra quem chama a API do Google por fora do BackendGoogle (cópia das planilhas dos hotéis)."""
     COTA.usar("leitura")

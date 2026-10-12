@@ -21,5 +21,6 @@
 | 12/10/2026 | Segundo Cérebro no **Obsidian**, com resumo organizado | Memória para o João e para o Claude |
 | 12/10/2026 | O cofre vai **dentro do repositório Notas-Fiscais** (main + branches) | Chegar ao PC de casa e aos PCs da equipe pelo clone |
 | 12/10/2026 | Cadastro dos hotéis que faltam: depois | — |
+| 12/10/2026 | **Modo casa**: no PC de casa o Painel vê os dados reais e não grava nada; chave do Google nova e só de leitura para casa | Trabalhar em casa sem risco para a equipe e para a cota |
 
 Ver: [[Regras fixas]].

@@ -25,4 +25,5 @@ atualizado: 2026-10-12
 - [[O que é o projeto]] · [[Como funciona]] · [[Pessoas e PCs]] · [[Glossário]]
 - [[Regras fixas]] · [[Como entregar]] · [[Decisões]]
 - [[Ideias e pendências]] · [[Problemas resolvidos]] · [[Padrão de design]]
+- [[Painel em casa]] (modo casa: dados reais, só visualização)
 - Diário: [[Diário/2026-10-12]] (mais recente) · pasta `Diário/`

@@ -224,3 +224,23 @@ def test_pagina_inteira_espera_arquivo_completo(tmp_path, monkeypatch):
     leituras = iter(["<html><script>let a = `", "<html><body>ok</body></html>\n"])
     monkeypatch.setattr(type(tmp_path), "read_text", lambda self, **k: next(leituras))
     assert app_servidor._pagina_inteira().endswith("</html>\n")
+
+
+def test_modo_casa_porteiro_ignora_toda_gravacao():
+    # PC de casa (12/10/2026): só lê; nenhuma gravação chega ao Google
+    import sheets
+    b = object.__new__(sheets.BackendSoLeitura)
+    chamadas = []
+    b._com_aba = lambda *a, **k: chamadas.append(a)
+    for nome in ("escrever", "criar_aba_status", "criar_aba_log", "inserir_no_topo", "substituir_aba",
+                 "garantir_colunas", "anexar_linhas", "apagar_linhas", "apagar_aba"):
+        assert getattr(b, nome)("planilha", "aba", [["x"]]) is None
+    assert chamadas == []
+
+
+def test_modo_casa_nao_executa_comando_nem_se_registra(monkeypatch):
+    import app_servidor
+    e = object.__new__(app_servidor.Estado)
+    e.so_ver = True
+    monkeypatch.setattr(app_servidor.rede_pcs, "pendentes", lambda *a: (_ for _ in ()).throw(AssertionError("leu comando")))
+    assert e._rede({}, []) is None
