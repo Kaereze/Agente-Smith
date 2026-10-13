@@ -1112,6 +1112,10 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .btn-novo:focus-visible{outline:2px solid var(--verde);outline-offset:2px}
 .compor-cab select#nf-de{max-width:100%;min-width:0;flex:1;font:inherit;padding:4px 6px;border:1px solid var(--linha);border-radius:var(--raio);background:var(--folha);color:var(--tinta)}
 .linha-cab .de-novo{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+/* janela de escrever quase em tela cheia (usuário, 13/10/2026) */
+.modal.compor{width:min(1600px,96vw)!important;height:94vh;max-height:94vh!important;display:flex;flex-direction:column}
+.modal.compor .compor-corpo{flex:1;min-height:0}
+.modal.compor .editor{min-height:42vh}
 </style>
 </head>
 <body>
