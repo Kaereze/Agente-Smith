@@ -25,6 +25,7 @@ tags: [cerebro/trabalho]
 | **Cadastro de hotéis** (cartão Cadastrar) | `painel.js` → `carregarCadastro`, `htmlCadastro` | `cadastro_faltando`, `adicionar_cadastro`; `saude.cadastro_faltando` |
 | **Enviar NF ao hóspede** | `painel.js` → `abrirEnvioNF`, `validarEnvioNF`, `enviarNF`, `acompanharNF`, `escolherSelo` | `pedir_envio`, `conferir_anexos`, `situacao_envio`; `envio_nf.py` |
 | **Enviar pendentes** (robô pela tela) | `painel.js` → `abrirEnvio`, `acompanharEnvio` | `app_envio.py` |
+| **Assinaturas** (selos do Painel e imagem das assinaturas do Outlook) | `app_ui/assinaturas/<agente>.png` (1200×380) | `envio_nf.LARGURA_SELO`; no Outlook de cada PC: `python Automacoes	rocar_assinatura_outlook.py <agente>` (só troca a imagem, mantém o texto, guarda cópia `_arquivos.antes-AAAAMMDD`) |
 | **Respostas prontas** | `painel.js` → `MODELOS_RESPOSTA`, `linhaModelos`, `dadosDoModelo` | — |
 | **Modo Professor** (frases azuis) | `index.html` → `DICAS_BOTOES`, `aplicarDicasBotoes`, `aplicarProfessor` | `POST /api/professor` |
 | **Agente do PC / menu do operador** | `index.html` → `desenharOperador`, `menuOperador` | `identidade.py`, `nome_do_agente` |

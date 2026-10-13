@@ -186,7 +186,7 @@ PASTA_SELOS = Path(__file__).resolve().parent.parent / "app_ui" / "assinaturas"
 NOMES_SELOS = {"joao": "João"}
 ORDEM_SELOS = ["joao", "cristian", "clara", "bernardo"]
 CID_SELO = "selo_nf"
-LARGURA_SELO = 460
+LARGURA_SELO = 520   # 13/10/2026: assinatura nova é mais larga (2400x760)
 
 
 def selos():
