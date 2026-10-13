@@ -75,3 +75,27 @@ def test_encaminhar_leva_a_assinatura_padrao(monkeypatch):
     args, kw = pedidos[0]
     assert kw.get("selo") == "joao" and len(args) == 7          # selo pelo nome; cc não recebe a assinatura
     assert kw.get("acao") == app_servidor.envio_nf.ENCAMINHAR
+
+
+def test_tira_a_assinatura_automatica_do_outlook():
+    # 13/10/2026: Reply()/Forward() já vinham com a assinatura padrão da caixa; somada à do Painel, saíam duas
+    html = ("<html><body><p class=MsoNormal><o:p>&nbsp;</o:p></p>"
+            "<p class=MsoNormal><a name=\"_MailAutoSig\">Prezado(a) hóspede,</a></p>"
+            "<p class=MsoNormal>Atenciosamente,<img src=\"cid:image001.png@01DC5E2A.1\"></p>"
+            "<div style='border:none;border-top:solid #E1E1E1 1.0pt;padding:3.0pt 0cm 0cm 0cm'>"
+            "<p><b>De:</b> hospede@x.com</p></div><p>texto original do hóspede</p></body></html>")
+    limpo, cids = envio_nf.tirar_assinatura_automatica(html)
+    assert "Prezado(a) hóspede" not in limpo and "image001" not in limpo
+    assert "texto original do hóspede" in limpo and "De:" in limpo       # o histórico continua
+    assert cids == {"image001.png@01dc5e2a.1"}
+    assert envio_nf.tirar_assinatura_automatica("<p>sem assinatura</p>") == ("<p>sem assinatura</p>", set())
+
+
+def test_espelho_mostra_se_o_enviado_saiu_pelo_painel():
+    import espelho_emails as ee
+    agora = datetime.datetime(2026, 10, 13, 11, 0)
+    itens = {"a": {"id": "a", "pasta": ee.ENVIADO, "caixa": "c", "hotel": "VERNON", "de": "c", "para": "h@x.com",
+                   "assunto": "NF", "quando": "2026-10-13T10:00:00", "via": "painel"}}
+    linhas = ee.linhas_da_aba(itens, {}, "PC1", agora)
+    assert len(linhas[1]) == len(ee.CABECALHO)
+    assert ee.ler_aba(linhas)[0]["via"] == "painel"

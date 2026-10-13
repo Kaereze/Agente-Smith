@@ -43,7 +43,17 @@ logger = configurar_logging("espelho_emails")
 PREFIXO_ABA = "Correio_"
 PREFIXO_TEXTOS = "CorreioTexto_"
 CABECALHO = ["ID", "Pasta", "Caixa", "Hotel", "De", "Nome", "Para", "Assunto", "Quando", "Anexos", "Prévia",
-             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise", "Lido Outlook"]
+             "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise", "Lido Outlook", "Via"]
+# Marca invisível nos e-mails que o Painel envia (usuário, 13/10/2026: saber se saiu do Painel ou do Outlook da pessoa)
+MARCA_PAINEL = "http://schemas.microsoft.com/mapi/string/{00020329-0000-0000-C000-000000000046}/PainelFiscal"
+
+
+def foi_pelo_painel(item):
+    """True se o e-mail (Itens Enviados) saiu pelo Painel Fiscal (tem a marca invisível)."""
+    try:
+        return bool(item.PropertyAccessor.GetProperty(MARCA_PAINEL))
+    except Exception:
+        return False
 CAB_TEXTOS = ["ID", "Texto", "Citado"]
 ABA_EVENTOS = "Eventos_Correio"
 PREFIXO_PEDIDOS = "CaixaPedidos_"
@@ -371,7 +381,8 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao="", lido_desde=None):
                        pc, carimbo, texto_quartos(e) if entrada else "",
                        reclama_falta_nota(e.get("texto", "")) if entrada else "",
                        " ".join(e.get("classes", [])) if entrada else "", versao, e.get("analise", "") if entrada else "",
-                       ("TRUE" if lido_confirmado(e, lido_desde, agora) else "FALSE") if entrada else ""])
+                       ("TRUE" if lido_confirmado(e, lido_desde, agora) else "FALSE") if entrada else "",
+                       e.get("via", "") if e["pasta"] == ENVIADO else ""])
     # respostas: TODAS numa célula só ("endereço=quando;..."), as mais novas primeiro — 400 linhas viravam 80 KB
     limite = agora - datetime.timedelta(days=RESPOSTAS_DIAS)
     pares, tamanho = [], 0
@@ -382,7 +393,7 @@ def linhas_da_aba(itens, enviados, pc, agora=None, versao="", lido_desde=None):
         pares.append(par)
         tamanho += len(par) + 1
     if pares:
-        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao, "", ""])
+        linhas.append(["r:*", RESPOSTA, "", "", "", "", "", "", "", "", ";".join(pares), pc, carimbo, "", "", "", versao, "", "", ""])
     return linhas
 
 
@@ -400,7 +411,7 @@ def ler_textos(linhas):
 def ler_aba(linhas):
     """Linhas de uma aba Correio_<PC> -> [dict] (entrada, enviado e resposta)."""
     chaves = ["id", "pasta", "caixa", "hotel", "de", "nome", "para", "assunto", "quando", "anexos", "previa",
-              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto", "analise", "lido_outlook"]
+              "pc", "atualizado", "quartos", "falta_nota", "classes", "versao_texto", "analise", "lido_outlook", "via"]
     saida = []
     for l in (linhas or [])[1:]:
         if not l or not str(l[0]).strip():
@@ -586,7 +597,7 @@ class Espelho:
                          "hotel": caixas.get(caixa, ""), "de": caixa, "nome": "", "para": ", ".join(sorted(destinos)),
                          "assunto": str(item.Subject or ""), "quando": quando.isoformat(timespec="seconds"),
                          "anexos": anexos_do_item(item), "texto": dividir_historico(corpo)[0][:MAX_TEXTO_ENVIADO],
-                         "citado": ""}
+                         "citado": "", "via": "painel" if foi_pelo_painel(item) else "outlook"}
 
     def _recebido(self, item, caixa, caixas, rede, antigo, vouchers):
         if getattr(item, "Class", 43) != 43:

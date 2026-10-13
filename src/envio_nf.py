@@ -569,6 +569,28 @@ def contas_do_outlook():
 PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
 
 
+def tirar_assinatura_automatica(html):
+    """O Outlook põe sozinho a assinatura padrão da caixa no Reply()/Forward() (marca "_MailAutoSig"). Somada à do
+    Painel, saíam duas assinaturas (usuário, 13/10/2026). -> (html sem ela, cids das imagens dela)."""
+    i = html.find("_MailAutoSig")
+    if i < 0:
+        return html, set()
+    inicio = max(html.rfind("<p", 0, i), html.rfind("<div", 0, i))
+    fim = -1
+    for marca in ("border-top:solid #E1E1E1", "divRplyFwdMsg", "<hr"):
+        k = html.find(marca, i)
+        if k > 0:
+            fim = max(html.rfind("<div", i, k), html.rfind("<p", i, k)) if marca != "<hr" else k
+            if fim < i:
+                fim = k
+            break
+    if inicio < 0 or fim < 0:
+        return html, set()
+    bloco = html[inicio:fim]
+    cids = {c.lower() for c in re.findall(r"cid:([^\"'>\s]+)", bloco, re.I)}
+    return html[:inicio] + html[fim:], cids
+
+
 def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a="",
                         encaminhar_de=""):
     """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
@@ -594,6 +616,7 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     else:
         mail = original.Forward() if encaminhar_de else original.Reply()
     historico = mail.HTMLBody if original is not None else ""
+    historico, cids_automaticos = tirar_assinatura_automatica(historico)   # só a assinatura escolhida no Painel
     mail.To = para
     if cc:
         mail.CC = cc
@@ -612,12 +635,25 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
         mail.HTMLBody = corpo_do_email(mensagem, html_assinatura)
         if historico:   # sem selo também: a resposta/encaminhamento leva o e-mail original embaixo
             mail.HTMLBody = re.sub(r"</body>\s*</html>\s*$", "", mail.HTMLBody) + "<br>" + historico
+    if cids_automaticos:   # a imagem da assinatura automática vem como anexo escondido: sai junto
+        for k in range(mail.Attachments.Count, 0, -1):
+            try:
+                cid = str(mail.Attachments.Item(k).PropertyAccessor.GetProperty(PR_ATTACH_CONTENT_ID) or "").lower()
+            except Exception:
+                cid = ""
+            if cid and cid in cids_automaticos:
+                mail.Attachments.Item(k).Delete()
     for arquivo, cid in imagens:
         anexo_img = mail.Attachments.Add(str(arquivo))
         anexo_img.PropertyAccessor.SetProperty(PR_ATTACH_CONTENT_ID, cid)
     for anexo in anexos:
         mail.Attachments.Add(str(anexo))
     mail._oleobj_.Invoke(*(DISPID_SEND_USING_ACCOUNT, 0, 8, 0, conta))
+    try:   # marca invisível: o espelho mostra "pelo Painel" nos Itens enviados
+        import espelho_emails
+        mail.PropertyAccessor.SetProperty(espelho_emails.MARCA_PAINEL, f"{agente}|{agora().isoformat(timespec='seconds')}")
+    except Exception:
+        logger.debug("marca do Painel no e-mail", exc_info=True)
     mail.Send()
     try:
         ns.SendAndReceive(False)

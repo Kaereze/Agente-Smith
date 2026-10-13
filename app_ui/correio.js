@@ -180,7 +180,7 @@ function linhaEmail(e) {
   const enviado = e.pasta === "enviado", excluido = e.pasta === "excluido";
   const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
   const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de);
-  const situacao = cinza ? " · respondido" : excluido ? " · excluído" : "";
+  const situacao = cinza ? " · respondido" : excluido ? " · excluído" : enviado && e.via ? (e.via === "painel" ? " · pelo Painel" : " · pelo Outlook") : "";
   return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
       aria-selected="${sel}" data-id="${esc(e.id)}" title="${e.urgente ? esc(e.motivo_urgencia || "Urgente") : ""}">
     <div class="cx-l1">${e.urgente && !cinza ? `<span class="cx-ponto" aria-label="urgente"></span>` : ""}<span class="cx-quem">${esc(quem)}</span>

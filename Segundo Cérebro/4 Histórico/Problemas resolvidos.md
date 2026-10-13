@@ -22,6 +22,8 @@ tags: [cerebro/historico]
 | 13/10/2026 | Busca ao vivo entre os PCs nunca funcionou | Nenhum PC tinha a regra da porta 8766, os Wi-Fi estão como rede Pública e havia bloqueio do `pythonw.exe` (alguém clicou "Cancelar" no aviso do firewall; bloqueio vence permissão) | `liberar_rede.ps1` tira os bloqueios do Python e cria a regra só para a rede local; aplicado nos 4 PCs com a senha de administrador |
 | 13/10/2026 | `git pull` do Bernardo: "Cannot fast-forward to multiple branches" | `FETCH_HEAD` com a lista de branches duplicada (provável autofetch do VS Code em paralelo) | O atualizador agora faz `fetch` + `merge --ff-only origin/<ramo>` (não depende do FETCH_HEAD); antes falhou às 08:55 de 13/10 |
 
+| 13/10/2026 | E-mail enviado pelo Painel saía com **duas assinaturas** | O Reply()/Forward() do Outlook já vem com a assinatura padrão da caixa (marca `_MailAutoSig`); o Painel somava a dele | `envio_nf.tirar_assinatura_automatica` tira o bloco e a imagem escondida; fica só a do Painel. E-mails do Painel levam a marca invisível `PainelFiscal` (Itens enviados mostra "pelo Painel"/"pelo Outlook") |
+
 ## Cuidados aprendidos
 - Scripts de alteração: escrever o arquivo `.py` pelo editor, não por heredoc (barras invertidas quebram).
 - No Windows, `git` avisa LF→CRLF: é normal.
