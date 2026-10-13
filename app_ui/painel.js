@@ -524,8 +524,9 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
       <div class="dica">Mensagem padrão e selo da caixa ${esc(o.conta_de)}, como no Outlook (prévia deste PC; sai a do PC que enviar)</div>`
       : enc ? "" : `<div class="dica">Sem assinatura do Outlook para ${esc(o.conta_de)} neste PC.</div>`}
     ${resp?.citacao ? `<div class="cx-citacao" aria-label="Mensagem original">${resp.citacao}</div>` : ""}`;
-  if (enc) $("nf-msg").dataset.dica = "Escreva uma mensagem (opcional) — o e-mail original vai junto, embaixo.";
-  $("nf-msg").innerText = novo ? modeloSolicitacaoDados() : resp && resp.comNF ? o.corpo_nf : o.corpo;
+  if (enc) $("nf-msg").dataset.dica = "Mensagem (dá pra editar) — o e-mail original vai junto, embaixo.";
+  // responder e encaminhar já vêm com a mensagem padrão da NF (usuário, 13/10/2026: "qualquer coisa eu altero no meio do caminho")
+  $("nf-msg").innerText = novo ? modeloSolicitacaoDados() : resp ? (o.corpo_nf || o.corpo) : o.corpo;
   if (resp) { $("nf-assunto").value = novo ? `Solicitação de dados - Nota Fiscal ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
   if (novo) comboDe(o);
   if (novo) envNF.escolherDe = async conta => {   // trocou a caixa: de qual PC sai e o hotel do assunto
