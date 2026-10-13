@@ -12,7 +12,7 @@ tags: [cerebro/inicio]
 1. Esta página → **Onde paramos** e **Próximos passos**.
 2. [[Hierarquia de prioridades]] → o que vence quando duas coisas brigam.
 3. [[Regras fixas]] → o que **não** mexer. [[Credenciais]] → onde ficam (nunca o valor).
-4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
+4. [[Onde mexer]] → a tarefa aponta o arquivo e a função; [[Pastas do projeto]] → o risco de cada pasta. **Só então** abrir o código.
 5. No fim: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (13/10/2026)
@@ -49,5 +49,8 @@ tags: [cerebro/inicio]
 
 > [!abstract] 6 Documentos — turquesa · **guias completos**
 > [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
+
+> [!p4] 7 Pastas do projeto — rosa · **cada pasta do código: o que tem, risco e como mexer**
+> [[Pastas do projeto]] · [[Mapa das pastas.canvas|Mapa das pastas]]
 
 > [!quote] Diário — cinza · um arquivo por dia (`Diário/AAAA-MM-DD`). 99 Rascunhos = quadros vazios guardados, fora do mapa.

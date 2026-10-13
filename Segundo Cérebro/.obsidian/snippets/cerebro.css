@@ -62,3 +62,11 @@ a.tag[href="#cerebro/diario"]    { background: color-mix(in srgb, var(--cb-diari
 .markdown-rendered table th, .cm-table-widget th { background: rgba(242,193,78,.14); }
 /* propriedades */
 .metadata-container { border-left: 3px solid var(--cb-inicio); padding-left: 8px; }
+
+/* 7 Pastas do projeto (rosa) e etiquetas de risco */
+.nav-folder-title[data-path^="7 Pastas do projeto"] { color: #E879F9; font-weight: 600; }
+a.tag[href="#cerebro/pastas"] { background: rgba(232,121,249,.18); color: #E879F9; }
+a.tag[href="#risco/vermelho"] { background: rgba(229,72,77,.18); color: #E5484D; }
+a.tag[href="#risco/laranja"]  { background: rgba(240,140,46,.18); color: #F08C2E; }
+a.tag[href="#risco/azul"]     { background: rgba(62,155,255,.18); color: #3E9BFF; }
+a.tag[href="#risco/verde"]    { background: rgba(47,191,113,.18); color: #2FBF71; }
