@@ -7,7 +7,7 @@
 - O **gráfico** (ícone de rede na lateral do Obsidian) mostra como as notas se ligam.
 
 ## Para o Claude (regras de manutenção)
-1. **Começo de conversa:** ler [[00 Início]] (e o que ele apontar) antes de agir.
+1. **Começo de conversa:** `git pull`; ler [[00 Início]] → [[Hierarquia de prioridades]] → [[Regras fixas]] → [[Onde mexer]]. Só abrir o código no arquivo que [[Onde mexer]] apontar; se ele estiver errado ou incompleto, **corrigir a nota** na mesma entrega.
 2. **Fim de cada etapa** (depois do commit e do "Atualizar todos os PCs"):
    - acrescentar no diário do dia (`Diário/AAAA-MM-DD.md`): o que foi feito, versão (commit) e o que ficou pendente;
    - atualizar "Onde paramos" e "Próximos passos" em [[00 Início]];
@@ -15,5 +15,7 @@
    - erro resolvido → [[Problemas resolvidos]] (sintoma, causa, correção);
    - regra nova → [[Regras fixas]].
 3. Escrever em português simples, curto, sem jargão. Datas sempre absolutas (12/10/2026, nunca "ontem").
-4. **Nunca** guardar aqui senhas, tokens, a chave do Google ou o segredo do Mail Analytics.
-5. Não apagar o que o João escreveu; se algo mudou, marcar como ~~antigo~~ e escrever o novo embaixo.
+4. **Nunca** guardar aqui senhas, tokens, a chave do Google ou o segredo do Mail Analytics. O cofre vai para o GitHub: só o **mapa** de [[Credenciais]] (o que é e onde fica).
+5. Conversa que **muda o rumo** do projeto → [[Marcos do projeto]] (data, frase do João, o que mudou).
+6. Arquivo ou função nova/renomeada → atualizar [[Onde mexer]] e [[Mapa do código]].
+7. Não apagar o que o João escreveu; se algo mudou, marcar como ~~antigo~~ e escrever o novo embaixo.

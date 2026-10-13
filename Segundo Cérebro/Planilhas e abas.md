@@ -1,0 +1,32 @@
+# Planilhas e abas
+
+IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/relatorio_semana.py` → `PLANILHA_MAIL_ANALYTICS`. (IDs não são senha: o acesso depende do compartilhamento.)
+
+## Planilha Central! (Krz) — o hub da equipe
+| Aba | Quem grava | Quem lê | Observação |
+|---|---|---|---|
+| Uma aba por hotel (respostas copiadas) | `sincronizar.py` (PC principal) | Painel, robô | Cópia das planilhas dos hotéis |
+| `Cadastro_Hoteis` | João / cartão Cadastrar | Todos | **Sem cabeçalho**: hotel · e-mail · agente |
+| `Status` | João | Robô | B1 liga/desliga o painel do robô |
+| `Tratamento` | Conferente / robô | Painel | A:H, uma linha por solicitação |
+| `Log de Envios` | Robô | — | Histórico de envios |
+| `Envios_NF`, `Envios_NF_Anexos` | Painel (Enviar NF) | PC dono da caixa | Fila de envio de NF entre PCs |
+| `PCs_Painel` | Cada PC | Todos | Versão, Outlook, saúde (coluna L) |
+| `Comandos_PC` | Painel ("Atualizar todos") | Cada PC | Respostas na mesma aba |
+| `Eventos_Correio` | Painel (lido/excluído) | Todos | Faxina 3 dias |
+| `Correio_<PC>` | `espelho_emails.py` do PC | Painel | Caixa de entrada espelhada (coluna "Lido Outlook") |
+| `CorreioTexto_<PC>` | idem | Painel | Texto dos e-mails |
+| `CaixaPedidos_<PC>` | idem | Painel | Solicitações do robô na Caixa de Entrada |
+| `ContagemPainel_<PC>` | `contagem_painel.py` (João/Cristian) | Relatório | Fim de semana |
+| `Atividade_Robo` | Todos os robôs | Log da tela | Faxina 7 dias |
+| `Conferência da Cópia` | `conferir_copia.py` | — | Auditoria da cópia |
+
+## Fora da Central (só leitura)
+| Planilha | Abas | Regra |
+|---|---|---|
+| Planilhas dos hotéis (Drive de outra conta) | respostas do formulário | Só ler |
+| Mail Analytics | `Agente_Joao`, `Agente_Clara`, `Agente_Cristian`, `Agente_Bernardo` (Data, Hotel, Recebidos, Enviados, Ligações, Subst./Canc., NFs) | Só ler · fim de semana vira linha de domingo, gravada segunda de manhã |
+| Fiscal Intelligence (gravada pelo Mail Analytics) | — | Só ler |
+
+## Cota
+60 leituras/min somando os 4 PCs, dividida em `cota_google.py`. Toda leitura nova entra na conta ([[Hierarquia de prioridades]] P3).

@@ -15,3 +15,11 @@ config.local.json
 # Obsidian: estado da janela de cada PC
 Segundo Cérebro/.obsidian/workspace*.json
 Segundo Cérebro/.trash/
+
+# credenciais: nunca sobem (ver Segundo Cérebro/Credenciais.md)
+chave*.json
+*service-account*.json
+*service_account*.json
+*.pem
+*.key
+.env

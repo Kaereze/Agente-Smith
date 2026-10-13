@@ -1,29 +1,37 @@
 ---
-atualizado: 2026-10-12
+atualizado: 2026-10-13
 ---
 # Segundo Cérebro — Projeto Notas Fiscais
 
 > A memória do projeto. O João tem as ideias; o Claude programa. Os dois leem e escrevem aqui.
-> Claude: leia esta página no começo de toda conversa e atualize no fim de cada etapa (ver [[Como usar este cérebro]]).
+> Fica dentro do repositório `Kaereze/Notas-Fiscais` (todas as branches): chega a qualquer PC pelo clone.
 
-## Onde paramos (12/10/2026)
-- Os 4 PCs estão na mesma versão (`032bd6e`), com o Painel e o robô no ar. O PC do Bernardo estava desligado.
-- Mail Analytics: a linha de domingo (11/10) dos 4 agentes já foi gravada. Nada a corrigir.
-- O João pediu este Segundo Cérebro **antes** de seguir com o resto. Ele fica dentro do repositório `Kaereze/Notas-Fiscais` (todas as branches), então chega a qualquer PC pelo clone.
+## Claude: comece por aqui (economiza tempo e tokens)
+1. Esta página → **Onde paramos** e **Próximos passos**.
+2. [[Hierarquia de prioridades]] → o que vence quando duas coisas brigam.
+3. [[Regras fixas]] → o que **não** mexer. [[Credenciais]] → onde ficam (nunca o valor).
+4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
+5. No fim: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Próximos passos (combinados em 12/10)
-1. **Guia de design**: página com o padrão fixo para aprovar (rascunho pronto em [[Padrão de design]]).
-2. **Ficha-resumo** no topo da ficha do Painel: tomador, estadia, como quer a nota, situação e histórico (histórico por regra, sem IA).
-3. **Velocidade do Painel**: medir e reduzir o tempo para abrir e trocar de tela.
-4. Aplicar o padrão de design em todas as telas.
+## Onde paramos (13/10/2026)
+- GitHub e PC do trabalho na versão `58661bc` (4 branches iguais). Painel e robô no ar.
+- **Modo casa** pronto: no PC de casa o Painel mostra os dados reais só para ver ([[Painel em casa]]). Falta o João criar a chave de casa (só leitura).
+- PC de casa (DESKTOP-7J2E10S) tem a correção do modo demonstração `1dbdac4` **ainda não enviada**; combinado: enviar para a branch `casa`, o Claude revisa e junta na `main`.
+- Segundo Cérebro completo: hierarquia, restrições, credenciais (mapa), marcos, onde mexer, mapa do código, planilhas, API.
+
+## Próximos passos
+1. Trazer os commits de casa (branch `casa`) → revisar → `main`.
+2. **Guia de design** para aprovar (`guia-painel-fiscal.html`) → aplicar o padrão em todas as telas ([[Padrão de design]]).
+3. **Ficha-resumo** no topo da ficha (tomador · estadia · como quer a nota · situação e histórico por regra).
+4. **Velocidade do Painel**: medir e reduzir.
 
 ## Esperando o João
-- **Firewall da porta 8766** (busca ao vivo entre os PCs): Clara e Cristian estão em Wi-Fi com perfil *Público*. Escolher: rede como *Privada*, ou regra Pública limitada à rede local (`liberar_rede.ps1`). Precisa de administrador nos PCs.
-- **Cadastro** de CAMPO GRANDE, IDEAL, PALACE, Itapoá e Pousada Jeri: deixado para depois.
+- **Firewall 8766** (Clara e Cristian em Wi-Fi Público): rede Privada ou regra Pública só na rede local; precisa de administrador.
+- **Cadastro** de CAMPO GRANDE, IDEAL, PALACE, Itapoá e Pousada Jeri: depois.
 
-## Mapa
-- [[O que é o projeto]] · [[Como funciona]] · [[Pessoas e PCs]] · [[Glossário]]
-- [[Regras fixas]] · [[Como entregar]] · [[Decisões]]
-- [[Ideias e pendências]] · [[Problemas resolvidos]] · [[Padrão de design]]
-- [[Painel em casa]] (modo casa: dados reais, só visualização)
-- Diário: [[Diário/2026-10-12]] (mais recente) · pasta `Diário/`
+## Mapa do cofre
+- **Regras e segurança:** [[Hierarquia de prioridades]] · [[Regras fixas]] · [[Credenciais]]
+- **Como trabalhar:** [[Onde mexer]] · [[Como entregar]] · [[Como usar este cérebro]]
+- **Como o sistema é:** [[O que é o projeto]] · [[Como funciona]] · [[Mapa do código]] · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
+- **História:** [[Marcos do projeto]] · [[Decisões]] · [[Problemas resolvidos]] · `Diário/`
+- **Em andamento:** [[Ideias e pendências]] · [[Padrão de design]] · [[Painel em casa]]
