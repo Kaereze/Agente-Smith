@@ -25,6 +25,7 @@ from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro,
                          ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
                          trocar_paragrafo_status)
 from log_util import configurar_logging
+import outlook_vivo
 
 logger = configurar_logging("conferente")
 
@@ -477,12 +478,11 @@ IDENTIDADE_SEGUNDOS = 6 * 60 * 60
 def _identificar(cfg):
     try:
         import pythoncom
-        import win32com.client
         import identidade
         from config import caminho_chave_google
         from sheets import BackendGoogle
         pythoncom.CoInitialize()
-        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         dados = identidade.detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
         papel = carregar_config()["papel"]
         logger.info(f"🪪 Este PC: {dados.get('agente') or '?'} → papel {papel}")
@@ -640,9 +640,9 @@ def main():
         return 0
     import cota_google
     cota_google.configurar("conferente_principal" if e_principal(cfg) else "conferente")
+    outlook_vivo.iniciar_guardiao()   # usuário, 13/10/2026: Outlook obrigatoriamente aberto (com janela) com o PC ligado
 
     import pythoncom
-    import win32com.client
     from config import caminho_chave_google
     from sheets import BackendGoogle, garantir_rotulos_status
 
@@ -696,7 +696,7 @@ def main():
         if agora >= proxima_conferencia:
             try:
                 pythoncom.CoInitialize()
-                outlook = win32com.client.Dispatch("Outlook.Application")
+                outlook = outlook_vivo.aplicativo()
                 namespace = outlook.GetNamespace("MAPI")
                 if not categorias_ok:
                     garantir_categorias(namespace)
@@ -724,7 +724,7 @@ def main():
             # Vigia (20 s): só olha o Outlook. E-mail novo enviado/recebido -> conferência e espelho agora.
             try:
                 pythoncom.CoInitialize()
-                namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                namespace = outlook_vivo.aplicativo().GetNamespace("MAPI")
                 import vigia_outlook
                 vigia = vigia or vigia_outlook.Vigia()
                 novos = vigia.novidades(namespace)
@@ -749,7 +749,7 @@ def main():
         if agora >= proxima_confirmacao or agora >= proximo_espelho:
             try:
                 pythoncom.CoInitialize()
-                namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                namespace = outlook_vivo.aplicativo().GetNamespace("MAPI")
             except Exception as e:
                 logger.warning(f"⚠️ Outlook indisponível ({e}) — confiro de novo em 2 min.")
                 namespace = None

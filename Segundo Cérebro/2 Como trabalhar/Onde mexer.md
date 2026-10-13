@@ -46,11 +46,14 @@ tags: [cerebro/trabalho]
 | **Faxina da Central** | `faxina.py` |
 | **Cota do Google** | `cota_google.py`, `rede_util.py` (retry) |
 | **Janela, X que esconde, abrir com o Windows** | `app_janela.py` |
+| **Outlook: guardião (abrir com janela), porta única do COM** | `outlook_vivo.py` → `estado`, `garantir`, `aplicativo`, `iniciar_guardiao` (ligado no `conferente.main`); estado no Painel via `rede_pcs.outlook_aberto` |
+| **Saúde: último e-mail recebido, alarme "nenhum e-mail chega"** | `saude.py` → `ultimo_recebido`, `problemas`; coletado no `app_servidor.vigiar_caixa_de_saida` |
 | **Modo demonstração / modo casa** | `demo.py`; servidor `main()` (`--demo`, `--visualizar`); `sheets.BackendSoLeitura`; `PAINEL_DEMO_EM_CASA.bat` |
 | **Avisos do Windows** | `avisos_windows.py` |
 | **Configuração** | `config.json` (todos), `config.local.json` (só do PC, papel principal/conferente), `config.py` |
 
 ## Armadilhas conhecidas
+- **Nunca** chamar `win32com.client.Dispatch("Outlook.Application")` direto: use `outlook_vivo.aplicativo()` (o Dispatch com o Outlook fechado cria um Outlook **sem janela**, que não baixa e-mail POP3).
 - `index.html` tem várias camadas de CSS com `!important`: regra nova sempre no **fim** do `<style>`.
 - Script de alteração: escrever o `.py` pelo editor (heredoc quebra as barras invertidas do Windows).
 - Capturas de tela: scripts `cdp_*.js` no scratchpad, Edge sem janela, porta 8765; **nunca** abrir e-mail não lido, nunca Enviar/Cadastrar, nunca mexer no Professor.

@@ -66,14 +66,14 @@ def pendentes(linhas, pc, agora=None):
     return [p for p in pedidos if p[0] not in respondidos]
 
 
+TEXTO_OUTLOOK = {"aberto": "aberto", "sem_janela": "sem janela", "fechado": "fechado"}
+
+
 def outlook_aberto():
-    """Outlook clássico rodando neste PC (é ele que o robô lê)."""
-    try:
-        r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq OUTLOOK.EXE", "/NH"], capture_output=True, text=True,
-                           timeout=15, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        return "outlook.exe" in (r.stdout or "").lower()
-    except Exception:
-        return None
+    """Estado do Outlook clássico deste PC: "aberto" | "sem janela" | "fechado" | None (13/10/2026: antes só via se o
+    OUTLOOK.EXE existia; um Outlook escondido, aberto pelo COM, aparecia como "aberto" e não recebia e-mail)."""
+    import outlook_vivo
+    return TEXTO_OUTLOOK.get(outlook_vivo.estado())
 
 
 def ultima_conferencia():

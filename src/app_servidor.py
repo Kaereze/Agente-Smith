@@ -50,6 +50,7 @@ from hoteis import CadastroHoteis
 from app_envio import Envio
 from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
 from log_util import configurar_logging
+import outlook_vivo
 from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
 from tratamento import normalizar
 
@@ -311,7 +312,7 @@ class Estado:
     # ---------- rede de PCs ----------
     def _extras_pc(self):
         """Colunas E-J da linha deste PC em PCs_Painel."""
-        outlook = {True: "aberto", False: "fechado"}.get(self.outlook, "?")
+        outlook = self.outlook or "?"
         leituras, escritas = cota_google.consumo_deste_pc()
         # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
         uso = getattr(self, "uso_ref", None)
@@ -321,7 +322,7 @@ class Estado:
                 rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
                 f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
                 saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia(), self._planilhas_sem_cadastro(),
-                             self._ultimo_robo())]
+                             self._ultimo_robo(), getattr(self, "ultimo_recebido", ""))]
 
     def _planilhas_sem_cadastro(self):
         if not e_principal(self.cfg):
@@ -409,13 +410,16 @@ class Estado:
         """A cada 2 min conta os e-mails parados há mais de 10 min na Caixa de Saída do Outlook deste PC (só lê)."""
         def rodar():
             import pythoncom
-            import win32com.client
             pythoncom.CoInitialize()
             while True:
                 try:
-                    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                    if not outlook_vivo.pode_usar():   # nunca cria um Outlook escondido; o guardião do conferente abre
+                        time.sleep(120)
+                        continue
+                    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
                     limite = datetime.datetime.now() - datetime.timedelta(minutes=saude.SAIDA_TRAVADA_MIN)
                     vistos, presos = set(), 0
+                    self.ultimo_recebido = saude.ultimo_recebido(ns) or getattr(self, "ultimo_recebido", "")
                     for pasta in [ns.GetDefaultFolder(4)] + [c.DeliveryStore.GetDefaultFolder(4) for c in ns.Accounts]:
                         try:
                             if pasta.EntryID in vistos:
@@ -505,13 +509,16 @@ class Estado:
                 linhas.append(atividade.linha(atividade.ATUALIZADO, detalhe=f"de {anterior} para {self.versao}", agente=agente))
             CAMINHO_VERSAO.write_text(self.versao, encoding="utf-8")
             self.versao_registrada = True
-        aberto = rede_pcs.outlook_aberto()
-        if aberto is not None and aberto != self.outlook:
+        estado_outlook = rede_pcs.outlook_aberto()   # "aberto" | "sem janela" | "fechado" | None
+        if estado_outlook is not None and estado_outlook != self.outlook:
+            aberto = estado_outlook == "aberto"
             if self.outlook is not None or not aberto:
                 tipo = atividade.OUTLOOK_ABERTO if aberto else atividade.OUTLOOK_FECHADO
-                linhas.append(atividade.linha(tipo, detalhe="o robô deste PC " + ("voltou a ler" if aberto else "parou de ler")
-                                              + " os e-mails das caixas daqui", agente=agente))
-            self.outlook = aberto
+                detalhe = ("o robô deste PC voltou a ler os e-mails das caixas daqui" if aberto else
+                           "Outlook aberto sem janela: não baixa e-mail (o guardião vai abrir)" if estado_outlook == "sem janela"
+                           else "o robô deste PC parou de ler os e-mails das caixas daqui")
+                linhas.append(atividade.linha(tipo, detalhe=detalhe, agente=agente))
+            self.outlook = estado_outlook
         # Pedido novo na planilha: só o principal registra (os outros veriam o mesmo e repetiriam)
         chaves = {s["chave"]: s for s in solicitacoes}
         if self.chaves_vistas is not None and e_principal(self.cfg):
@@ -637,7 +644,8 @@ class Estado:
         """Abriu (ou "Não lido") no Painel -> o PC dono da caixa marca igual no Outlook dele (usuário, 11/10/2026).
         Cada PC só mexe nos e-mails das próprias caixas; cada clique é levado 1 vez só (lido_aplicado.json), até
         24 h depois (PC que estava desligado leva quando ligar). Só muda a marca de lido, nada mais no e-mail."""
-        if getattr(self, "demo", False) or getattr(self, "so_ver", False) or getattr(self, "_lido_rodando", False):
+        if getattr(self, "demo", False) or getattr(self, "so_ver", False) or getattr(self, "_lido_rodando", False) \
+                or not outlook_vivo.pode_usar():
             return
         pc = socket.gethostname()
         if not hasattr(self, "_lido_aplicado"):
@@ -663,9 +671,8 @@ class Estado:
         def rodar():
             try:
                 import pythoncom
-                import win32com.client
                 pythoncom.CoInitialize()
-                ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+                ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
                 for i, lido, q in tarefas:
                     entry = espelho_emails.entry_do_email(i)
                     try:
@@ -779,9 +786,8 @@ class Estado:
     # --- chamadas que chegam dos outros PCs (rede_local) ---
     def rede_buscar(self, corpo):
         import pythoncom
-        import win32com.client
         pythoncom.CoInitialize()
-        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         r = busca_outlook.buscar(ns, self._caixas_de_hotel(), corpo.get("q", ""), socket.gethostname(),
                                  limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
         return {**r, "pc": socket.gethostname()}
@@ -794,9 +800,8 @@ class Estado:
         if not corpo.get("entry"):
             raise KeyError("e-mail não está mais no espelho deste PC")
         import pythoncom
-        import win32com.client
         pythoncom.CoInitialize()
-        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         return busca_outlook.abrir(ns, str(corpo["entry"]), self._caixas_de_hotel(), socket.gethostname())
 
     def rede_ping(self, _corpo):

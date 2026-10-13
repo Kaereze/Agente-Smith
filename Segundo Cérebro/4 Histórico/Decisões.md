@@ -28,5 +28,6 @@ tags: [cerebro/historico]
 | 12/10/2026 | O cofre vai **dentro do repositório Notas-Fiscais** (main + branches) | Chegar ao PC de casa e aos PCs da equipe pelo clone |
 | 12/10/2026 | Cadastro dos hotéis que faltam: depois | — |
 | 12/10/2026 | **Modo casa**: no PC de casa o Painel vê os dados reais e não grava nada; chave do Google nova e só de leitura para casa | Trabalhar em casa sem risco para a equipe e para a cota |
+| 13/10/2026 | **Outlook obrigatoriamente aberto** (com janela) enquanto o PC estiver ligado: guardião abre sozinho se fechar | Outlook escondido deixou o PC do Cristian 3 dias sem receber e-mail |
 
 Ver: [[O que não mexer]].

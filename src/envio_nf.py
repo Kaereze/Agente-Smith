@@ -19,6 +19,7 @@ from pathlib import Path
 
 from controle_nf import _tokens, ler_assunto_nf
 from log_util import configurar_logging
+import outlook_vivo
 
 logger = configurar_logging("envio_nf")
 
@@ -560,9 +561,8 @@ def juntar_anexo(linhas_anexos, id_envio):
 # ---------- Outlook ----------
 def contas_do_outlook():
     import pythoncom
-    import win32com.client
     pythoncom.CoInitialize()
-    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
     return [str(c.SmtpAddress or "").strip().lower() for c in ns.Accounts if c.SmtpAddress]
 
 
@@ -575,9 +575,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     a assinatura da caixa no Outlook), imagens embutidas, e os anexos. responder_a / encaminhar_de: EntryID do
     e-mail original (resposta ou encaminhamento de verdade, com o original embaixo). Levanta erro legível."""
     import pythoncom
-    import win32com.client
     pythoncom.CoInitialize()
-    outlook = win32com.client.Dispatch("Outlook.Application")
+    outlook = outlook_vivo.aplicativo()
     ns = outlook.GetNamespace("MAPI")
     conta = next((c for c in ns.Accounts if str(c.SmtpAddress or "").strip().lower() == conta_de.lower()), None)
     if conta is None:
@@ -629,9 +628,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
 def excluir_no_outlook(entry_id):
     """Move o e-mail pra Itens Excluídos (o Outlook guarda; dá pra recuperar de lá)."""
     import pythoncom
-    import win32com.client
     pythoncom.CoInitialize()
-    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
     try:
         item = ns.GetItemFromID(entry_id)
     except Exception:

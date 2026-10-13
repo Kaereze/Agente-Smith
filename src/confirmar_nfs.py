@@ -35,6 +35,7 @@ from arquivos import salvar_json, so_na_nuvem
 from config import PASTA_ESTADO, caminho_chave_google, carregar_config
 from controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
+import outlook_vivo
 from sheets import ler_hoteis
 
 logger = configurar_logging("confirmar_nfs")
@@ -568,11 +569,10 @@ def rodar(namespace, cfg, usar_dropbox):
 
 
 if __name__ == "__main__":
-    import win32com.client
     from sheets import BackendGoogle
     cfg = carregar_config()
     gravar = "--gravar" in sys.argv
-    ns = None if "--sem-email" in sys.argv else win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    ns = None if "--sem-email" in sys.argv else outlook_vivo.aplicativo().GetNamespace("MAPI")
     desde = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--desde=")), None)
     achadas = confirmar(BackendGoogle(caminho_chave_google(cfg)), cfg, ns,
                         usar_dropbox="--sem-dropbox" not in sys.argv, gravar=gravar, desde=desde,

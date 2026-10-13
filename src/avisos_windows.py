@@ -21,7 +21,7 @@ _SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 def situacao(p):
     if not p.get("online"):
         return FORA
-    if p.get("outlook") == "fechado":
+    if p.get("outlook") in ("fechado", "sem janela"):
         return OUTLOOK
     if p.get("conferencia_atrasada"):
         return PARADA

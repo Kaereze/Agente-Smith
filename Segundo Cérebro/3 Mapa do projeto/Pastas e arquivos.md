@@ -51,6 +51,7 @@ tags: [cerebro/mapa]
 | `envio_nf.py` | 895 | Envio da NF ao hóspede |
 | `controle_nf.py` · `confirmar_nfs.py` | 703 · 582 | Reconhecer/confirmar NF |
 | `analise_nf.py` · `faxina.py` | 270 · 210 | Urgência · limpeza da Central |
+| `outlook_vivo.py` | 160 | Guardião do Outlook (aberto com janela) e porta única do COM |
 | `sheets.py` · `config.py` · `cota_google.py` | 646 · 144 · 123 | Google Sheets (+ `BackendSoLeitura`) · configuração · cota |
 
 Pequenos: `prazos`, `hospedes`, `canceladas`, `tratamento`, `identidade`, `atualizador`, `cota_envio`, `vigia_outlook`, `avisos_windows`, `aviso_certificado`, `lock_execucao`, `diario_envios`, `historico`, `atividade`, `hoteis`, `fiscal_intelligence`, `robo_antigo`, `log_util`, `arquivos`, `rede_util`, `console_utf8`, `modelos`, `conferir_copia`, `classificador`, `organizador_emails`.

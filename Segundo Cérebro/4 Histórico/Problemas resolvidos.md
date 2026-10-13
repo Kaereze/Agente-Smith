@@ -17,6 +17,8 @@ tags: [cerebro/historico]
 | 11/10/2026 | Código aparecendo como texto embaixo da tela | Página lida pela metade enquanto o arquivo era regravado (atualização/edição) | Servidor só entrega a página inteira; a página recarrega sozinha se vier quebrada |
 | 11/10/2026 | Hora "Enviado em" sem segundos não ligava o pedido | Comparação exigia segundos | Compara até o minuto |
 
+| 13/10/2026 | PC do Cristian sem receber e-mail desde 09/10 (13+ solicitações não apareciam), mas o Painel dizia "Outlook aberto" | O Outlook fechou em 10/10; o robô, pelo COM, abriu um Outlook **sem janela** ("-Embedding"); contas POP3 não fazem Enviar/Receber assim. A checagem só via se o OUTLOOK.EXE existia | Outlook aberto com janela + F9 (44 e-mails baixados). Código: `outlook_vivo.py` (guardião a cada 60 s, porta única `aplicativo()`), estado "sem janela" na saúde e alarme "nenhum e-mail novo chega" |
+
 ## Cuidados aprendidos
 - Scripts de alteração: escrever o arquivo `.py` pelo editor, não por heredoc (barras invertidas quebram).
 - No Windows, `git` avisa LF→CRLF: é normal.

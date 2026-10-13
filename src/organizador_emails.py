@@ -22,6 +22,7 @@ import json
 import os
 import re
 import sys
+import outlook_vivo
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -325,8 +326,7 @@ def main():
 
     cfg = carregar_config()
 
-    import win32com.client
-    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
 
     caixas, fora_do_cadastro = descobrir_caixas(cfg, ns)
     if not caixas:

@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from arquivos import salvar_json
 from config import CAMINHO_MAQUINA, carregar_config, caminho_chave_google
 from log_util import configurar_logging
+import outlook_vivo
 from tratamento import normalizar
 
 logger = configurar_logging(__name__)
@@ -97,10 +98,9 @@ def ler():
 
 
 if __name__ == "__main__":
-    import win32com.client
     from sheets import BackendGoogle
     cfg = carregar_config()
-    ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
     dados = detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
     print(f"\nEste PC: {dados.get('agente') or '(não identificado)'}"
           + (f" · CONFLITO: {dados['conflito']}" if dados.get("conflito") else "")

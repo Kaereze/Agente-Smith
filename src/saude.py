@@ -9,10 +9,13 @@ import datetime
 COPIA_ATRASADA_MIN = 75          # a cópia roda a cada 30 min: duas voltas perdidas + folga
 SAIDA_TRAVADA_MIN = 10           # e-mail parado na Caixa de Saída há mais que isso
 HORARIO_COPIA = ("07:00", "23:30")
+SEM_EMAIL_HORAS = 6              # caixa deste PC sem e-mail novo há mais que isso...
+OUTRO_RECEBEU_HORAS = 2          # ...enquanto outro PC recebeu há menos que isso = Outlook não está baixando
+HORARIO_EMAIL = ("08:00", "22:00")
 
 
-def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo=""):
-    """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso"."""
+def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""):
+    """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso;rec=iso"."""
     partes = [f"saida={int(saida_travada or 0)}"]
     if ultima_copia:
         partes.append(f"copia={ultima_copia}")
@@ -20,7 +23,33 @@ def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo=""):
         partes.append("cad=" + "|".join(str(x).replace(";", ",").replace("=", "-") for x in sem_cadastro))
     if robo:
         partes.append(f"robo={robo}")
+    if recebido:
+        partes.append(f"rec={recebido}")
     return ";".join(partes)
+
+
+def ultimo_recebido(ns):
+    """Hora (iso) do e-mail mais novo nas Caixas de Entrada deste Outlook (13/10/2026: o Outlook do Cristian ficou 3 dias
+    sem baixar e-mail e ninguém viu). Só lê; não abre item nem muda lido."""
+    mais_novo = None
+    vistos = set()
+    for conta in ns.Accounts:
+        try:
+            pasta = conta.DeliveryStore.GetDefaultFolder(6)
+            if pasta.EntryID in vistos:
+                continue
+            vistos.add(pasta.EntryID)
+            itens = pasta.Items
+            itens.Sort("[ReceivedTime]", True)
+            item = itens.GetFirst()
+            if item is None:
+                continue
+            q = item.ReceivedTime
+            quando = datetime.datetime(q.year, q.month, q.day, q.hour, q.minute, q.second)
+            mais_novo = max(mais_novo, quando) if mais_novo else quando
+        except Exception:
+            continue
+    return mais_novo.isoformat(timespec="seconds") if mais_novo else ""
 
 
 def ler_coluna(texto):
@@ -102,11 +131,24 @@ def problemas(pcs, agora=None):
                           f"{n} e-mail(s) parado(s) há mais de {SAIDA_TRAVADA_MIN} min"})
         if p.get("outlook") == "fechado":
             saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Outlook fechado no PC de {quem}: o robô não lê as caixas dele"})
+        elif p.get("outlook") == "sem janela":
+            saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Outlook do PC de {quem} aberto sem janela: não baixa e-mail "
+                          "(o guardião está abrindo; se continuar, abra o Outlook pelo ícone e aperte F9)"})
         elif p.get("conferencia_atrasada"):
             saida.append({"nivel": "aviso", "pc": p["pc"], "texto": f"Robô do PC de {quem} parado (sem conferir o Outlook há mais de 10 min)"})
         if versao_da_maioria and p.get("versao") and p["versao"] != versao_da_maioria and len(versoes) > 1:
             saida.append({"nivel": "aviso", "pc": p["pc"], "texto": f"PC de {quem} rodando outra versão ({p['versao']}): "
                           "use \"Atualizar todos os PCs\" em Máquinas"})
+    recebidos = {p["pc"]: _data(p.get("saude", {}).get("rec")) for p in pcs if p.get("online")}
+    recebidos = {pc: r for pc, r in recebidos.items() if r}
+    if len(recebidos) > 1 and HORARIO_EMAIL[0] <= agora.strftime("%H:%M") <= HORARIO_EMAIL[1]:
+        for p in pcs:
+            r = recebidos.get(p.get("pc"))
+            outros = [x for pc, x in recebidos.items() if pc != p.get("pc")]
+            if r and outros and agora - r > datetime.timedelta(hours=SEM_EMAIL_HORAS) \
+                    and agora - max(outros) < datetime.timedelta(hours=OUTRO_RECEBEU_HORAS):
+                saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Nenhum e-mail novo chega ao Outlook de "
+                              f"{p.get('agente') or p['pc']} desde {r:%d/%m %H:%M}: confira o Enviar/Receber (F9) nesse PC"})
     robos = [r for r in (_data(p.get("saude", {}).get("robo")) for p in pcs) if r]
     if robos and HORARIO_COPIA[0] <= agora.strftime("%H:%M") <= HORARIO_COPIA[1] and \
             agora - max(robos) > datetime.timedelta(minutes=COPIA_ATRASADA_MIN):

@@ -28,6 +28,7 @@ garantir_utf8()
 import app_dados as dados
 from config import PASTA_ESTADO, caminho_chave_google, carregar_config
 from log_util import configurar_logging
+import outlook_vivo
 from sheets import BackendGoogle, ler_hoteis
 from tratamento import normalizar
 
@@ -437,8 +438,7 @@ def main():
     cfg = carregar_config()
 
     if args.tags:
-        import win32com.client
-        ns = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         mudancas, fora = tags_pendentes(ns, cfg, args.dias)
         print(f"\n{'APLICANDO' if args.aplicar else 'PRÉVIA — nada gravado'}: "
               f"{len(mudancas)} e-mail(s) com categoria a mudar"
@@ -467,8 +467,7 @@ def main():
     namespace = None
     if not args.sem_nf:
         try:
-            import win32com.client
-            namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+            namespace = outlook_vivo.aplicativo().GetNamespace("MAPI")
         except Exception as e:
             logger.warning(f"⚠️ Outlook indisponível ({e}); confiro só o Dropbox")
 

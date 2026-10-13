@@ -2,6 +2,7 @@
 import time
 
 from log_util import configurar_logging
+import outlook_vivo
 
 logger = configurar_logging(__name__)
 
@@ -26,7 +27,6 @@ class OutlookNF:
 
     def conectar(self):
         import pythoncom
-        import win32com.client
 
         opcoes = self._cfg["outlook"]
         tentativas = int(opcoes["tentativas_conexao"])
@@ -35,7 +35,7 @@ class OutlookNF:
         for tentativa in range(1, tentativas + 1):
             try:
                 pythoncom.CoInitialize()
-                self.outlook = win32com.client.Dispatch("Outlook.Application")
+                self.outlook = outlook_vivo.aplicativo()
                 self.namespace = self.outlook.GetNamespace("MAPI")
                 if self.namespace.Folders.Count == 0:
                     raise ErroOutlook("Outlook abriu mas o perfil ainda não carregou nenhuma conta")
