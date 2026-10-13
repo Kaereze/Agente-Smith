@@ -1,72 +1,73 @@
-/* Segundo Cérebro: uma cor por nível (as mesmas do gráfico) */
+/* Segundo Cérebro — três escalas de cor (ver "Legenda de cores")
+   1) cor da pasta = tipo de nota · 2) P0–P6 = prioridade · 3) risco das pastas do código */
 body {
-  --cb-inicio: #F2C14E; --cb-seguranca: #E5484D; --cb-trabalho: #F08C2E; --cb-sistema: #3E9BFF;
-  --cb-historia: #A371F7; --cb-andamento: #2FBF71; --cb-diario: #7F93A3; --cb-documentos: #14B8A6;
+  --cb-inicio: #F2C14E; --cb-regras: #E5484D; --cb-trabalho: #F08C2E; --cb-mapa: #3E9BFF;
+  --cb-historico: #A371F7; --cb-andamento: #2FBF71; --cb-docs: #14B8A6; --cb-diario: #8E9AAF;
 }
-/* pastas na barra lateral */
-.nav-folder-title[data-path^="1 Segurança"] { color: var(--cb-seguranca); font-weight: 600; }
-.nav-folder-title[data-path^="2 Trabalho"]  { color: var(--cb-trabalho);  font-weight: 600; }
-.nav-folder-title[data-path^="3 Sistema"]   { color: var(--cb-sistema);   font-weight: 600; }
-.nav-folder-title[data-path^="4 História"]  { color: var(--cb-historia);  font-weight: 600; }
-.nav-folder-title[data-path^="5 Andamento"] { color: var(--cb-andamento); font-weight: 600; }
-.nav-folder-title[data-path^="6 Documentos"] { color: var(--cb-documentos); font-weight: 600; }
-.nav-folder-title[data-path^="Diário"]      { color: var(--cb-diario);    font-weight: 600; }
-.nav-folder-title[data-path^="99 Rascunhos"] { opacity: .45; }
-.nav-file-title[data-path="00 Início.md"]   { color: var(--cb-inicio); font-weight: 700; }
+
+/* 1) pastas na barra lateral */
+.nav-folder-title[data-path^="0 Comece aqui"]     { color: var(--cb-inicio);    font-weight: 700; }
+.nav-folder-title[data-path^="1 Regras"]          { color: var(--cb-regras);    font-weight: 600; }
+.nav-folder-title[data-path^="2 Como trabalhar"]  { color: var(--cb-trabalho);  font-weight: 600; }
+.nav-folder-title[data-path^="3 Mapa do projeto"] { color: var(--cb-mapa);      font-weight: 600; }
+.nav-folder-title[data-path^="4 Histórico"]       { color: var(--cb-historico); font-weight: 600; }
+.nav-folder-title[data-path="4 Histórico/Diário"] { color: var(--cb-diario); }
+.nav-folder-title[data-path^="5 Em andamento"]    { color: var(--cb-andamento); font-weight: 600; }
+.nav-folder-title[data-path^="6 Documentos"]      { color: var(--cb-docs);      font-weight: 600; }
+.nav-folder-title[data-path^="99 Rascunhos"]      { opacity: .4; }
+.nav-file-title[data-path="0 Comece aqui/00 Início.md"] { color: var(--cb-inicio); font-weight: 700; }
+
+/* 1) caixas de pasta (página de entrada e legenda) */
+.callout[data-callout^="cat-"] { border-radius: 6px; --callout-icon: lucide-folder; }
+.callout[data-callout="cat-inicio"]    { --c: 242,193,78; }
+.callout[data-callout="cat-regras"]    { --c: 229,72,77; }
+.callout[data-callout="cat-trabalho"]  { --c: 240,140,46; }
+.callout[data-callout="cat-mapa"]      { --c: 62,155,255; }
+.callout[data-callout="cat-historico"] { --c: 163,113,247; }
+.callout[data-callout="cat-andamento"] { --c: 47,191,113; }
+.callout[data-callout="cat-docs"]      { --c: 20,184,166; }
+
+/* 2) prioridade P0–P6 */
+.callout[data-callout="p0"] { --c: 229,72,77;   --callout-icon: lucide-shield-alert; }
+.callout[data-callout="p1"] { --c: 240,140,46;  --callout-icon: lucide-server-crash; }
+.callout[data-callout="p2"] { --c: 234,196,53;  --callout-icon: lucide-scale; }
+.callout[data-callout="p3"] { --c: 62,155,255;  --callout-icon: lucide-gauge; }
+.callout[data-callout="p4"] { --c: 163,113,247; --callout-icon: lucide-user-check; }
+.callout[data-callout="p5"] { --c: 47,191,113;  --callout-icon: lucide-sparkles; }
+.callout[data-callout="p6"] { --c: 142,154,175; --callout-icon: lucide-zap; }
+
+/* 3) risco das pastas do código */
+.callout[data-callout="risco-vermelho"] { --c: 229,72,77;  --callout-icon: lucide-octagon-x; }
+.callout[data-callout="risco-laranja"]  { --c: 240,140,46; --callout-icon: lucide-triangle-alert; }
+.callout[data-callout="risco-azul"]     { --c: 62,155,255; --callout-icon: lucide-monitor; }
+.callout[data-callout="risco-verde"]    { --c: 47,191,113; --callout-icon: lucide-circle-check; }
+
+/* aplica a cor de cada caixa (fundo, borda, título, ícone) */
+.callout[data-callout^="cat-"], .callout[data-callout^="p"], .callout[data-callout^="risco-"] {
+  background-color: rgba(var(--c), .12) !important; border-left: 4px solid rgb(var(--c)) !important; border-radius: 6px;
+}
+.callout[data-callout^="cat-"] .callout-title, .callout[data-callout^="p"] .callout-title, .callout[data-callout^="risco-"] .callout-title,
+.callout[data-callout^="cat-"] .callout-icon svg, .callout[data-callout^="p"] .callout-icon svg, .callout[data-callout^="risco-"] .callout-icon svg {
+  color: rgb(var(--c)) !important; stroke: rgb(var(--c)) !important;
+}
+
 /* etiquetas */
-a.tag[href="#cerebro/seguranca"], .multi-select-pill:has([data-value="cerebro/seguranca"]) { background: color-mix(in srgb, var(--cb-seguranca) 22%, transparent); color: var(--cb-seguranca); }
-a.tag[href="#cerebro/trabalho"]  { background: color-mix(in srgb, var(--cb-trabalho) 22%, transparent);  color: var(--cb-trabalho); }
-a.tag[href="#cerebro/sistema"]   { background: color-mix(in srgb, var(--cb-sistema) 22%, transparent);   color: var(--cb-sistema); }
-a.tag[href="#cerebro/historia"]  { background: color-mix(in srgb, var(--cb-historia) 22%, transparent);  color: var(--cb-historia); }
-a.tag[href="#cerebro/andamento"] { background: color-mix(in srgb, var(--cb-andamento) 22%, transparent); color: var(--cb-andamento); }
-a.tag[href="#cerebro/documentos"] { background: color-mix(in srgb, var(--cb-documentos) 22%, transparent); color: var(--cb-documentos); }
-a.tag[href="#cerebro/diario"]    { background: color-mix(in srgb, var(--cb-diario) 22%, transparent);    color: var(--cb-diario); }
-/* títulos com a cor do nível da nota */
-.markdown-rendered h1, .markdown-source-view .cm-header-1 { border-bottom: 2px solid var(--interactive-accent); padding-bottom: 4px; }
-.markdown-rendered h2 { color: var(--cb-inicio); }
-.markdown-rendered table th { background: color-mix(in srgb, var(--cb-inicio) 14%, transparent); }
-/* caixas de prioridade P0..P6 (usadas na Hierarquia) */
-.callout[data-callout="p0"] { --callout-color: 229, 72, 77;  --callout-icon: lucide-shield-alert; }
-.callout[data-callout="p1"] { --callout-color: 240, 140, 46; --callout-icon: lucide-server-crash; }
-.callout[data-callout="p2"] { --callout-color: 234, 196, 53; --callout-icon: lucide-scale; }
-.callout[data-callout="p3"] { --callout-color: 62, 155, 255; --callout-icon: lucide-gauge; }
-.callout[data-callout="p4"] { --callout-color: 163, 113, 247; --callout-icon: lucide-user-check; }
-.callout[data-callout="p5"] { --callout-color: 47, 191, 113; --callout-icon: lucide-sparkles; }
-.callout[data-callout="p6"] { --callout-color: 127, 147, 163; --callout-icon: lucide-zap; }
-
-/* cores explícitas (esta versão do Obsidian não usa --callout-color nos tipos novos) */
-.callout[data-callout="p0"] { background-color: rgba(229,72,77,.12) !important; border-left: 4px solid rgb(229,72,77) !important; border-radius: 6px; }
-.callout[data-callout="p0"] .callout-title, .callout[data-callout="p0"] .callout-icon, .callout[data-callout="p0"] .callout-icon svg { color: rgb(229,72,77) !important; stroke: rgb(229,72,77) !important; }
-.callout[data-callout="p1"] { background-color: rgba(240,140,46,.12) !important; border-left: 4px solid rgb(240,140,46) !important; border-radius: 6px; }
-.callout[data-callout="p1"] .callout-title, .callout[data-callout="p1"] .callout-icon, .callout[data-callout="p1"] .callout-icon svg { color: rgb(240,140,46) !important; stroke: rgb(240,140,46) !important; }
-.callout[data-callout="p2"] { background-color: rgba(234,196,53,.12) !important; border-left: 4px solid rgb(234,196,53) !important; border-radius: 6px; }
-.callout[data-callout="p2"] .callout-title, .callout[data-callout="p2"] .callout-icon, .callout[data-callout="p2"] .callout-icon svg { color: rgb(234,196,53) !important; stroke: rgb(234,196,53) !important; }
-.callout[data-callout="p3"] { background-color: rgba(62,155,255,.12) !important; border-left: 4px solid rgb(62,155,255) !important; border-radius: 6px; }
-.callout[data-callout="p3"] .callout-title, .callout[data-callout="p3"] .callout-icon, .callout[data-callout="p3"] .callout-icon svg { color: rgb(62,155,255) !important; stroke: rgb(62,155,255) !important; }
-.callout[data-callout="p4"] { background-color: rgba(163,113,247,.12) !important; border-left: 4px solid rgb(163,113,247) !important; border-radius: 6px; }
-.callout[data-callout="p4"] .callout-title, .callout[data-callout="p4"] .callout-icon, .callout[data-callout="p4"] .callout-icon svg { color: rgb(163,113,247) !important; stroke: rgb(163,113,247) !important; }
-.callout[data-callout="p5"] { background-color: rgba(47,191,113,.12) !important; border-left: 4px solid rgb(47,191,113) !important; border-radius: 6px; }
-.callout[data-callout="p5"] .callout-title, .callout[data-callout="p5"] .callout-icon, .callout[data-callout="p5"] .callout-icon svg { color: rgb(47,191,113) !important; stroke: rgb(47,191,113) !important; }
-.callout[data-callout="p6"] { background-color: rgba(127,147,163,.12) !important; border-left: 4px solid rgb(127,147,163) !important; border-radius: 6px; }
-.callout[data-callout="p6"] .callout-title, .callout[data-callout="p6"] .callout-icon, .callout[data-callout="p6"] .callout-icon svg { color: rgb(127,147,163) !important; stroke: rgb(127,147,163) !important; }
-.callout[data-callout="abstract"] { background-color: rgba(20,184,166,.12) !important; border-left: 4px solid rgb(20,184,166) !important; border-radius: 6px; }
-.callout[data-callout="abstract"] .callout-title, .callout[data-callout="abstract"] .callout-icon, .callout[data-callout="abstract"] .callout-icon svg { color: rgb(20,184,166) !important; stroke: rgb(20,184,166) !important; }
-.callout[data-callout="quote"] { background-color: rgba(127,147,163,.12) !important; border-left: 4px solid rgb(127,147,163) !important; border-radius: 6px; }
-.callout[data-callout="quote"] .callout-title, .callout[data-callout="quote"] .callout-icon, .callout[data-callout="quote"] .callout-icon svg { color: rgb(127,147,163) !important; stroke: rgb(127,147,163) !important; }
-/* títulos também no modo de edição */
-.cm-header-2, .HyperMD-header-2, .markdown-rendered h2 { color: var(--cb-inicio) !important; }
-.cm-header-1, .HyperMD-header-1, .markdown-rendered h1 { color: #ffffff; }
-.theme-light .cm-header-1, .theme-light .markdown-rendered h1 { color: #111; }
-.theme-light .cm-header-2, .theme-light .markdown-rendered h2 { color: #B7791F !important; }
-/* tabelas */
-.markdown-rendered table th, .cm-table-widget th { background: rgba(242,193,78,.14); }
-/* propriedades */
-.metadata-container { border-left: 3px solid var(--cb-inicio); padding-left: 8px; }
-
-/* 7 Pastas do projeto (rosa) e etiquetas de risco */
-.nav-folder-title[data-path^="7 Pastas do projeto"] { color: #E879F9; font-weight: 600; }
-a.tag[href="#cerebro/pastas"] { background: rgba(232,121,249,.18); color: #E879F9; }
-a.tag[href="#risco/vermelho"] { background: rgba(229,72,77,.18); color: #E5484D; }
+a.tag[href="#cerebro/inicio"]     { background: rgba(242,193,78,.18);  color: var(--cb-inicio); }
+a.tag[href="#cerebro/regras"]     { background: rgba(229,72,77,.18);   color: var(--cb-regras); }
+a.tag[href="#cerebro/trabalho"]   { background: rgba(240,140,46,.18);  color: var(--cb-trabalho); }
+a.tag[href="#cerebro/mapa"], a.tag[href="#cerebro/pastas"] { background: rgba(62,155,255,.18); color: var(--cb-mapa); }
+a.tag[href="#cerebro/historico"]  { background: rgba(163,113,247,.18); color: var(--cb-historico); }
+a.tag[href="#cerebro/diario"]     { background: rgba(142,154,175,.18); color: var(--cb-diario); }
+a.tag[href="#cerebro/andamento"]  { background: rgba(47,191,113,.18);  color: var(--cb-andamento); }
+a.tag[href="#cerebro/documentos"] { background: rgba(20,184,166,.18);  color: var(--cb-docs); }
+a.tag[href="#risco/vermelho"] { background: rgba(229,72,77,.18);  color: #E5484D; }
 a.tag[href="#risco/laranja"]  { background: rgba(240,140,46,.18); color: #F08C2E; }
 a.tag[href="#risco/azul"]     { background: rgba(62,155,255,.18); color: #3E9BFF; }
 a.tag[href="#risco/verde"]    { background: rgba(47,191,113,.18); color: #2FBF71; }
+
+/* títulos e tabelas */
+.cm-header-1, .markdown-rendered h1 { border-bottom: 2px solid var(--cb-inicio); padding-bottom: 4px; }
+.cm-header-2, .HyperMD-header-2, .markdown-rendered h2 { color: var(--cb-inicio) !important; }
+.theme-light .cm-header-2, .theme-light .markdown-rendered h2 { color: #B7791F !important; }
+.markdown-rendered table th { background: rgba(242,193,78,.14); }
+.metadata-container { border-left: 3px solid var(--cb-inicio); padding-left: 8px; }

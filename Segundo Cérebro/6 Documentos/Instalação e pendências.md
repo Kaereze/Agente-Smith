@@ -1,5 +1,6 @@
 ---
-nivel: "6 · Documentos"
+tipo: documento
+pasta: "6 Documentos"
 pai: "[[00 Início]]"
 tags: [cerebro/documentos]
 ---
