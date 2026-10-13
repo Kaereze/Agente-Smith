@@ -10,8 +10,8 @@ tags: [cerebro/mapa]
 |---|---|---|---|---|
 | João | DESKTOP-GA8IJAU | `main` | esta (trabalho) | PC principal (cópia dos hotéis, robô, conferência diária). Dono das ideias. |
 | Clara | DESKTOP-FA8HRTN | `main` | "Clara" | Wi-Fi "Passeio Sapiens 3", perfil Público. Sem administrador. Firewall 8766: João escolheu **Público + só rede local**; falta alguém rodar como administrador (o pedido foi cancelado na tela). |
-| Cristian | DESKTOP-0EP6A0T | `main` | "Cris" | Wi-Fi "Passeio Sapiens 6 GHz", perfil Público. Sem administrador. Fim de semana conta para ele. |
-| Bernardo | DESKTOP-DF2300B | `main` | "Bernardo" | — |
+| Cristian | DESKTOP-0EP6A0T (pasta `Desktop\Solicitacoes NF`) | `main` | "Cris" | Wi-Fi "Passeio Sapiens 6 GHz", perfil Público. Sem administrador. Fim de semana conta para ele. |
+| Bernardo | DESKTOP-DF2300B (pasta `Desktop\Solicitacoes NF`) | `main` | "Bernardo" | — |
 | João (casa) | DESKTOP-7J2E10S | `main` | "a" / "Painel Fiscal demo dados" | Modo casa (só ver). Dois clones: `Desktop\NOTAS\Solicitacoes NF` e `Desktop\Painel Fiscal (demo)`. |
 
 > Conferido em 13/10/2026: os 4 PCs do trabalho estão com a pasta na branch **`main`**. As branches `Bernardo`, `Christian` e `clara` existem no GitHub e são mantidas iguais à `main`, mas não são as que as pastas usam.

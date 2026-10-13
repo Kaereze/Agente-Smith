@@ -19,6 +19,7 @@ tags: [cerebro/inicio]
 ## Onde paramos (13/10/2026)
 - GitHub e PC do trabalho na mesma versão (4 branches iguais). Painel e robô no ar.
 - Modo casa pronto ([[Painel em casa]]); falta o João criar a chave de casa.
+- 13/10: Guardião do Outlook nos 4 PCs; Dia do administrador concluído (busca ao vivo entre os 4 PCs funcionando).
 - Commit do PC de casa (`1dbdac4`, conserto do modo demonstração) ainda **não enviado**: vai para a branch `casa`, o Claude revisa e junta.
 - O que fazer a seguir e o que espera decisão: **[[Ideias e pendências]]** (lista única).
 

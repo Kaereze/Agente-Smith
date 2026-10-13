@@ -9,6 +9,10 @@ tags: [cerebro/trabalho]
 > O que só dá para fazer com a **senha de administrador** em cada PC, para deixar tudo automático. Levantado em 13/10/2026.
 > Ninguém do Claude digita a senha: a pessoa que tem a senha aprova na tela do Windows.
 
+> [!success] Concluído em 13/10/2026, por volta das 09:00
+> Alguém com a senha passou nos 4 PCs pela janela pronta. Nos 4: regra "Painel Fiscal - rede entre os PCs" criada e 0 bloqueios do Python.
+> Teste real às 09:03: busca ao vivo do PC do João respondeu nos 4 PCs (50 resultados de cada).
+
 ## 1. Firewall da rede entre os PCs (obrigatório nos 4 PCs)
 **Para quê:** busca ao vivo no Outlook dos outros PCs e abrir o texto inteiro de um e-mail de outro PC (porta 8766).
 **Por que não funciona hoje:**
@@ -33,7 +37,7 @@ O Painel já escuta a 8766 em todas as interfaces (conferido no PC do Bernardo);
 1. Menu Iniciar → digite `PowerShell` → **Executar como administrador** → digite a senha.
 2. Cole:
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Desktop\NOTAS\Solicitacoes NF\Automacoes\liberar_rede.ps1"
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\Automacoes\liberar_rede.ps1   # dentro da pasta do projeto (Cristian e Bernardo: Desktop\Solicitacoes NF; João e Clara: Desktop\NOTAS\Solicitacoes NF ou similar)
    ```
 3. Tem que aparecer: `OK: rede entre os PCs liberada (porta 8766, so a rede local) e nenhum bloqueio do Python.`
 
