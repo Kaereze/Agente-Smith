@@ -18,7 +18,7 @@ tags: [cerebro/andamento]
 - [ ] **CRICIÚMA**: auditoria da cópia mostra 1 solicitação de 29/09 (TRUE no hotel, pendente na Central) — o robô poderia reenviar; revisar
 
 ## Esperando decisão do João
-- [ ] **Firewall 8766**: Clara → decidido **Público + só rede local**, falta rodar como administrador no PC dela; Cristian → decisão pendente (mesma escolha?). Sem a regra, só a busca ao vivo entre os PCs não funciona
+- [ ] **Dia do administrador** (firewall 8766 nos **4** PCs, inclusive o do João, + tirar o bloqueio do `pythonw.exe`): um comando por PC — passo a passo em [[Dia do administrador]]
 - [ ] **Chave do Google de casa** (só leitura): passo a passo em [[Painel em casa]]
 - [ ] **Cadastro**: planilhas CAMPO GRANDE, IDEAL, PALACE; caixas Itapoá (Clara), Pousada Jeri (João), Campo Grande e Ideal (Bernardo), Palace (Cristian) — "depois"
 

@@ -18,7 +18,7 @@ Aparece na barra lateral, no gráfico e nas caixas da página de entrada.
 > O que vence e o que não se mexe: [[Hierarquia de prioridades]], [[O que não mexer]], [[Credenciais]], [[Padrão de design]].
 
 > [!cat-trabalho] 2 Como trabalhar — laranja
-> Passo a passo: [[Onde mexer]], [[Como entregar]], [[Painel em casa]].
+> Passo a passo: [[Onde mexer]], [[Como entregar]], [[Painel em casa]], [[Dia do administrador]].
 
 > [!cat-mapa] 3 Mapa do projeto — azul
 > Como o sistema é: [[Visão geral do projeto]], [[Pastas e arquivos]], [[Planilhas e abas]], [[API do Painel]], [[Pessoas e PCs]], [[Glossário]].

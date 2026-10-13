@@ -1,0 +1,40 @@
+---
+tipo: guia
+pasta: "2 Como trabalhar"
+pai: "[[00 Início]]"
+tags: [cerebro/trabalho]
+---
+# Dia do administrador
+
+> O que só dá para fazer com a **senha de administrador** em cada PC, para deixar tudo automático. Levantado em 13/10/2026.
+> Ninguém do Claude digita a senha: a pessoa que tem a senha aprova na tela do Windows.
+
+## 1. Firewall da rede entre os PCs (obrigatório nos 4 PCs)
+**Para quê:** busca ao vivo no Outlook dos outros PCs e abrir o texto inteiro de um e-mail de outro PC (porta 8766).
+**Por que não funciona hoje:**
+- nenhum dos 4 PCs tem a regra da porta 8766;
+- os Wi-Fi do escritório estão como **rede Pública**;
+- no PC do João existe um **bloqueio do `pythonw.exe`** (o programa que roda o Painel), criado quando alguém clicou "Cancelar" no aviso do firewall. No Windows, bloqueio vence permissão.
+
+**Como fazer (um comando por PC):**
+1. Menu Iniciar → digite `PowerShell` → **Executar como administrador** → digite a senha.
+2. Cole:
+   ```
+   powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Desktop\NOTAS\Solicitacoes NF\Automacoes\liberar_rede.ps1"
+   ```
+3. Tem que aparecer: `OK: rede entre os PCs liberada (porta 8766, so a rede local) e nenhum bloqueio do Python.`
+
+O script (`Automacoes/liberar_rede.ps1`) tira **só** os bloqueios de entrada do Python e cria a regra da porta 8766 **só para a rede local**, em qualquer perfil de rede (decisão do João). Pode rodar de novo sem problema.
+
+## 2. Opcional (decisão do João)
+- **Rede como Privada** em vez de Pública: não é preciso com a regra acima; muda a descoberta do PC na rede (decisão de segurança da TI).
+- **Login automático depois de reiniciar** (Windows Update à noite): hoje o robô e o Painel só voltam quando alguém entra no Windows. Ligar o login automático deixa a senha guardada no PC (risco de segurança) — **não recomendado**. Alternativa sem administrador: deixar o Windows Update reiniciar fora do horário de trabalho e entrar no Windows ao chegar.
+
+## 3. O que NÃO precisa de administrador (já automático)
+- Tarefas do Windows (`SolicitacoesNF_*`): rodam como o próprio usuário, ao entrar no Windows.
+- Atualização e reinício pelo "Atualizar todos os PCs".
+- **Guardião do Outlook** (abre o Outlook com janela se fechar).
+- Python e bibliotecas (instalados só para o usuário).
+- Suspensão do PC na tomada: o próprio usuário ajusta (Configurações → Sistema → Energia → "Nunca" na tomada).
+
+Ver: [[O que não mexer]] (firewall e rede são decisão do João) · [[Pessoas e PCs]].
