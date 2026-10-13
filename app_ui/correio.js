@@ -492,3 +492,8 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { cx.sel = null; desenharCorreio(); }
 });
+
+// Novo e-mail ao hóspede (usuário, 13/10/2026): como no Outlook, com a solicitação de dados já pronta
+document.addEventListener("click", e => {
+  if (e.target.closest("#cx-novo")) abrirEnvioNF(null, { novo: true });
+});

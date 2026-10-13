@@ -17,6 +17,7 @@ tags: [cerebro/trabalho]
 | **Caixa de entrada / Urgência / Itens enviados** | `correio.js` → `desenharCorreio`, `linhaEmail`, `desenharLeituraCorreio`, `desenharFiltroHotel` | `_montar_correio`, `lista_correio`; juntar PCs em `correio.py` (`juntar`, `lido_atual`); o que cada PC publica em `espelho_emails.py` |
 | **Busca de cima** (ao vivo no Outlook) | `correio.js` → `buscarNoOutlook`, `agendarBusca` | `buscar_outlook`, `_buscar_local`; `busca_outlook.py`; entre PCs `rede_local.py` (porta 8766) |
 | **Lido / não lido** | `correio.js` → `abrirEmail`, `marcarNaoLido` | `evento_correio`, `_lido_no_outlook`; regra dos 5 min em `espelho_emails.lido_confirmado` |
+| **Novo e-mail ao hóspede** (Caixa de entrada → "Novo e-mail") | `correio.js` → clique `#cx-novo`; `painel.js` → `abrirEnvioNF(null, {novo:true})`, `modeloSolicitacaoDados` | `contas_de_hotel`, `opcoes_email_novo`, `enviar_email_novo` (`GET/POST /api/email/novo`); `envio_nf.pedir(..., livre=True)` |
 | **Responder / encaminhar / excluir** | `correio.js` → `escrever`, `encaminhar`, `excluir`, `mostrarDesfazer` | `responder_email`, `encaminhar_email`, `excluir_email` |
 | **Visão geral** | `painel.js` → `desenharVisao`, `faixaAgora`, `contarNumeros` | `painel`, `atividade_resumo` |
 | **Gerência / relatório dia e semana** | `painel.js` → `desenharGerencia`, `carregarRelatorio`, `htmlRelatorio` | `relatorio_semana`, `_contagem_fim_de_semana`; `relatorio_semana.py`, `contagem_painel.py` |

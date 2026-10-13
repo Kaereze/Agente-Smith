@@ -753,14 +753,14 @@ class ServicoEnvio:
                       f" estar aberto/rodando).")
 
     def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder="",
-              acao=""):
+              acao="", livre=False):
         """responder: id do e-mail do espelho (espelho_emails) — sai como resposta, anexo opcional.
         acao: "encaminhar" | "excluir" (no Outlook do PC dono). anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} |
         {"tipo": "arquivo", "nome", "conteudo": bytes}]. PC dono desligado: o pedido espera na fila."""
         destino, motivo = self.destino_para(conta_de, aceitar_desligado=True)
         if not destino:
             return {"ok": False, "motivo": motivo, "contas_locais": self.contas}
-        if not anexos_entrada and not responder:
+        if not anexos_entrada and not responder and not livre:
             return {"ok": False, "motivo": "Anexe a nota fiscal."}
         if sum(len(a.get("conteudo", b"")) for a in anexos_entrada) > MAX_ANEXO_BYTES:
             return {"ok": False, "motivo": "Os anexos passam de 8 MB."}
@@ -779,7 +779,7 @@ class ServicoEnvio:
         if partes:
             self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
         pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos,
-                               mensagem if responder else (mensagem or mensagem_padrao(self.cfg)), selo, responder, acao)
+                               mensagem if (responder or livre) else (mensagem or mensagem_padrao(self.cfg)), selo, responder, acao)
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:

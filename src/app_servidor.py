@@ -975,6 +975,60 @@ class Estado:
                 "selos": envio_nf.selos(), "selo": envio_nf.selo_do_agente(nome_do_agente()), "email": e,
                 "solicitacao": sol["chave"] if sol else ""}
 
+    def contas_de_hotel(self):
+        """Caixas notafiscal@ dos 4 PCs -> [{"conta", "hotel", "agente", "pc", "destino"}], as deste PC primeiro.
+        É o "De" do Novo e-mail (usuário, 13/10/2026): sai pela caixa do hotel, pelo Outlook do PC dono."""
+        hotel_da_conta = {}
+        for h in self.cadastro.nomes():
+            email = str(self.cadastro.dados(h).get("email", "")).strip().lower()
+            if email:
+                hotel_da_conta[email] = h
+        este = socket.gethostname()
+        vistas, saida = set(), []
+        for p in sorted(self.pcs(), key=lambda x: x["pc"] != este):
+            for c in p.get("contas_lista", []):
+                if c.startswith("notafiscal@") and c not in vistas:
+                    vistas.add(c)
+                    saida.append({"conta": c, "hotel": hotel_da_conta.get(c, saude.nome_da_caixa(c)),
+                                  "agente": p.get("agente", ""), "pc": p["pc"], "online": bool(p.get("online"))})
+        return saida
+
+    def opcoes_email_novo(self, conta=""):
+        """Opções do Novo e-mail: escolher a caixa do hotel, escrever para quem quiser (modelo: solicitação de dados)."""
+        contas = self.contas_de_hotel()
+        if not contas:
+            raise KeyError("nenhuma caixa de hotel nos PCs da equipe (aba PCs_Painel)")
+        escolhida = next((c for c in contas if c["conta"] == conta.lower()), contas[0])
+        destino, motivo = self.envio_nf.destino_para(escolhida["conta"], aceitar_desligado=True)
+        return {"novo": True, "para": [], "conta_de": escolhida["conta"], "destino": destino, "motivo": motivo,
+                "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "contas": contas,
+                "sugestoes": [], "nome": "", "hotel": escolhida["hotel"], "assunto": "", "corpo": "",
+                "corpo_nf": "", "assinatura": "", "assinatura_com_mensagem": False, "selos": envio_nf.selos(),
+                "selo": envio_nf.selo_do_agente(nome_do_agente())}
+
+    def enviar_email_novo(self, corpo, quem):
+        """Novo e-mail ao hóspede: sai da caixa do hotel escolhida, sem ligar a nenhuma solicitação (não marca NF)."""
+        conta = str(corpo.get("conta_de", "")).strip().lower()
+        contas = {c["conta"]: c for c in self.contas_de_hotel()}
+        if conta not in contas:
+            raise ValueError("escolha a caixa do hotel de onde o e-mail sai")
+        para, assunto = str(corpo.get("para", "")).strip(), str(corpo.get("assunto", "")).strip()
+        texto = str(corpo.get("corpo", "")).strip()
+        if "@" not in para or not assunto:
+            raise ValueError("preencha o destinatário e o assunto")
+        if not texto:
+            raise ValueError("escreva a mensagem")
+        import base64
+        anexos = [{"tipo": "arquivo", "nome": os.path.basename(a.get("nome", "anexo.pdf")),
+                   "conteudo": base64.b64decode(a.get("b64", ""))}
+                  for a in corpo.get("anexos") or [] if a.get("tipo") == "arquivo"]
+        cc = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in x)
+        selo = str(corpo.get("selo") or "")
+        sol = {"aba": "", "carimbo": "", "email": para, "hotel": contas[conta]["hotel"], "nome": para}
+        logger.info(f"✉️ Novo e-mail de {conta} para {para}: \"{assunto}\" — por {quem}")
+        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, str(corpo.get("corpo", "")), cc,
+                                   selo if envio_nf.caminho_selo(selo) else "", livre=True)
+
     def responder_email(self, corpo, quem):
         e = self._email(str(corpo.get("id", "")))
         sol = self._solicitacao_do_email(e["de"]) or {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"],
@@ -1394,6 +1448,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.buscar_outlook(q.get("q", "")))
                 if url.path == "/api/email/opcoes":
                     return self._json(estado.opcoes_email(q.get("id", "")))
+                if url.path == "/api/email/novo":
+                    return self._json(estado.opcoes_email_novo(q.get("conta", "")))
             except KeyError as e:
                 return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
@@ -1452,6 +1508,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.conferir_anexos(corpo))
                 if path == "/api/email/responder":
                     return self._json(estado.responder_email(corpo, nome_do_agente()))
+                if path == "/api/email/novo":
+                    return self._json(estado.enviar_email_novo(corpo, nome_do_agente()))
                 if path == "/api/correio/evento":
                     return self._json(estado.evento_correio([str(i) for i in corpo.get("ids", [])], str(corpo.get("acao", "")),
                                                             nome_do_agente()))
