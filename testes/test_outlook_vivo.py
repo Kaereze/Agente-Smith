@@ -84,3 +84,21 @@ def test_saude_nao_alarma_de_madrugada_nem_com_um_pc_so():
 def test_coluna_de_saude_leva_o_ultimo_recebido():
     texto = saude.coluna(0, recebido="2026-10-13T08:07:20")
     assert saude.ler_coluna(texto)["rec"] == "2026-10-13T08:07:20"
+
+
+def test_atualizador_avanca_sem_git_pull(monkeypatch):
+    # 13/10/2026: "git pull" falhava no PC do Bernardo (FETCH_HEAD duplicado); agora fetch + merge --ff-only origin/<ramo>
+    import atualizador
+    chamadas = []
+
+    def git(*args, timeout=60):
+        chamadas.append(args)
+        return "main" if args[:2] == ("rev-parse", "--abbrev-ref") else ""
+
+    monkeypatch.setattr(atualizador, "_git", git)
+    monkeypatch.setattr(atualizador, "versao", lambda: "abc 13/10")
+    monkeypatch.setattr(atualizador, "pedir_reinicio", lambda: "reinício pedido", raising=False)
+    monkeypatch.setattr(atualizador.subprocess, "run", lambda *a, **k: None)   # sem pip install de verdade
+    atualizador.atualizar()
+    assert ("merge", "--ff-only", "origin/main") in chamadas
+    assert not any(a and a[0] == "pull" for a in chamadas)

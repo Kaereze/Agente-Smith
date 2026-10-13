@@ -23,6 +23,7 @@ tags: [cerebro/andamento]
 - [ ] **Cadastro**: planilhas CAMPO GRANDE, IDEAL, PALACE; caixas Itapoá (Clara), Pousada Jeri (João), Campo Grande e Ideal (Bernardo), Palace (Cristian) — "depois"
 
 ## Ideias para o futuro
+- Atualizador não reiniciar o robô quando a versão nova só traz notas/documentos (sugestão da sessão da Clara, 13/10)
 - Reservas e ligações internas no Painel
 - Supabase como banco central (precisa autorizar a conexão no claude.ai)
 - Reconhecer pedidos que chegam direto por e-mail, sem formulário

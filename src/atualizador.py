@@ -104,7 +104,12 @@ def atualizar():
     """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu)"""
     antes = versao()
     try:
-        _git("pull", "--ff-only", timeout=300)
+        # fetch + merge só pra frente, em vez de "git pull": o pull lê o FETCH_HEAD, que no PC do Bernardo saiu com a
+        # lista de branches duplicada (provável autofetch do VS Code em paralelo) e falhava com "Cannot fast-forward to
+        # multiple branches" (13/10/2026). O merge pela origin/<ramo> não depende do FETCH_HEAD.
+        ramo = _git("rev-parse", "--abbrev-ref", "HEAD")
+        _git("fetch", "--quiet", "origin", timeout=300)
+        _git("merge", "--ff-only", f"origin/{ramo}", timeout=300)
     except Exception as e:
         logger.warning(f"⚠️ git pull falhou: {e}")
         return False, f"git pull falhou: {e}"

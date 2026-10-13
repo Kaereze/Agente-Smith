@@ -20,7 +20,7 @@ tags: [cerebro/historico]
 | 13/10/2026 | PC do Cristian sem receber e-mail desde 09/10 (13+ solicitações não apareciam), mas o Painel dizia "Outlook aberto" | O Outlook fechou em 10/10; o robô, pelo COM, abriu um Outlook **sem janela** ("-Embedding"); contas POP3 não fazem Enviar/Receber assim. A checagem só via se o OUTLOOK.EXE existia | Outlook aberto com janela + F9 (44 e-mails baixados). Código: `outlook_vivo.py` (guardião a cada 60 s, porta única `aplicativo()`), estado "sem janela" na saúde e alarme "nenhum e-mail novo chega" |
 
 | 13/10/2026 | Busca ao vivo entre os PCs nunca funcionou | Nenhum PC tinha a regra da porta 8766, os Wi-Fi estão como rede Pública e havia bloqueio do `pythonw.exe` (alguém clicou "Cancelar" no aviso do firewall; bloqueio vence permissão) | `liberar_rede.ps1` tira os bloqueios do Python e cria a regra só para a rede local; aplicado nos 4 PCs com a senha de administrador |
-| 13/10/2026 | `git pull` do Bernardo: "Cannot fast-forward to multiple branches" | `FETCH_HEAD` com a lista de branches duplicada (provável autofetch do VS Code em paralelo) | Contorno: `git merge --ff-only origin/main` |
+| 13/10/2026 | `git pull` do Bernardo: "Cannot fast-forward to multiple branches" | `FETCH_HEAD` com a lista de branches duplicada (provável autofetch do VS Code em paralelo) | O atualizador agora faz `fetch` + `merge --ff-only origin/<ramo>` (não depende do FETCH_HEAD); antes falhou às 08:55 de 13/10 |
 
 ## Cuidados aprendidos
 - Scripts de alteração: escrever o arquivo `.py` pelo editor, não por heredoc (barras invertidas quebram).
