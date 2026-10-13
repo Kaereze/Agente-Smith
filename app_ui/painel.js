@@ -482,7 +482,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (enc) {   // encaminhar: pra quem a pessoa escolher, com o original anexado embaixo; sem anexo de NF nem selo
     const orig = o.email?.assunto || "";
     o.assunto = /^(enc|fw|fwd):/i.test(orig) ? orig : "ENC: " + orig;
-    o.para = []; o.sugestoes = []; o.selos = []; o.assinatura = ""; o.corpo = "";
+    o.para = []; o.sugestoes = []; o.corpo = "";   // assinatura padrão continua (13/10/2026: em todo tipo de envio)
   }
   envNF = { chave, resp, alvo, fechar, o, anexos: [], assuntoAuto: !resp };
   $("nf-sub").textContent = novo ? "sai da caixa do hotel, pelo Outlook do PC dono" : `${o.nome} · ${o.hotel}`;
@@ -720,7 +720,8 @@ async function enviarNF(contaForcada, jaConferido = false) {
     ? await api("/api/email/novo", { conta_de: $("nf-de").value, para: $("nf-para").value.trim(), cc: $("nf-cc").value.trim(),
         assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos, selo: envNF.selo || undefined })
     : envNF.resp?.encaminhar
-    ? await api("/api/correio/encaminhar", { id: envNF.resp.id, para: $("nf-para").value.trim(), corpo: $("nf-msg").innerText })
+    ? await api("/api/correio/encaminhar", { id: envNF.resp.id, para: $("nf-para").value.trim(), corpo: $("nf-msg").innerText,
+        selo: envNF.selo || undefined })
     : await api(envNF.resp ? "/api/email/responder" : "/api/envio_nf", {
     chave: envNF.chave || undefined, id: envNF.resp ? envNF.resp.id : undefined, para: $("nf-para").value.trim(),
     cc: $("nf-cc").value.trim(), assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,

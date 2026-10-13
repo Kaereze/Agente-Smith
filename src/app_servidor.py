@@ -966,8 +966,9 @@ class Estado:
             raise ValueError("preencha pra quem encaminhar")
         assunto = e["assunto"] if e["assunto"].lower().startswith(("enc:", "fw:", "fwd:")) else "ENC: " + e["assunto"]
         sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+        selo = str(corpo.get("selo") or "")   # assinatura padrão também no encaminhar (13/10/2026)
         return self.envio_nf.pedir(sol, para, assunto, e["caixa"], [], quem, str(corpo.get("corpo", "")),
-                                   responder=e["id"], acao=envio_nf.ENCAMINHAR)
+                                   selo=selo if envio_nf.caminho_selo(selo) else "", responder=e["id"], acao=envio_nf.ENCAMINHAR)
 
     def opcoes_email(self, id_email):
         e = self._email(id_email)

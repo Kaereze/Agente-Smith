@@ -63,3 +63,15 @@ def test_pedir_aceita_email_livre_sem_anexo_e_usa_a_mensagem_escrita():
     r = s.pedir(sol, "h@x.com", "Solicitação de dados", "notafiscal@x.com", [], "João", "Bom dia!", livre=True)
     assert r["ok"] and r["destino"] == "PC2"
     assert "Bom dia!" in str(linhas[-1])
+
+
+def test_encaminhar_leva_a_assinatura_padrao(monkeypatch):
+    # 13/10/2026: assinatura padrão em todo tipo de envio, inclusive encaminhar (e no campo certo, não no Cc)
+    e, pedidos = _estado(monkeypatch, CONTAS)
+    monkeypatch.setattr(app_servidor.Estado, "_email", lambda self, i: {"id": i, "assunto": "Nota", "de": "h@x.com",
+                                                                        "hotel": "ONDINA", "nome": "H", "caixa": CONTAS[0]["conta"]})
+    monkeypatch.setattr(app_servidor.envio_nf, "caminho_selo", lambda s: "joao.png" if s == "joao" else None)
+    e.encaminhar_email({"id": "e1", "para": "outro@x.com", "corpo": "Prezado(a) hóspede,", "selo": "joao"}, "João")
+    args, kw = pedidos[0]
+    assert kw.get("selo") == "joao" and len(args) == 7          # selo pelo nome; cc não recebe a assinatura
+    assert kw.get("acao") == app_servidor.envio_nf.ENCAMINHAR
