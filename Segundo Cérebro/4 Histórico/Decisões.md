@@ -30,5 +30,6 @@ tags: [cerebro/historico]
 | 12/10/2026 | **Modo casa**: no PC de casa o Painel vê os dados reais e não grava nada; chave do Google nova e só de leitura para casa | Trabalhar em casa sem risco para a equipe e para a cota |
 | 13/10/2026 | **Outlook obrigatoriamente aberto** (com janela) enquanto o PC estiver ligado: guardião abre sozinho se fechar | Outlook escondido deixou o PC do Cristian 3 dias sem receber e-mail |
 | 13/10/2026 | **Novo e-mail** na Caixa de entrada: escolher a caixa do hotel, editar para/assunto/mensagem; modelo "Solicitação de dados" (texto do João) já vem pronto | Pedir dados ao hóspede sem sair do Painel |
+| 13/10/2026 | **Todo envio** (novo, responder, encaminhar, NF) abre com a **mensagem padrão da NF + assinatura** inteira visível; a solicitação de dados fica no botão das Respostas prontas | O João pediu 3 vezes: "quando for enviar um e-mail, que apareça a nossa assinatura padrão" |
 
 Ver: [[O que não mexer]].

@@ -526,17 +526,19 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
     ${resp?.citacao ? `<div class="cx-citacao" aria-label="Mensagem original">${resp.citacao}</div>` : ""}`;
   if (enc) $("nf-msg").dataset.dica = "Mensagem (dá pra editar) — o e-mail original vai junto, embaixo.";
   // responder e encaminhar já vêm com a mensagem padrão da NF (usuário, 13/10/2026: "qualquer coisa eu altero no meio do caminho")
-  $("nf-msg").innerText = novo ? modeloSolicitacaoDados() : resp ? (o.corpo_nf || o.corpo) : o.corpo;
-  if (resp) { $("nf-assunto").value = novo ? `Solicitação de dados - Nota Fiscal ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
+  // todo envio abre com a mensagem padrão (usuário, 13/10/2026); a solicitação de dados fica no botão das Respostas prontas
+  $("nf-msg").innerText = resp ? (o.corpo_nf || o.corpo) : o.corpo;
+  if (resp) { $("nf-assunto").value = novo ? `Nota Fiscal - ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
   if (novo) comboDe(o);
   if (novo) envNF.escolherDe = async conta => {   // trocou a caixa: de qual PC sai e o hotel do assunto
     $("nf-de").value = conta;
     const n = await api("/api/email/novo?conta=" + encodeURIComponent(conta));
     if (!envNF || n.erro) return;
-    const assuntoPadrao = `Solicitação de dados - Nota Fiscal ${envNF.o.hotel}`;
+    const prefixo = $("nf-assunto").value.startsWith("Solicitação de dados") ? "Solicitação de dados - Nota Fiscal " : "Nota Fiscal - ";
+    const assuntoPadrao = prefixo + envNF.o.hotel;   // assunto ainda o automático: acompanha o hotel novo
     Object.assign(envNF.o, { conta_de: n.conta_de, destino: n.destino, motivo: n.motivo, hotel: n.hotel });
     $("nf-de-pc").textContent = n.destino === n.este_pc ? "· por este PC" : n.destino ? "· pelo PC " + n.destino : "";
-    if ($("nf-assunto").value === assuntoPadrao) $("nf-assunto").value = `Solicitação de dados - Nota Fiscal ${n.hotel}`;
+    if ($("nf-assunto").value === assuntoPadrao) $("nf-assunto").value = prefixo + n.hotel;
     validarEnvioNF();
   };
   if (o.selos.length) {
@@ -700,6 +702,8 @@ document.addEventListener("click", e => {
   if (!b || !envNF) return;
   const d = dadosDoModelo();
   $("nf-msg").innerText = MODELOS_RESPOSTA[Number(b.dataset.modelo)][1](d).replace("Olá, !", "Olá!");
+  if (envNF.resp?.novo && Number(b.dataset.modelo) === 0 && $("nf-assunto").value === `Nota Fiscal - ${envNF.o.hotel}`)
+    $("nf-assunto").value = `Solicitação de dados - Nota Fiscal ${envNF.o.hotel}`;   // solicitação de dados: assunto combina
   $("nf-msg").dispatchEvent(new Event("input")); $("nf-msg").focus();
   if (typeof validarEnvioNF === "function") validarEnvioNF();
 });
