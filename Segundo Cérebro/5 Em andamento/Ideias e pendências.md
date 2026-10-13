@@ -16,7 +16,7 @@ tags: [cerebro/andamento]
 - [ ] **Velocidade do Painel**: medir abrir e trocar de tela; reduzir
 
 ## Esperando decisão do João
-- [ ] **Firewall 8766** nos PCs de Clara e Cristian (Wi-Fi com perfil Público): rede Privada ou regra Pública só na rede local; precisa de administrador
+- [ ] **Firewall 8766**: Clara → decidido **Público + só rede local**, falta rodar como administrador no PC dela; Cristian → decisão pendente (mesma escolha?). Sem a regra, só a busca ao vivo entre os PCs não funciona
 - [ ] **Chave do Google de casa** (só leitura): passo a passo em [[Painel em casa]]
 - [ ] **Cadastro**: planilhas CAMPO GRANDE, IDEAL, PALACE; caixas Itapoá (Clara), Pousada Jeri (João), Campo Grande e Ideal (Bernardo), Palace (Cristian) — "depois"
 
