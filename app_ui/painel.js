@@ -487,9 +487,10 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   envNF = { chave, resp, alvo, fechar, o, anexos: [], assuntoAuto: !resp };
   $("nf-sub").textContent = novo ? "sai da caixa do hotel, pelo Outlook do PC dono" : `${o.nome} · ${o.hotel}`;
   const de = novo
-    ? `<div class="de-novo"><select id="nf-de" aria-label="Caixa do hotel de onde o e-mail sai">${o.contas.map(c =>
-        `<option value="${esc(c.conta)}" ${c.conta === o.conta_de ? "selected" : ""}>${esc(c.hotel)} · ${esc(c.conta)} · ${
-          c.pc === o.este_pc ? "este PC" : "PC de " + esc(c.agente)}${c.online ? "" : " (desligado: sai quando ligar)"}</option>`).join("")}</select>
+    ? `<div class="de-novo"><div class="combo-de">
+          <input id="nf-de-txt" autocomplete="off" spellcheck="false" placeholder="Digite o nome do hotel…" aria-label="Caixa do hotel de onde o e-mail sai (digite para filtrar)">
+          <input type="hidden" id="nf-de" value="${esc(o.conta_de)}">
+          <div class="combo-lista oculta" id="nf-de-lista" role="listbox"></div></div>
         <span class="dica" id="nf-de-pc">${o.destino === o.este_pc ? "· por este PC" : o.destino ? "· pelo PC " + esc(o.destino) : ""}</span></div>`
     : o.destino
     ? `<div class="campo-txt"><b>${esc(o.conta_de)}</b> <span class="dica">${o.destino === o.este_pc ? "· por este PC" : "· pelo PC " + esc(o.destino)}</span></div>`
@@ -526,8 +527,10 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (enc) $("nf-msg").dataset.dica = "Escreva uma mensagem (opcional) — o e-mail original vai junto, embaixo.";
   $("nf-msg").innerText = novo ? modeloSolicitacaoDados() : resp && resp.comNF ? o.corpo_nf : o.corpo;
   if (resp) { $("nf-assunto").value = novo ? `Solicitação de dados - Nota Fiscal ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
-  if (novo) $("nf-de").onchange = async e => {   // trocou a caixa: de qual PC sai e o hotel do assunto
-    const n = await api("/api/email/novo?conta=" + encodeURIComponent(e.target.value));
+  if (novo) comboDe(o);
+  if (novo) envNF.escolherDe = async conta => {   // trocou a caixa: de qual PC sai e o hotel do assunto
+    $("nf-de").value = conta;
+    const n = await api("/api/email/novo?conta=" + encodeURIComponent(conta));
     if (!envNF || n.erro) return;
     const assuntoPadrao = `Solicitação de dados - Nota Fiscal ${envNF.o.hotel}`;
     Object.assign(envNF.o, { conta_de: n.conta_de, destino: n.destino, motivo: n.motivo, hotel: n.hotel });
@@ -602,6 +605,41 @@ const lerBase64 = f => new Promise((ok, erro) => {
 });
 
 // Respostas prontas (usuário, 11/10/2026): um clique preenche a mensagem com o nome, o hotel e o nº da NF
+// "De" do Novo e-mail com busca (usuário, 13/10/2026): digita parte do hotel, da caixa ou do agente; sem acento
+function comboDe(o) {
+  const rot = c => `${c.hotel} · ${c.conta} · ${c.pc === o.este_pc ? "este PC" : "PC de " + c.agente}${c.online ? "" : " (desligado: sai quando ligar)"}`;
+  const semAcento = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const txt = $("nf-de-txt"), lista = $("nf-de-lista");
+  const atual = () => o.contas.find(c => c.conta === $("nf-de").value) || o.contas[0];
+  const fechar = () => lista.classList.add("oculta");
+  const mostrar = () => {
+    const termos = semAcento(txt.value).split(/\s+/).filter(Boolean);
+    const achados = o.contas.filter(c => termos.every(q => semAcento(rot(c)).includes(q)));
+    lista.innerHTML = achados.length
+      ? achados.map((c, i) => `<button type="button" role="option" class="${i === 0 ? "ativo" : ""}" data-de="${esc(c.conta)}">${esc(rot(c))}</button>`).join("")
+      : `<div class="combo-vazio">Nenhuma caixa com “${esc(txt.value)}”</div>`;
+    lista.classList.remove("oculta");
+  };
+  const escolher = conta => { fechar(); txt.value = rot(o.contas.find(c => c.conta === conta) || atual()); envNF?.escolherDe?.(conta); };
+  txt.value = rot(atual());
+  txt.addEventListener("focus", () => { txt.select(); txt.value = ""; mostrar(); });
+  txt.addEventListener("input", mostrar);
+  txt.addEventListener("keydown", e => {
+    const itens = [...lista.querySelectorAll("[data-de]")], i = itens.findIndex(b => b.classList.contains("ativo"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const j = Math.max(0, Math.min(itens.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+      itens.forEach((b, k) => b.classList.toggle("ativo", k === j)); itens[j]?.scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") {
+      e.preventDefault(); if (itens[Math.max(0, i)]) escolher(itens[Math.max(0, i)].dataset.de);
+    } else if (e.key === "Escape") {
+      e.preventDefault(); e.stopPropagation(); fechar(); txt.value = rot(atual()); txt.blur();
+    }
+  });
+  lista.addEventListener("mousedown", e => { const b = e.target.closest("[data-de]"); if (b) { e.preventDefault(); escolher(b.dataset.de); } });
+  txt.addEventListener("blur", () => setTimeout(() => { fechar(); txt.value = rot(atual()); }, 120));
+}
+
 // Solicitação de dados (texto do João, 13/10/2026). A saudação acompanha a hora: Bom dia / Boa tarde / Boa noite.
 function modeloSolicitacaoDados() {
   const h = new Date().getHours();
