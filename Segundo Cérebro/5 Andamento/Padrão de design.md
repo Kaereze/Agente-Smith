@@ -1,3 +1,8 @@
+---
+nivel: "5 · Em andamento"
+pai: "[[00 Início]]"
+tags: [cerebro/andamento]
+---
 # Padrão de design
 
 **Objetivo (12/10/2026):** o Painel vai ser apresentado a uma empresa grande. Ter **um padrão fixo** em todas as telas (mesma letra, tamanho, aba, card, seleção, tabela, cor), bonito e simples, com animação discreta, tabelas, gráficos e porcentagens, fácil para quem não é de TI, e **rápido**, porque a equipe usa o tempo todo, em ligação e por e-mail.

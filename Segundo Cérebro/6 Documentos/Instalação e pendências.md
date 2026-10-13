@@ -1,3 +1,8 @@
+---
+nivel: "6 · Documentos"
+pai: "[[00 Início]]"
+tags: [cerebro/documentos]
+---
 # Instalação completa, ambientes, sincronia entre PCs e pendências
 
 Guia para deixar **qualquer PC funcionando exatamente igual ao PC do João**: robô de solicitações,
@@ -108,7 +113,7 @@ e compara com a coluna C (agente) da aba `Cadastro_Hoteis` da Central. O resulta
 ```text
 Solicitacoes NF\
 ├── INSTALAR_OU_ATUALIZAR.bat   ← duplo clique: instala OU atualiza tudo neste PC (o "coração")
-├── INSTALACAO_E_PENDENCIAS.md  ← este guia
+├── Segundo Cérebro/            ← cofre do Obsidian (este guia: 6 Documentos/Instalação e pendências.md)
 ├── README.md                   ← visão técnica do robô (fluxo, garantias)
 ├── config.json                 ← configuração igual para todos os PCs (vai no git)
 ├── config.local.json           ← (opcional) ajustes só deste PC (NÃO vai no git)
@@ -824,7 +829,8 @@ Para o dia a dia, depois do push. Duplo clique em **`ATUALIZAR_PAINEL.bat`** (na
 1. acha a pasta do projeto sozinho (funciona até copiado para outro lugar, como a Área de Trabalho);
 2. baixa a `main` do GitHub e aplica neste PC, mesmo que o PC esteja na branch do operador;
 3. confere as bibliotecas do `.venv` (`pip install -r requirements.txt`);
-4. reinicia o conferente e o Painel (`Automacoeseiniciar_servicos.ps1`) e espera o Painel responder;
+4. reinicia o conferente e o Painel (`Automacoes
+einiciar_servicos.ps1`) e espera o Painel responder;
 5. mostra `PRONTO. Versao neste PC: xxxxxxx (GitHub: xxxxxxx)`: os dois números têm que ser iguais.
 
 Ele **nunca apaga** o que foi alterado à mão no PC: se a versão nova mexer no mesmo arquivo, para, lista os arquivos

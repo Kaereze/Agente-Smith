@@ -1,3 +1,8 @@
+---
+nivel: "5 · Em andamento"
+pai: "[[00 Início]]"
+tags: [cerebro/andamento]
+---
 # Painel em casa (modo casa)
 
 Decidido em 12/10/2026: no PC de casa o Painel mostra os **dados reais, só para ver**. Ele lê a Planilha Central e **não grava nada**: não aparece em Máquinas, não executa comandos da equipe, não mexe no Outlook e relê devagar (1 vez por minuto com a janela aberta) para não gastar a cota do Google dos 4 PCs.

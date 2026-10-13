@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # Glossário
 
 - **NF**: nota fiscal de serviço da estadia (NFS-e).

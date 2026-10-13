@@ -1,3 +1,8 @@
+---
+nivel: "5 · Em andamento"
+pai: "[[00 Início]]"
+tags: [cerebro/andamento]
+---
 # Ideias e pendências
 
 ## Para fazer (12/10/2026)

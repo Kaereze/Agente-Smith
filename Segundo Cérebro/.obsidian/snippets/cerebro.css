@@ -1,0 +1,35 @@
+/* Segundo Cérebro: uma cor por nível (as mesmas do gráfico) */
+body {
+  --cb-inicio: #F2C14E; --cb-seguranca: #E5484D; --cb-trabalho: #F08C2E; --cb-sistema: #3E9BFF;
+  --cb-historia: #A371F7; --cb-andamento: #2FBF71; --cb-diario: #7F93A3; --cb-documentos: #14B8A6;
+}
+/* pastas na barra lateral */
+.nav-folder-title[data-path^="1 Segurança"] { color: var(--cb-seguranca); font-weight: 600; }
+.nav-folder-title[data-path^="2 Trabalho"]  { color: var(--cb-trabalho);  font-weight: 600; }
+.nav-folder-title[data-path^="3 Sistema"]   { color: var(--cb-sistema);   font-weight: 600; }
+.nav-folder-title[data-path^="4 História"]  { color: var(--cb-historia);  font-weight: 600; }
+.nav-folder-title[data-path^="5 Andamento"] { color: var(--cb-andamento); font-weight: 600; }
+.nav-folder-title[data-path^="6 Documentos"] { color: var(--cb-documentos); font-weight: 600; }
+.nav-folder-title[data-path^="Diário"]      { color: var(--cb-diario);    font-weight: 600; }
+.nav-folder-title[data-path^="99 Rascunhos"] { opacity: .45; }
+.nav-file-title[data-path="00 Início.md"]   { color: var(--cb-inicio); font-weight: 700; }
+/* etiquetas */
+a.tag[href="#cerebro/seguranca"], .multi-select-pill:has([data-value="cerebro/seguranca"]) { background: color-mix(in srgb, var(--cb-seguranca) 22%, transparent); color: var(--cb-seguranca); }
+a.tag[href="#cerebro/trabalho"]  { background: color-mix(in srgb, var(--cb-trabalho) 22%, transparent);  color: var(--cb-trabalho); }
+a.tag[href="#cerebro/sistema"]   { background: color-mix(in srgb, var(--cb-sistema) 22%, transparent);   color: var(--cb-sistema); }
+a.tag[href="#cerebro/historia"]  { background: color-mix(in srgb, var(--cb-historia) 22%, transparent);  color: var(--cb-historia); }
+a.tag[href="#cerebro/andamento"] { background: color-mix(in srgb, var(--cb-andamento) 22%, transparent); color: var(--cb-andamento); }
+a.tag[href="#cerebro/documentos"] { background: color-mix(in srgb, var(--cb-documentos) 22%, transparent); color: var(--cb-documentos); }
+a.tag[href="#cerebro/diario"]    { background: color-mix(in srgb, var(--cb-diario) 22%, transparent);    color: var(--cb-diario); }
+/* títulos com a cor do nível da nota */
+.markdown-rendered h1, .markdown-source-view .cm-header-1 { border-bottom: 2px solid var(--interactive-accent); padding-bottom: 4px; }
+.markdown-rendered h2 { color: var(--cb-inicio); }
+.markdown-rendered table th { background: color-mix(in srgb, var(--cb-inicio) 14%, transparent); }
+/* caixas de prioridade P0..P6 (usadas na Hierarquia) */
+.callout[data-callout="p0"] { --callout-color: 229, 72, 77;  --callout-icon: lucide-shield-alert; }
+.callout[data-callout="p1"] { --callout-color: 240, 140, 46; --callout-icon: lucide-server-crash; }
+.callout[data-callout="p2"] { --callout-color: 234, 196, 53; --callout-icon: lucide-scale; }
+.callout[data-callout="p3"] { --callout-color: 62, 155, 255; --callout-icon: lucide-gauge; }
+.callout[data-callout="p4"] { --callout-color: 163, 113, 247; --callout-icon: lucide-user-check; }
+.callout[data-callout="p5"] { --callout-color: 47, 191, 113; --callout-icon: lucide-sparkles; }
+.callout[data-callout="p6"] { --callout-color: 127, 147, 163; --callout-icon: lucide-zap; }

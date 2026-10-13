@@ -1,3 +1,9 @@
+---
+nivel: "2 · Como trabalhar"
+pai: "[[00 Início]]"
+tags: [cerebro/trabalho]
+prioridade: P1
+---
 # Como entregar cada mudança
 
 > **Dois PCs do João (12/10/2026):** ele modifica o projeto no PC do trabalho **e** no PC de casa. Sempre `git pull` antes de começar (em qualquer PC) e enviar ao GitHub no fim, senão um PC apaga o trabalho do outro. O PC de casa roda o Painel em modo demonstração (sem chave do Google, sem `estado/`, sem Outlook dos hotéis).

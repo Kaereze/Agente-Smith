@@ -1,3 +1,9 @@
+---
+nivel: "1 · Segurança e regras"
+pai: "[[00 Início]]"
+tags: [cerebro/seguranca]
+prioridade: P0
+---
 # Regras fixas — o que NÃO mexer
 
 Ordem de importância: ver [[Hierarquia de prioridades]]. Credenciais: ver [[Credenciais]].

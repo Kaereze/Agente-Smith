@@ -109,7 +109,7 @@ def validar_config(cfg):
     caminho_chave = caminho_chave_google(cfg)
     if not caminho_chave or not os.path.exists(caminho_chave):
         problemas.append(f"Não achei a chave do Google em '{caminho_chave}'. "
-                         f"Veja Docs\\CONTA_DE_SERVICO_GOOGLE.md.")
+                         f"Veja Segundo Cérebro\\6 Documentos\\Instalação e pendências.md (seção 7, a chave do Google).")
 
     for chave in ("enviado", "carimbo"):
         if not str(cfg.get("colunas", {}).get(chave, "")).strip():

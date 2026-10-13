@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # O que é o projeto
 
 **Quem:** setor financeiro/fiscal da Rede Andrade (~73 hotéis). Equipe de 4 agentes: João, Clara, Cristian e Bernardo. Ver [[Pessoas e PCs]].

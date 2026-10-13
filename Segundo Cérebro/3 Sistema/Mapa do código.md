@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # Mapa do código (13/10/2026)
 
 Pasta: `Desktop\NOTAS\Solicitacoes NF` · repositório `Kaereze/Notas-Fiscais`. Para "qual função", ver [[Onde mexer]].

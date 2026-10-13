@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # Como funciona (em português simples)
 
 ## O caminho de um pedido de NF

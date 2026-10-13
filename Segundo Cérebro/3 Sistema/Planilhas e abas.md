@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # Planilhas e abas
 
 IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/relatorio_semana.py` → `PLANILHA_MAIL_ANALYTICS`. (IDs não são senha: o acesso depende do compartilhamento.)

@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # API do Painel (127.0.0.1:8765)
 
 Tudo em `src/app_servidor.py` → `criar_handler`. `POST` exige o cabeçalho `X-Token` (vem no HTML servido). No **modo casa** só `professor`, `agente` e `atualizar` são aceitos.

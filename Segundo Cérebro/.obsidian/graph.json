@@ -1,22 +1,79 @@
 {
   "collapse-filter": true,
-  "search": "",
+  "search": "-path:\"99 Rascunhos\"",
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
   "showOrphans": true,
-  "collapse-color-groups": true,
-  "colorGroups": [],
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "file:\"00 Início\"",
+      "color": {
+        "a": 1,
+        "rgb": 15909198
+      }
+    },
+    {
+      "query": "path:\"1 Segurança\"",
+      "color": {
+        "a": 1,
+        "rgb": 15026253
+      }
+    },
+    {
+      "query": "path:\"2 Trabalho\"",
+      "color": {
+        "a": 1,
+        "rgb": 15764526
+      }
+    },
+    {
+      "query": "path:\"3 Sistema\"",
+      "color": {
+        "a": 1,
+        "rgb": 4103167
+      }
+    },
+    {
+      "query": "path:\"4 História\"",
+      "color": {
+        "a": 1,
+        "rgb": 10711543
+      }
+    },
+    {
+      "query": "path:\"5 Andamento\"",
+      "color": {
+        "a": 1,
+        "rgb": 3129201
+      }
+    },
+    {
+      "query": "path:\"6 Documentos\"",
+      "color": {
+        "a": 1,
+        "rgb": 1357990
+      }
+    },
+    {
+      "query": "path:\"Diário\"",
+      "color": {
+        "a": 1,
+        "rgb": 8360867
+      }
+    }
+  ],
   "collapse-display": true,
-  "showArrow": false,
-  "textFadeMultiplier": 0,
-  "nodeSizeMultiplier": 1,
+  "showArrow": true,
+  "textFadeMultiplier": -1,
+  "nodeSizeMultiplier": 1.4,
   "lineSizeMultiplier": 1,
   "collapse-forces": true,
   "centerStrength": 0.518713248970312,
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 1,
+  "scale": 0.9999999999999994,
   "close": false
 }

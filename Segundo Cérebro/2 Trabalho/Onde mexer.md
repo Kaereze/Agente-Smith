@@ -1,3 +1,9 @@
+---
+nivel: "2 · Como trabalhar"
+pai: "[[00 Início]]"
+tags: [cerebro/trabalho]
+prioridade: P1
+---
 # Onde mexer — vá direto ao ponto
 
 > Antes de procurar no código, ache a tarefa aqui. Tela = `app_ui/`. Servidor = `src/app_servidor.py` (classe `Estado`). Tamanhos e propósito de cada arquivo: [[Mapa do código]].

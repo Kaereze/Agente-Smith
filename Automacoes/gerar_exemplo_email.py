@@ -51,7 +51,7 @@ html = email.html
 for s, estado in zip(lista, estados):
     html, _ = trocar_paragrafo_status(html, s.ref, paragrafo_status(s.ref, estado))
 
-destino = os.path.join(RAIZ, "Docs", f"exemplo_email_{visual}.html")
+destino = os.path.join(RAIZ, "Segundo Cérebro", "6 Documentos", "Exemplos de e-mail", f"exemplo_email_{visual}.html")
 os.makedirs(os.path.dirname(destino), exist_ok=True)
 open(destino, "w", encoding="utf-8").write(html)
 print("Assunto:", email.assunto)

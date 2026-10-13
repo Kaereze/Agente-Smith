@@ -1,3 +1,9 @@
+---
+nivel: "2 · Como trabalhar"
+pai: "[[00 Início]]"
+tags: [cerebro/trabalho]
+prioridade: P1
+---
 # Como usar este cérebro
 
 ## Para o João

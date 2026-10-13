@@ -1,3 +1,8 @@
+---
+nivel: "4 · História"
+pai: "[[00 Início]]"
+tags: [cerebro/historia]
+---
 # Problemas resolvidos (para não repetir)
 
 | Data | Sintoma | Causa | Correção |

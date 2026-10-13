@@ -1,3 +1,8 @@
+---
+nivel: "3 · Como o sistema é"
+pai: "[[00 Início]]"
+tags: [cerebro/sistema]
+---
 # Pessoas e PCs
 
 | Agente | PC | Branch no GitHub | Observações |

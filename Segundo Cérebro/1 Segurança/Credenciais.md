@@ -1,3 +1,9 @@
+---
+nivel: "1 · Segurança e regras"
+pai: "[[00 Início]]"
+tags: [cerebro/seguranca]
+prioridade: P0
+---
 # Credenciais — mapa (SEM os valores)
 
 > **Por que não guardamos os valores aqui:** este cofre está dentro do repositório do GitHub e vai para os 4 PCs e para o PC de casa. Credencial escrita aqui = credencial vazada. O cofre guarda **o que é, onde fica e o que fazer se vazar**. O valor fica só no lugar seguro da coluna "Onde fica".

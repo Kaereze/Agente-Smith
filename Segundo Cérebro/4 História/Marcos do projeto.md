@@ -1,3 +1,8 @@
+---
+nivel: "4 · História"
+pai: "[[00 Início]]"
+tags: [cerebro/historia]
+---
 # Marcos do projeto — conversas que mudaram o rumo
 
 > Só o que **mudou a direção**. O dia a dia fica no `Diário/`. As decisões em tabela ficam em [[Decisões]].

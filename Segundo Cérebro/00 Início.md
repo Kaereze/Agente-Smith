@@ -1,5 +1,7 @@
 ---
 atualizado: 2026-10-13
+nivel: "0 · Comece aqui"
+tags: [cerebro/inicio]
 ---
 # Segundo Cérebro — Projeto Notas Fiscais
 
@@ -29,9 +31,23 @@ atualizado: 2026-10-13
 - **Firewall 8766** (Clara e Cristian em Wi-Fi Público): rede Privada ou regra Pública só na rede local; precisa de administrador.
 - **Cadastro** de CAMPO GRANDE, IDEAL, PALACE, Itapoá e Pousada Jeri: depois.
 
-## Mapa do cofre
-- **Regras e segurança:** [[Hierarquia de prioridades]] · [[Regras fixas]] · [[Credenciais]]
-- **Como trabalhar:** [[Onde mexer]] · [[Como entregar]] · [[Como usar este cérebro]]
-- **Como o sistema é:** [[O que é o projeto]] · [[Como funciona]] · [[Mapa do código]] · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
-- **História:** [[Marcos do projeto]] · [[Decisões]] · [[Problemas resolvidos]] · `Diário/`
-- **Em andamento:** [[Ideias e pendências]] · [[Padrão de design]] · [[Painel em casa]]
+## Hierarquia do cofre (cada cor = um nível)
+> [!p0] 1 Segurança — vermelho · **ler sempre primeiro**
+> [[Hierarquia de prioridades]] · [[Regras fixas]] · [[Credenciais]]
+
+> [!p1] 2 Trabalho — laranja · **antes de mexer no código**
+> [[Onde mexer]] · [[Como entregar]] · [[Como usar este cérebro]]
+
+> [!p3] 3 Sistema — azul · **como o sistema é**
+> [[O que é o projeto]] · [[Como funciona]] · [[Mapa do código]] · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
+
+> [!p4] 4 História — roxo · **por que é assim**
+> [[Marcos do projeto]] · [[Decisões]] · [[Problemas resolvidos]]
+
+> [!p5] 5 Andamento — verde · **o que está sendo feito**
+> [[Ideias e pendências]] · [[Padrão de design]] · [[Painel em casa]]
+
+> [!abstract] 6 Documentos — turquesa · **guias completos**
+> [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
+
+> [!quote] Diário — cinza · um arquivo por dia (`Diário/AAAA-MM-DD`). 99 Rascunhos = quadros vazios guardados, fora do mapa.
