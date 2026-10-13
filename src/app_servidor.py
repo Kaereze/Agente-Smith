@@ -61,6 +61,15 @@ PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = PASTA_ESTADO / "app.json"
 
 
+def _marca_pagina():
+    """Marca da versão da tela (data do arquivo mais novo em app_ui): mudou = a janela aberta recarrega sozinha
+    (13/10/2026: a tela foi atualizada sem reiniciar o Painel e a janela continuava com a página antiga)."""
+    try:
+        return str(int(max(p.stat().st_mtime for p in PASTA_UI.iterdir() if p.suffix in (".html", ".js", ".css"))))
+    except (OSError, ValueError):
+        return ""
+
+
 def _pagina_inteira(tentativas=6):
     """index.html lido inteiro: durante uma atualização o arquivo pode estar sendo regravado (lido pela metade = página quebrada)."""
     html = ""
@@ -1367,7 +1376,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self._json({"erro": "host"}, 403)
             url = urlparse(self.path)
             if url.path in ("/", "/index.html"):
-                html = _pagina_inteira().replace("__TOKEN__", token)
+                html = _pagina_inteira().replace("__TOKEN__", token).replace("__PAGINA__", _marca_pagina())
                 corpo = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -1404,7 +1413,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
-                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "so_ver": bool(getattr(estado, "so_ver", False)),
+                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
             if url.path == "/api/envio":

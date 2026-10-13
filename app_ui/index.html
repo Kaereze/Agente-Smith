@@ -1255,6 +1255,7 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
 <script>
 const TOKEN = "__TOKEN__";
+const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
 const NOMES = {aguardando_envio:"Aguardando envio", na_fila:"Sem NF", em_tratamento:"Em tratamento",
                tratativa:"Tratativa", nf_parcial:"NF parcial", concluida:"NF emitida", sem_resposta:"Sem resposta"};
 // Uma cor por situação em todo o Painel (lista, cartões e gráficos): vermelho = sem NF / atrasada, violeta = e-mail sem
@@ -1365,6 +1366,10 @@ async function carregar(){
     const dias = periodo === "0" ? 0 : Math.max(45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
     const j = await api("/api/estado?dias=" + dias + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
+    // tela nova no disco (atualização sem reinício): recarrega, mas nunca com uma mensagem sendo escrita
+    if (j.pagina && j.pagina !== PAGINA && !document.querySelector(".modal-fundo") && !(typeof envNF !== "undefined" && envNF)) {
+      location.reload(); return;
+    }
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
     // pedido repetido (Etapa 2): conta 1 vez só; o repetido fica ligado ao principal e abre pelo detalhe dele
