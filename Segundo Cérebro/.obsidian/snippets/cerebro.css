@@ -33,3 +33,32 @@ a.tag[href="#cerebro/diario"]    { background: color-mix(in srgb, var(--cb-diari
 .callout[data-callout="p4"] { --callout-color: 163, 113, 247; --callout-icon: lucide-user-check; }
 .callout[data-callout="p5"] { --callout-color: 47, 191, 113; --callout-icon: lucide-sparkles; }
 .callout[data-callout="p6"] { --callout-color: 127, 147, 163; --callout-icon: lucide-zap; }
+
+/* cores explícitas (esta versão do Obsidian não usa --callout-color nos tipos novos) */
+.callout[data-callout="p0"] { background-color: rgba(229,72,77,.12) !important; border-left: 4px solid rgb(229,72,77) !important; border-radius: 6px; }
+.callout[data-callout="p0"] .callout-title, .callout[data-callout="p0"] .callout-icon, .callout[data-callout="p0"] .callout-icon svg { color: rgb(229,72,77) !important; stroke: rgb(229,72,77) !important; }
+.callout[data-callout="p1"] { background-color: rgba(240,140,46,.12) !important; border-left: 4px solid rgb(240,140,46) !important; border-radius: 6px; }
+.callout[data-callout="p1"] .callout-title, .callout[data-callout="p1"] .callout-icon, .callout[data-callout="p1"] .callout-icon svg { color: rgb(240,140,46) !important; stroke: rgb(240,140,46) !important; }
+.callout[data-callout="p2"] { background-color: rgba(234,196,53,.12) !important; border-left: 4px solid rgb(234,196,53) !important; border-radius: 6px; }
+.callout[data-callout="p2"] .callout-title, .callout[data-callout="p2"] .callout-icon, .callout[data-callout="p2"] .callout-icon svg { color: rgb(234,196,53) !important; stroke: rgb(234,196,53) !important; }
+.callout[data-callout="p3"] { background-color: rgba(62,155,255,.12) !important; border-left: 4px solid rgb(62,155,255) !important; border-radius: 6px; }
+.callout[data-callout="p3"] .callout-title, .callout[data-callout="p3"] .callout-icon, .callout[data-callout="p3"] .callout-icon svg { color: rgb(62,155,255) !important; stroke: rgb(62,155,255) !important; }
+.callout[data-callout="p4"] { background-color: rgba(163,113,247,.12) !important; border-left: 4px solid rgb(163,113,247) !important; border-radius: 6px; }
+.callout[data-callout="p4"] .callout-title, .callout[data-callout="p4"] .callout-icon, .callout[data-callout="p4"] .callout-icon svg { color: rgb(163,113,247) !important; stroke: rgb(163,113,247) !important; }
+.callout[data-callout="p5"] { background-color: rgba(47,191,113,.12) !important; border-left: 4px solid rgb(47,191,113) !important; border-radius: 6px; }
+.callout[data-callout="p5"] .callout-title, .callout[data-callout="p5"] .callout-icon, .callout[data-callout="p5"] .callout-icon svg { color: rgb(47,191,113) !important; stroke: rgb(47,191,113) !important; }
+.callout[data-callout="p6"] { background-color: rgba(127,147,163,.12) !important; border-left: 4px solid rgb(127,147,163) !important; border-radius: 6px; }
+.callout[data-callout="p6"] .callout-title, .callout[data-callout="p6"] .callout-icon, .callout[data-callout="p6"] .callout-icon svg { color: rgb(127,147,163) !important; stroke: rgb(127,147,163) !important; }
+.callout[data-callout="abstract"] { background-color: rgba(20,184,166,.12) !important; border-left: 4px solid rgb(20,184,166) !important; border-radius: 6px; }
+.callout[data-callout="abstract"] .callout-title, .callout[data-callout="abstract"] .callout-icon, .callout[data-callout="abstract"] .callout-icon svg { color: rgb(20,184,166) !important; stroke: rgb(20,184,166) !important; }
+.callout[data-callout="quote"] { background-color: rgba(127,147,163,.12) !important; border-left: 4px solid rgb(127,147,163) !important; border-radius: 6px; }
+.callout[data-callout="quote"] .callout-title, .callout[data-callout="quote"] .callout-icon, .callout[data-callout="quote"] .callout-icon svg { color: rgb(127,147,163) !important; stroke: rgb(127,147,163) !important; }
+/* títulos também no modo de edição */
+.cm-header-2, .HyperMD-header-2, .markdown-rendered h2 { color: var(--cb-inicio) !important; }
+.cm-header-1, .HyperMD-header-1, .markdown-rendered h1 { color: #ffffff; }
+.theme-light .cm-header-1, .theme-light .markdown-rendered h1 { color: #111; }
+.theme-light .cm-header-2, .theme-light .markdown-rendered h2 { color: #B7791F !important; }
+/* tabelas */
+.markdown-rendered table th, .cm-table-widget th { background: rgba(242,193,78,.14); }
+/* propriedades */
+.metadata-container { border-left: 3px solid var(--cb-inicio); padding-left: 8px; }
