@@ -16,6 +16,17 @@ tags: [cerebro/trabalho]
 - os Wi-Fi do escritório estão como **rede Pública**;
 - no PC do João existe um **bloqueio do `pythonw.exe`** (o programa que roda o Painel), criado quando alguém clicou "Cancelar" no aviso do firewall. No Windows, bloqueio vence permissão.
 
+**Levantamento de 13/10/2026 (só leitura, pelas sessões Remote Control):**
+
+| PC | Bloqueios do pythonw (rede Pública) | Regra 8766 | Energia na tomada | Windows Update |
+|---|---|---|---|---|
+| João · DESKTOP-GA8IJAU | 2 | não existe | nunca suspende | — |
+| Clara · DESKTOP-FA8HRTN | 2 (TCP e UDP) | não existe | nunca suspende (desktop) | sem reinício pendente |
+| Cristian · DESKTOP-0EP6A0T | 2 | não existe | nunca suspende (desktop) | sem reinício pendente |
+| Bernardo · DESKTOP-DF2300B | 2 | não existe | nunca suspende (desktop) | renomeação pendente: reiniciar no fim do dia |
+
+O Painel já escuta a 8766 em todas as interfaces (conferido no PC do Bernardo); só o firewall barra. O Python fica em pastas diferentes por PC (`AppData\Local\Python\pythoncore-3.14-64` ou `AppData\Local\Programs\Python\Python314`): o script acha qualquer `python.exe`/`pythonw.exe`.
+
 **Como fazer (um comando por PC):**
 1. Menu Iniciar → digite `PowerShell` → **Executar como administrador** → digite a senha.
 2. Cole:
