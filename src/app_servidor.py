@@ -1013,7 +1013,7 @@ class Estado:
         return {"novo": True, "para": [], "conta_de": escolhida["conta"], "destino": destino, "motivo": motivo,
                 "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "contas": contas,
                 "sugestoes": [], "nome": "", "hotel": escolhida["hotel"], "assunto": "", "corpo": "",
-                "corpo_nf": "", "assinatura": "", "assinatura_com_mensagem": False, "selos": envio_nf.selos(),
+                "corpo_nf": envio_nf.mensagem_padrao(self.cfg), "assinatura": "", "assinatura_com_mensagem": False, "selos": envio_nf.selos(),
                 "selo": envio_nf.selo_do_agente(nome_do_agente())}
 
     def enviar_email_novo(self, corpo, quem):

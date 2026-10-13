@@ -1115,7 +1115,9 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 /* janela de escrever quase em tela cheia (usuário, 13/10/2026) */
 .modal.compor{width:min(1600px,96vw)!important;height:94vh;max-height:94vh!important;display:flex;flex-direction:column}
 .modal.compor .compor-corpo{flex:1;min-height:0}
-.modal.compor .editor{min-height:42vh}
+/* a assinatura tem que aparecer inteira sem rolar (usuário, 13/10/2026): a mensagem rola dentro da caixa dela */
+.modal.compor .editor,.compor-inline .editor{min-height:160px;max-height:36vh;overflow:auto}
+.selo-previa img{width:520px!important}
 /* "De" com busca no Novo e-mail */
 .combo-de{position:relative;flex:1;min-width:0}
 .combo-de input{width:100%;font:inherit;padding:5px 8px;border:1px solid var(--linha);border-radius:var(--raio);background:var(--folha);color:var(--tinta)}

@@ -575,9 +575,18 @@ function adicionarArquivos(lista) {
     if (!/\.(pdf|xml)$/i.test(f.name)) { toast(`${f.name}: só PDF ou XML`, true); continue; }
     if (!envNF.anexos.some(a => a.nome === f.name)) envNF.anexos.push({ tipo: "arquivo", nome: f.name, file: f, bytes: f.size });
   }
+  trocarParaMensagemDaNF();
   desenharAnexos();
 }
 
+// Novo e-mail: anexou a NF e o texto ainda é a solicitação de dados intacta -> vira a mensagem padrão da NF (13/10/2026)
+function trocarParaMensagemDaNF() {
+  if (!envNF?.resp?.novo || !envNF.anexos.length || !envNF.o?.corpo_nf) return;
+  const atual = $("nf-msg").innerText.trim().replace(/^(Bom dia|Boa tarde|Boa noite)!/, "");
+  if (atual !== modeloSolicitacaoDados().trim().replace(/^(Bom dia|Boa tarde|Boa noite)!/, "")) return;   // já mexeu: não troca
+  $("nf-msg").innerText = envNF.o.corpo_nf;
+  toast("NF anexada: a mensagem virou a de envio da NF (dá pra editar)");
+}
 function escolherSugestao(i) {
   const a = envNF.o.sugestoes[i];
   if (!envNF.anexos.some(x => x.rel === a.rel)) envNF.anexos.push({ tipo: "dropbox", rel: a.rel, nome: a.nome });
