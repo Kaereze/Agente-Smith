@@ -27,6 +27,8 @@ tags: [cerebro/trabalho]
 
 O Painel já escuta a 8766 em todas as interfaces (conferido no PC do Bernardo); só o firewall barra. O Python fica em pastas diferentes por PC (`AppData\Local\Python\pythoncore-3.14-64` ou `AppData\Local\Programs\Python\Python314`): o script acha qualquer `python.exe`/`pythonw.exe`.
 
+**Jeito mais fácil (13/10/2026):** em cada PC já fica aberta uma janela "Dia do administrador - aperte Enter" com o comando digitado (aberta por `Automacoes/preparar_dia_admin.ps1`, que não executa nada). Basta apertar **Enter** e digitar a senha quando o Windows pedir. Se a janela tiver sido fechada, rode de novo: `powershell -ExecutionPolicy Bypass -File .\Automacoes\preparar_dia_admin.ps1` na pasta do projeto.
+
 **Como fazer (um comando por PC):**
 1. Menu Iniciar → digite `PowerShell` → **Executar como administrador** → digite a senha.
 2. Cole:
