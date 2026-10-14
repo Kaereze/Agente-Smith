@@ -13,6 +13,7 @@ function trocarVista(v) {
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
     b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba)
                                           && (v !== "correio" || b.dataset.caixa === cx.caixa))));
+  $("seletor-caixa")?.classList.toggle("oculta", !["fila", "correio"].includes(v));   // "Caixa de" só onde filtra (usuário, 14/10/2026)
   $("busca").placeholder = "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…";
   if (v !== "correio") $("topo-filtro").innerHTML = "";   // o filtro do topo é dos e-mails
   if (v === "correio") { desenharCorreio(); return; }
@@ -530,6 +531,11 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   $("nf-msg").innerText = resp ? (o.corpo_nf || o.corpo) : o.corpo;
   if (resp) { $("nf-assunto").value = novo ? `Nota Fiscal - ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
   if (novo) comboDe(o);
+  if (novo && resp.para) $("nf-para").value = resp.para;
+  if (novo && resp.solicitar) {
+    $("nf-msg").innerText = modeloSolicitacaoDados();
+    $("nf-assunto").value = `Solicitação de dados - Nota Fiscal ${o.hotel}`;
+  }
   if (novo) envNF.escolherDe = async conta => {   // trocou a caixa: de qual PC sai e o hotel do assunto
     $("nf-de").value = conta;
     const n = await api("/api/email/novo?conta=" + encodeURIComponent(conta));
@@ -562,7 +568,11 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (o.sugestoes.length === 1) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada
   desenharAnexos();
   validarEnvioNF();
-  setTimeout(() => (enc || novo ? $("nf-para") : $("nf-msg"))?.focus(), 50);
+  if (novo && resp.conta && resp.conta !== o.conta_de && o.contas.some(c => c.conta === resp.conta)) {   // a caixa do hotel do pedido
+    envNF.escolherDe(resp.conta).then(() => { if (resp.solicitar) $("nf-assunto").value = `Solicitação de dados - Nota Fiscal ${envNF.o.hotel}`;
+      const c = envNF.o.contas.find(x => x.conta === resp.conta); if (c) $("nf-de-txt").value = `${c.hotel} · ${c.conta} · ${c.pc === envNF.o.este_pc ? "este PC" : "PC de " + c.agente}`; });
+  }
+  setTimeout(() => (enc || (novo && !resp.para) ? $("nf-para") : $("nf-msg"))?.focus(), 50);
 }
 
 function escolherSelo(id) {

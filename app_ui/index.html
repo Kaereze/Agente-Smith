@@ -800,8 +800,6 @@ body.professor .dica-bt.antes{margin:2px 0 -4px;padding-left:2px}
 @keyframes desenhaLinha{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 .anima .fr-item{animation:subir .4s ease both}
 .anima .fr-item:nth-child(2){animation-delay:.05s}.anima .fr-item:nth-child(3){animation-delay:.1s}.anima .fr-item:nth-child(4){animation-delay:.15s}.anima .fr-item:nth-child(5){animation-delay:.2s}
-.fr-sub{font-size:12px;color:var(--tinta-3);line-height:1.35}
-.fr-sub b{color:var(--erro)}
 @media (max-width:1180px){.faixa-resumo{grid-template-columns:repeat(3,minmax(0,1fr))}.fr-item:nth-child(4){border-left:0}}
 /* Gerência (em teste): tudo o que a equipe está fazendo, ao vivo */
 .ln .n.em-teste{font:600 10px var(--f-titulo);letter-spacing:.06em;text-transform:uppercase;background:var(--atencao-fundo);color:var(--atencao);border-radius:999px;padding:2px 7px}
@@ -1153,6 +1151,17 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .sc-txt small.ok{color:var(--ok)}
 .sc-n{font:500 13px var(--f-dado);color:var(--tinta-2)}
 .sc-vazio{padding:12px 16px;color:var(--tinta-3);font-size:13px}
+/* Ficha-resumo no topo da ficha (Figma 14/10/2026) */
+.ficha-resumo{border:1px solid var(--creme-borda);border-top:3px solid var(--creme-borda);border-radius:var(--raio);background:var(--folha);overflow:hidden;margin-bottom:4px}
+.fr-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0}
+.fr-bloco{padding:12px 18px 14px}
+.fr-bloco h4{margin:0 0 8px;font:600 10.5px var(--f-texto);letter-spacing:.07em;text-transform:uppercase;color:var(--creme-tinta)}
+.fr-bloco dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:5px 10px;margin:0;font-size:12.5px}
+.fr-bloco dt{color:var(--tinta-3)}
+.fr-bloco dd{margin:0;color:var(--tinta);font-weight:500;overflow-wrap:anywhere}
+.fr-bloco dd.dado,.fr-bloco dt.dado{font-family:var(--f-dado)}
+.fr-bloco dd.falta{color:var(--atencao);font-weight:600}
+.fr-bloco dd.vazio-fr{color:var(--tinta-3);font-weight:400}
 </style>
 </head>
 <body>
@@ -1913,6 +1922,7 @@ function desenharDetalhe() {
       ${livre ? `<button data-a="ASSUMIR"><svg class="ic"><use href="#i-mao"/></svg>Assumir</button>` : ""}
       ${meu ? `<button data-a="LIBERAR">Liberar</button>` : ""}
       ${!livre && !meu ? `<button class="perigo" data-a="LIBERAR" data-v="forcar" title="Tira de ${esc(s.dono)}">Liberar à força</button>` : ""}
+      <button data-pedir-dados="${esc(s.chave)}" title="Novo e-mail ao hóspede, saindo da caixa do hotel, com a solicitação de dados">Pedir dados</button>
       <button data-copiar="1"><svg class="ic"><use href="#i-copiar"/></svg>Copiar dados</button>
       <button data-a="DIVIDIDA" data-v="${s.dividida ? "nao" : "sim"}">${s.dividida ? "Não é dividida" : "Nota dividida"}</button>
       <button class="fechar" id="d-fechar" aria-label="Fechar leitura">×</button></div>
@@ -1925,10 +1935,10 @@ function desenharDetalhe() {
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
         ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}
         ${s.enviado ? "" : `<span class="etq ruim">E-mail ao hotel não enviado</span>`}</div></header>
-    <div class="corpo-msg">${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
-      <section class="ficha ficha-form"><div class="ficha-tit"><span class="rot">Ficha do formulário</span><span class="dica">${dataBr(s.data)}</span></div>
+    <div class="corpo-msg">${fichaResumoHtml(s)}${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
+      <details class="ficha ficha-form dobra" data-dobra="form" ${DOBRA.form ? "open" : ""}><summary class="ficha-tit"><span class="rot">Formulário completo</span><span class="dica">${dataBr(s.data)} · clique pra abrir</span></summary>
         <dl><dt>E-mail do hóspede</dt><dd>${esc(s.email)}</dd>${s.campos.map(c =>
-          `<dt>${esc(c[0])}</dt><dd class="${/\d{3}[.\/-]\d/.test(c[1]) ? "dado" : ""}">${esc(c[1])}</dd>`).join("")}</dl></section>
+          `<dt>${esc(c[0])}</dt><dd class="${/\d{3}[.\/-]\d/.test(c[1]) ? "dado" : ""}">${esc(c[1])}</dd>`).join("")}</dl></details>
       <section class="ficha ficha-nf"><div class="ficha-tit"><span class="rot">Nota fiscal ${s.partes > 1 || s.dividida ? `· dividida em ${Math.max(s.partes, 2)}` : ""}</span></div>
         <div class="ficha-corpo">
           ${s.nfs.length ? `<div class="etiquetas">${s.nfs.map(n => `<span class="nf-num">NF ${esc(n)}${s.nfs_conferente.includes(n) ? " · conferente"
@@ -1949,6 +1959,44 @@ function desenharDetalhe() {
     </div>`;
 }
 
+// Ficha-resumo (desenho aprovado no Figma, 14/10/2026): tudo que precisa pra emitir, sem rolar. O que falta fica em âmbar.
+function fichaResumoHtml(s) {
+  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const campo = (...testes) => { const c = (s.campos || []).find(([k]) => testes.some(r => r.test(semAc(k)))); return c ? String(c[1]).trim() : ""; };
+  const nomeTom = campo(/nome.*tomador/, /razao social/, /^nome( completo)?$/);
+  const docTom = campo(/documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
+  const cep = campo(/\bcep\b/), endereco = campo(/endereco/), fone = campo(/telefone|celular|whats/);
+  const titular = campo(/nome.*titular/), cpfTit = campo(/cpf.*titular/);
+  const entrada = campo(/check.?in|data de entrada|entrada/), saida = campo(/check.?out|data de saida|saida/);
+  const info = campo(/informac/, /observac/), dividida = campo(/dividid/);
+  const val = (v, dado) => v ? `<dd class="${dado ? "dado" : ""}">${esc(v)}</dd>` : `<dd class="falta">falta pedir</dd>`;
+  const opc = (v, dado) => v ? `<dd class="${dado ? "dado" : ""}">${esc(v)}</dd>` : `<dd class="vazio-fr">—</dd>`;
+  const hist = (s.historico || []).slice(-3).reverse();
+  const sit = `${NOMES[s.situacao] || s.situacao}${s.nfs?.length ? " · NF " + s.nfs.join(", ") : ""}`;
+  return `<section class="ficha-resumo" aria-label="Resumo do pedido">
+    <div class="fr-grade">
+      <div class="fr-bloco"><h4>Tomador da nota</h4><dl>
+        <dt>Nome</dt>${val(nomeTom)}<dt>CPF/CNPJ</dt>${val(docTom, true)}<dt>CEP</dt>${val(cep, true)}
+        ${endereco ? `<dt>Endereço</dt><dd>${esc(endereco)}</dd>` : ""}<dt>Telefone</dt>${opc(fone, true)}</dl></div>
+      <div class="fr-bloco"><h4>Estadia</h4><dl>
+        <dt>Hotel</dt><dd>${esc(s.hotel)}</dd><dt>Titular</dt>${opc(titular)}${cpfTit ? `<dt>CPF titular</dt><dd class="dado">${esc(cpfTit)}</dd>` : ""}
+        <dt>Datas</dt>${entrada || saida ? `<dd class="dado">${esc(entrada || "?")} → ${esc(saida || "?")}</dd>` : `<dd class="falta">falta pedir</dd>`}</dl></div>
+      <div class="fr-bloco"><h4>Como quer a nota</h4><dl>
+        <dt>Pedido</dt>${opc(info)}<dt>Dividida</dt><dd>${s.dividida ? `sim${s.partes > 1 ? ` · ${s.partes} notas` : ""}` : esc(dividida || "não")}</dd>
+        <dt>Enviar para</dt><dd>${esc(s.email || "")}</dd></dl></div>
+      <div class="fr-bloco"><h4>Situação e histórico</h4><dl>
+        <dt>Situação</dt><dd>${esc(sit)}</dd><dt>Prazo</dt><dd>${s.prazo ? prazoHtml(s.prazo) : "—"}</dd>
+        ${hist.length ? hist.map(h => `<dt class="dado">${esc(quando(h.quando))}</dt><dd>${esc(h.agente)} · ${esc(rotulo(h))}</dd>`).join("") : `<dt>Ações</dt><dd class="vazio-fr">nenhuma ainda</dd>`}</dl></div>
+    </div></section>`;
+}
+// "Pedir dados": Novo e-mail ao hóspede, da caixa do hotel, com a solicitação de dados (assunto combina)
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-pedir-dados]");
+  if (!b) return;
+  const s = acharPedido(b.dataset.pedirDados);
+  if (s) abrirEnvioNF(null, { novo: true, para: s.email, conta: s.na_caixa?.caixa || "", solicitar: true });
+});
+
 // Etapa 2: CPF/CNPJ da NF diferente do pedido, pedido repetido e os outros pedidos do mesmo hóspede (e-mail ou CPF/CNPJ)
 const linhaPedido = o => `<div class="outro-ped" data-k="${esc(o.chave)}" role="button" tabindex="0"><span class="dado">${dataBr(o.data)} ${esc(horaDoCarimbo(o.carimbo))}</span>
   <span>${esc(o.hotel)} · ${esc(o.nome)}${o.email ? ` <span class="dado">&lt;${esc(o.email)}&gt;</span>` : ""}</span>
@@ -1957,7 +2005,7 @@ function caixaEmDia(texto) {
   return `<div class="vazio feliz"><b>Nada pendente</b><span>${esc(texto)}</span></div>`;
 }
 // seções que abrem e fecham (Anotar, Histórico): ficam como você deixou, mesmo com a lista atualizando a cada 15 s
-const DOBRA = { trat: false, hist: false };
+const DOBRA = { trat: false, hist: false, form: false };
 document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.dobra) DOBRA[d.dataset.dobra] = d.open; }, true);
 function noOutlookHtml(s) {
   const c = s.na_caixa;
@@ -2122,6 +2170,7 @@ const DICAS_BOTOES = [
   ["#cx-novo", "Escreve um e-mail novo ao hóspede, saindo da caixa do hotel (já vem a solicitação de dados)"],
   ["[data-envnf]", "Escreve o e-mail da NF pro hóspede, aqui mesmo"],
   ["#detalhe [data-a='ASSUMIR']", "Avisa a equipe que você vai cuidar deste pedido"],
+  ["#detalhe [data-pedir-dados]", "Novo e-mail ao hóspede pedindo o que falta"],
   ["#detalhe [data-a='LIBERAR']", "Devolve o pedido (ninguém cuidando)"],
   ["#detalhe [data-copiar]", "Copia os dados pra colar no emissor da NF"],
   ["#detalhe [data-a='DIVIDIDA']", "Diz se o hóspede quer a nota em partes"],
