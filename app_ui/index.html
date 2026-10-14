@@ -1261,6 +1261,27 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 #saude .s-linha.warn .ic{color:var(--atencao)}
 #saude .s-ver{margin:4px 14px 0;border:1px solid var(--linha-forte);background:var(--folha-2);color:var(--tinta);border-radius:6px;
   padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+/* Notas fiscais v2: tags úteis, aviso do que falta, ficha com cabeçalho creme */
+.tags-nf{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tg{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;white-space:nowrap;line-height:1.5}
+.t-urg{background:var(--erro-fundo);color:var(--erro)}
+.t-falta{background:var(--atencao-fundo);color:var(--atencao)}
+.t-div{background:#1b2a3d;color:#9cc2ee}
+:root[data-theme="light"] .t-div{background:#e6eef8;color:#2d4f7a}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .t-div{background:#e6eef8;color:#2d4f7a}}
+.t-nf{background:var(--ok-fundo);color:var(--ok)}
+.falta-banner{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:12px 16px;border:1px solid var(--creme-borda);
+  background:var(--atencao-fundo);border-radius:8px}
+.falta-banner div{flex:1;min-width:240px;display:flex;flex-direction:column;gap:2px}
+.falta-banner b{color:var(--atencao);font-size:13.5px}.falta-banner span{font-size:12.5px;color:var(--tinta-2)}
+button.dest,.acoes button.dest{background:var(--atencao-fundo)!important;border-color:var(--atencao)!important;color:var(--atencao)!important;font-weight:600}
+#detalhe .cab-msg{background:var(--creme);border-bottom:1px solid var(--creme-borda)}
+#detalhe .cab-msg h2{font-size:21px}
+.corpo-msg > .ficha-form.orig{order:99;border:0;background:transparent;padding:12px 0 0;border-top:1px solid var(--linha)}
+.ficha-form.orig > summary{list-style:none;cursor:pointer;font-size:12.5px;color:var(--tinta-3)}
+.ficha-form.orig > summary::-webkit-details-marker{display:none}
+.ficha-form.orig > summary u{color:var(--verde-texto)}
+.ficha-form.orig[open] > dl{margin-top:12px}
 </style>
 </head>
 <body>
@@ -1432,7 +1453,7 @@ let filtro = "todas", filtroEmail = "todos", origem = "form", hotel = "", agente
 let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "", ordem = "";   // ordem "": automática
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
 try { const p = JSON.parse(localStorage.getItem("painel.caixa2") || "{}");
-      if (p.filtro) filtro = p.filtro;
+      if (["todas", "urgentes", "falta_dado", "dividida", "doc_diferente", "envio_pendente", "concluida", "minhas"].includes(p.filtro)) filtro = p.filtro;   // filtros v2
       if (p.filtroEmail) filtroEmail = p.filtroEmail; if (p.agente) agenteF = p.agente; } catch (e) {}
 const guardarCaixa = () => { try { localStorage.setItem("painel.caixa2", JSON.stringify({origem, filtro, filtroEmail, agente: agenteF})); } catch (e) {} };
 
@@ -1617,7 +1638,48 @@ function passaSit(it, f) {
   if (f === "atrasadas") return s.situacao !== "concluida" && diasDesde(s.data) > PRAZO.med;
   if (f === "doc_diferente") return !!(s.alerta_doc && s.alerta_doc.length);
   if (f === "minhas") return s.dono === st.agente && s.situacao !== "concluida";
+  if (f === "urgentes") return !!motivoUrgente(s);
+  if (f === "falta_dado") return faltaDados(s).length > 0;
+  if (f === "dividida") return !!s.dividida;
   return s.situacao === f;
+}
+// O que é preciso pra emitir (usuário, 14/10/2026): nome + CPF/CNPJ (acham a reserva) + o que entra na nota
+// (diárias, consumo, estacionamento). Faltou algum: tag "Falta dado" e o botão "Pedir o que falta".
+function campoDoPedido(s, ...testes) {
+  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const c = (s.campos || []).find(([k]) => testes.some(r => r.test(semAc(k))));
+  return c ? String(c[1] || "").trim() : "";
+}
+function faltaDados(s) {
+  if (s.situacao === "concluida") return [];
+  const falta = [];
+  if (!campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/)) falta.push("nome");
+  const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/).replace(/\D/g, "");
+  if (doc.length !== 11 && doc.length !== 14) falta.push("CPF/CNPJ");
+  if (!campoDoPedido(s, /informac/, /o que.*nota/, /itens/)) falta.push("o que quer na nota");
+  return falta;
+}
+// Urgência (usuário, 14/10/2026): prazo perto de vencer (ou vencido) ou o hóspede cobrou de novo
+function motivoUrgente(s) {
+  if (s.situacao === "concluida") return "";
+  if ((st.filaRep || []).some(r => r.repetido_de === s.chave)) return "Cobrou de novo";
+  const i = prazoInfo(s.prazo);
+  return !i ? "" : i.resta <= 0 ? "Prazo vencido" : i.resta <= 6 ? "Vence em " + i.tempo : "";
+}
+function tagsPedido(s) {
+  const falta = faltaDados(s), urg = motivoUrgente(s);
+  return (urg ? `<span class="tg t-urg">${esc(urg)}</span>` : "") +
+    (falta.length ? `<span class="tg t-falta" title="Falta para emitir: ${esc(falta.join(", "))}">Falta: ${esc(falta[0])}${falta.length > 1 ? ` +${falta.length - 1}` : ""}</span>` : "") +
+    (s.dividida ? `<span class="tg t-div">Nota dividida</span>` : "") +
+    (s.nfs?.length ? `<span class="tg t-nf">NF ${esc(s.nfs.join(", "))}</span>` : "");
+}
+function faltaBanner(s) {
+  const falta = faltaDados(s);
+  if (!falta.length) return "";
+  const txt = { "nome": "o nome de quem vai na nota", "CPF/CNPJ": "o CPF ou CNPJ", "o que quer na nota": "o que entra na nota (diárias, consumo ou estacionamento)" };
+  return `<div class="falta-banner" role="status"><div><b>Falta ${falta.length} dado${falta.length > 1 ? "s" : ""} para emitir</b>
+    <span>O hóspede não informou ${esc(falta.map(f => txt[f] || f).join(", "))}.</span></div>
+    <button type="button" class="dest" data-pedir-dados="${esc(s.chave)}">Pedir o que falta</button></div>`;
 }
 // Prazo de atendimento: quantos dias o pedido (ou o e-mail) espera
 // Pedidos dos últimos 45 dias (os contadores de sempre); st.fila pode trazer mais, pra comparar períodos
@@ -1829,12 +1891,10 @@ const HISTORICO = ["concluida"];   // o que já terminou fica discreto, ao lado 
 const conta = (ign, f, busca) => TODOS.reduce((n, it) => n + (passa(it, ign, busca) && f(it) ? 1 : 0), 0);
 function situacoesDaAba(busca) {
   if (origem === "email") return SIT_EMAIL.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)]);
-  const base = [["todas", "Todas", "var(--verde)"], ["aberto", "Em aberto", "var(--linha-forte)"], ["atrasadas", "Atrasadas +7 dias", "var(--erro)"],
-    ["doc_diferente", "CPF/CNPJ diferente", "var(--erro)"],
-    ["na_fila", "Sem NF", COR_SIT.na_fila], ["tratativa", "Tratativa", COR_SIT.tratativa],
-    ["nf_parcial", "NF parcial", COR_SIT.nf_parcial], ["envio_pendente", "Envio pendente", "var(--atencao)"],
-    ["concluida", "NF emitida", COR_SIT.concluida], ["em_tratamento", "Em tratamento", COR_SIT.em_tratamento],
-    ["aguardando_envio", "Aguardando envio", COR_SIT.aguardando_envio], ["minhas", "Minhas", "var(--roxo)"]];
+  // repaginação v2 (usuário, 14/10/2026): todo e-mail já é pedido de NF; os filtros são só o que ajuda a agir
+  const base = [["todas", "Todos", "var(--verde)"], ["urgentes", "Urgentes", "var(--erro)"], ["falta_dado", "Falta dado", "var(--atencao)"],
+    ["dividida", "Nota dividida", "var(--info)"], ["doc_diferente", "CPF/CNPJ diferente", "var(--erro)"],
+    ["envio_pendente", "Envio pendente", "var(--atencao)"], ["concluida", "NF emitida", COR_SIT.concluida], ["minhas", "Minhas", "var(--roxo)"]];
   return base.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)])
     .filter(([f, , , n]) => n || f === filtro || f === "todas");   // o que é zero some (usuário, 09/10/2026)
 }
@@ -1969,7 +2029,7 @@ function linhaHtml(it) {
       <span class="c-nome">${esc(s.nome)}${alerta ? `<span class="c-aviso" aria-label="tem aviso">●</span>` : ""}</span>
       <span class="c-hotel">${esc(s.hotel)}</span>
       <span class="c-op">${esc(agentesDo(it)[0] || "")}</span>
-      <span class="c-sit"><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span></span>
+      <span class="c-sit tags-nf">${tagsPedido(s)}</span>
       <span class="c-prazo">${s.prazo ? prazoHtml(s.prazo) : `<span class="prazo fim">—</span>`}</span>
       <span class="c-hora">${chegou(it.quando)}</span>${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
   }
@@ -1993,7 +2053,7 @@ function desenhar(){
   const seta = o => ord === o ? (o === "antigo" ? " ↓" : " ↓") : "";
   $("linhas-cab").className = "nf-cab";
   $("linhas-cab").innerHTML = `<span class="c-nome">Hóspede</span><span class="c-hotel">Hotel</span><span class="c-op">Operador</span>
-    <span class="c-sit">Situação</span><span class="c-prazo">Prazo</span>
+    <span class="c-sit">Avisos</span><span class="c-prazo">Prazo</span>
     <button class="ord c-hora" data-ordem="${ord === "recente" ? "antigo" : "recente"}" title="Inverter a ordem" style="justify-self:end;border:0;background:none;padding:0">Chegou ${ord === "recente" ? "↓" : "↑"}</button>`;
   desenharFiltros(busca, lista.length);
   const aviso = `${lista.length.toLocaleString("pt-BR")} ${lista.length === 1 ? "resultado" : "resultados"}`;
@@ -2038,7 +2098,7 @@ function desenharDetalhe() {
       ${livre ? `<button data-a="ASSUMIR"><svg class="ic"><use href="#i-mao"/></svg>Assumir</button>` : ""}
       ${meu ? `<button data-a="LIBERAR">Liberar</button>` : ""}
       ${!livre && !meu ? `<button class="perigo" data-a="LIBERAR" data-v="forcar" title="Tira de ${esc(s.dono)}">Liberar à força</button>` : ""}
-      <button data-pedir-dados="${esc(s.chave)}" title="Novo e-mail ao hóspede, saindo da caixa do hotel, com a solicitação de dados">Pedir dados</button>
+      <button data-pedir-dados="${esc(s.chave)}" class="${faltaDados(s).length ? "dest" : ""}" title="Novo e-mail ao hóspede, da caixa do hotel, pedindo só o que falta">Pedir o que falta</button>
       <button data-copiar="1"><svg class="ic"><use href="#i-copiar"/></svg>Copiar dados</button>
       <button data-a="DIVIDIDA" data-v="${s.dividida ? "nao" : "sim"}">${s.dividida ? "Não é dividida" : "Nota dividida"}</button>
       <button class="fechar" id="d-fechar" aria-label="Fechar leitura">×</button></div>
@@ -2051,8 +2111,8 @@ function desenharDetalhe() {
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
         ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}
         ${s.enviado ? "" : `<span class="etq ruim">E-mail ao hotel não enviado</span>`}</div></header>
-    <div class="corpo-msg">${fichaResumoHtml(s)}${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
-      <details class="ficha ficha-form dobra" data-dobra="form" ${DOBRA.form ? "open" : ""}><summary class="ficha-tit"><span class="rot">Formulário completo</span><span class="dica">${dataBr(s.data)} · clique pra abrir</span></summary>
+    <div class="corpo-msg">${faltaBanner(s)}${fichaResumoHtml(s)}${quadrosEtapa2(s)}${quadroFalta(s.falta_nota)}
+      <details class="ficha-form orig" data-dobra="form" ${DOBRA.form ? "open" : ""}><summary>Dúvida no que o hóspede digitou? <u>Ver respostas originais do formulário</u> <span class="dica">${dataBr(s.data)}</span></summary>
         <dl><dt>E-mail do hóspede</dt><dd>${esc(s.email)}</dd>${s.campos.map(c =>
           `<dt>${esc(c[0])}</dt><dd class="${/\d{3}[.\/-]\d/.test(c[1]) ? "dado" : ""}">${esc(c[1])}</dd>`).join("")}</dl></details>
       <section class="ficha ficha-nf"><div class="ficha-tit"><span class="rot">Nota fiscal ${s.partes > 1 || s.dividida ? `· dividida em ${Math.max(s.partes, 2)}` : ""}</span></div>
@@ -2110,7 +2170,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-pedir-dados]");
   if (!b) return;
   const s = acharPedido(b.dataset.pedirDados);
-  if (s) abrirEnvioNF(null, { novo: true, para: s.email, conta: s.na_caixa?.caixa || "", solicitar: true });
+  if (s) abrirEnvioNF(null, { novo: true, para: s.email, conta: s.na_caixa?.caixa || "", solicitar: true, faltas: faltaDados(s) });
 });
 
 // Etapa 2: CPF/CNPJ da NF diferente do pedido, pedido repetido e os outros pedidos do mesmo hóspede (e-mail ou CPF/CNPJ)

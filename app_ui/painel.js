@@ -538,7 +538,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (novo) comboDe(o);
   if (novo && resp.para) $("nf-para").value = resp.para;
   if (novo && resp.solicitar) {
-    $("nf-msg").innerText = modeloSolicitacaoDados();
+    $("nf-msg").innerText = resp.faltas?.length ? modeloPedirFalta(resp.faltas) : modeloSolicitacaoDados();
     $("nf-assunto").value = `Solicitação de dados - Nota Fiscal ${o.hotel}`;
   }
   if (novo) envNF.escolherDe = async conta => {   // trocou a caixa: de qual PC sai e o hotel do assunto
@@ -692,6 +692,23 @@ E-mail para envio da nota:
 Qual a data do check-in?
 
 Qual o CEP deve constar na NF?`;
+}
+// "Pedir o que falta" (usuário, 14/10/2026): a mensagem pede só o que o robô viu que falta; revisar e enviar
+function modeloPedirFalta(faltas) {
+  const h = new Date().getHours();
+  const saudacao = h < 12 ? "Bom dia!" : h < 18 ? "Boa tarde!" : "Boa noite!";
+  const pergunta = { "nome": "Nome completo (ou razão social) que deve constar na nota:",
+    "CPF/CNPJ": "CPF ou CNPJ que deve constar na nota:",
+    "o que quer na nota": "A nota deve incluir apenas as diárias ou também consumos e estacionamento (se houver)?" };
+  return `${saudacao}
+
+Prezado(a),
+
+Recebemos o seu pedido de nota fiscal. Para emitir, só precisamos de:
+
+${faltas.map(f => pergunta[f] || f).join("\n\n")}
+
+Assim que responder, emitimos e enviamos a nota para este e-mail.`;
 }
 const MODELOS_RESPOSTA = [
   ["Solicitação de dados", () => modeloSolicitacaoDados()],
