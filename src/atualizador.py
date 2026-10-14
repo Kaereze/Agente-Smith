@@ -100,6 +100,22 @@ def motivo_para_nao(s):
     return ""
 
 
+def precisa_reiniciar(s, rodando, na_pasta):
+    """Código novo já na pasta, mas o Painel roda o velho (14/10/2026: no PC do João o commit nasce aqui, então o
+    "atualizar" não baixava nada e não reiniciava). -> True quando só falta reiniciar."""
+    rodando, na_pasta = (rodando or "").split(" ")[0][:7], (na_pasta or "")[:7]
+    return not s["erro"] and s["atras"] == 0 and bool(rodando) and bool(na_pasta) and rodando != na_pasta
+
+
+def so_reiniciar():
+    """Reinicia os serviços sem baixar nada. -> texto pro log"""
+    try:
+        return pedir_reinicio()
+    except Exception as e:
+        logger.warning(f"⚠️ O Agendador do Windows não aceitou o reinício ({e}) — tentando o PowerShell solto")
+        return _reinicio_solto()
+
+
 def atualizar():
     """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu)"""
     antes = versao()

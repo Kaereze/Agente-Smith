@@ -562,6 +562,13 @@ class Estado:
                 atividade.ATUALIZADO if ok else atividade.FALHA,
                 detalhe=f"atualização {quem} ({s['atras']} commit(s) novo(s)): {texto}", agente=nome_do_agente())])
             return texto
+        na_pasta = envio_nf.versao_do_codigo()
+        if not automatica and atualizador.precisa_reiniciar(s, self.versao, na_pasta):   # pedido: só reinicia
+            como = atualizador.so_reiniciar()
+            texto = f"código {na_pasta[:7]} já estava na pasta, o Painel rodava {self.versao.split(' ')[0]}: {como}"
+            atividade.registrar(self.backend, self.central, [atividade.linha(
+                atividade.ATUALIZADO, detalhe=f"atualização pedida por {pedido_por}: {texto}", agente=nome_do_agente())])
+            return texto
         return motivo
 
     def _executar_comando(self, id_c, comando, por):
