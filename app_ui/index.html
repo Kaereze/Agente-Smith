@@ -639,7 +639,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .pop-op{border-radius:9px}
 /* fila de trabalho: abas com contador + exceção (atrasadas) à parte */
 .status-cards{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px}
-.topo .busca{max-width:340px;min-width:200px}
+.topo .busca{max-width:340px;min-width:170px}
 .topo .sync{flex-wrap:nowrap}
 .st-alerta{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:12px;background:var(--erro-fundo);color:var(--erro);
   border:1px solid var(--erro);animation:entrar .25s ease both}
@@ -660,7 +660,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .st-sep{width:1px;height:24px;background:var(--linha-forte);margin:0 8px}
 .st-rot{font:600 11.5px var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-right:2px}
 /* listas no formato do Outlook (e-mails e notas) */
-#v-correio{grid-template-rows:auto auto minmax(0,1fr)}
+#v-correio{grid-template-rows:auto minmax(0,1fr)}
 .cx-cab{padding:20px 26px 12px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .cx-sub{font-size:13px;color:var(--tinta-3)}
 #cx-mesa{grid-template-columns:minmax(0,1fr)}
@@ -1162,6 +1162,24 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .fr-bloco dd.dado,.fr-bloco dt.dado{font-family:var(--f-dado)}
 .fr-bloco dd.falta{color:var(--atencao);font-weight:600}
 .fr-bloco dd.vazio-fr{color:var(--tinta-3);font-weight:400}
+/* Leitura até o topo (usuário, 14/10/2026): com uma ficha/e-mail aberto, o painel de leitura ocupa a altura toda;
+   título, filtros e lista ficam na coluna da esquerda */
+@media (min-width:900px){
+  #v-fila:has(> #mesa.com-leitura){grid-template-columns:400px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:16px}
+  #v-fila:has(> #mesa.com-leitura) > #mesa{display:contents}
+  #v-fila:has(> #mesa.com-leitura) > .notas-cab{grid-column:1;grid-row:1;padding-right:0;min-width:0}
+  #v-fila:has(> #mesa.com-leitura) .quadro{grid-column:1;grid-row:2;margin:0 0 22px 26px}
+  #v-fila:has(> #mesa.com-leitura) #detalhe{grid-column:2;grid-row:1 / 3;margin:20px 26px 22px 0}
+  #v-correio:has(> #cx-mesa.com-leitura){grid-template-columns:400px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:16px}
+  #v-correio:has(> #cx-mesa.com-leitura) > #cx-mesa{display:contents}
+  #v-correio:has(> #cx-mesa.com-leitura) > .cx-cab{grid-column:1;grid-row:1;padding-right:0;min-width:0}
+  #v-correio:has(> #cx-mesa.com-leitura) .cx-quadro{grid-column:1;grid-row:2;margin:0 0 22px 26px}
+  #v-correio:has(> #cx-mesa.com-leitura) .cx-direita{grid-column:2;grid-row:1 / 3;margin:20px 26px 22px 0}
+}
+.cx-direita{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.cx-direita:has(> #cx-leitura.oculta){display:none}
+.cx-direita > .cx-acoes{margin:0}
+.cx-direita > #cx-leitura{flex:1;min-height:0}
 </style>
 </head>
 <body>
@@ -1268,10 +1286,12 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
         <p class="dica-prof" id="cx-dica"></p>
         <div class="abas-linha"><div class="abas-op" role="tablist" aria-label="Operador" id="op-cartoes-emails"></div><div id="cx-filtro-hotel"></div></div>
         <div class="det-op" id="det-op-emails" aria-live="polite"></div></div>
-      <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
       <div class="mesa" id="cx-mesa">
         <section class="quadro cx-quadro" aria-label="Lista de e-mails"><div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div></section>
-        <article class="leitura oculta" id="cx-leitura" aria-live="polite"></article>
+        <div class="cx-direita">   <!-- botões do e-mail em cima da leitura -->
+          <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
+          <article class="leitura oculta" id="cx-leitura" aria-live="polite"></article>
+        </div>
       </div>
       <div class="cx-desfazer oculta" id="cx-desfazer" role="status"></div>
     </section>
