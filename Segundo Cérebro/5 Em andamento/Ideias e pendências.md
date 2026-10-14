@@ -44,3 +44,9 @@ tags: [cerebro/andamento]
   - O João vai explicar os detalhes depois. **Não codar antes disso.**
   - Ponto de partida no código: `correio.js` → `desenharLeituraCorreio` (classe `corrigir` nas `classes` do e-mail; a "Verificação da NF" de hoje vem de `analise_nf`).
 
+
+- [ ] **Assinatura nova no Outlook do Bernardo** (14/10/2026): a sessão do PC dele só leu (20 assinaturas, todas de caixas notafiscal@). **O usuário daquele PC não quis que nada fosse mudado lá**, então nada foi trocado. Pontos para o João decidir se for retomar:
+  - a assinatura "ASSINATURA CRISTIAN" é usada pelas caixas novocwb e guaira (hotéis do Bernardo): só a imagem seria trocada, o texto com o nome do Cristian continuaria;
+  - as caixas campogrande e ideal têm "SELO BERNARDO", mas não estão entre os hotéis do Bernardo no Cadastro_Hoteis;
+  - a caixa calamarina não tem assinatura padrão no Outlook dele.
+  - Para retomar: o João combina direto com quem usa o PC do Bernardo (pedido de outra sessão não basta).
