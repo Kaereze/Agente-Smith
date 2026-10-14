@@ -13,7 +13,7 @@ tags: [cerebro/trabalho]
 | Quero mexer em… | Tela (front) | Dados (servidor) |
 |---|---|---|
 | **Notas fiscais**: lista, colunas, abas de agente, filtros de situação | `index.html` → `desenharFiltros`, `linhaHtml`, `desenhar`, `segOperadores`, `detalheOperador`, `desenharAbasNotas`, `colunaSituacao` | `fila_da_tela`, `fila`, `resumo_caixa`; ligação pedido↔e-mail em `app_dados.py` → `ligar_caixa` |
-| **Ficha da solicitação** (onde entra a ficha-resumo) | `index.html` → `desenharDetalhe`, `noOutlookHtml`, `quadrosEtapa` | `conversa`, `_alertas_documento`, `_hospedes` |
+| **Ficha da solicitação** | `index.html` → `desenharDetalhe`, `fichaResumoHtml` (resumo no topo; acha os campos pelo nome, sem acento), botão `data-pedir-dados`; seletor do topo em `desenharSeletorCaixa` (mostrado só em fila/correio por `trocarVista` no `painel.js`), `noOutlookHtml`, `quadrosEtapa` | `conversa`, `_alertas_documento`, `_hospedes` |
 | **Caixa de entrada / Urgência / Itens enviados** | `correio.js` → `desenharCorreio`, `linhaEmail`, `desenharLeituraCorreio`, `desenharFiltroHotel` | `_montar_correio`, `lista_correio`; juntar PCs em `correio.py` (`juntar`, `lido_atual`); o que cada PC publica em `espelho_emails.py` |
 | **Busca de cima** (ao vivo no Outlook) | `correio.js` → `buscarNoOutlook`, `agendarBusca` | `buscar_outlook`, `_buscar_local`; `busca_outlook.py`; entre PCs `rede_local.py` (porta 8766) |
 | **Lido / não lido** | `correio.js` → `abrirEmail`, `marcarNaoLido` | `evento_correio`, `_lido_no_outlook`; regra dos 5 min em `espelho_emails.lido_confirmado` |

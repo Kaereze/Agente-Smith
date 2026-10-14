@@ -12,7 +12,8 @@ tags: [cerebro/andamento]
 ## Fazer agora (ordem combinada)
 - [ ] **Trazer o commit do PC de casa** (branch `casa`) → revisar → juntar na `main`
 - [ ] **Guia de design** para o João aprovar (`guia-painel-fiscal.html`, nesta pasta) → aplicar o padrão em todas as telas ([[Padrão de design]])
-- [ ] **Ficha-resumo** no topo da ficha do Painel: tomador · estadia · como quer a nota · situação e histórico (por regra, sem IA)
+- [x] **Ficha-resumo** no topo da ficha do Painel (14/10, `22a3007`)
+- [ ] Design no padrão aprovado nas outras telas: Caixa de entrada, Visão geral, Gerência, janela de envio (Figma primeiro)
 - [ ] **Velocidade do Painel**: medir abrir e trocar de tela; reduzir
 
 - [ ] **CRICIÚMA**: auditoria da cópia mostra 1 solicitação de 29/09 (TRUE no hotel, pendente na Central) — o robô poderia reenviar; revisar

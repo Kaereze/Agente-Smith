@@ -31,6 +31,7 @@ tags: [cerebro/historico]
 | 13/10/2026 | **Outlook obrigatoriamente aberto** (com janela) enquanto o PC estiver ligado: guardião abre sozinho se fechar | Outlook escondido deixou o PC do Cristian 3 dias sem receber e-mail |
 | 13/10/2026 | **Novo e-mail** na Caixa de entrada: escolher a caixa do hotel, editar para/assunto/mensagem; modelo "Solicitação de dados" (texto do João) já vem pronto | Pedir dados ao hóspede sem sair do Painel |
 | 13/10/2026 | **Todo envio** (novo, responder, encaminhar, NF) abre com a **mensagem padrão da NF + assinatura** inteira visível; a solicitação de dados fica no botão das Respostas prontas | O João pediu 3 vezes: "quando for enviar um e-mail, que apareça a nossa assinatura padrão" |
-| 14/10/2026 | **Seletor "Caixa de" no topo** (substitui as abas de agente), com busca, atalhos (Minha caixa, Todos) e resumo por agente; vale para todas as telas. Desenhado e aprovado no Figma ("Painel Fiscal - Design") | Escala para empresa com 1.000+ funcionários; padrão de Slack/Jira/M365 |
+| 14/10/2026 | **Seletor "Caixa de" no topo** (substitui as abas de agente), com busca, atalhos (Minha caixa, Todos) e resumo por agente; aparece **só em Notas fiscais e E-mails** (onde filtra). Desenhado e aprovado no Figma ("Painel Fiscal - Design") | Escala para empresa com 1.000+ funcionários; padrão de Slack/Jira/M365 |
+| 14/10/2026 | **Ficha-resumo** no topo do pedido (4 blocos; o que falta em âmbar "falta pedir"); formulário completo recolhido; botão **Pedir dados** | Tudo para emitir a NF sem rolar a tela |
 
 Ver: [[O que não mexer]].
