@@ -13,6 +13,7 @@ tags: [cerebro/andamento]
 - [ ] **Trazer o commit do PC de casa** (branch `casa`) → revisar → juntar na `main`
 - [ ] **Guia de design** para o João aprovar (`guia-painel-fiscal.html`, nesta pasta) → aplicar o padrão em todas as telas ([[Padrão de design]])
 - [x] **Ficha-resumo** no topo da ficha do Painel (14/10, `22a3007`)
+- [ ] Leitura ampla / tela cheia (Figma, 14/10): aguardando o João aprovar
 - [ ] Design no padrão aprovado nas outras telas: Caixa de entrada, Visão geral, Gerência, janela de envio (Figma primeiro)
 - [ ] **Velocidade do Painel**: medir abrir e trocar de tela; reduzir
 
