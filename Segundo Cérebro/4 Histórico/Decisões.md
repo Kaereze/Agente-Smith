@@ -34,5 +34,6 @@ tags: [cerebro/historico]
 | 14/10/2026 | **Seletor "Caixa de" no topo** (substitui as abas de agente), com busca, atalhos (Minha caixa, Todos) e resumo por agente; aparece **só em Notas fiscais e E-mails** (onde filtra). Desenhado e aprovado no Figma ("Painel Fiscal - Design") | Escala para empresa com 1.000+ funcionários; padrão de Slack/Jira/M365 |
 | 14/10/2026 | **Ficha-resumo** no topo do pedido (4 blocos; o que falta em âmbar "falta pedir"); formulário completo recolhido; botão **Pedir dados** | Tudo para emitir a NF sem rolar a tela |
 | 14/10/2026 | Ficha/e-mail aberto: **leitura até o topo**, lista e filtros numa coluna à esquerda | Ver a mensagem grande, sem perder espaço com o cabeçalho |
+| 14/10/2026 | Situação do sistema (robô, Central, PCs, tema, professor) **no rodapé**; topo some com leitura aberta | Não são tão relevantes; dar o espaço para a mensagem |
 
 Ver: [[O que não mexer]].
