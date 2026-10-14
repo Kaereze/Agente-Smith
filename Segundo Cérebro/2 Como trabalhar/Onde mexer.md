@@ -62,3 +62,4 @@ tags: [cerebro/trabalho]
 - Dois Painéis no mesmo PC disputam o arquivo de log (erro de rotação): normal em teste, não em uso.
 - Porta **8765** = Painel (só 127.0.0.1) · porta **8766** = rede entre os PCs.
 - `POST` da tela exige o `X-Token` (fica no HTML servido); só de 127.0.0.1.
+| **Repaginação v2 (14/10)** | `index.html`: bloco CSS "Repaginação v2" no fim do `<style>`; `faltaDados`, `motivoUrgente`, `tagsPedido`, `faltaBanner`, `desenharSaude` (caixinha de avisos), `aplicarMenu` (menu recolhível); `painel.js`: `resumoDiaHtml` (resumo de ontem), `numerosPainel` + `htmlRelatorio` (Gerência), `modeloPedirFalta`, abas do Monitoramento em `trocarVista`; `correio.js`: `tagsEmail`, `faixaPedido` | `relatorio_semana.periodo(..., "mes")`; `admin` em `/api/estado` |

@@ -37,3 +37,4 @@ tags: [cerebro/historico]
 | 14/10/2026 | Situação do sistema (robô, Central, PCs, tema, professor) **no rodapé**; topo some com leitura aberta | Não são tão relevantes; dar o espaço para a mensagem |
 
 Ver: [[O que não mexer]].
+| 14/10/2026 | **Repaginação v2 aprovada e no Painel**: escuro, menu recolhível, Monitoramento só admin, avisos no canto, tags só urgência/dividida/falta dado, "Pedir o que falta", resumo de ontem, Gerência = relatório do mês | Telas limpas e empresariais, foco no usuário |

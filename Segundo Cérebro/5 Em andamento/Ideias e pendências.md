@@ -13,8 +13,8 @@ tags: [cerebro/andamento]
 - [ ] **Trazer o commit do PC de casa** (branch `casa`) → revisar → juntar na `main`
 - [ ] **Guia de design** para o João aprovar (`guia-painel-fiscal.html`, nesta pasta) → aplicar o padrão em todas as telas ([[Padrão de design]])
 - [x] **Ficha-resumo** no topo da ficha do Painel (14/10, `22a3007`)
-- [ ] Leitura ampla / tela cheia (Figma, 14/10): aguardando o João aprovar
-- [ ] Prévia web da repaginação (7 quadros, 14/10): aguardando o João aprovar; depois, codar tela por tela
+- [ ] Leitura ampla / tela cheia (Figma, 14/10): ficou de fora da v2; perguntar se ainda quer
+- [x] Prévia web da repaginação aprovada e passada para o Painel (14/10, partes 1 a 6)
 - [ ] Figma: cota do Starter acabou em 14/10 (20/mês). Volta no mês que vem ou com o plano Pro
 - [ ] Design no padrão aprovado nas outras telas: Caixa de entrada, Visão geral, Gerência, janela de envio (Figma primeiro)
 - [ ] **Velocidade do Painel**: medir abrir e trocar de tela; reduzir
