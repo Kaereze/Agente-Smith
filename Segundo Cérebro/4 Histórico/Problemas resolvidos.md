@@ -28,3 +28,4 @@ tags: [cerebro/historico]
 - Scripts de alteração: escrever o arquivo `.py` pelo editor, não por heredoc (barras invertidas quebram).
 - No Windows, `git` avisa LF→CRLF: é normal.
 - O segredo do webapp do Mail Analytics já apareceu sem querer no terminal uma vez: **nunca** usar nem repetir.
+- **14/10/2026 · Painel com menos e-mails que o Outlook (Clara 192 × 91)**: o espelho escondia respondidos, formulário e avisos. Regra nova: espelho literal (`resolver` não tira respondido; `correio.juntar` marca `respondido`/`pendente`). Para conferir: `Automacoes/diagnostico_espelho.py`.
