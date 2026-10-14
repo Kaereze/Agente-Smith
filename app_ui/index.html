@@ -1327,6 +1327,40 @@ button.dest,.acoes button.dest{background:var(--atencao-fundo)!important;border-
 .rd-tab td{padding:10px 18px;border-bottom:1px solid var(--linha)}
 .rd-tab .n{text-align:right;font-family:var(--f-dado,"IBM Plex Mono")}
 @media (max-width:1100px){.rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rd-grade{grid-template-columns:1fr}}
+/* Gerência v2: relatório do mês */
+.ger-v2{display:flex;flex-direction:column;gap:18px}
+.g-cab{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;justify-content:space-between}
+.g-cab h3{margin:0;font-size:22px}
+.g-ferr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.g-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.g-kpi{background:var(--folha-2);border:1px solid var(--linha);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+.g-kpi small{font:600 10.5px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.g-kpi b{font:600 24px var(--f-dado,"IBM Plex Mono");color:var(--tinta);font-variant-numeric:tabular-nums}
+.var-n{font-size:12px;color:var(--tinta-2)}
+.var-n em,.ger-v2 em{font-style:normal;font-weight:600}
+.ger-v2 em.bom{color:var(--ok)}.ger-v2 em.ruim{color:var(--erro)}.ger-v2 em.neutro{color:var(--atencao)}
+.g-grade{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.g-painel{background:var(--folha-2);border:1px solid var(--linha);border-radius:8px;overflow:hidden;min-width:0}
+.g-tit{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--linha)}
+.g-tit b{font-size:14px}.g-tit small{font-size:12px;color:var(--tinta-3)}
+.g-barras,.g-funil{display:flex;flex-direction:column;gap:11px;padding:16px 18px}
+.g-br,.g-fl{display:grid;grid-template-columns:160px minmax(0,1fr) 54px;gap:12px;align-items:center;font-size:13px}
+.g-trilho{height:10px;border-radius:5px;background:var(--linha);overflow:hidden}
+.g-trilho i{display:block;height:100%;border-radius:5px;background:var(--erro)}
+.g-trilho i.v{background:var(--verde)}
+.g-n{text-align:right;font-family:var(--f-dado,"IBM Plex Mono")}
+.g-nota{margin:0;padding:0 18px 14px;font-size:12px;color:var(--tinta-3)}
+.g-perdas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--linha)}
+.g-perdas > div{padding:12px 18px;display:flex;flex-direction:column;gap:3px;border-right:1px solid var(--linha)}
+.g-perdas > div:last-child{border-right:0}
+.g-perdas b{font:600 20px var(--f-dado,"IBM Plex Mono");color:var(--erro)}.g-perdas span{font-size:12px;color:var(--tinta-2)}
+.g-ideias{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-ideia{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;padding:15px 18px;border-bottom:1px solid var(--linha)}
+.g-ideia:nth-child(odd){border-right:1px solid var(--linha)}
+.g-ideia i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--creme);color:var(--creme-tinta);font:600 12px var(--f-dado,"IBM Plex Mono");display:grid;place-items:center}
+.g-ideia b{display:block;font-size:13.5px;margin-bottom:3px}.g-ideia span{font-size:12.5px;color:var(--tinta-2);line-height:1.55}
+.g-ideia em{color:var(--atencao)}
+@media (max-width:1200px){.g-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.g-grade,.g-ideias{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1598,7 +1632,7 @@ function desenharPcsCabecalho(pcs) {
 async function carregar(){
   try {
     // dias: o dobro da janela da Visão geral (o resumo compara com o período anterior inteiro)
-    const dias = periodo === "0" ? 0 : Math.max(45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
+    const dias = periodo === "0" ? 0 : Math.max(typeof pn !== "undefined" && pn.vista === "gerencia" ? 75 : 45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
     const j = await api("/api/estado?dias=" + dias + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     // tela nova no disco (atualização sem reinício): recarrega, mas nunca com uma mensagem sendo escrita

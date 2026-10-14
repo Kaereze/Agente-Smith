@@ -189,29 +189,14 @@ function desenharGerencia() {
   base.forEach(s => { const a = AG[s.hotel]; if (a && porAgente[a] && ["na_fila", "aguardando_envio"].includes(s.situacao)) porAgente[a].notas++; });
   emails.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) { a.entrada++; if (e.urgente) a.urg++; } });
   enviados.forEach(e => { const a = Object.values(porAgente).find(x => x.p.pc === e.pc); if (a) a.env++; });
-  el.innerHTML = `<div class="cab-pagina"><h1>Gerência</h1><span class="dica">Tudo o que a equipe está fazendo agora · atualiza sozinho</span></div>
-    <p class="dica-prof" style="margin:-8px 0 14px">A equipe está dando conta? "Andamento do dia" = o que saiu (NFs e e-mails enviados) dividido pelo que entrou (pedidos e e-mails recebidos). Acima de 100% = estamos tirando atraso.</p>
-    <div class="ger-aviso" role="note"><svg aria-hidden="true"><use href="#i-cadeado"/></svg><span><b>Página em construção.</b> Por enquanto todos veem;
-      depois só o gerente terá acesso (com login). Os números abaixo já são reais.</span></div>
-    <div class="ger-dia" role="group" aria-label="Hoje">
-      <div><small>Pedidos recebidos hoje</small><b>${n(pedidosHoje)}</b><small>formulários</small></div>
-      <div><small>E-mails recebidos hoje</small><b>${n(recebidosHoje)}</b><small>sem resposta ainda: ${n(emails.length)}</small></div>
-      <div><small>E-mails enviados hoje</small><b>${n(enviadosHoje)}</b><small>pelas caixas dos hotéis</small></div>
-      <div><small>NFs emitidas hoje</small><b>${n(nfsHoje)}</b><small>registradas hoje (inclui as achadas pelo robô)</small></div>
-      <div class="taxa"><small>Andamento do dia</small><b>${taxa}%</b><div class="ger-barra"><i style="width:${Math.min(100, taxa)}%"></i></div>
-        <small>saiu (NFs + e-mails enviados) ÷ entrou (pedidos + e-mails)</small></div></div>
-    <div class="cartao"><h3>Por PC / agente</h3><div class="sub">O que cada um tem pra fazer agora e o que já saiu hoje</div>
+  el.innerHTML = `<div class="cartao ger-v2" id="ger-relatorio">${REL.html || `<div class="vazio">Carregando o relatório…</div>`}</div>
+    <div class="cartao"><h3>Equipe agora</h3><div class="sub">O que cada um tem pra fazer neste momento e o que saiu hoje</div>
       <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Agente</th><th>PC</th><th class="num">NFs pra emitir</th><th class="num">E-mails na entrada</th>
         <th class="num">Urgência</th><th class="num">Enviados 24 h</th><th>Painel</th></tr></thead><tbody>
         ${Object.entries(porAgente).map(([a, x]) => `<tr><td><b>${esc(a)}</b></td><td>${x.p.online ? '<span class="dot on"></span> no ar' : '<span class="dot"></span> desligado'}</td>
           <td class="num">${n(x.notas)}</td><td class="num">${n(x.entrada)}</td><td class="num">${x.urg ? `<span class="ruim-txt">${n(x.urg)}</span>` : "0"}</td>
           <td class="num">${n(x.env)}</td><td>${String(x.p.uso || "").startsWith("aberto") ? "aberto · " + esc(String(x.p.uso).split("|")[1] || "") : "fechado"}</td></tr>`).join("")}
-      </tbody></table></div></div>
-    <div class="ger-breve">
-      <div><b>Canceladas e substituídas do dia</b><span>Em construção: vem das NFs marcadas (CANCELADA)/(SUBSTITUÍDA) no Dropbox.</span></div>
-      <div><b>Ligações do dia</b><span>Em construção: precisa ligar o Painel ao sistema de telefone da empresa.</span></div>
-      <div><b>Tempo médio de resposta</b><span>Em construção: do e-mail chegar até a resposta sair, por agente.</span></div></div>
-    <div class="cartao" id="ger-relatorio">${REL.html || `<div class="vazio">Carregando o relatório…</div>`}</div>`;
+      </tbody></table></div></div>`;
   carregarRelatorio();
 }
 function contarNumeros(el) {   // os números grandes sobem do zero até o valor (0,6 s)
@@ -922,7 +907,7 @@ document.addEventListener("drop", async e => {
 });
 
 // ---------- Relatório do dia e da semana (Gerência) — dados do Mail Analytics, só leitura (usuário, 11/10/2026) ----------
-const REL = { tipo: "dia", desl: -1, html: "", chave: "", em: 0, texto: "" };   // -1 = último dia com dados no Mail Analytics
+const REL = { tipo: "mes", desl: 0, html: "", chave: "", em: 0, texto: "" };   // repaginação v2: mês × mês anterior; dia -1 = último dia com dados
 const COLS_REL = [["pedidos", "Pedidos (formulário)"], ["recebidos", "E-mails recebidos"], ["enviados", "E-mails enviados"],
                   ["nfs", "NFs emitidas"], ["subst_canc", "Subst./canc."], ["ligacoes", "Ligações"]];
 async function carregarRelatorio(forcar = false) {
@@ -935,39 +920,106 @@ async function carregarRelatorio(forcar = false) {
   REL.texto = r.texto || "";
   if ($("ger-relatorio")) $("ger-relatorio").innerHTML = REL.html;
 }
+// Gerência v2 (usuário, 14/10/2026): relatório que o gerente lê em 1 minuto — volume e variação, canceladas/refeitas,
+// onde as solicitações se perdem e "O que melhorar". Mail Analytics (só leitura) + o que o Painel/Outlook sabem.
+function numerosPainel(ini, fim) {
+  const agenteDe = s => AG[String(s.hotel || "").split(" / ")[0]] || s.dono || "Sem agente";
+  const chegada = s => new Date(`${s.data}T${horaDoCarimbo(s.carimbo) || "12:00"}`);
+  const isoEnvio = q => { const m = String(q || "").match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/); return m ? `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}` : ""; };
+  const pedidos = st.fila.filter(s => s.data >= ini && s.data <= fim);
+  const envios = [];
+  st.fila.forEach(s => (s.envios || []).forEach(v => { const iso = isoEnvio(v.quando); if (iso.slice(0, 10) >= ini && iso.slice(0, 10) <= fim)
+    envios.push({ s, h: (new Date(iso) - chegada(s)) / 36e5, ag: agenteDe(s) }); }));
+  const validos = envios.filter(e => e.h >= 0);
+  const pct = l => l.length ? Math.round(100 * l.filter(e => e.h <= 48).length / l.length) : null;
+  const porAg = {};
+  validos.forEach(e => (porAg[e.ag] ||= []).push(e));
+  const abertos = pedidos.filter(s => s.situacao !== "concluida");
+  const vencidos = abertos.filter(s => (prazoInfo(s.prazo)?.resta ?? 1) <= 0);
+  const comNf = pedidos.filter(s => s.situacao === "concluida" || s.nfs?.length).length;
+  const enviados = pedidos.filter(s => s.envios?.length).length;
+  const fds = s => { const d = chegada(s); return d.getDay() === 0 || d.getDay() === 6 || (d.getDay() === 5 && d.getHours() >= 18); };
+  return { pedidos, noPrazo: pct(validos), porAgPrazo: Object.fromEntries(Object.entries(porAg).map(([a, l]) => [a, pct(l)])),
+    perdidas: vencidos.length, vencidos, comNf, enviados,
+    faltaDado: abertos.filter(s => faltaDados(s).length).length, esperando: vencidos.filter(s => s.situacao === "tratativa").length,
+    fimDeSemana: vencidos.filter(fds).length, agenteDe };
+}
 function htmlRelatorio(r) {
   const n = v => (v ?? 0).toLocaleString("pt-BR");
   const dt = iso => iso.slice(8, 10) + "/" + iso.slice(5, 7);
-  const titulo = r.tipo === "dia" ? `Relatório do dia · ${dt(r.ini)}/${r.ini.slice(0, 4)}` : `Relatório da semana · ${dt(r.ini)} a ${dt(r.ate)}`;
-  // subir é bom em NFs e e-mails enviados, ruim em substituições/cancelamentos; volume (pedidos, recebidos, ligações) é neutro
-  const BOM_SUBIR = { nfs: true, enviados: true, subst_canc: false };
-  const seta = (a, b, k) => { if (!b) return ""; const v = Math.round(100 * (a - b) / b); if (!v) return "";
-    const cls = BOM_SUBIR[k] === undefined ? "igual" : (v > 0) === BOM_SUBIR[k] ? "bom" : "ruim";
-    return `<span class="tend ${cls}" title="antes: ${n(b)}">${v > 0 ? "▲" : "▼"} ${Math.abs(v)}%</span>`; };
-  // operador sem nenhum dia gravado pelo Mail Analytics no período: "sem dados" (não é zero)
-  const celula = (a, k) => k !== "pedidos" && !r.por_agente[a].dias ? `<span class="dica" title="o Mail Analytics ainda não gravou esse período">sem dados</span>`
-    : `${n(r.por_agente[a][k])} ${seta(r.por_agente[a][k], r.anterior[a]?.[k], k)}`;
-  const algumDado = Object.values(r.por_agente).some(d => d.dias);
-  const todosComDado = Object.keys(r.por_agente).every(a => r.por_agente[a].dias && r.anterior[a]?.dias);   // senão a seta do total compara coisas diferentes
+  const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const nomeMes = MESES[Number(r.ini.slice(5, 7)) - 1];
+  const titulo = r.tipo === "mes" ? `Relatório de ${nomeMes}` : r.tipo === "dia" ? `Relatório do dia ${dt(r.ini)}` : `Relatório da semana`;
+  const contra = r.tipo === "mes" ? "mês anterior" : r.tipo === "dia" ? "dia anterior" : "semana anterior";
+  const pa = numerosPainel(r.ini, r.ate), pb = numerosPainel(r.ini_anterior || r.ini, r.fim_anterior || r.ini);
+  const BOM_SUBIR = { nfs: true, enviados: true, noprazo: true, subst_canc: false, perdidas: false };
+  const varTxt = (x, y, k, pts) => { if (y == null || (!y && !pts)) return `<span class="var-n">sem comparação</span>`;
+    const d = pts ? x - y : Math.round(100 * (x - y) / y); if (!d) return `<span class="var-n">igual · era ${y}${pts ? "%" : ""}</span>`;
+    const cls = BOM_SUBIR[k] === undefined ? "neutro" : (d > 0) === BOM_SUBIR[k] ? "bom" : "ruim";
+    return `<span class="var-n"><em class="${cls}">${d > 0 ? "▲" : "▼"} ${Math.abs(d)}${pts ? " pts" : "%"}</em> · era ${y}${pts ? "%" : ""}</span>`; };
+  const kpi = (rot, v, sub) => `<div class="g-kpi"><small>${rot}</small><b>${v}</b>${sub}</div>`;
+  const T = r.total, A = r.total_anterior;
+  const hot = (r.hoteis_todos || []);
+  const canc = hot.filter(h => h.subst_canc).sort((x, y) => y.subst_canc - x.subst_canc).slice(0, 6);
+  const maxCanc = Math.max(1, ...canc.map(h => h.subst_canc));
+  const mudaram = hot.filter(h => h.recebidos + h.recebidos_ant >= 5).map(h => ({ ...h, d: h.recebidos_ant ? (h.recebidos - h.recebidos_ant) / h.recebidos_ant : 1 }))
+    .sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 6);
+  // O que melhorar: regras simples sobre os números acima (sem IA)
+  const ideias = [];
+  if (canc.length && T.subst_canc) ideias.push(["Notas refeitas concentradas", `<em>${esc(canc[0].hotel)}</em> teve ${canc[0].subst_canc} de ${T.subst_canc} substituições/cancelamentos do período. Conferir o tomador antes de emitir para esse hotel.`]);
+  const piorAg = Object.entries(pa.porAgPrazo).filter(([a, v]) => v != null && a !== "Sem agente").sort((x, y) => x[1] - y[1])[0];
+  if (piorAg && piorAg[1] < 90) ideias.push([`${esc(piorAg[0])} abaixo da meta de prazo`, `<em>${piorAg[1]}%</em> das notas enviadas em até 48 h (meta: 90%). Ver se a carteira de hotéis está pesada.`]);
+  const venc = {}; pa.vencidos.forEach(s => venc[s.hotel] = (venc[s.hotel] || 0) + 1);
+  const piorHotel = Object.entries(venc).sort((x, y) => y[1] - x[1])[0];
+  if (piorHotel && piorHotel[1] >= 2) ideias.push([`${esc(piorHotel[0])} acumula pedidos vencidos`, `<em>${piorHotel[1]} pedidos</em> do período passaram do prazo sem NF.`]);
+  if (pa.faltaDado) ideias.push(["Pedidos parados por falta de dado", `<em>${pa.faltaDado}</em> pedidos sem nome, CPF/CNPJ ou o que entra na nota. Usar "Pedir o que falta" logo que o pedido chega.`]);
+  if (pa.fimDeSemana && pa.perdidas && pa.fimDeSemana / pa.perdidas >= 0.25) ideias.push(["Fim de semana acumula", `<em>${Math.round(100 * pa.fimDeSemana / pa.perdidas)}% dos vencidos</em> chegaram entre sexta 18 h e domingo. Vale um plantão no sábado de manhã.`]);
+  if (A.ligacoes && T.ligacoes > A.ligacoes * 1.15) ideias.push(["Ligações subindo", `As ligações subiram <em>${Math.round(100 * (T.ligacoes - A.ligacoes) / A.ligacoes)}%</em>. Em geral é hóspede cobrando nota: responder primeiro quem cobrou de novo.`]);
   const agentes = Object.keys(r.por_agente).sort((a, b) => r.por_agente[b].nfs - r.por_agente[a].nfs);
   const atrasados = Object.entries(r.ultimo_dia || {}).filter(([, d]) => d && d < r.ate).map(([a, d]) => `${a} (até ${dt(d)})`);
-  return `<div class="cartao-topo"><div><h3>${titulo}</h3><div class="sub">Do Mail Analytics (só leitura) + pedidos de formulário do Painel · comparado com ${r.tipo === "dia" ? "o dia anterior" : "a semana anterior"}</div></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div class="seg" role="group" aria-label="Período"><button data-rel-tipo="dia" aria-pressed="${r.tipo === "dia"}">Dia</button><button data-rel-tipo="semana" aria-pressed="${r.tipo === "semana"}">Semana</button></div>
-        <button class="btn-ic" data-rel-mover="1" title="${r.tipo === "dia" ? "Dia" : "Semana"} anterior" aria-label="Anterior">◀</button>
-        <button class="btn-ic" data-rel-mover="-1" title="Próximo" aria-label="Próximo" ${REL.desl <= 0 ? "disabled" : ""}>▶</button>
+  return `<div class="g-cab"><div><h3>${titulo}</h3><div class="sub">${dt(r.ini)} a ${dt(r.ate)} comparado com ${dt(r.ini_anterior || r.ini)} a ${dt(r.fim_anterior || r.ini)} · fontes: Mail Analytics (só leitura) e Painel</div></div>
+      <div class="g-ferr"><div class="seg" role="group" aria-label="Comparação">
+        <button data-rel-tipo="mes" aria-pressed="${r.tipo === "mes"}">Mês × mês anterior</button><button data-rel-tipo="semana" aria-pressed="${r.tipo === "semana"}">Semana</button><button data-rel-tipo="dia" aria-pressed="${r.tipo === "dia"}">Dia</button></div>
+        <button class="btn-ic" data-rel-mover="1" title="Período anterior" aria-label="Período anterior">◀</button>
+        <button class="btn-ic" data-rel-mover="-1" title="Próximo período" aria-label="Próximo período" ${REL.desl <= 0 ? "disabled" : ""}>▶</button>
         <button data-rel-copiar="1" title="Copia o resumo em texto pra colar no WhatsApp ou no e-mail"><svg class="ic"><use href="#i-copiar"/></svg>Copiar resumo</button></div></div>
-    <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Operador</th>${COLS_REL.map(([, rot]) => `<th class="num">${rot}</th>`).join("")}</tr></thead><tbody>
-      ${agentes.map(a => `<tr><td><b><span class="op-av" style="background:${corOp(a)}">${esc(inicial(a))}</span>${esc(a)}</b></td>${COLS_REL.map(([k]) =>
-        `<td class="num">${celula(a, k)}</td>`).join("")}</tr>`).join("")}
-      <tr class="total"><td><b>Total</b></td>${COLS_REL.map(([k]) => `<td class="num">${k !== "pedidos" && !algumDado ? `<span class="dica">sem dados</span>`
-        : `<b>${n(r.total[k])}</b> ${k === "pedidos" || todosComDado ? seta(r.total[k], r.total_anterior[k], k) : ""}`}</td>`).join("")}</tr>
-    </tbody></table></div>
-    ${r.hoteis?.length ? `<div class="sub" style="margin:14px 0 6px"><b>Hotéis com mais movimento</b></div><div class="rel-hoteis">${r.hoteis.map(h =>
-      `<span class="etq">${esc(h.hotel)} · ${n(h.recebidos)} e-mails · ${n(h.nfs)} NFs${h.subst_canc ? ` · ${n(h.subst_canc)} subst./canc.` : ""}</span>`).join("")}</div>` : `<p class="dica">Sem movimento registrado nesse período.</p>`}
-    ${r.contado_painel?.length ? `<p class="dica" style="margin-top:10px">${esc(r.contado_painel.join(" e "))}: sexta a domingo contados pelo Painel
-      (o Mail Analytics grava a soma do fim de semana na segunda de manhã; quando ele gravar, vale o número dele — nada é somado duas vezes).</p>` : ""}
-    ${atrasados.length ? `<p class="dica" style="margin-top:10px">⚠ O Mail Analytics ainda não gravou todos os dias de: ${esc(atrasados.join(", "))} — os números desses operadores podem estar incompletos.</p>` : ""}`;
+    <div class="g-kpis">
+      ${kpi("Solicitações", n(T.pedidos), varTxt(T.pedidos, A.pedidos, "pedidos"))}
+      ${kpi("NFs emitidas", n(T.nfs), varTxt(T.nfs, A.nfs, "nfs"))}
+      ${kpi("Enviadas no prazo", pa.noPrazo == null ? "—" : pa.noPrazo + "%", pa.noPrazo == null ? `<span class="var-n">até 48 h</span>` : varTxt(pa.noPrazo, pb.noPrazo, "noprazo", true))}
+      ${kpi("Canceladas ou refeitas", n(T.subst_canc), varTxt(T.subst_canc, A.subst_canc, "subst_canc"))}
+      ${kpi("Perdidas", n(pa.perdidas), varTxt(pa.perdidas, pb.perdidas, "perdidas"))}
+      ${kpi("Ligações", n(T.ligacoes), varTxt(T.ligacoes, A.ligacoes, "ligacoes"))}
+    </div>
+    <div class="g-grade">
+      <section class="g-painel"><div class="g-tit"><b>Canceladas ou refeitas · onde</b><small>${n(T.subst_canc)} no período</small></div>
+        ${canc.length ? `<div class="g-barras">${canc.map(h => `<div class="g-br"><span>${esc(h.hotel)}</span><span class="g-trilho"><i style="width:${Math.round(100 * h.subst_canc / maxCanc)}%"></i></span><span class="g-n">${h.subst_canc}</span></div>`).join("")}</div>
+          <p class="g-nota">O Mail Analytics conta as substituições e cancelamentos, mas não grava o motivo.</p>` : `<div class="vazio">Nenhuma nota cancelada ou refeita no período.</div>`}</section>
+      <section class="g-painel"><div class="g-tit"><b>Solicitações perdidas · onde se perdem</b><small>pedidos do formulário no período</small></div>
+        <div class="g-funil">${[["Recebidas", pa.pedidos.length], ["Com NF", pa.comNf], ["NF enviada", pa.enviados]].map(([rot, v]) =>
+          `<div class="g-fl"><span>${rot}</span><span class="g-trilho"><i class="v" style="width:${pa.pedidos.length ? Math.round(100 * v / pa.pedidos.length) : 0}%"></i></span><span class="g-n">${n(v)}</span></div>`).join("")}</div>
+        <div class="g-perdas"><div><b>${n(pa.perdidas - pa.esperando - Math.min(pa.faltaDado, pa.perdidas))}</b><span>sem NF e com o prazo vencido</span></div>
+          <div><b>${n(pa.esperando)}</b><span>esperando o hóspede responder</span></div><div><b>${n(pa.faltaDado)}</b><span>com dado faltando para emitir</span></div></div></section>
+    </div>
+    <section class="g-painel"><div class="g-tit"><b>O que melhorar</b><small>gerado a partir dos números acima</small></div>
+      ${ideias.length ? `<div class="g-ideias">${ideias.slice(0, 4).map(([t1, t2], i) => `<div class="g-ideia"><i>${i + 1}</i><div><b>${t1}</b><span>${t2}</span></div></div>`).join("")}</div>`
+        : `<div class="vazio">Nada fora do normal no período. 👍</div>`}</section>
+    <div class="g-grade">
+      <section class="g-painel"><div class="g-tit"><b>Por agente</b><small>${contra}</small></div>
+        <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Agente</th><th class="num">Pedidos</th><th class="num">E-mails</th><th class="num">NFs</th><th class="num">No prazo</th><th class="num">Refeitas</th><th class="num">Variação NFs</th></tr></thead><tbody>
+          ${agentes.map(a => { const d = r.por_agente[a], b = r.anterior[a] || {};
+            return `<tr><td><b>${esc(a)}</b></td><td class="num">${d.dias || d.pedidos ? n(d.pedidos) : "—"}</td><td class="num">${d.dias ? n(d.recebidos) : `<span class="dica">sem dados</span>`}</td>
+              <td class="num">${d.dias ? n(d.nfs) : "—"}</td><td class="num">${pa.porAgPrazo[a] == null ? "—" : pa.porAgPrazo[a] + "%"}</td><td class="num">${d.dias ? n(d.subst_canc) : "—"}</td>
+              <td class="num">${d.dias && b.nfs ? varTxt(d.nfs, b.nfs, "nfs").replace(/ · era \d+/, "") : "—"}</td></tr>`; }).join("")}
+        </tbody></table></div></section>
+      <section class="g-painel"><div class="g-tit"><b>Hotéis que mais mudaram</b><small>e-mails recebidos · ${contra}</small></div>
+        ${mudaram.length ? `<div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Hotel</th><th class="num">Agora</th><th class="num">Antes</th><th class="num">Variação</th><th class="num">NFs</th></tr></thead><tbody>
+          ${mudaram.map(h => `<tr><td>${esc(h.hotel)}</td><td class="num">${n(h.recebidos)}</td><td class="num">${n(h.recebidos_ant)}</td>
+            <td class="num"><em class="${h.d > 0 ? "neutro" : "neutro"}">${h.d > 0 ? "▲" : "▼"} ${Math.abs(Math.round(100 * h.d))}%</em></td><td class="num">${n(h.nfs)}</td></tr>`).join("")}
+        </tbody></table></div>` : `<div class="vazio">Pouco movimento para comparar.</div>`}</section>
+    </div>
+    ${r.contado_painel?.length ? `<p class="dica">${esc(r.contado_painel.join(" e "))}: sexta a domingo contados pelo Painel (o Mail Analytics grava o fim de semana na segunda de manhã; nada é somado duas vezes).</p>` : ""}
+    ${atrasados.length ? `<p class="dica">⚠ O Mail Analytics ainda não gravou todos os dias de: ${esc(atrasados.join(", "))}. Os números desses agentes podem estar incompletos.</p>` : ""}`;
 }
 document.addEventListener("click", async e => {
   const t = e.target.closest("[data-rel-tipo],[data-rel-mover],[data-rel-copiar]");

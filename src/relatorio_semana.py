@@ -107,8 +107,22 @@ def juntar_fontes(ma, painel, tipo):
     return saida, sorted(usou)
 
 
+def _mes(ano, mes):
+    """-> (primeiro dia, último dia) do mês (mes pode passar de 12 ou ficar abaixo de 1)."""
+    ano, mes = ano + (mes - 1) // 12, (mes - 1) % 12 + 1
+    ini = datetime.date(ano, mes, 1)
+    prox = datetime.date(ano + (mes == 12), mes % 12 + 1, 1)
+    return ini, prox - datetime.timedelta(days=1)
+
+
 def periodo(hoje, tipo="semana", deslocamento=0):
-    """-> (ini, fim, ini_anterior, fim_anterior). Dia: o dia (hoje - deslocamento) contra o dia anterior."""
+    """-> (ini, fim, ini_anterior, fim_anterior). Dia: o dia (hoje - deslocamento) contra o dia anterior.
+    Mês (repaginação v2, 14/10/2026): o mês contra o anterior; no mês corrente, compara os mesmos dias (01 a hoje)."""
+    if tipo == "mes":
+        ini, fim = _mes(hoje.year, hoje.month - deslocamento)
+        ini_ant, fim_mes_ant = _mes(hoje.year, hoje.month - deslocamento - 1)
+        dias = (min(fim, hoje) - ini).days
+        return ini, fim, ini_ant, min(fim_mes_ant, ini_ant + datetime.timedelta(days=dias))
     if tipo == "dia":
         d = hoje - datetime.timedelta(days=deslocamento)
         return d, d, d - datetime.timedelta(days=1), d - datetime.timedelta(days=1)
@@ -138,15 +152,19 @@ def montar(dados, hoje, deslocamento=0, pedidos=None, tipo="semana", painel=None
     hoteis = {}
     for agente, regs in dados.items():
         for r in regs:
-            if ini <= r["dia"] <= fim:
-                h = hoteis.setdefault(r["hotel"], {"hotel": r["hotel"], "agente": agente, "recebidos": 0, "nfs": 0, "subst_canc": 0})
+            agora_ = ini <= r["dia"] <= fim
+            if agora_ or ini_ant <= r["dia"] <= fim_ant:
+                h = hoteis.setdefault(r["hotel"], {"hotel": r["hotel"], "agente": agente, "recebidos": 0, "nfs": 0, "subst_canc": 0,
+                                                   "recebidos_ant": 0, "nfs_ant": 0, "subst_canc_ant": 0})
                 for k in ("recebidos", "nfs", "subst_canc"):
-                    h[k] += r.get(k, 0)
-    top = sorted(hoteis.values(), key=lambda h: (h["recebidos"], h["nfs"]), reverse=True)[:8]
+                    h[k if agora_ else k + "_ant"] += r.get(k, 0)
+    top = sorted((h for h in hoteis.values() if h["recebidos"] or h["nfs"]), key=lambda h: (h["recebidos"], h["nfs"]), reverse=True)[:8]
+    todos_hoteis = sorted(hoteis.values(), key=lambda h: h["hotel"])
     ultimo_dia = {a: max((r["dia"] for r in regs), default=None) for a, regs in dados.items()}
     return {"ini": ini.isoformat(), "fim": fim.isoformat(), "ate": fim_real.isoformat(), "deslocamento": deslocamento,
             "por_agente": por_agente, "anterior": anterior, "total": total, "total_anterior": total_ant,
-            "hoteis": top, "ultimo_dia": {a: d.isoformat() if d else "" for a, d in ultimo_dia.items()},
+            "hoteis": top, "hoteis_todos": todos_hoteis, "ini_anterior": ini_ant.isoformat(), "fim_anterior": fim_ant.isoformat(),
+            "ultimo_dia": {a: d.isoformat() if d else "" for a, d in ultimo_dia.items()},
             "tipo": tipo, "contado_painel": [a for a in contado_painel if por_agente.get(a, {}).get("dias")],
             "texto": resumo_texto(ini, fim_real, por_agente, total, total_ant, top, tipo)}
 
@@ -155,13 +173,14 @@ def _var(agora, antes, tipo="semana"):
     if not antes:
         return ""
     v = round(100 * (agora - antes) / antes)
-    contra = "dia anterior" if tipo == "dia" else "semana anterior"
-    return f" ({'+' if v > 0 else ''}{v}% vs {contra})" if v else f" (igual ao {contra})" if tipo == "dia" else f" (igual à {contra})"
+    contra = {"dia": "dia anterior", "mes": "mês anterior"}.get(tipo, "semana anterior")
+    return f" ({'+' if v > 0 else ''}{v}% vs {contra})" if v else f" (igual ao {contra})" if tipo in ("dia", "mes") else f" (igual à {contra})"
 
 
 def resumo_texto(ini, fim, por_agente, total, total_ant, top, tipo="semana"):
     """Texto pronto pra colar no WhatsApp/e-mail do gerente."""
-    titulo = f"Relatório do dia — {ini:%d/%m/%Y}" if tipo == "dia" else f"Relatório da semana — {ini:%d/%m} a {fim:%d/%m}"
+    titulo = (f"Relatório do dia — {ini:%d/%m/%Y}" if tipo == "dia" else f"Relatório do mês — {ini:%d/%m} a {fim:%d/%m}"
+              if tipo == "mes" else f"Relatório da semana — {ini:%d/%m} a {fim:%d/%m}")
     _v = lambda a, b: _var(a, b, tipo)
     linhas = [titulo, "",
               f"• Pedidos de NF (formulário): {total['pedidos']}{_v(total['pedidos'], total_ant['pedidos'])}",

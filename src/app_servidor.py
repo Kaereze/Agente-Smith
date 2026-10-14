@@ -364,7 +364,7 @@ class Estado:
         dados_ma = relatorio_semana.ler(self.backend, self.cfg.get("mail_analytics_planilha", relatorio_semana.PLANILHA_MAIL_ANALYTICS))
         with self.lock:
             pedidos = [(s["data"], self.cadastro.dados(s["hotel"]).get("agente", "")) for s in self.solicitacoes if s.get("data")]
-        rel = relatorio_semana.montar(dados_ma, datetime.date.today(), deslocamento, pedidos, "dia" if tipo == "dia" else "semana",
+        rel = relatorio_semana.montar(dados_ma, datetime.date.today(), deslocamento, pedidos, tipo if tipo in ("dia", "mes") else "semana",
                                       self._contagem_fim_de_semana())
         self._ultimo_relatorio = rel
         return rel
