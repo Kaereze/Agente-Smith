@@ -1127,6 +1127,32 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 .combo-lista button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--tinta);padding:7px 10px;font:inherit;font-size:13px;cursor:pointer}
 .combo-lista button:hover,.combo-lista button.ativo{background:var(--verde-suave)}
 .combo-vazio{padding:10px;color:var(--tinta-3);font-size:13px}
+/* Seletor "Caixa de" no topo (Figma 14/10/2026) — as abas de agente saem */
+#op-cartoes-notas,#det-op-notas,#op-cartoes-emails,#det-op-emails,.cab-pagina .seg-op{display:none!important}
+.cx-cab .abas-linha{border-bottom:0}
+.seletor-caixa{position:relative;flex:none}
+.sc-botao{display:inline-flex;align-items:center;gap:8px;padding:7px 10px 7px 12px;border-radius:var(--raio);background:var(--creme);border:1px solid var(--creme-borda);
+  color:var(--tinta);font:inherit;cursor:pointer;white-space:nowrap}
+.sc-botao:hover,.sc-botao[aria-expanded="true"]{border-color:var(--verde)}
+.sc-botao:focus-visible{outline:2px solid var(--verde);outline-offset:2px}
+.sc-rot{font-size:12.5px;color:var(--creme-tinta)}
+.sc-botao b{font-size:13.5px;font-weight:600}
+.sc-qt{font:500 12px var(--f-dado);color:var(--creme-tinta)}
+.sc-seta{font-size:11px;color:var(--creme-tinta)}
+.sc-lista{position:absolute;left:0;top:calc(100% + 6px);z-index:80;width:400px;max-height:70vh;overflow:auto;background:var(--folha);
+  border:1px solid var(--linha-forte);border-radius:8px;box-shadow:0 10px 28px rgba(15,25,20,.18);padding:8px 0}
+.sc-busca{padding:4px 12px 10px}
+.sc-busca input{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--verde);border-radius:var(--raio);background:var(--chao);color:var(--tinta)}
+.sc-grupo{padding:8px 16px 4px;font:600 10.5px var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--creme-tinta)}
+.sc-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 16px;border:0;background:transparent;color:var(--tinta);text-align:left;cursor:pointer;font:inherit}
+.sc-item:hover{background:var(--folha-2)}
+.sc-item.ativo{background:var(--verde-suave);box-shadow:inset 3px 0 0 var(--verde)}
+.sc-txt{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.sc-txt b{font-size:13.5px;font-weight:600}
+.sc-txt small{font-size:12px;color:var(--tinta-3)}
+.sc-txt small.ok{color:var(--ok)}
+.sc-n{font:500 13px var(--f-dado);color:var(--tinta-2)}
+.sc-vazio{padding:12px 16px;color:var(--tinta-3);font-size:13px}
 </style>
 </head>
 <body>
@@ -1199,6 +1225,14 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
   <div class="palco" role="main">
     <header class="topo">
       <div class="trilha-nav">Painel Fiscal / <b id="trilha">Caixa de entrada</b></div>
+      <div class="seletor-caixa" id="seletor-caixa">
+        <button type="button" class="sc-botao" id="sc-botao" aria-haspopup="listbox" aria-expanded="false" title="De quem é a caixa que você está vendo (vale para Notas fiscais, Caixa de entrada e Urgência)">
+          <span class="sc-rot">Caixa de</span><b id="sc-nome">…</b><span class="sc-qt" id="sc-qt"></span><span class="sc-seta" aria-hidden="true">▾</span></button>
+        <div class="sc-lista oculta" id="sc-lista" role="listbox" aria-label="Escolher a caixa">
+          <div class="sc-busca"><input id="sc-busca" type="search" placeholder="Buscar agente ou equipe…" aria-label="Buscar agente ou equipe" autocomplete="off"></div>
+          <div id="sc-itens"></div>
+        </div>
+      </div>
       <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…" aria-label="Pesquisar no Outlook"></label>
       <div class="topo-filtro" id="topo-filtro"></div>
       <span class="pill demo oculta" id="pill-demo">Modo demonstração · dados fictícios</span>
@@ -1589,7 +1623,54 @@ function detalheOperador() {
     `<span><b>${fmt(meus.length)}</b> e-mails na caixa</span><span><b>${fmt(naoLidos)}</b> não lidos</span>` +
     `<span class="${urg ? "urg" : ""}"><b>${fmt(urg)}</b> urgente${urg === 1 ? "" : "s"}</span>`;
 }
+// Seletor "Caixa de" no topo (Figma aprovado em 14/10/2026): substitui as abas de agente; vale para todas as telas
+function resumoCaixa(v) {
+  const sol = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v));
+  const semNf = sol.filter(it => ["na_fila", "aguardando_envio"].includes(it.s.situacao)).length;
+  const atras = sol.filter(it => it.s.situacao !== "concluida" && diasDesde(it.s.data) > PRAZO.med).length;
+  const emails = typeof emailsDa === "function" ? emailsDa("entrada", v).length : 0;
+  return { n: sol.length, semNf, atras, emails };
+}
+function desenharSeletorCaixa() {
+  if (!$("sc-botao")) return;
+  const v = escopoAtual(), r = resumoCaixa(v), fmt = x => x.toLocaleString("pt-BR");
+  $("sc-nome").textContent = v === "todos" ? "Todos os agentes" : v === st.agente ? `${v} (minha)` : v;
+  $("sc-qt").textContent = fmt(r.n);
+  const q = semAcentoSC($("sc-busca").value);
+  const linha = (valor, nome, sub, n, ok) => {
+    if (q && !semAcentoSC(nome + " " + sub).includes(q)) return "";
+    return `<button type="button" role="option" class="sc-item ${valor === v ? "ativo" : ""}" aria-selected="${valor === v}" data-escopo="${esc(valor)}">
+      <span class="sc-txt"><b>${esc(nome)}</b><small class="${ok ? "ok" : ""}">${esc(sub)}</small></span><span class="sc-n">${fmt(n)}</span></button>`;
+  };
+  const sub = x => x.n === 0 && x.emails === 0 ? "caixa em dia" : `${fmt(x.semNf)} sem NF · ${fmt(x.atras)} atrasada${x.atras === 1 ? "" : "s"} · ${fmt(x.emails)} e-mail${x.emails === 1 ? "" : "s"}`;
+  const meu = st.agente && agentesEquipe().includes(st.agente) ? st.agente : "";
+  const atalhos = (meu ? linha(meu, "Minha caixa", `${meu} · ${sub(resumoCaixa(meu))}`, resumoCaixa(meu).n) : "") +
+    linha("todos", "Todos os agentes", "toda a equipe", resumoCaixa("todos").n);
+  const equipe = agentesEquipe().map(a => { const x = resumoCaixa(a); return linha(a, a, sub(x), x.n, x.n === 0 && x.emails === 0); }).join("");
+  $("sc-itens").innerHTML = (atalhos ? `<div class="sc-grupo">Atalhos</div>${atalhos}` : "") +
+    (equipe ? `<div class="sc-grupo">Equipe Fiscal</div>${equipe}` : "") ||
+    `<div class="sc-vazio">Ninguém com “${esc($("sc-busca").value)}”</div>`;
+}
+const semAcentoSC = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+function abrirSeletorCaixa(abrir) {
+  const lista = $("sc-lista"), aberto = abrir ?? lista.classList.contains("oculta");
+  lista.classList.toggle("oculta", !aberto);
+  $("sc-botao").setAttribute("aria-expanded", aberto);
+  if (aberto) { $("sc-busca").value = ""; desenharSeletorCaixa(); setTimeout(() => $("sc-busca").focus(), 20); }
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#sc-botao")) { abrirSeletorCaixa(); return; }
+  if (e.target.closest("#sc-lista [data-escopo]")) { abrirSeletorCaixa(false); setTimeout(desenharSeletorCaixa, 0); return; }
+  if (!e.target.closest("#seletor-caixa")) abrirSeletorCaixa(false);
+});
+document.addEventListener("input", e => { if (e.target.id === "sc-busca") desenharSeletorCaixa(); });
+document.addEventListener("keydown", e => {
+  if (e.target.id !== "sc-busca") return;
+  if (e.key === "Escape") { e.stopPropagation(); abrirSeletorCaixa(false); $("sc-botao").focus(); }
+  if (e.key === "Enter") { e.preventDefault(); $("sc-itens").querySelector("[data-escopo]")?.click(); }
+});
 function desenharAbasNotas() {
+  desenharSeletorCaixa();
   if (!$("op-cartoes-notas")) return;
   $("op-cartoes-notas").innerHTML = segOperadores(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
   $("det-op-notas").innerHTML = detalheOperador();
@@ -2129,7 +2210,7 @@ document.addEventListener("click", e => {
   if (!b) return;
   escopo = b.dataset.escopo;
   try { localStorage.setItem("painel.agenteFiltro", escopo); } catch (er) {}
-  pagina = 0; desenharLateral(); desenhar();
+  pagina = 0; desenharLateral(); desenhar(); desenharSeletorCaixa();
   if (typeof desenharCorreio === "function") { desenharLateralCorreio(); desenharCorreio(); }
   if (pn.vista === "visao") desenharVisao();
 });

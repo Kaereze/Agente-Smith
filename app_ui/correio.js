@@ -18,6 +18,7 @@ async function carregarCorreio() {
     const agora = Date.now();
     for (const [k, t] of Object.entries(cx.resolvendo)) if (agora - t > RESOLVENDO_MS) delete cx.resolvendo[k];
     desenharLateralCorreio();
+    if (typeof desenharSeletorCaixa === "function") desenharSeletorCaixa();
     if (pn.vista === "correio") desenharCorreio();
     else if (pn.vista === "fila") desenharAbasNotas();   // e-mails chegaram: atualiza os números das abas
   } catch (e) { /* a próxima volta tenta de novo */ }

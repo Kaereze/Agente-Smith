@@ -21,3 +21,9 @@ tags: [cerebro/regras]
 - Rascunho do guia: `guia-painel-fiscal.html` (nesta pasta) (abrir no navegador). Seções: princípios, cores, letras (6 tamanhos), espaços, cabeçalho, abas e filtros, botões e selos, tabela, números e gráficos, ficha-resumo, vazio/carregando, o que não fazer.
 
 Ver: [[Decisões]].
+
+## Figma (14/10/2026)
+- Arquivo **Painel Fiscal - Design** (rascunhos da conta Joao Carlos): https://www.figma.com/design/jCfxJgHjuqApxnL1ziu0ec
+- Variáveis "Painel Fiscal · Cores" (24 cores) e componentes (Botão, Aba, Selo) na página Componentes.
+- Telas aprovadas: **Notas fiscais** (ficha-resumo à direita) e o **seletor "Caixa de"** aberto.
+- Regra: no Figma, só **dados fictícios** (é serviço externo, P0).
