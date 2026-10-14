@@ -315,7 +315,71 @@ function corpoTexto(chave) {
     <div class="cx-texto">${esc(t.citado)}</div></details>` : "") +
     (t.origem && !["ao vivo", "este PC"].includes(t.origem) ? `<p class="dica">${esc(t.origem)}</p>` : "");
 }
-const anexosHtml = an => an?.length ? `<div class="cx-anexos">${an.map(a => `<span class="cx-anexo"><b>${esc(String(a).split(".").pop().toUpperCase().slice(0, 4))}</b>${esc(a)}</span>`).join("")}</div>` : "";
+// Anexos clicáveis (usuário, 14/10/2026): a foto ou o PDF do hóspede abre aqui mesmo, pedido ao vivo pro PC dono
+const anexosHtml = (an, alvo) => {
+  if (!an?.length) return "";
+  const chave = alvo ? (alvo.id || alvo.entry || "") : "";
+  if (chave) (cx.anexoAlvos ||= {})[chave] = { id: alvo.id_espelho ?? alvo.id ?? "", pc: alvo.pc || "", entry: alvo.entry || "", nomes: an };
+  return `<div class="cx-anexos">${an.map((a, i) => `<button type="button" class="cx-anexo" ${chave ? `data-anexo="${esc(chave)}" data-i="${i}"` : "disabled"}
+    title="Ver aqui no Painel"><b>${esc(String(a).split(".").pop().toUpperCase().slice(0, 4))}</b>${esc(a)}</button>`).join("")}</div>`;
+};
+const noEspelhoDoPainel = e => (cx.dados?.emails || []).some(x => x.id === e.id) || (cx.dados?.enviados || []).some(x => x.id === e.id);
+const visor = { chave: "", i: 0, urls: {} };
+function abrirVisor(chave, i) {
+  const alvo = cx.anexoAlvos?.[chave];
+  if (!alvo) return;
+  visor.chave = chave; visor.i = Math.max(0, Math.min(i, alvo.nomes.length - 1));
+  let el = $("visor");
+  if (!el) { el = document.createElement("div"); el.id = "visor"; el.className = "visor-fundo"; document.body.appendChild(el); }
+  el.classList.remove("oculta");
+  desenharVisor();
+}
+async function desenharVisor() {
+  const el = $("visor"), alvo = cx.anexoAlvos?.[visor.chave];
+  if (!el || !alvo) return;
+  const nome = alvo.nomes[visor.i], k = visor.chave + "|" + nome, n = alvo.nomes.length;
+  const cab = (extra = "") => `<div class="visor" role="dialog" aria-label="Anexo ${esc(nome)}"><div class="visor-cab">
+      <b title="${esc(nome)}">${esc(nome)}</b>${n > 1 ? `<span class="visor-n">${visor.i + 1} de ${n}</span>
+      <button type="button" data-visor="-1" aria-label="Anexo anterior">‹</button><button type="button" data-visor="1" aria-label="Próximo anexo">›</button>` : ""}
+      ${extra}<button type="button" class="visor-x" data-visor-fechar aria-label="Fechar">×</button></div>`;
+  const u = visor.urls[k];
+  if (!u) {
+    el.innerHTML = cab() + `<div class="visor-corpo"><div class="vazio">Pedindo o anexo ao Outlook do PC dono…</div></div></div>`;
+    const q = new URLSearchParams({ id: alvo.id || "", pc: alvo.pc || "", entry: alvo.entry || "", nome });
+    const r = await api("/api/correio/anexo?" + q);
+    if (r.erro || !r.b64) { visor.urls[k] = { erro: r.erro || "não veio o arquivo" }; }
+    else {
+      const bin = atob(r.b64), bytes = new Uint8Array(bin.length);
+      for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+      visor.urls[k] = { url: URL.createObjectURL(new Blob([bytes], { type: r.tipo })), tipo: r.tipo, tamanho: r.tamanho };
+    }
+    if (visor.chave + "|" + alvo.nomes[visor.i] !== k) return;   // trocou de anexo enquanto carregava
+    return desenharVisor();
+  }
+  if (u.erro) { el.innerHTML = cab() + `<div class="visor-corpo"><div class="vazio">Não deu para abrir: ${esc(u.erro)}</div></div></div>`; return; }
+  const baixar = `<a class="visor-baixar" href="${u.url}" download="${esc(nome)}">Baixar</a>`;
+  const corpo = u.tipo.startsWith("image/") ? `<img src="${u.url}" alt="${esc(nome)}" class="visor-img" data-visor-zoom>`
+    : u.tipo === "application/pdf" || u.tipo.startsWith("text/") ? `<iframe src="${u.url}" title="${esc(nome)}" class="visor-pdf"></iframe>`
+    : `<div class="vazio">Esse tipo de arquivo não dá para mostrar aqui.<br>Use "Baixar" para abrir no programa do PC.</div>`;
+  el.innerHTML = cab(baixar) + `<div class="visor-corpo">${corpo}</div></div>`;
+}
+function fecharVisor() { $("visor")?.classList.add("oculta"); }
+document.addEventListener("click", ev => {
+  const a = ev.target.closest("[data-anexo]");
+  if (a) { ev.stopPropagation(); return abrirVisor(a.dataset.anexo, Number(a.dataset.i)); }
+  if (ev.target.closest("[data-visor-fechar]") || ev.target.id === "visor") return fecharVisor();
+  const m = ev.target.closest("[data-visor]");
+  if (m) { visor.i = (visor.i + Number(m.dataset.visor) + cx.anexoAlvos[visor.chave].nomes.length) % cx.anexoAlvos[visor.chave].nomes.length; return desenharVisor(); }
+  const z = ev.target.closest("[data-visor-zoom]");
+  if (z) z.classList.toggle("grande");
+});
+window.addEventListener("keydown", ev => {   // com o visor aberto, as teclas são dele (Delete não exclui o e-mail de trás)
+  if (!$("visor") || $("visor").classList.contains("oculta")) return;
+  ev.stopPropagation();
+  if (ev.key === "Escape") { ev.preventDefault(); fecharVisor(); }
+  if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") { ev.preventDefault(); const n = cx.anexoAlvos[visor.chave].nomes.length;
+    visor.i = (visor.i + (ev.key === "ArrowRight" ? 1 : -1) + n) % n; desenharVisor(); }
+}, true);
 
 function desenharLeituraCorreio() {
   desenharAcoes();
@@ -344,7 +408,7 @@ function desenharLeituraCorreio() {
         ${e.lido_por ? `<div class="cx-fl"><span>Lido</span><span>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</span></div>` : ""}
       </div>
       ${avisoNfJaEnviada(h)}
-      ${corpoTexto(e.id)}${anexosHtml(e.anexos)}
+      ${corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}
       ${h ? historicoHtml(h, e) : ""}
     </div>`;
 }
@@ -390,7 +454,7 @@ function linhaHist(x) {
       <span class="cx-h-tipo t-${x.pasta}">${x.pasta === "enviado" ? "↗ Enviado" : x.pasta === "excluido" ? "✕ Excluído" : "↙ Recebido"}</span>
       <span class="cx-h-data">${esc(quando(x.quando))}</span><span class="cx-h-ass">${esc(x.assunto || "(sem assunto)")}</span>
       <span class="cx-h-pc">${esc(nomeAgente(x.pc))}</span></div>
-    ${aberto ? `<div class="cx-h-corpo">${corpoTexto(x.id)}${anexosHtml(x.anexos)}</div>` : ""}`;
+    ${aberto ? `<div class="cx-h-corpo">${corpoTexto(x.id)}${anexosHtml(x.anexos, { id: x.id, id_espelho: "", pc: x.pc, entry: x.entry || "" })}</div>` : ""}`;
 }
 
 // ---------- ações (rodam no Outlook do PC dono, sem abrir janela) ----------

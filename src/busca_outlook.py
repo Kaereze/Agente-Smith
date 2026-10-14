@@ -104,6 +104,61 @@ def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMP
     return {"resultados": achados, "completo": completo and len(candidatos) <= limite}
 
 
+LIMITE_ANEXO = 15 * 1024 * 1024   # anexo maior que isso: abrir no Outlook (não passa pela rede)
+
+
+def tipo_do_anexo(nome):
+    import mimetypes
+    return mimetypes.guess_type(str(nome))[0] or "application/octet-stream"
+
+
+def ler_anexo(namespace, entry, caixas, nome):
+    """Bytes de 1 anexo de um e-mail das caixas dos hotéis (só lê; usuário, 14/10/2026: ver a foto/PDF que o hóspede
+    mandou dentro do Painel). -> {"nome", "tipo", "tamanho", "b64"}"""
+    import base64
+    import os
+    import tempfile
+    item = namespace.GetItemFromID(entry)
+    _caixa_e_pasta(namespace, item, caixas)   # PermissionError se não for caixa de hotel
+    for i in range(1, item.Attachments.Count + 1):
+        a = item.Attachments.Item(i)
+        if str(a.FileName) != str(nome):
+            continue
+        if (a.Size or 0) > LIMITE_ANEXO:
+            raise ValueError(f"anexo grande demais ({(a.Size or 0) / 1048576:.0f} MB): abra no Outlook")
+        pasta = tempfile.mkdtemp(prefix="painel_anexo_")
+        caminho = os.path.join(pasta, "anexo" + os.path.splitext(str(nome))[1][:10])
+        try:
+            a.SaveAsFile(caminho)
+            dados = open(caminho, "rb").read()
+        finally:
+            try:
+                os.remove(caminho)
+                os.rmdir(pasta)
+            except OSError:
+                pass
+        return {"nome": str(nome), "tipo": tipo_do_anexo(nome), "tamanho": len(dados), "b64": base64.b64encode(dados).decode()}
+    raise KeyError(f"o anexo {nome} não está mais nesse e-mail")
+
+
+def _caixa_e_pasta(namespace, item, caixas):
+    pasta_id, loja_id = item.Parent.EntryID, item.Parent.Store.StoreID
+    caixa, pasta = "", "entrada"
+    for conta in namespace.Accounts:
+        try:
+            loja = conta.DeliveryStore
+            if loja.StoreID != loja_id:
+                continue
+            caixa = str(conta.SmtpAddress or "").strip().lower()
+            pasta = next((nome for numero, nome in PASTAS if loja.GetDefaultFolder(numero).EntryID == pasta_id), "entrada")
+            break
+        except Exception:
+            continue
+    if caixa not in caixas:   # só e-mail das caixas dos hotéis sai pela rede (nunca uma caixa pessoal)
+        raise PermissionError("esse e-mail não é de uma caixa de hotel")
+    return caixa, pasta
+
+
 def abrir(namespace, entry, caixas, pc):
     """Texto inteiro de 1 e-mail (só lê). -> dict com texto e citado."""
     item = namespace.GetItemFromID(entry)

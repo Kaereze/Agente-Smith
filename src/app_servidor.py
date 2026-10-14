@@ -820,6 +820,16 @@ class Estado:
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         return busca_outlook.abrir(ns, str(corpo["entry"]), self._caixas_de_hotel(), socket.gethostname())
 
+    def rede_anexo(self, corpo):
+        """Anexo de um e-mail das caixas deste PC (foto, PDF do hóspede) pra ver no Painel. Só leitura."""
+        entry = str(corpo.get("entry") or "") or espelho_emails.item_local(str(corpo.get("id", ""))).get("entry_id", "")
+        if not entry:
+            raise KeyError("e-mail não está mais no espelho deste PC")
+        import pythoncom
+        pythoncom.CoInitialize()
+        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+        return {**busca_outlook.ler_anexo(ns, entry, self._caixas_de_hotel(), str(corpo.get("nome", ""))), "pc": socket.gethostname()}
+
     def rede_ping(self, _corpo):
         return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
 
@@ -839,6 +849,23 @@ class Estado:
         if not id_email:
             raise KeyError(f"o PC {pc} não respondeu pela rede agora — tente de novo em instantes")
         return {**self._texto_da_planilha(pc, id_email), "origem": "cópia (PC dono sem rede)"}
+
+    def anexo_email(self, id_email="", pc="", entry="", nome=""):
+        """Anexo pedido ao vivo pro PC dono (nada fica guardado). PC dono desligado: não tem como (só ele tem o Outlook)."""
+        if not nome:
+            raise ValueError("nome do anexo")
+        if id_email and not pc:
+            pc = self._email(id_email)["pc"]
+        if pc == socket.gethostname() or not pc:
+            return self.rede_anexo({"id": id_email, "entry": entry, "nome": nome})
+        endereco = self._enderecos_rede().get(pc)
+        if not (endereco and self.segredo):
+            raise KeyError("o PC dono desse e-mail está desligado ou sem rede agora: o anexo só pode ser aberto por lá")
+        r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "anexo", {"id": id_email, "entry": entry, "nome": nome},
+                                         tempo=45).get(pc, {})
+        if "erro" in r:
+            raise KeyError(f"o PC dono não mandou o anexo: {r['erro']}")
+        return r
 
     def _texto_da_planilha(self, pc, id_email):
         e = self._email(id_email)
@@ -1462,6 +1489,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.conversa(q.get("de", "")))
                 if url.path == "/api/correio/texto":
                     return self._json(estado.texto_email(q.get("id", ""), q.get("pc", ""), q.get("entry", "")))
+                if url.path == "/api/correio/anexo":
+                    return self._json(estado.anexo_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""), q.get("nome", "")))
                 if url.path == "/api/correio/buscar":
                     return self._json(estado.buscar_outlook(q.get("q", "")))
                 if url.path == "/api/email/opcoes":
@@ -1618,7 +1647,7 @@ def main():
     if not modo_demo and not so_ver:
         estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
         estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
-                                                                  "ping": estado.rede_ping}).iniciar()
+                                                                  "anexo": estado.rede_anexo, "ping": estado.rede_ping}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
     estado.uso_ref = ultimo_uso
