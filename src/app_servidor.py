@@ -649,7 +649,7 @@ class Estado:
     def _montar_correio(self):
         eventos = espelho_emails.dobrar_eventos(self.eventos_linhas + self.eventos_pendentes)
         entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now(), self._alertas_documento())
-        convs = correio.conversas(entrada)
+        convs = correio.conversas([e for e in entrada if e.get("pendente", True)])   # conversa = esperando resposta
         with self.lock:
             self.eventos_correio, self.entrada_correio, self.enviados_correio, self.convs = eventos, entrada, enviados, convs
 
@@ -754,7 +754,7 @@ class Estado:
                    "prazo": por_de.get(e["de"], {}).get("prazo"),
                    "notas": self.notas_emails.get(e["id"], []),
                    "solicitacao": por_de.get(e["de"], {}).get("solicitacao")} for e in entrada]
-        return {"conversas": saida, "emails": emails, "enviados": enviados, "contagem": correio.contagem(convs),
+        return {"conversas": saida, "emails": emails, "enviados": enviados, "contagem": correio.contagem(convs, entrada),
                 "pcs": [{"pc": p["pc"], "agente": p["agente"], "online": p["online"], "espelho": espelhos.get(p["pc"], ""),
                          "rede": bool(p.get("rede"))} for p in pcs.values()],
                 "este_pc": socket.gethostname()}

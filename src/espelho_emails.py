@@ -67,7 +67,7 @@ URGENCIA_DIAS = 7                 # sem resposta há mais que isso: aba Urgênci
 MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
-VERSAO_ESTADO = 3   # 3: Caixa de Entrada inteira + lido do Outlook (11/10/2026) — relê tudo 1 vez
+VERSAO_ESTADO = 4   # 4: espelho literal, com respondidos, formulário e avisos (14/10/2026) — relê tudo 1 vez
 MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
 MAX_CITADO = 8000
 MAX_TEXTO_ENVIADO = 4000
@@ -336,8 +336,9 @@ def texto_quartos(e):
 
 
 def resolver(itens, enviados, agora):
-    """Tira o que foi respondido (some do Painel: o Outlook guarda), o que passou de 14 dias sem resposta e os
-    enviados com mais de 24 h. enviados: {endereço: último envio (datetime)}."""
+    """Espelho LITERAL da Caixa de Entrada (usuário, 14/10/2026: "o Outlook da Clara tem 192 e o Painel menos"):
+    tudo que está lá fica, inclusive o já respondido (o Painel marca "respondido" em correio.juntar).
+    Só os Itens Enviados com mais de 24 h saem. enviados: {endereço: último envio (datetime)}."""
     saida = {}
     for i, e in itens.items():
         try:
@@ -349,10 +350,7 @@ def resolver(itens, enviados, agora):
             if idade <= datetime.timedelta(hours=RECENTE_HORAS):
                 saida[i] = e
             continue
-        resposta = enviados.get(e["de"])
-        if resposta and resposta > quando:
-            continue
-        saida[i] = e   # está na Caixa de Entrada e sem resposta: fica, de qualquer data (espelho fiel)
+        saida[i] = e   # está na Caixa de Entrada: fica, respondido ou não, de qualquer data (espelho literal, 14/10/2026)
     return saida
 
 
@@ -600,17 +598,30 @@ class Espelho:
                          "citado": "", "via": "painel" if foi_pelo_painel(item) else "outlook"}
 
     def _recebido(self, item, caixa, caixas, rede, antigo, vouchers):
-        if getattr(item, "Class", 43) != 43:
-            return
         i = id_do_email(item.EntryID)
         if i in self.itens:
             return
+        if getattr(item, "Class", 43) != 43:   # recibo de leitura, aviso de entrega, convite: está na caixa, entra
+            quando = _data(getattr(item, "ReceivedTime", None) or getattr(item, "CreationTime", None))
+            if quando:
+                self.itens[i] = {"id": i, "entry_id": item.EntryID, "pasta": ENTRADA, "caixa": caixa,
+                                 "hotel": caixas.get(caixa, ""), "de": "", "nome": "Aviso do Outlook", "para": caixa,
+                                 "assunto": str(getattr(item, "Subject", "") or ""), "quando": quando.isoformat(timespec="seconds"),
+                                 "anexos": [], "texto": "", "citado": "", "quartos": [0, []], "classes": ["aviso"],
+                                 "analise": "", "lido_outlook": not bool(getattr(item, "UnRead", True))}
+            return
         de = remetente(item)
         corpo = str(item.Body or "")
-        if e_do_robo(de, corpo, rede, antigo):
-            return   # solicitação do robô: aparece em Notas fiscais (aba CaixaPedidos_<PC>)
         recebido = _data(item.ReceivedTime)
         if not recebido:
+            return
+        if e_do_robo(de, corpo, rede, antigo):   # solicitação do formulário: também em Notas fiscais (CaixaPedidos_<PC>)
+            proprio, citado = dividir_historico(corpo)
+            self.itens[i] = {"id": i, "entry_id": item.EntryID, "pasta": ENTRADA, "caixa": caixa,
+                             "hotel": caixas.get(caixa, ""), "de": de, "nome": str(item.SenderName or "Formulário"),
+                             "para": caixa, "assunto": str(item.Subject or ""), "quando": recebido.isoformat(timespec="seconds"),
+                             "anexos": [], "texto": proprio, "citado": "", "quartos": [0, []], "classes": ["formulario"],
+                             "analise": "", "lido_outlook": not bool(getattr(item, "UnRead", True))}
             return
         anexos = anexos_do_item(item)
         if i not in vouchers:   # voucher com 2+ quartos = nota dividida (lido 1 vez por e-mail)

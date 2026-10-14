@@ -101,7 +101,9 @@ def test_correio_dos_4_pcs_uma_linha_por_hospede_e_respondido_por_outro_pc_some(
     assert por_de["ana@gmail.com"]["total"] == 2 and por_de["ana@gmail.com"]["nao_lidos"] == 2
     assert por_de["ana@gmail.com"]["ultimo"]["id"] == "a2"
     assert por_de["bia@gmail.com"]["urgente"] and not por_de["ana@gmail.com"]["urgente"]
-    assert c["contagem"] == {"entrada_nao_lidos": 3, "entrada": 2, "urgencia": 1, "urgencia_nao_lidos": 1}
+    # contagem = a caixa inteira, igual ao Outlook (14/10/2026): o Caio respondido segue na lista, marcado
+    assert c["contagem"] == {"entrada_nao_lidos": 5, "entrada": 5, "urgencia": 1, "urgencia_nao_lidos": 1}
+    assert any(e["de"] == "caio@gmail.com" and e["respondido"] and not e["urgente"] for e in c["emails"])
 
 
 def test_lido_vale_pra_equipe_e_vai_numa_escrita_so(cfg, planilha):

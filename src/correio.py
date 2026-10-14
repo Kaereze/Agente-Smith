@@ -64,12 +64,15 @@ def juntar(emails, eventos, agora, alertas=None):
         if e["pasta"] == ee.ENVIADO:
             enviados.append(e)
             continue
-        if respostas.get(e["de"], "") > e["quando"]:
-            continue   # respondido por uma caixa de outro PC: some também
+        # espelho literal (14/10/2026): respondido (por qualquer caixa da rede), solicitação do formulário e aviso do
+        # Outlook ficam na lista, como no Outlook; só não contam como "esperando resposta" nem viram urgência
+        respondido = respostas.get(e["de"], "") > e["quando"]
+        especial = respondido or bool({"formulario", "aviso"} & set(e["classes"]))
         quando = _data(e["quando"])
         dias = (agora - quando).total_seconds() / 86400 if quando else 0
-        motivo = motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""))
-        entrada.append({**e, "lido": lido_atual(e, ev), "lido_por": ev.get("lido_por", ""),
+        motivo = "" if especial else motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""))
+        entrada.append({**e, "respondido": respondido, "pendente": not especial,
+                        "lido": lido_atual(e, ev), "lido_por": ev.get("lido_por", ""),
                         "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),
                         "urgente": bool(motivo), "motivo_urgencia": motivo, "alerta_doc": alertas.get(e["de"], "")})
     entrada.sort(key=lambda e: e["quando"], reverse=True)
@@ -108,8 +111,13 @@ def conversas(entrada):
     return saida
 
 
-def contagem(convs):
-    """Números do menu: e-mails não lidos na Caixa de Entrada (como no Outlook) e conversas em Urgência."""
+def contagem(convs, entrada=None):
+    """Números do menu. Caixa de entrada = igual ao Outlook: TODOS os e-mails da caixa (lidos e não lidos,
+    respondidos, formulário, avisos). Urgência = conversas esperando resposta que viraram urgência."""
+    if entrada is not None:
+        return {"entrada_nao_lidos": sum(1 for e in entrada if not e["lido"]), "entrada": len(entrada),
+                "urgencia": sum(1 for c in convs if c["urgente"]),
+                "urgencia_nao_lidos": sum(c["nao_lidos"] for c in convs if c["urgente"])}
     return {"entrada_nao_lidos": sum(c["nao_lidos"] for c in convs if not c["urgente"]),
             "entrada": sum(1 for c in convs if not c["urgente"]),
             "urgencia": sum(1 for c in convs if c["urgente"]),
