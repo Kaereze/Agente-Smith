@@ -188,8 +188,43 @@ function linhaEmail(e) {
     <div class="cx-l1">${e.urgente && !cinza ? `<span class="cx-ponto" aria-label="urgente"></span>` : ""}<span class="cx-quem">${esc(quem)}</span>
       <span class="cx-hora">${horaCurta(e.quando)}</span></div>
     <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}<span class="cx-onde"> · ${esc(e.hotel || "")}${situacao}</span>${e.pc ? opMini(nomeAgente(e.pc)) : ""}</div>
-    ${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
+    ${tagsEmail(e, cinza)}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
+// Tags da repaginação v2 (usuário, 14/10/2026): só urgência, nota dividida e falta de dados
+function pedidoDoEmail(e) {
+  return e.solicitacao && typeof acharPedido === "function" ? acharPedido(e.solicitacao.chave) : null;
+}
+function tagsEmail(e, cinza) {
+  if (e.pasta !== "entrada" || cinza || e.respondido) return "";
+  const s = pedidoDoEmail(e), falta = s && typeof faltaDados === "function" ? faltaDados(s) : [];
+  const urg = e.urgente ? (/dias sem resposta/.test(e.motivo_urgencia || "") ? e.motivo_urgencia.replace(/^(\d+) dias sem resposta$/, "Sem resposta há $1 dias")
+    : /corre/i.test(e.motivo_urgencia || "") ? "Pedido de correção" : "Urgente") : "";
+  const tags = (urg ? `<span class="tg t-urg">${esc(urg)}</span>` : "") +
+    (falta.length ? `<span class="tg t-falta">Falta: ${esc(falta[0])}${falta.length > 1 ? ` +${falta.length - 1}` : ""}</span>` : "") +
+    ((e.quartos?.[0] || e.quartos || 0) >= 2 ? `<span class="tg t-div">Nota dividida</span>` : "");
+  return tags ? `<div class="cx-l3">${tags}</div>` : "";
+}
+// Faixa do pedido ligado ao e-mail, acima dele (prévia v2): prazo, o que falta, quem cuida, abrir a ficha
+function faixaPedido(e) {
+  const s = pedidoDoEmail(e);
+  if (!s) return e.solicitacao ? `<div class="cx-pedido"><div><small>Pedido</small><b>do formulário de ${esc(String(e.solicitacao.data || "").split("-").reverse().join("/"))}</b></div>
+    <div><small>Hotel</small><b>${esc(e.solicitacao.hotel || "")}</b></div><div><small>Situação</small><b>pedido antigo, fora da lista de Notas fiscais</b></div></div>` : "";
+  const falta = typeof faltaDados === "function" ? faltaDados(s) : [];
+  return `<div class="cx-pedido" aria-label="Pedido ligado a este e-mail">
+    <div><small>Pedido</small><b>${esc(s.nome)}</b></div>
+    <div><small>Prazo</small>${s.prazo ? prazoHtml(s.prazo) : "<b>—</b>"}</div>
+    <div><small>Dados para emitir</small>${falta.length ? `<b class="atn">falta ${esc(falta.join(", "))}</b>` : `<b class="ok">completos</b>`}</div>
+    <div><small>Com</small><b>${esc(s.dono || "ninguém")}</b></div>
+    ${s.nfs?.length ? `<div><small>NF</small><b class="ok">${esc(s.nfs.join(", "))}</b></div>` : ""}
+    <button type="button" class="cx-abrir-ficha" data-abrir-ficha="${esc(s.chave)}">Abrir ficha</button></div>`;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-abrir-ficha]");
+  if (!b || typeof abrirNotas !== "function") return;
+  const chave = b.dataset.abrirFicha;
+  abrirNotas({ filtro: "todas" });
+  sel = chave; desenhar();
+});
 
 // ---------- busca: direto no Outlook dos 4 PCs ----------
 function agendarBusca() {
@@ -293,7 +328,7 @@ function desenharLeituraCorreio() {
   if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA|SUMMARY/.test(document.activeElement.tagName)) return;
   const enviado = e.pasta === "enviado";
   const h = !enviado && e.de ? cx.hist[e.de] : null;
-  el.innerHTML = `
+  el.innerHTML = `${enviado ? "" : faixaPedido(e)}
     <div class="cx-msg">
       <h2>${esc(e.assunto || "(sem assunto)")}</h2>
       ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>

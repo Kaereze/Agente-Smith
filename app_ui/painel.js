@@ -1,6 +1,6 @@
 // Visão geral, Log, Máquinas e as janelas de envio. Usa api/$/esc/toast/st/desenhar e o estado da tela de notas
 // (mesmo escopo global).
-let pn = { vista: "visao", janela: 30, rz: null, tabela: {} };   // tabela: gráfico mostrado como tabela
+let pn = { vista: "visao", janela: 30, rz: null, tabela: {}, resumo: "ontem" };   // resumo: a Visão geral abre no dia anterior   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
 const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
@@ -255,6 +255,71 @@ document.addEventListener("click", e => {
   trocarVista("correio"); abrirCaixa(qual);
 });
 
+// Resumo do dia (repaginação v2, usuário 14/10/2026): a Visão geral abre em "ontem" — o que chegou, o que foi
+// resolvido, o que ficou para hoje — comparado com o mesmo dia da semana anterior.
+function resumoDiaHtml() {
+  const isoDe = d => d.toLocaleDateString("sv-SE");
+  const base = new Date(hojeIso() + "T12:00");
+  if (pn.resumo === "ontem") base.setDate(base.getDate() - 1);
+  const dia = isoDe(base), antes = new Date(base); antes.setDate(antes.getDate() - 7);
+  const diaAntes = isoDe(antes);
+  const agenteDe = s => AG[String(s.hotel || "").split(" / ")[0]] || s.dono || "Sem agente";
+  const isoEnvio = q => { const m = String(q || "").match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/); return m ? `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}` : ""; };
+  const chegada = s => new Date(`${s.data}T${horaDoCarimbo(s.carimbo) || "12:00"}`);
+  function numeros(d) {
+    const recebidos = st.fila.filter(s => s.data === d);
+    const envios = [];
+    st.fila.forEach(s => (s.envios || []).forEach(v => { const iso = isoEnvio(v.quando); if (iso.slice(0, 10) === d) envios.push({ s, iso, n: (v.nfs || []).length || 1 }); }));
+    const nfs = envios.reduce((a, e) => a + e.n, 0);
+    // no prazo = NF enviada até 48 h depois da chegada (o prazo do pedido some quando a nota sai)
+    envios.forEach(e => { e.h = (new Date(e.iso) - chegada(e.s)) / 36e5; });
+    const validos = envios.filter(e => e.h >= 0);
+    const noPrazo = validos.length ? Math.round(100 * validos.filter(e => e.h <= 48).length / validos.length) : null;
+    const horas = validos.map(e => e.h).sort((a, b) => a - b);
+    const mediana = horas.length ? horas[Math.floor(horas.length / 2)] : null;
+    return { recebidos, envios, nfs, noPrazo, mediana };
+  }
+  const a = numeros(dia), b = numeros(diaAntes);
+  const abertos = TODOS.filter(it => it.tipo === "form" && it.s.situacao !== "concluida" && it.s.data <= dia);
+  const vencidos = abertos.filter(it => (prazoInfo(it.s.prazo)?.resta ?? 1) <= 0).length;
+  const varPct = (x, y) => !y ? "" : (x >= y ? `<em class="sobe">▲ ${Math.round(100 * (x - y) / y)}%</em>` : `<em class="desce">▼ ${Math.round(100 * (y - x) / y)}%</em>`) + ` · eram ${y}`;
+  const fmtH = h => h == null ? "—" : h < 1 ? Math.round(h * 60) + " min" : Math.round(h) + " h";
+  const nomeDia = base.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" });
+  const porAgente = {};
+  const somar = (ag, k, v = 1) => { (porAgente[ag] ||= { rec: 0, nfs: 0, prazo: [0, 0], pend: 0 })[k] = (k === "prazo" ? porAgente[ag][k] : (porAgente[ag][k] || 0) + v); };
+  a.recebidos.forEach(s => somar(agenteDe(s), "rec"));
+  a.envios.forEach(e => { const ag = agenteDe(e.s); somar(ag, "nfs", e.n); if (e.h >= 0) { const p = porAgente[ag].prazo; p[1]++; if (e.h <= 48) p[0]++; } });
+  abertos.forEach(it => somar(agentesDo(it)[0] || agenteDe(it.s), "pend"));
+  const atencao = TODOS.filter(it => it.tipo === "form" && (motivoUrgente(it.s) || faltaDados(it.s).length))
+    .sort((x, y) => String(x.s.prazo?.vence || "9") < String(y.s.prazo?.vence || "9") ? -1 : 1).slice(0, 6);
+  return `<section class="resumo-dia" aria-label="Resumo do dia">
+    <div class="rd-cab"><h1>${pn.resumo === "ontem" ? "Resumo de ontem" : "Resumo de hoje"}</h1>
+      <span class="sub">${esc(nomeDia)} · comparado com o mesmo dia da semana anterior</span>
+      <div class="seg-rd" role="group" aria-label="Dia do resumo">
+        <button type="button" data-rd="ontem" aria-pressed="${pn.resumo === "ontem"}">Ontem</button>
+        <button type="button" data-rd="hoje" aria-pressed="${pn.resumo === "hoje"}">Hoje</button></div></div>
+    <div class="rd-kpis">
+      <div class="rd-kpi"><small>Pedidos recebidos</small><b>${a.recebidos.length}</b><span>${varPct(a.recebidos.length, b.recebidos.length) || "pelo formulário"}</span></div>
+      <div class="rd-kpi"><small>NFs enviadas</small><b>${a.nfs}</b><span>${varPct(a.nfs, b.nfs) || "pelo Painel e Outlook"}</span></div>
+      <div class="rd-kpi"><small>Enviadas no prazo</small><b>${a.noPrazo == null ? "—" : a.noPrazo + "%"}</b><span>${b.noPrazo == null ? "prazo de 48 h" : `era ${b.noPrazo}%`}</span></div>
+      <div class="rd-kpi"><small>Tempo até a NF</small><b>${fmtH(a.mediana)}</b><span>mediana${b.mediana != null ? ` · era ${fmtH(b.mediana)}` : ""}</span></div>
+      <div class="rd-kpi"><small>Ficaram para ${pn.resumo === "ontem" ? "hoje" : "amanhã"}</small><b>${abertos.length}</b><span class="${vencidos ? "desce" : ""}">${vencidos ? vencidos + " já vencido" + (vencidos > 1 ? "s" : "") : "nenhum vencido"}</span></div>
+    </div>
+    <div class="rd-grade">
+      <div class="rd-painel"><div class="rd-tit"><b>Precisa de atenção ${pn.resumo === "ontem" ? "hoje" : "agora"}</b><small>urgentes e com dado faltando</small></div>
+        ${atencao.length ? atencao.map(it => `<button type="button" class="rd-lin" data-abrir-ficha="${esc(it.s.chave)}">
+          <span class="rd-nome"><b>${esc(it.s.nome)}</b><small>${esc(it.s.hotel)} · ${esc(agentesDo(it)[0] || "")}</small></span>
+          <span class="tags-nf">${tagsPedido(it.s)}</span><span class="rd-pz">${it.s.prazo ? prazoHtml(it.s.prazo) : ""}</span></button>`).join("")
+          : `<div class="vazio">Nada urgente nem com dado faltando.</div>`}</div>
+      <div class="rd-painel"><div class="rd-tit"><b>Equipe ${pn.resumo === "ontem" ? "ontem" : "hoje"}</b><small>pedidos e notas</small></div>
+        <table class="rd-tab"><thead><tr><th>Agente</th><th class="n">Recebidos</th><th class="n">NFs</th><th class="n">No prazo</th><th class="n">Pendentes</th></tr></thead>
+        <tbody>${Object.entries(porAgente).filter(([ag]) => ag !== "Sem agente").sort((x, y) => x[0].localeCompare(y[0])).map(([ag, v]) =>
+          `<tr><td>${esc(ag)}</td><td class="n">${v.rec || 0}</td><td class="n">${v.nfs || 0}</td><td class="n">${v.prazo[1] ? Math.round(100 * v.prazo[0] / v.prazo[1]) + "%" : "—"}</td><td class="n">${v.pend || 0}</td></tr>`).join("")
+          || `<tr><td colspan="5" class="vazio">Sem movimento.</td></tr>`}</tbody></table></div>
+    </div></section>`;
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-rd]"); if (b) { pn.resumo = b.dataset.rd; desenharVisao(); } });
+
 function desenharVisao() {
   const el = $("visao");
   if (!st.atualizado_em) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
@@ -308,7 +373,7 @@ function desenharVisao() {
         const c = linhaOp(v);
         return `<tr data-escopo="${esc(v)}" class="${escopoAtual() === v ? "sel" : ""}"><td>${v === "todos" ? "Total" : esc(v)}</td>${c.map((x, k) =>
           `<td class="num">${(k === 2 || k === 5) && x ? `<span class="ruim-txt">${n(x)}</span>` : n(x)}</td>`).join("")}</tr>`; }).join("")}</tbody></table></div>`;
-  el.innerHTML = `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
+  el.innerHTML = resumoDiaHtml() + `<div class="cab-pagina"><div style="display:flex;flex-direction:column;gap:4px;margin-right:auto"><h1>Visão geral</h1>
       <span class="resumo-tela">Agora, no Outlook · ${esc(quem)}</span></div>
       <div class="grupo" style="display:flex;align-items:center;gap:10px">
         <div class="seg-op" role="group" aria-label="Operador">${segOperadores(null)}</div></div></div>
@@ -752,8 +817,9 @@ async function enviarNF(contaForcada, jaConferido = false) {
     if (c.avisos?.length) {
       $("nf-ir").disabled = false;
       const box = $("nf-conferir");
-      box.innerHTML = `<b>⚠ Confira antes de enviar</b>${c.avisos.map(a => `<div>${esc(a)}</div>`).join("")}
-        <div class="acoes-q"><button class="perigo" id="nf-enviar-mesmo">Enviar mesmo assim</button><button id="nf-corrigir">Voltar e corrigir</button></div>`;
+      // prévia v2: só aparece quando tem problema; o que está certo não ocupa espaço
+      box.innerHTML = `<b>${c.avisos.length} ponto${c.avisos.length > 1 ? "s" : ""} para conferir antes de enviar</b>${c.avisos.map(a => `<div>${esc(a)}</div>`).join("")}
+        <div class="acoes-q"><button class="dest" id="nf-enviar-mesmo">Conferi, pode enviar</button><button id="nf-corrigir">Voltar e corrigir</button></div>`;
       box.classList.remove("oculta"); box.scrollIntoView({ block: "nearest" });
       $("nf-enviar-mesmo").onclick = () => { box.classList.add("oculta"); enviarNF(contaForcada, true); };
       $("nf-corrigir").onclick = () => box.classList.add("oculta");

@@ -1282,6 +1282,51 @@ button.dest,.acoes button.dest{background:var(--atencao-fundo)!important;border-
 .ficha-form.orig > summary::-webkit-details-marker{display:none}
 .ficha-form.orig > summary u{color:var(--verde-texto)}
 .ficha-form.orig[open] > dl{margin-top:12px}
+/* Caixa de entrada v2: tags na lista e faixa do pedido acima do e-mail */
+.cx-l3{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.cx-pedido{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin:16px 24px 0;padding:12px 16px;background:var(--creme);
+  border:1px solid var(--creme-borda);border-radius:8px;font-size:13px}
+.cx-pedido > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cx-pedido small{font:600 10px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--creme-tinta)}
+.cx-pedido b{font-weight:500;color:var(--tinta)}
+.cx-pedido b.ok{color:var(--ok)}.cx-pedido b.atn{color:var(--atencao)}
+.cx-abrir-ficha{margin-left:auto;border:1px solid var(--linha-forte);background:var(--folha);color:var(--tinta);border-radius:6px;
+  padding:7px 12px;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.cx-abrir-ficha:hover{border-color:var(--verde-texto)}
+/* Envio da NF v2: conferência em âmbar, só quando tem problema */
+#nf-conferir{background:var(--atencao-fundo)!important;border:1px solid var(--atencao)!important;border-left-width:1px!important;color:var(--tinta)!important;border-radius:8px}
+#nf-conferir > b{color:var(--atencao)}
+/* Visão geral v2: resumo do dia no topo */
+.resumo-dia{display:flex;flex-direction:column;gap:16px;margin-bottom:28px;padding-bottom:26px;border-bottom:1px solid var(--linha)}
+.rd-cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}
+.rd-cab h1{margin:0;font-size:22px}
+.rd-cab .sub{font-size:13px;color:var(--tinta-3)}
+.seg-rd{margin-left:auto;display:inline-flex;border:1px solid var(--linha-forte);border-radius:7px;overflow:hidden}
+.seg-rd button{border:0;background:var(--folha);padding:7px 14px;font:inherit;font-size:12.5px;color:var(--tinta-2);cursor:pointer}
+.seg-rd button + button{border-left:1px solid var(--linha-forte)}
+.seg-rd button[aria-pressed="true"]{background:var(--verde-suave);color:var(--tinta);font-weight:600}
+.rd-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.rd-kpi{background:var(--folha);border:1px solid var(--linha);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+.rd-kpi small{font:600 10.5px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
+.rd-kpi b{font:600 26px var(--f-dado,"IBM Plex Mono");color:var(--tinta);font-variant-numeric:tabular-nums}
+.rd-kpi span{font-size:12px;color:var(--tinta-2)}
+.rd-kpi em{font-style:normal;font-weight:600}
+.sobe{color:var(--ok)}.desce{color:var(--erro)}
+.rd-grade{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
+.rd-painel{background:var(--folha);border:1px solid var(--linha);border-radius:8px;overflow:hidden;min-width:0}
+.rd-tit{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--linha)}
+.rd-tit b{font-size:14px}.rd-tit small{font-size:12px;color:var(--tinta-3)}
+.rd-lin{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 130px;gap:12px;align-items:center;width:100%;padding:11px 18px;
+  border:0;border-bottom:1px solid var(--linha);background:transparent;color:var(--tinta);font:inherit;text-align:left;cursor:pointer}
+.rd-lin:hover{background:var(--folha-2)}
+.rd-nome{display:flex;flex-direction:column;min-width:0}.rd-nome b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-nome small{font-size:12px;color:var(--tinta-3)}
+.rd-pz{text-align:right}
+.rd-tab{width:100%;border-collapse:collapse;font-size:13px}
+.rd-tab th{text-align:left;font:600 10.5px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);padding:10px 18px;border-bottom:1px solid var(--linha)}
+.rd-tab td{padding:10px 18px;border-bottom:1px solid var(--linha)}
+.rd-tab .n{text-align:right;font-family:var(--f-dado,"IBM Plex Mono")}
+@media (max-width:1100px){.rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rd-grade{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
