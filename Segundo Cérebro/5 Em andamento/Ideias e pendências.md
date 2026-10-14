@@ -38,3 +38,9 @@ tags: [cerebro/andamento]
 - [x] Abas de agente, telas mais limpas, página que nunca chega pela metade (11/10)
 
 > João: escreva aqui qualquer ideia nova, do jeito que vier.
+
+## Ideia do João (14/10/2026) — aba de correção da NF
+- [ ] **E-mail com a tag "Pedido de correção" abre diferente**: em vez da leitura normal do e-mail (Caixa de entrada / Urgência), abre uma **aba própria para verificar a correção da nota**. Exemplo real que motivou: hóspede recebeu 2 NFs (1464 certa, 1478 errada) e pede o cancelamento da 1478.
+  - O João vai explicar os detalhes depois. **Não codar antes disso.**
+  - Ponto de partida no código: `correio.js` → `desenharLeituraCorreio` (classe `corrigir` nas `classes` do e-mail; a "Verificação da NF" de hoje vem de `analise_nf`).
+
