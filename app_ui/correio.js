@@ -180,7 +180,7 @@ function desenharAcoes() {
 function linhaEmail(e) {
   const enviado = e.pasta === "enviado", excluido = e.pasta === "excluido";
   const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
-  const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de);
+  const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de || (e.classes?.includes("aviso") ? "Aviso do Outlook" : "(sem remetente)"));
   const situacao = cinza || e.respondido ? " · respondido" : excluido ? " · excluído" :
     e.classes?.includes("formulario") ? " · solicitação do formulário" : e.classes?.includes("aviso") ? " · aviso do Outlook" : enviado && e.via ? (e.via === "painel" ? " · pelo Painel" : " · pelo Outlook") : "";
   return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"

@@ -3,16 +3,21 @@
 let pn = { vista: "visao", janela: 30, rz: null, tabela: {} };   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
-const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Log do robô", maquinas: "Máquinas", correio: "E-mails",
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
                   gerencia: "Gerência (em teste)" };
 function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
   pn.vista = v;
   for (const id of Object.keys(TITULOS)) $("v-" + id).classList.toggle("oculta", id !== v);
   $("trilha").textContent = v === "correio" ? "E-mails / " + CAIXAS[cx.caixa] : TITULOS[v];
+  document.querySelectorAll(".abas-monit").forEach(n => { n.innerHTML = [["maquinas", "", "Máquinas"], ["log", "tudo", "Log do robô"],
+      ["log", "entrada", "Entradas"], ["log", "saida", "Saídas"], ["log", "sistema", "Atualizações"]].map(([vv, lg, nome]) =>
+      `<button type="button" data-vista="${vv}" ${lg ? `data-log="${lg}"` : ""} aria-current="${vv === v && (vv !== "log" || lg === at.aba)}">${nome}</button>`).join("") +
+      `<span class="adm">Só o administrador vê</span>`; });
   document.querySelectorAll(".ln[data-vista]").forEach(b =>
     b.setAttribute("aria-current", String(b.dataset.vista === v && (v !== "log" || b.dataset.log === at.aba)
                                           && (v !== "correio" || b.dataset.caixa === cx.caixa))));
+  if (v === "log") $("nav-maquinas")?.setAttribute("aria-current", "true");   // Log e Máquinas = uma entrada no menu
   $("seletor-caixa")?.classList.toggle("oculta", !["fila", "correio"].includes(v));   // "Caixa de" só onde filtra (usuário, 14/10/2026)
   $("busca").placeholder = "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…";
   if (v !== "correio") $("topo-filtro").innerHTML = "";   // o filtro do topo é dos e-mails

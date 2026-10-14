@@ -1422,6 +1422,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
+                    "admin": nome_do_agente() in (estado.cfg.get("painel", {}).get("admins") or ["João"]) or bool(getattr(estado, "so_ver", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 })
             if url.path == "/api/envio":

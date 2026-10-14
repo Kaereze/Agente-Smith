@@ -67,7 +67,7 @@ URGENCIA_DIAS = 7                 # sem resposta há mais que isso: aba Urgênci
 MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
-VERSAO_ESTADO = 4   # 4: espelho literal, com respondidos, formulário e avisos (14/10/2026) — relê tudo 1 vez
+VERSAO_ESTADO = 5   # 5: espelho literal + data certa dos avisos do Outlook (14/10/2026) — relê tudo 1 vez
 MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
 MAX_CITADO = 8000
 MAX_TEXTO_ENVIADO = 4000
@@ -602,7 +602,8 @@ class Espelho:
         if i in self.itens:
             return
         if getattr(item, "Class", 43) != 43:   # recibo de leitura, aviso de entrega, convite: está na caixa, entra
-            quando = _data(getattr(item, "ReceivedTime", None) or getattr(item, "CreationTime", None))
+            datas = [_data(getattr(item, c, None)) for c in ("ReceivedTime", "CreationTime")]
+            quando = next((d for d in datas if d and d.year < 2100), None)   # o Outlook usa 01/01/4501 pra "sem data"
             if quando:
                 self.itens[i] = {"id": i, "entry_id": item.EntryID, "pasta": ENTRADA, "caixa": caixa,
                                  "hotel": caixas.get(caixa, ""), "de": "", "nome": "Aviso do Outlook", "para": caixa,
