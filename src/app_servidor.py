@@ -1365,7 +1365,9 @@ class Estado:
     def hoteis_por_agente(self):
         """[{hotel, agente}] do Cadastro_Hoteis (sem os ignorados): filtros de hotel e agente da caixa."""
         ign = self._ignorados()
-        return [{"hotel": h, "agente": self.cadastro.dados(h).get("agente", "")} for h in self.cadastro.nomes() if h not in ign]
+        return [{"hotel": h, "agente": self.cadastro.dados(h).get("agente", ""),
+                 "email": str(self.cadastro.dados(h).get("email", "")).strip().lower()}   # caixa do hotel (pastas dos e-mails)
+                for h in self.cadastro.nomes() if h not in ign]
 
     def _fila_do_painel(self):
         ign = self._ignorados()

@@ -9,6 +9,11 @@ function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
   pn.vista = v;
   for (const id of Object.keys(TITULOS)) $("v-" + id).classList.toggle("oculta", id !== v);
+  // E-mails igual ao Outlook (usuário, 15/10/2026): só ícones na esquerda e as cores da prévia aprovada
+  const app = document.querySelector(".app");
+  let fechadoPref = false; try { fechadoPref = localStorage.getItem("painel.menuFechado") === "1"; } catch (e) {}
+  app.classList.toggle("modo-ol", v === "correio");
+  app.classList.toggle("menu-fechado", v === "correio" || fechadoPref);
   $("trilha").textContent = v === "correio" ? "E-mails / " + CAIXAS[cx.caixa] : TITULOS[v];
   document.querySelectorAll(".abas-monit").forEach(n => { n.innerHTML = [["maquinas", "", "Máquinas"], ["log", "tudo", "Log do robô"],
       ["log", "entrada", "Entradas"], ["log", "saida", "Saídas"], ["log", "sistema", "Atualizações"]].map(([vv, lg, nome]) =>

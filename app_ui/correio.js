@@ -4,7 +4,8 @@
 // Outlook do PC dono por trás, sem abrir janela. A busca vai direto ao Outlook dos 4 PCs. Usa api/$/esc/toast/st.
 let cx = { caixa: "entrada", dados: null, sel: null, hist: {}, textos: {}, hotel: "", live: null, buscando: "",
            resolvendo: {}, escondidos: {}, desfazer: null, manterNaoLido: {}, timerBusca: null, conv: {},
-           soNaoLidos: false, fechados: {} };   // Todas / Não lidos e os grupos de caixas recolhidos (igual ao Outlook, 15/10/2026)
+           soNaoLidos: false, fechados: {}, caixaSel: "", soForm: false, pcsAbertos: {}, pcsTodas: {}, aba: "inicio",
+           semPastas: false, menu: false };   // igual ao Outlook (15/10/2026): pasta escolhida, faixa e menus
 const CAIXAS = { entrada: "Caixa de entrada", urgencia: "Urgência", enviados: "Itens enviados" };
 const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["Nota complementar", "atencao"],
   cobranca: ["Cobrança", "atencao"], dados_tomador: ["Dados do tomador", "info"], pedido_nf: ["Pedido de NF", "ok"] };
@@ -70,7 +71,8 @@ function itensDaTela(busca) {
       .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
-  const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false));
+  const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false)
+    && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario")));
   return lista;   // o mais recente primeiro também na Urgência (usuário, 09/10/2026)
 }
 
@@ -93,17 +95,24 @@ function desenharCorreio() {
     + (cx.hotel ? ` · ${esc(cx.hotel)}` : "") + statusBusca(busca);
   desenharFiltroHotel();
   desenharPastas();
-  if ($("cx-lcab")) $("cx-lcab").innerHTML = busca ? `<span class="cx-ord">Resultado da pesquisa no Outlook dos 4 PCs</span>` :
+  desenharFaixa();
+  const nomePasta = cx.caixaSel ? nomeDaCaixa(cx.caixaSel) : "";
+  const titulo = busca ? "Resultado da pesquisa" : cx.soForm ? "Formulários do robô" :
+    (cx.caixa === "enviados" ? "Itens Enviados" : cx.caixa === "urgencia" ? "Urgência" : "Caixa de Entrada") + (nomePasta ? " · " + nomePasta : "");
+  if ($("cx-lcab")) $("cx-lcab").innerHTML = `<div class="ol-lcab">` + (busca ? `<span class="ol-ord">no Outlook dos 4 PCs</span>` :
     `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos}">Todas</button>` +
     (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
-    `<span class="cx-ord">${esc(cx.hotel || CAIXAS[cx.caixa])} · por data ↓</span>`;
+    `<span class="ol-ord">Por Data ↓</span>`) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b> · ${lista.length.toLocaleString("pt-BR")} itens` +
+    (naoLidos ? ` · ${naoLidos.toLocaleString("pt-BR")} não lidos` : "") + `</div>`;
+  if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span>Itens: ${lista.length.toLocaleString("pt-BR")}</span><span>Não lidos: ${naoLidos.toLocaleString("pt-BR")}</span>`;
+  $("v-correio").classList.toggle("sem-pastas", !!cx.semPastas);
   // a lista é refeita a cada 15 s: quem estava com o foco numa linha continua nela
   const focada = document.activeElement?.closest?.("#cx-lista .cx-l");
   const idFoco = focada?.dataset.id;
   let grupo = "", html = "";
   for (const e of lista) {
     const g = cx.caixa === "urgencia" && !busca ? "" : grupoData(e.quando);
-    if (g && g !== grupo) { html += `<div class="cx-grupo">${g}</div>`; grupo = g; }
+    if (g && g !== grupo) { html += `<div class="cx-grupo">▾ ${g}</div>`; grupo = g; }
     html += linhaEmail(e);
   }
   const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
@@ -185,32 +194,34 @@ function desenharAcoes() {
 
 // Lista limpa (usuário, 11/10/2026: "muita informação dentro de uma só"): 2 linhas como o Outlook — quem mandou e a
 // hora; o assunto e o hotel pequeno. Prazo, etiquetas, análise da NF e prévia ficam no e-mail aberto.
-function linhaEmail(e) {
-  const enviado = e.pasta === "enviado", excluido = e.pasta === "excluido";
+function linhaEmail(e) {   // igual à prévia aprovada (15/10/2026): quem, assunto, hora, prévia e etiquetas
+  const enviado = e.pasta === "enviado";
   const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
-  const quem = enviado ? "Para: " + (e.para || "") : (e.nome || e.de || (e.classes?.includes("aviso") ? "Aviso do Outlook" : "(sem remetente)"));
-  const situacao = cinza || e.respondido ? " · respondido" : excluido ? " · excluído" :
-    e.classes?.includes("formulario") ? " · solicitação do formulário" : e.classes?.includes("aviso") ? " · aviso do Outlook" : enviado && e.via ? (e.via === "painel" ? " · pelo Painel" : " · pelo Outlook") : "";
+  const quem = enviado ? "Para: " + (e.para || "") : (e.classes?.includes("formulario") ? "Formulário · robô" :
+    e.nome || e.de || (e.classes?.includes("aviso") ? "Aviso do Outlook" : "(sem remetente)"));
+  const situacao = cinza || e.respondido ? "respondido · " : e.pasta === "excluido" ? "excluído · " : "";
+  const previa = situacao + (e.hotel ? e.hotel + " · " : "") + (e.previa || "");
+  const clip = (e.anexos || []).length ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="tem anexo"><path d="M21 11l-9 9a6 6 0 01-8-8l9-9a4 4 0 016 6l-9 9a2 2 0 01-3-3l8-8"/></svg>` : "";
   return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
       aria-selected="${sel}" data-id="${esc(e.id)}" title="${e.urgente ? esc(e.motivo_urgencia || "Urgente") : ""}">
-    <div class="cx-l1">${e.urgente && !cinza ? `<span class="cx-ponto" aria-label="urgente"></span>` : ""}<span class="cx-quem">${esc(quem)}</span>
-      <span class="cx-hora">${horaCurta(e.quando)}</span></div>
-    <div class="cx-l2">${esc(e.assunto || "(sem assunto)")}<span class="cx-onde"> · ${esc(e.hotel || "")}${situacao}</span>${e.pc ? opMini(nomeAgente(e.pc)) : ""}</div>
-    ${tagsEmail(e, cinza)}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
+    <span class="it-de">${esc(quem)}</span><span class="it-ic">${e.urgente && !cinza ? `<span class="urg" aria-label="urgente"></span>` : ""}${clip}</span>
+    <span class="it-as">${esc(e.assunto || "(sem assunto)")}</span><time>${horaCurta(e.quando)}</time>
+    <span class="it-pv">${esc(previa)}</span>${tagsEmail(e, cinza)}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
 // Tags da repaginação v2 (usuário, 14/10/2026): só urgência, nota dividida e falta de dados
 function pedidoDoEmail(e) {
   return e.solicitacao && typeof acharPedido === "function" ? acharPedido(e.solicitacao.chave) : null;
 }
 function tagsEmail(e, cinza) {
-  if (e.pasta !== "entrada" || cinza || e.respondido) return "";
+  if ((e.pasta && e.pasta !== "entrada") || cinza || e.respondido) return "";
   const s = pedidoDoEmail(e), falta = s && typeof faltaDados === "function" ? faltaDados(s) : [];
   const urg = e.urgente ? (/dias sem resposta/.test(e.motivo_urgencia || "") ? e.motivo_urgencia.replace(/^(\d+) dias sem resposta$/, "Sem resposta há $1 dias")
     : /corre/i.test(e.motivo_urgencia || "") ? "Pedido de correção" : "Urgente") : "";
   const tags = (urg ? `<span class="tg t-urg">${esc(urg)}</span>` : "") +
     (falta.length ? `<span class="tg t-falta">Falta: ${esc(falta[0])}${falta.length > 1 ? ` +${falta.length - 1}` : ""}</span>` : "") +
     ((e.quartos?.[0] || e.quartos || 0) >= 2 ? `<span class="tg t-div">Nota dividida</span>` : "");
-  return tags ? `<div class="cx-l3">${tags}</div>` : "";
+  const form = (e.classes || []).includes("formulario") ? `<span class="tg t-form">Formulário</span>` : "";
+  return tags || form ? `<div class="it-tg">${tags}${form}</div>` : "";
 }
 // Faixa do pedido ligado ao e-mail, acima dele (prévia v2): prazo, o que falta, quem cuida, abrir a ficha
 function faixaPedido(e) {
@@ -389,38 +400,90 @@ window.addEventListener("keydown", ev => {   // com o visor aberto, as teclas s�
     visor.i = (visor.i + (ev.key === "ArrowRight" ? 1 : -1) + n) % n; desenharVisor(); }
 }, true);
 
+const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const IC = { resp: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v5"/>', todos: '<path d="M7 14L2 9l5-5"/><path d="M12 14L7 9l5-5"/><path d="M7 9h9a5 5 0 015 5v5"/>',
+  enc: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 00-5 5v5"/>', lixo: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  arq: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/>', mover: '<path d="M3 7h7l2 2h9v10H3z"/>',
+  lido: '<path d="M3 9l9-6 9 6v10H3z"/><path d="M3 9l9 6 9-6"/>', band: '<path d="M5 21V4h11l-2 4 2 4H5"/>', nf: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  sync: '<path d="M20 11a8 8 0 00-14-5L4 8M4 4v4h4M4 13a8 8 0 0014 5l2-2M20 20v-4h-4"/>', novo: '<path d="M12 5v14M5 12h14"/>',
+  env: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>', pastas: '<path d="M3 6h7l2 2h9v11H3z"/>', tema: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
+  chapeu: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>', caixa: '<path d="M3 13h5l1 3h6l1-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/>',
+  alerta: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>', form: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9.5 15h5M9.5 12h5"/>' };
+// Faixa de comandos do Outlook, com as 3 abas do topo (Página Inicial · Enviar/Receber · Exibir)
+function desenharFaixa() {
+  const el = $("cx-faixa");
+  if (!el) return;
+  document.querySelectorAll("[data-ol-aba]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.olAba === cx.aba)));
+  const bt = (attr, ic, txt, extra = "") => `<button type="button" ${attr} ${extra}>${SVG(IC[ic])} ${txt}</button>`;
+  const nao = "disabled title=\"Ainda não dá pelo Painel: faça no Outlook\"";
+  el.innerHTML = cx.aba === "enviar" ? bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas as pastas") + bt('data-ol-acao="pendentes"', "env", "Enviar solicitações pendentes")
+    : cx.aba === "exibir" ? bt('data-ol-acao="pastas"', "pastas", cx.semPastas ? "Mostrar as pastas" : "Esconder as pastas") +
+      bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
+    : `<button type="button" class="p" id="cx-novo" title="Escrever um e-mail novo ao hóspede, saindo da caixa do hotel">${SVG(IC.novo)} Novo e-mail</button><span class="sep"></span>` +
+      bt('data-cx-faixa="exc"', "lixo", "Excluir", 'title="Delete"') + bt("", "arq", "Arquivar", nao) + bt("", "mover", "Mover ▾", nao) + `<span class="sep"></span>` +
+      bt('data-cx-faixa="resp"', "resp", "Responder", 'title="Ctrl+R"') + bt('data-cx-faixa="resp"', "todos", "Responder a todos") + bt('data-cx-faixa="enc"', "enc", "Encaminhar", 'title="Ctrl+F"') +
+      `<span class="sep"></span>` + bt('data-cx-faixa="lido"', "lido", "Não lido/Lido", 'title="Ctrl+U / Ctrl+Q"') + bt("", "band", "Sinalizar", nao) +
+      `<div class="dir">${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
+}
+const hotelDaCaixa = c => (st.hoteis || []).filter(h => h.email === c).map(h => h.hotel).join(" / ");
+const nomeDaCaixa = c => hotelDaCaixa(c) || String(c).split("@")[1]?.replace(/^(redeandrade|hotel)/, "").replace(/(hotel)?\.com(\.br)?$/, "").toUpperCase() || c;
+// Ficha do pedido (creme), no topo do e-mail como na prévia: tomador, documento, o que pede, nota, prazo e os 3 botões
+function fichaPedidoOl(e) {
+  const s = pedidoDoEmail(e);
+  if (!s) return e.solicitacao ? `<section class="ol-ficha"><div class="ft"><b>Ficha do pedido</b> · ${esc(e.solicitacao.hotel || "")} · formulário de
+    ${esc(String(e.solicitacao.data || "").split("-").reverse().join("/"))} · pedido antigo, fora da lista de Notas fiscais</div></section>` : "";
+  const tom = campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/);
+  const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
+  const pede = campoDoPedido(s, /informac/, /o que.*nota/, /itens/);
+  const v = (x, dado) => x ? `<span>${esc(x)}</span>` : `<span class="falta">falta pedir</span>`;
+  const i = prazoInfo(s.prazo);
+  const barra = i ? Math.max(4, Math.min(100, Math.round(100 * i.resta / (s.prazo.horas || 48)))) : 0;
+  return `<section class="ol-ficha" aria-label="Ficha do pedido"><div class="ft"><b>Ficha do pedido</b> · ${esc(s.hotel)}${s.dono ? " · com " + esc(s.dono) : ""}
+      ${i ? `<span class="prz ${i.nivel}">prazo: ${esc(i.texto)} <i><b style="width:${barra}%"></b></i></span>` : ""}</div>
+    <div class="fg"><div><small>Tomador</small>${v(tom)}</div><div><small>CNPJ / CPF</small>${v(doc, true)}</div>
+      <div><small>O que pede</small>${v(pede)}</div><div><small>Nota</small><span>${s.dividida || s.partes > 1 ? `Dividida em ${Math.max(s.partes || 2, 2)}` : "Única"}${s.nfs?.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span></div></div>
+    <div class="fb"><button type="button" class="p" data-cx-faixa="nf">Enviar NF</button>
+      ${faltaDados(s).length ? `<button type="button" data-pedir-dados="${esc(s.chave)}">Pedir o que falta</button>` : ""}
+      <button type="button" data-abrir-ficha="${esc(s.chave)}">Marcar tratativa</button></div></section>`;
+}
 function desenharLeituraCorreio() {
   desenharAcoes();
   const el = $("cx-leitura");
   if (typeof envNF !== "undefined" && envNF && envNF.alvo === el) return;   // escrevendo uma resposta: não apaga
   const e = cx.sel && itemSelecionado();
-  if (!e) {   // a leitura fica sempre à direita, como no Outlook (o topo da página não some: é onde está a pesquisa)
-    el.innerHTML = `<div class="cx-ler-vazio"><svg aria-hidden="true"><use href="#i-mail"/></svg><b>Selecione um e-mail para ler</b>
+  if (!e) {   // a leitura fica sempre à direita, como no Outlook
+    el.innerHTML = `<div class="ol-vazio"><svg aria-hidden="true"><use href="#i-mail"/></svg><b>Selecione um e-mail para ler</b>
       <span>Clique numa linha da lista · as setas ↑ ↓ andam pelos e-mails</span></div>`;
     return;
   }
   if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA|SUMMARY/.test(document.activeElement.tagName)) return;
-  const enviado = e.pasta === "enviado";
+  const enviado = e.pasta === "enviado", robo = (e.classes || []).includes("formulario");
   const h = !enviado && e.de ? cx.hist[e.de] : null;
-  el.innerHTML = `${enviado ? "" : faixaPedido(e)}
-    <div class="cx-msg">
-      <h2>${esc(e.assunto || "(sem assunto)")}</h2>
-      ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
-        <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
-      ${verificacaoHtml(e)}
-      <div class="cx-ficha">
-        <div class="cx-fl"><span>De</span><span>${enviado ? esc(e.caixa) : `<b>${esc(e.nome || e.de)}</b> &lt;${esc(e.de)}&gt;`}</span></div>
-        <div class="cx-fl"><span>Para</span><span>${esc(enviado ? e.para : e.caixa || e.para)}</span></div>
-        <div class="cx-fl"><span>Data</span><span>${esc(dataLonga(e.quando))}</span></div>
-        <div class="cx-fl"><span>Hotel</span><span>${esc(e.hotel || "")}${e.pc ? ` · caixa no PC de ${esc(nomeAgente(e.pc))}${e.pc && !pcOnline(e.pc) ? " (desligado: o que for pedido sai quando ele ligar)" : ""}` : ""}</span></div>
-        ${(e.classes || []).length ? `<div class="cx-fl"><span>Assunto</span><span>${e.classes.map(etiqueta).join("")}</span></div>` : ""}
-        ${e.pasta === "entrada" && e.prazo ? `<div class="cx-fl"><span>Prazo</span><span>${prazoHtml(e.prazo)} · ${esc(e.prazo.nome)} (${e.prazo.horas} h, contado do 1º e-mail sem resposta)</span></div>` : ""}
-        ${e.lido_por ? `<div class="cx-fl"><span>Lido</span><span>por ${esc(e.lido_por)} às ${esc(String(e.lido_em).slice(11, 16))}</span></div>` : ""}
-      </div>
-      ${avisoNfJaEnviada(h)}
-      ${corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}
-      ${h ? historicoHtml(h, e) : ""}
-    </div>`;
+  const noEspelho = (cx.dados?.emails || []).some(x => x.id === e.id), cinza = !!cx.resolvendo[e.id];
+  const nome = enviado ? nomeDaCaixa(String(e.caixa || "").toLowerCase()) : robo ? "Robô do formulário" : (e.nome || e.de || "");
+  const ender = enviado ? e.caixa : e.de;
+  const para = enviado ? e.para : (e.caixa || e.para || "");
+  const onde = [e.hotel, e.pc ? "PC de " + nomeAgente(e.pc) + (pcOnline(e.pc) ? "" : " (desligado)") : ""].filter(Boolean).join(" · ");
+  const botoes = noEspelho && !cinza ? `<div class="ol-bts"><button type="button" data-cx-faixa="resp">${SVG(IC.resp)} Responder</button>
+      <button type="button" data-cx-faixa="resp">${SVG(IC.todos)} Responder a todos</button><button type="button" data-cx-faixa="enc">${SVG(IC.enc)} Encaminhar</button>
+      <button type="button" data-ol-menu aria-label="Mais ações" aria-expanded="${cx.menu}">⋯</button></div>
+      ${cx.menu ? `<div class="ol-menu" role="menu"><button type="button" data-cx-faixa="nf">Responder com a NF</button>
+        <button type="button" data-cx-faixa="lido">${e.lido === false ? "Marcar como lido" : "Marcar como não lido"}</button>
+        <button type="button" class="perigo" data-cx-faixa="exc">Excluir</button></div>` : ""}`
+    : `<span class="ol-sit">${cinza ? "Respondido · sai da caixa quando o Outlook do PC dono confirmar" : enviado ? "E-mail enviado · só leitura" : (PASTAS[e.pasta] || "") + " no Outlook · só leitura"}</span>`;
+  el.innerHTML = `<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+      <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome).slice(0, 1))}</span>
+        <div class="ol-q"><b>${esc(nome)} ${ender ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span>Para <i>${esc(para)}</i>${onde ? " · " + esc(onde) : ""}</span>
+          ${(e.classes || []).filter(c => CLASSES[c]).length ? `<span>${e.classes.map(etiqueta).join(" ")}</span>` : ""}</div>
+        <div class="ol-acoes">${botoes}<time>${esc(dataLonga(e.quando))}</time>
+          <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div></div>
+    ${enviado ? "" : fichaPedidoOl(e)}
+    ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
+      <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
+    ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
+    ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
+    <div class="ol-corpo">${corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}</div>
+    ${h ? historicoHtml(h, e) : ""}`;
 }
 
 // Verificação da NF (Etapa 2): 1 motivo principal em destaque, o que a NF diz, a comparação e o resto que ele citou
@@ -537,32 +600,68 @@ function correioRespondido(idEmail) {
   if (pn.vista === "correio") desenharCorreio();
 }
 
-// Caixas de entrada à esquerda, como as pastas do Outlook (usuário, 15/10/2026: "só as caixas de entrada"):
-// todas as caixas no alto e, por agente, a caixa de cada hotel com os não lidos. Clicar filtra a lista.
+// Pastas à esquerda, como a prévia aprovada (15/10/2026): Favoritos e, por PC, a caixa de cada hotel (nome + e-mail +
+// não lidos); a caixa escolhida abre a Caixa de Entrada e os Itens Enviados dela.
 function desenharPastas() {
   const el = $("cx-pastas");
   if (!el) return;
-  const naoLidos = {}, entrada = emailsDa("entrada");
-  entrada.forEach(e => { if (e.lido === false) (e.hotel || "").split(" / ").forEach(h => h && (naoLidos[h] = (naoLidos[h] || 0) + 1)); });
-  const total = entrada.filter(e => e.lido === false).length;
-  const grupos = {};
-  (st.hoteis || []).forEach(h => { if (doAgente([h.agente])) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
-  const n = v => v ? `<em>${v.toLocaleString("pt-BR")}</em>` : "";
-  el.innerHTML = `<button type="button" class="cx-pa todas ${cx.hotel ? "" : "on"}" data-cx-pasta="">
-      <svg class="ic" aria-hidden="true"><use href="#i-caixa"/></svg><span class="nm">Todas as caixas</span>${n(total)}</button>` +
-    Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b, "pt")).map(([ag, hs]) => {
-      const aberto = !cx.fechados[ag], soma = hs.reduce((s, h) => s + (naoLidos[h] || 0), 0);
-      return `<button type="button" class="cx-pg" data-cx-grupo="${esc(ag)}" aria-expanded="${aberto}"><span class="seta">▼</span>${esc(ag)}${soma ? `<small>${soma}</small>` : ""}</button>` +
-        (aberto ? hs.sort((x, y) => x.localeCompare(y, "pt")).map(h => `<button type="button" class="cx-pa ${naoLidos[h] ? "tem" : ""} ${cx.hotel === h ? "on" : ""}"
-          data-cx-pasta="${esc(h)}" title="Caixa de entrada · ${esc(h)}"><span class="nm">${esc(h)}</span>${n(naoLidos[h])}</button>`).join("") : "");
-    }).join("");
+  const entrada = emailsDa("entrada"), nl = {};
+  entrada.forEach(e => { if (e.lido === false) { const c = String(e.caixa || "").toLowerCase(); nl[c] = (nl[c] || 0) + 1; } });
+  const n = (v, cls = "") => v ? `<em class="${cls}">${v.toLocaleString("pt-BR")}</em>` : "";
+  const favAberto = !cx.fechados.__fav;
+  const fav = (k, ic, txt, v, on, cls) => `<button type="button" class="ol-fav ${on ? "on" : ""}" data-ol-fav="${k}">${SVG(IC[ic])}${txt}${n(v, cls)}</button>`;
+  const semPasta = !cx.caixaSel;
+  let h = `<button type="button" class="ol-gr" data-cx-grupo="__fav" aria-expanded="${favAberto}"><span class="chev">▼</span>Favoritos</button>` +
+    (favAberto ? fav("entrada", "caixa", "Caixa de Entrada (todas)", entrada.filter(e => e.lido === false).length, semPasta && cx.caixa === "entrada" && !cx.soForm) +
+      fav("urgencia", "alerta", "Urgência", emailsDa("urgencia").length, semPasta && cx.caixa === "urgencia", "r") +
+      fav("form", "form", "Formulários do robô", entrada.filter(e => (e.classes || []).includes("formulario") && e.lido === false).length, semPasta && cx.soForm) +
+      fav("enviados", "env", "Itens Enviados", 0, semPasta && cx.caixa === "enviados") : "") + `<hr class="ol-hr">`;
+  const pcs = (st.pcs || []).filter(p => doAgente([p.agente]));
+  const meu = cx.dados?.este_pc || "";
+  for (const p of pcs.sort((a, b) => (a.pc === meu ? -1 : b.pc === meu ? 1 : String(a.agente).localeCompare(String(b.agente), "pt")))) {
+    const contas = [...new Set((p.contas_lista || []).map(c => String(c).toLowerCase()))]
+      .map(c => ({ c, hotel: nomeDaCaixa(c), n: nl[c] || 0 })).sort((a, b) => a.hotel.localeCompare(b.hotel, "pt"));
+    const aberto = cx.pcsAbertos[p.pc] ?? (p.pc === meu || contas.some(x => x.c === cx.caixaSel) || pcs.length === 1);
+    const soma = contas.reduce((s, x) => s + x.n, 0);
+    h += `<div class="ol-pc" data-ol-pc="${esc(p.pc)}" title="${p.online ? "PC ligado" : "PC desligado"}">${esc(p.agente || p.pc)}<span>${esc(p.pc)}</span></div>`;
+    if (!aberto) { h += `<button type="button" class="ol-mais-cx fechado" data-ol-pc="${esc(p.pc)}"><span class="chev" style="transform:rotate(-90deg)">▼</span> ${contas.length} caixas${n(soma)}</button>`; continue; }
+    const todas = cx.pcsTodas[p.pc] || contas.length <= 6;
+    const mostrar = todas ? contas : contas.filter((x, i) => i < 4 || x.c === cx.caixaSel);   // como a prévia: 4 e "+ N caixas"
+    for (const x of mostrar) {
+      const on = x.c === cx.caixaSel;
+      h += `<button type="button" class="ol-cx ${x.n ? "tem" : ""}" data-ol-caixa="${esc(x.c)}" aria-expanded="${on}" title="${esc(x.c)}"><span class="chev">▼</span>
+        <span class="nm"><b>${esc(x.hotel)}</b><small>${esc(x.c.split(".com")[0])}</small></span>${n(x.n)}</button>`;
+      if (on) h += `<button type="button" class="ol-sub ${cx.caixa !== "enviados" ? "on" : ""}" data-ol-sub="entrada">Caixa de Entrada${n(x.n)}</button>
+        <button type="button" class="ol-sub ${cx.caixa === "enviados" ? "on" : ""}" data-ol-sub="enviados">Itens Enviados</button>`;
+    }
+    if (mostrar.length < contas.length) h += `<button type="button" class="ol-mais-cx" data-ol-todas="${esc(p.pc)}"><span class="chev" style="transform:rotate(-90deg)">▼</span> + ${contas.length - mostrar.length} caixas</button>`;
+  }
+  el.innerHTML = h;
 }
 try { cx.fechados = JSON.parse(localStorage.getItem("painel.caixasFechadas") || "{}") || {}; } catch (e) {}
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-cx-pasta],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa]");
-  if (!t) return;
+  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
+  if (!t) { if (cx.menu && !ev.target.closest(".ol-menu")) { cx.menu = false; desenharLeituraCorreio(); } return; }
   const d = t.dataset;
-  if (d.cxPasta !== undefined) { cx.hotel = d.cxPasta; cx.sel = null; return desenharCorreio(); }
+  if (d.olAba) { cx.aba = d.olAba; if (pn.vista !== "correio") trocarVista("correio"); return desenharFaixa(); }
+  if (d.olAcao) {
+    if (d.olAcao === "sync") { toast("Relendo as caixas dos 4 PCs…"); $("btn-atualizar")?.click(); carregarCorreio(); }
+    if (d.olAcao === "pendentes") $("btn-enviar")?.click();
+    if (d.olAcao === "pastas") { cx.semPastas = !cx.semPastas; desenharCorreio(); }
+    if (d.olAcao === "tema") $("btn-tema")?.click();
+    if (d.olAcao === "prof") $("btn-prof")?.click();
+    return;
+  }
+  if (d.olMenu !== undefined) { cx.menu = !cx.menu; return desenharLeituraCorreio(); }
+  if (d.olFav) {
+    cx.caixaSel = ""; cx.soForm = d.olFav === "form"; cx.caixa = d.olFav === "form" ? "entrada" : d.olFav; cx.sel = null; cx.hotel = "";
+    return trocarVista("correio");
+  }
+  if (d.olCaixa) { cx.caixaSel = cx.caixaSel === d.olCaixa && cx.caixa === "entrada" ? "" : d.olCaixa; cx.caixa = "entrada"; cx.soForm = false; cx.sel = null; cx.hotel = ""; return trocarVista("correio"); }
+  if (d.olSub) { cx.caixa = d.olSub; cx.sel = null; return trocarVista("correio"); }
+  if (d.olTodas) { cx.pcsTodas[d.olTodas] = true; return desenharPastas(); }
+  if (d.olPc) { const atual = $("cx-pastas").querySelector(`.ol-mais-cx.fechado[data-ol-pc="${CSS.escape(d.olPc)}"]`) ? false : true;
+    cx.pcsAbertos[d.olPc] = !atual; return desenharPastas(); }
   if (d.cxGrupo !== undefined) {
     cx.fechados[d.cxGrupo] = !cx.fechados[d.cxGrupo];
     try { localStorage.setItem("painel.caixasFechadas", JSON.stringify(cx.fechados)); } catch (e) {}
@@ -570,16 +669,22 @@ document.addEventListener("click", ev => {
   }
   if (d.cxFiltro) { cx.soNaoLidos = d.cxFiltro === "naolidos"; cx.sel = null; return desenharCorreio(); }
   const id = cx.sel;
+  cx.menu = false;
   if (!id || t.disabled) return;
   if (d.cxFaixa === "resp") return escrever(id, "resp");
   if (d.cxFaixa === "nf") return escrever(id, "nf");
   if (d.cxFaixa === "enc") return escrever(id, "enc");
   if (d.cxFaixa === "exc") return excluir(id);
   if (d.cxFaixa === "naolido") return marcarNaoLido(id);
+  if (d.cxFaixa === "lido") {
+    const x = (cx.dados?.emails || []).find(m => m.id === id);
+    if (x && x.lido === false) { api("/api/correio/evento", { ids: [id], acao: "LIDO" }); x.lido = true; desenharLateralCorreio(); desenharCorreio(); return toast("Marcado como lido para a equipe"); }
+    return marcarNaoLido(id);
+  }
 });
 
 function abrirCaixa(caixa) {
-  cx.caixa = caixa; cx.sel = null; cx.hotel = "";
+  cx.caixa = caixa; cx.sel = null; cx.hotel = ""; cx.caixaSel = ""; cx.soForm = false;
   try { localStorage.setItem("painel.caixaEmail", caixa); } catch (e) {}
 }
 try { const c = localStorage.getItem("painel.caixaEmail"); if (CAIXAS[c]) cx.caixa = c; } catch (e) {}
