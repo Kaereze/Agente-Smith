@@ -168,6 +168,7 @@ class Estado:
         self.comandos_em_execucao = set()
         self.atividade_cache = ([], -1e9)
         self.envio_nf.extras = self._extras_pc
+        self.envio_nf.caixas_de_hotel = self._caixas_de_hotel   # e-mail do robô pela fila (envio_pc_dono)
         self.abas_emails, self.emails = [], []
         self.avisos = avisos_windows.Avisos()
         self.notas_emails, self.notas_emails_em = {}, -1e9   # {id do e-mail: [NF do Dropbox]} — calculado em segundo plano

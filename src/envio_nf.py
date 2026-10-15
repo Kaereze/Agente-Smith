@@ -32,6 +32,11 @@ CAB_PCS = ["PC", "Agente", "Contas", "Visto em", "Outlook", "Versão", "Papel", 
            "Saúde"]
 
 PEDIDO, ASSUMIDO, ENVIADO, FALHOU = "PEDIDO", "ASSUMIDO", "ENVIADO", "FALHOU"
+CONFIRMADO = "CONFIRMADO"        # e-mail do robô: apareceu em Itens Enviados depois do ENVIADO
+# E-mail do formulário do robô (envio_pc_dono, 15/10/2026): o PC dono que a rede não alcança recebe pela fila. Vai
+# em "pc_formulario" (não em "pc_destino") de propósito: Painel de versão antiga ignora o pedido em vez de mandar errado.
+ACAO_FORMULARIO = "formulario"
+RECONFERIR_SEGUNDOS = 60
 TAMANHO_PARTE = 45_000            # limite de célula do Sheets é 50 mil caracteres
 MAX_ANEXO_BYTES = 8 * 1024 * 1024
 PC_ONLINE_SEGUNDOS = 180
@@ -518,13 +523,16 @@ def dobrar_fila(linhas):
         except ValueError:
             dados = {}
         e = envios.setdefault(id_envio, {"pedido": None, "pedido_em": "", "quem": "", "assumido_por": "",
-                                         "resultado": None, "detalhe": "", "pc": ""})
+                                         "resultado": None, "detalhe": "", "pc": "", "confirmado": False})
         if ev == PEDIDO and e["pedido"] is None:
             e.update(pedido=dados, pedido_em=quando, quem=quem)
         elif ev == ASSUMIDO and not e["assumido_por"]:
             e["assumido_por"] = pc          # o primeiro gravado vence, como no Assumir da fila
         elif ev in (ENVIADO, FALHOU) and e["resultado"] is None:
-            e.update(resultado=ev, detalhe=dados.get("detalhe", ""), pc=pc)
+            e.update(resultado=ev, detalhe=dados.get("detalhe", ""), pc=pc,
+                     confirmado=ev == ENVIADO and bool(dados.get("confirmado", True)))
+        elif ev == CONFIRMADO:
+            e["confirmado"] = True
     return envios
 
 
@@ -736,6 +744,8 @@ class ServicoEnvio:
         self.contas, self.contas_lidas_em = [], None
         self.fila, self.pcs_linhas, self.publicado_em = {}, [[]], None
         self.locais = {}                               # id -> resultado de envios feitos aqui (resposta imediata)
+        self.caixas_de_hotel = lambda: {}              # o Painel troca: {caixa: hotel} do cadastro (e-mail do robô)
+        self.reconferidos = {}                         # id -> quando conferiu de novo um e-mail do robô sem confirmação
         import threading
         self.lock = threading.Lock()
 
@@ -828,6 +838,17 @@ class ServicoEnvio:
     def executar_pendentes(self):
         for id_envio, e in list(self.fila.items()):
             p = e["pedido"]
+            if p and p.get("acao") == ACAO_FORMULARIO:   # e-mail do robô: o PC dono vem em "pc_formulario"
+                if p.get("pc_formulario") != self.pc:
+                    continue
+                if e["resultado"] == ENVIADO and not e["confirmado"] and e["pc"] == self.pc:
+                    self._reconferir_formulario(id_envio, p)
+                    continue
+                if e["assumido_por"] == self.pc and not e["resultado"] and id_envio not in self.locais:
+                    self._reconferir_formulario(id_envio, p, interrompido=e)   # o Painel reiniciou no meio do envio
+                    continue
+                p = {**p, "pc_destino": self.pc}   # daqui pra baixo, um pedido deste PC como outro qualquer
+                e = {**e, "pedido": p}
             if not p or e["resultado"] or p.get("pc_destino") != self.pc or id_envio in self.locais:
                 continue
             if e["assumido_por"] and e["assumido_por"] != self.pc:
@@ -854,10 +875,21 @@ class ServicoEnvio:
         p = e["pedido"]
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ASSUMIDO, self.pc, e["quem"])])
         na_planilha = any(a["tipo"] == "planilha" for a in p["anexos"])
+        resultado = {}
         try:
             import espelho_emails
             acao = p.get("acao", "")
-            if acao == EXCLUIR:
+            if acao == ACAO_FORMULARIO:   # e-mail do robô: o HTML pronto, da caixa do hotel para ela mesma
+                linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]])
+                _nome, html = juntar_anexo(linhas, f"{id_envio}#0")
+                if html is None:
+                    raise RuntimeError("o texto do e-mail do robô não está na aba Envios_NF_Anexos")
+                import envio_pc_dono
+                corpo = {"codigo": p.get("codigo", ""), "para": p["para"], "assunto": p["assunto"],
+                         "html": html.decode("utf-8")}
+                enviar = getattr(self, "enviar_formulario", None) or envio_pc_dono.enviar_e_conferir
+                resultado = {"confirmado": bool(enviar(corpo, self.caixas_de_hotel()))}
+            elif acao == EXCLUIR:
                 entry = espelho_emails.entry_do_email(p["responder"])
                 if entry:
                     self.excluir(entry)
@@ -879,8 +911,14 @@ class ServicoEnvio:
                                        [evento(self.relogio(), id_envio, FALHOU, self.pc, e["quem"], {"detalhe": detalhe})])
             self.locais[id_envio] = {"estado": "falhou", "detalhe": detalhe, "pc": self.pc}
             return
-        self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ENVIADO, self.pc, e["quem"])])
+        self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ENVIADO, self.pc, e["quem"],
+                                                                 resultado or None)])
         self.locais[id_envio] = {"estado": "enviado", "pc": self.pc}
+        if p.get("acao") == ACAO_FORMULARIO:
+            logger.info(f"📤 {id_envio} ({p.get('codigo')}): e-mail do robô saiu de {p['conta_de']} (pela fila)"
+                        + ("" if resultado.get("confirmado") else " — ainda sem aparecer em Itens Enviados"))
+            self._apagar_anexos(id_envio)
+            return
         if p.get("acao") == EXCLUIR:
             logger.info(f"🗑️ {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} movido pra Itens Excluídos "
                         f"(pedido de {e['quem']})")
@@ -893,6 +931,35 @@ class ServicoEnvio:
             logger.exception("NF enviada, mas não consegui registrar na aba Tratamento")
         if na_planilha:
             self._apagar_anexos(id_envio)
+
+    def _reconferir_formulario(self, id_envio, p, interrompido=None):
+        """E-mail do robô que saiu daqui sem aparecer em Itens Enviados: confere de novo (1 vez por minuto) e, quando
+        aparecer, grava CONFIRMADO (o robô só marca TRUE com a confirmação). interrompido: pedido ASSUMIDO aqui que
+        nunca terminou (o Painel reiniciou no meio): está em Enviados = ENVIADO; nem lá nem na Caixa de Saída = FALHOU
+        (não saiu, o robô manda de novo); na Caixa de Saída = espera."""
+        import time as _time
+        if _time.monotonic() - self.reconferidos.get(id_envio, -1e9) < RECONFERIR_SEGUNDOS:
+            return
+        self.reconferidos[id_envio] = _time.monotonic()
+        try:
+            import envio_pc_dono
+            conferir = getattr(self, "conferir_formulario", None) or envio_pc_dono.conferir_local
+            r = conferir({"codigo": p.get("codigo", ""), "para": p["para"]}, self.caixas_de_hotel())
+            if interrompido is not None:
+                if r.get("enviados"):
+                    ev, dados = ENVIADO, {"confirmado": True}
+                elif not r.get("saida"):
+                    ev, dados = FALHOU, {"detalhe": "não saiu: o Painel reiniciou no meio do envio"}
+                else:
+                    return
+                self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ev, self.pc,
+                                                                         interrompido.get("quem", "Robô"), dados)])
+                self.locais[id_envio] = {"estado": "enviado" if ev == ENVIADO else "falhou", "pc": self.pc}
+            elif r.get("enviados"):
+                self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, CONFIRMADO, self.pc, "Robô")])
+                self.fila.get(id_envio, {})["confirmado"] = True
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui conferir o e-mail do robô {p.get('codigo')} ({e})")
 
     def _apagar_anexos(self, id_envio):
         from sheets import nome_intervalo

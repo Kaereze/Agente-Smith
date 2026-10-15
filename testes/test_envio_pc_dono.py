@@ -41,9 +41,13 @@ class RedeFalsa:
     """O PC dono do outro lado (rede_local.perguntar)."""
 
     def __init__(self):
-        self.pedidos, self.erro, self.mandados = [], None, set()
+        self.pedidos, self.erro, self.erro_ping, self.mandados = [], None, None, set()
 
     def __call__(self, segredo, endereco, acao, corpo, tempo):
+        if acao == "ping":   # "a rede chega no PC dono?" (não entra na conta dos pedidos)
+            if self.erro_ping:
+                raise self.erro_ping
+            return {"pc": "PC-CLARA"}
         self.pedidos.append((endereco, acao, corpo))
         if self.erro:
             raise self.erro
@@ -95,15 +99,20 @@ def test_caixa_de_nenhum_pc_sai_pela_conta_remetente():
     assert [e.destinatario for e in local.enviados] == ["teste@x.com"] and rede.pedidos == []
 
 
-def test_pedido_que_nem_chegou_e_nao_enviado_e_o_pc_fica_de_fora_na_volta():
+def test_rede_que_nao_chega_e_sem_fila_e_nao_enviado_e_o_pc_fica_de_fora_na_volta():
     rede = RedeFalsa()
-    rede.erro = urllib.error.URLError(ConnectionRefusedError("recusada"))
+    rede.erro = urllib.error.URLError(ConnectionRefusedError("recusada"))   # o "ping" passou, o pedido não chegou
     o = _outlook(rede=rede)
-    with pytest.raises(epd.NaoEnviado, match="não respondeu"):
+    with pytest.raises(epd.NaoEnviado, match="não chega"):
         o.enviar(_email("notafiscal@aracaju.com.br"))
-    with pytest.raises(epd.NaoEnviado, match="desligado ou sem rede"):
+    with pytest.raises(epd.NaoEnviado, match="não chega"):
         o.enviar(_email("notafiscal@aracaju.com.br", "NF-ABCDEF0123"))
-    assert len(rede.pedidos) == 1
+    assert len(rede.pedidos) == 1                                  # o 2º nem tentou pela rede
+    rede2 = RedeFalsa()
+    rede2.erro_ping = TimeoutError("timed out")                    # outra faixa de rede: nem o "ping" responde
+    with pytest.raises(epd.NaoEnviado, match="não chega"):
+        _outlook(rede=rede2).enviar(_email("notafiscal@aracaju.com.br"))
+    assert rede2.pedidos == []
 
 
 def test_pc_dono_ainda_sem_a_versao_nova_e_nao_enviado():
