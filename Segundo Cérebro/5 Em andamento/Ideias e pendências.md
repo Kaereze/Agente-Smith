@@ -63,4 +63,5 @@ tags: [cerebro/andamento]
   Jangadeiro, Jeri, Luxor, Ondina, Porto Praia, Terra Brasil, Vela Branca). Nada a fazer: quando começarem a usar, o robô
   junta sozinho.
 - [ ] Planilhas do CAMPO GRANDE e do IDEAL com data em formato misturado (dia/mês e mês/dia): conferir com calma.
+- [ ] Passar o design "E-mails · igual ao Outlook" (aprovado em 15/10/2026) para o Painel (`app_ui/correio.js`, `index.html`).
 
