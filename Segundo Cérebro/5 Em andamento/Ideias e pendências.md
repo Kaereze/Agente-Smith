@@ -57,8 +57,8 @@ tags: [cerebro/andamento]
 - [ ] **Rede da Clara** (João, com a senha de administrador): o PC dela está em outra faixa (10.80.x) e a regra do firewall
   dos 4 PCs só aceita a mesma faixa. Ampliar a regra da porta 8766 para a rede do escritório traz de volta a busca ao vivo e
   o envio na hora com ela (hoje o robô usa a fila da Central, até 1 min).
-- [ ] Reenviar pelos PCs donos os pedidos que saíram pela caixa do Ondina antes de 15/10 (hoje: Araras 2, Porto Center 2)?
-  Os hotéis já receberam (do Ondina); reenviar duplica. Esperando o João dizer.
+- [x] ~~Reenviar pelos PCs donos os pedidos que saíram pela caixa do Ondina~~ — João, 15/10/2026: "deixa esses e-mails assim
+  mesmo" (hoje foram 2: Porto Center 08:45 e Araras 08:52). Não reenviar.
 - [ ] 13 hotéis têm a planilha do formulário novo **vazia** (Bahia, Biton, Casa Blanca, Coimbra, Comfort, Estrela Centro,
   Jangadeiro, Jeri, Luxor, Ondina, Porto Praia, Terra Brasil, Vela Branca). Nada a fazer: quando começarem a usar, o robô
   junta sozinho.
