@@ -1,7 +1,7 @@
 ---
 tipo: guia
 pasta: "0 Comece aqui"
-atualizado: 2026-10-13
+atualizado: 2026-10-15
 tags: [cerebro/inicio]
 ---
 # Segundo Cérebro — Projeto Notas Fiscais
@@ -16,7 +16,10 @@ tags: [cerebro/inicio]
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (13/10/2026)
+## Onde paramos (15/10/2026)
+- 15/10: robô copia e envia **a cada 10 min**, marca TRUE também na planilha do hotel, **junta as planilhas do formulário
+  antigo e do novo** e manda o e-mail **pelo PC dono da caixa do hotel** (nunca mais pela caixa do Ondina). Versão `68b0539`
+  nos 4 PCs. Ver [[2026-10-15]].
 - GitHub e PC do trabalho na mesma versão (4 branches iguais). Painel e robô no ar.
 - Modo casa pronto ([[Painel em casa]]); falta o João criar a chave de casa.
 - 13/10: Guardião do Outlook nos 4 PCs; Dia do administrador concluído (busca ao vivo entre os 4 PCs funcionando).

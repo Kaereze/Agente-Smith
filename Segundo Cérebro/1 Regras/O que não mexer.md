@@ -30,6 +30,7 @@ Ordem de importância: ver [[Hierarquia de prioridades]]. Credenciais: ver [[Cre
 | **Branches dos colegas** | `Bernardo`, `Christian`, `clara` | Só fast-forward da `main` (nunca forçar) |
 | **Tarefas do Windows** | `SolicitacoesNF_CopiaHoteis`, `_Conferente`, `_Painel`, `_Reiniciar` | Não apagar nem renomear |
 | **Firewall / rede dos PCs** | perfil de rede, porta 8766 | Decisão do João; precisa de administrador |
+| **Caixa que envia o e-mail do robô** | `envio_pc_dono.py` | Sempre a **caixa do próprio hotel, no PC dono** (João, 15/10/2026). A caixa do Ondina (`conta_remetente`) só para o e-mail de teste |
 | **PCs dos colegas** | "nada de .bat" lá; sem administrador | Pedir pela sessão Remote Control; não insistir |
 
 ## Sempre

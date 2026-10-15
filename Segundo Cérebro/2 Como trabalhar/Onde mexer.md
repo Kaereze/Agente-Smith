@@ -35,8 +35,8 @@ tags: [cerebro/trabalho]
 ## Robôs e bastidores
 | Quero mexer em… | Arquivo → função |
 |---|---|
-| **Cópia das planilhas dos hotéis → Central** | `sincronizar.py` → `rodar_agendado`, `sincronizar`, `_ler_planilha_hotel`, `hoteis_que_mudaram` · TRUE de volta no hotel: `linhas_para_marcar_no_hotel`, `escrever_true_no_hotel`, `espelhar_true_nos_hoteis` (chamado na cópia e em `main._marcar_e_registrar`) |
-| **Envio das solicitações por e-mail** | `main.py` → `executar`; corpo do e-mail em `montar_email.py`; envio COM em `outlook.py`; diário em `diario_envios.py` |
+| **Cópia das planilhas dos hotéis → Central** | `sincronizar.py` → `rodar_agendado`, `sincronizar`, `_ler_planilha_hotel`, `hoteis_que_mudaram` · hotel com mais de uma planilha (formulário antigo + novo): `juntar_planilhas` · e-mail/nome por linha: `sheets._achar_colunas`, `_coluna_da_linha` · TRUE de volta no hotel: `linhas_para_marcar_no_hotel`, `escrever_true_no_hotel`, `espelhar_true_nos_hoteis` (chamado na cópia e em `main._marcar_e_registrar`) |
+| **Envio das solicitações por e-mail** | `main.py` → `executar`; corpo do e-mail em `montar_email.py`; envio COM em `outlook.py`; diário em `diario_envios.py` · caixa de outro PC: `envio_pc_dono.py` → `OutlookComPcDono` (rede: `enviar_aqui`/`conferir_aqui`, ações `/rede/enviar` e `/rede/conferir_envio` em `app_servidor`; plano B: `FilaCentral` + `envio_nf.ServicoEnvio` com `ACAO_FORMULARIO`) |
 | **Conferente** (lê Outlook, acha NF no Dropbox, etiquetas) | `conferente.py` → `uma_volta`, `varrer_dropbox`, `varrer_enviados`, `marcar_notas_divididas` |
 | **Espelho do Outlook de cada PC** (Correio_, CaixaPedidos_, CorreioTexto_) | `espelho_emails.py` → `Espelho`, `pedidos_do_robo`, `classificar`, `resolver` |
 | **Reconhecer a NF que saiu / confirmar NFs** | `controle_nf.py`, `confirmar_nfs.py` |

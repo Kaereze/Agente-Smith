@@ -44,11 +44,12 @@ tags: [cerebro/mapa]
 **Robôs (`src/`)**
 | Arquivo | Linhas | Para quê |
 |---|---|---|
-| `sincronizar.py` | 520 | Cópia das planilhas dos hotéis (a cada 10 min) + TRUE de volta na planilha do hotel |
-| `main.py` · `montar_email.py` · `outlook.py` | 432 · 281 · 126 | Envio das solicitações |
+| `sincronizar.py` | 636 | Cópia das planilhas dos hotéis (a cada 10 min; junta todas as planilhas do hotel) + TRUE de volta na planilha do hotel |
+| `main.py` · `montar_email.py` · `outlook.py` | 447 · 281 · 126 | Envio das solicitações |
+| `envio_pc_dono.py` | 341 | E-mail do robô pelo PC dono da caixa do hotel (rede 8766; plano B: fila Envios_NF) |
 | `conferente.py` | 794 | Processo contínuo de cada PC |
 | `espelho_emails.py` | 790 | Espelho do Outlook de cada PC |
-| `envio_nf.py` | 895 | Envio da NF ao hóspede |
+| `envio_nf.py` | 996 | Envio da NF ao hóspede + fila de envio entre PCs (também o e-mail do robô, plano B) |
 | `controle_nf.py` · `confirmar_nfs.py` | 703 · 582 | Reconhecer/confirmar NF |
 | `analise_nf.py` · `faxina.py` | 270 · 210 | Urgência · limpeza da Central |
 | `outlook_vivo.py` | 160 | Guardião do Outlook (aberto com janela) e porta única do COM |

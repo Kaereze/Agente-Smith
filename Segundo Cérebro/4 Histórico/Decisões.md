@@ -35,8 +35,10 @@ tags: [cerebro/historico]
 | 14/10/2026 | **Ficha-resumo** no topo do pedido (4 blocos; o que falta em âmbar "falta pedir"); formulário completo recolhido; botão **Pedir dados** | Tudo para emitir a NF sem rolar a tela |
 | 14/10/2026 | Ficha/e-mail aberto: **leitura até o topo**, lista e filtros numa coluna à esquerda | Ver a mensagem grande, sem perder espaço com o cabeçalho |
 | 14/10/2026 | Situação do sistema (robô, Central, PCs, tema, professor) **no rodapé**; topo some com leitura aberta | Não são tão relevantes; dar o espaço para a mensagem |
-
-Ver: [[O que não mexer]].
 | 14/10/2026 | **Repaginação v2 aprovada e no Painel**: escuro, menu recolhível, Monitoramento só admin, avisos no canto, tags só urgência/dividida/falta dado, "Pedir o que falta", resumo de ontem, Gerência = relatório do mês | Telas limpas e empresariais, foco no usuário |
 | 15/10/2026 | Copiar e enviar **a cada 10 min** (era 30) e alarme de **pedido parado** (+2 h sem envio) | O João viu pedidos "não enviados" no Rondonópolis e quer que nunca mais aconteça |
 | 15/10/2026 | O robô passa a marcar **TRUE na coluna Enviado da planilha do hotel** (só essa coluna), e corrigiu os antigos | O robô novo marcava só na Central; a planilha do hotel parecia não enviada (84 no Rondonópolis, todos enviados de verdade) |
+| 15/10/2026 | A cópia **junta todas as planilhas do hotel** numa aba só da Central (formulário antigo + novo, cada coluna pelo nome; o TRUE volta para a planilha de onde a linha veio) | O formulário novo grava numa planilha nova e a antiga para; copiar só a mais recente deixou 26 pedidos sem envio (Boa Viagem e São Francisco) |
+| 15/10/2026 | **E-mail do robô sai do PC dono da caixa do hotel**, da caixa do hotel para ela mesma. A caixa do Ondina não manda mais e-mail de outro hotel (só o e-mail de teste) | João: "por que está sendo utilizado meu e-mail do Ondina? mande uma requisição para o PC dono daquele hotel e ele mesmo envia" |
+
+Ver: [[O que não mexer]].

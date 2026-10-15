@@ -16,7 +16,7 @@ IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/
 | `Status` | João | Robô | B1 liga/desliga o painel do robô |
 | `Tratamento` | Conferente / robô | Painel | A:H, uma linha por solicitação |
 | `Log de Envios` | Robô | — | Histórico de envios |
-| `Envios_NF`, `Envios_NF_Anexos` | Painel (Enviar NF) | PC dono da caixa | Fila de envio de NF entre PCs |
+| `Envios_NF`, `Envios_NF_Anexos` | Painel (Enviar NF) e robô (e-mail do formulário, 15/10/2026) | PC dono da caixa | Fila de envio entre PCs. Pedido do robô: `acao` "formulario", PC em `pc_formulario`, HTML na Envios_NF_Anexos (apagado depois) |
 | `PCs_Painel` | Cada PC | Todos | Versão, Outlook, saúde (coluna L) |
 | `Comandos_PC` | Painel ("Atualizar todos") | Cada PC | Respostas na mesma aba |
 | `Eventos_Correio` | Painel (lido/excluído) | Todos | Faxina 3 dias |
@@ -36,3 +36,11 @@ IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/
 
 ## Cota
 60 leituras/min somando os 4 PCs, dividida em `cota_google.py`. Toda leitura nova entra na conta ([[Hierarquia de prioridades]] P3).
+
+## Formulário antigo e formulário novo (15/10/2026)
+- **Antigo:** "Nota Fiscal (Hotel) (respostas)", 36 colunas ("Endereço de e-mail", "Nome do Hóspede"...).
+- **Novo:** "Solicitação Nota Fiscal (Hotel) (respostas)", 18 colunas ("Termos de aceite", "Documento Tomador", "Nome Tomador",
+  "E-mail", "Check-in/Check-out da Hospedagem", "Valor da Nota Fiscal"...). Criado em abril para 15 hotéis; Boa Viagem e
+  São Francisco já usam (desde 07/10 e 06/10).
+- A cópia junta as duas na **mesma aba da Central** do hotel (colunas do novo no fim). Ver `sincronizar.juntar_planilhas`.
+
