@@ -3,7 +3,8 @@
 // histórico do hóspede puxado ao vivo do Outlook. Tudo que se faz aqui (responder, encaminhar, excluir) roda no
 // Outlook do PC dono por trás, sem abrir janela. A busca vai direto ao Outlook dos 4 PCs. Usa api/$/esc/toast/st.
 let cx = { caixa: "entrada", dados: null, sel: null, hist: {}, textos: {}, hotel: "", live: null, buscando: "",
-           resolvendo: {}, escondidos: {}, desfazer: null, manterNaoLido: {}, timerBusca: null, conv: {} };
+           resolvendo: {}, escondidos: {}, desfazer: null, manterNaoLido: {}, timerBusca: null, conv: {},
+           soNaoLidos: false, fechados: {} };   // Todas / Não lidos e os grupos de caixas recolhidos (igual ao Outlook, 15/10/2026)
 const CAIXAS = { entrada: "Caixa de entrada", urgencia: "Urgência", enviados: "Itens enviados" };
 const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["Nota complementar", "atencao"],
   cobranca: ["Cobrança", "atencao"], dados_tomador: ["Dados do tomador", "info"], pedido_nf: ["Pedido de NF", "ok"] };
@@ -69,7 +70,7 @@ function itensDaTela(busca) {
       .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
-  const lista = base.filter(e => !cx.hotel || e.hotel === cx.hotel);
+  const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false));
   return lista;   // o mais recente primeiro também na Urgência (usuário, 09/10/2026)
 }
 
@@ -91,6 +92,11 @@ function desenharCorreio() {
     cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${nEm(lista.length)}${naoLidos ? ` · ${naoLidos} não lido${naoLidos === 1 ? "" : "s"}` : ""}`)
     + (cx.hotel ? ` · ${esc(cx.hotel)}` : "") + statusBusca(busca);
   desenharFiltroHotel();
+  desenharPastas();
+  if ($("cx-lcab")) $("cx-lcab").innerHTML = busca ? `<span class="cx-ord">Resultado da pesquisa no Outlook dos 4 PCs</span>` :
+    `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos}">Todas</button>` +
+    (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
+    `<span class="cx-ord">${esc(cx.hotel || CAIXAS[cx.caixa])} · por data ↓</span>`;
   // a lista é refeita a cada 15 s: quem estava com o foco numa linha continua nela
   const focada = document.activeElement?.closest?.("#cx-lista .cx-l");
   const idFoco = focada?.dataset.id;
@@ -102,7 +108,7 @@ function desenharCorreio() {
   }
   const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
   const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
-    : cx.caixa === "enviados" ? "Nada enviado nas últimas 24 h." : "";
+    : cx.caixa === "enviados" ? "Nada enviado nas últimas 24 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : "";
   $("cx-lista").innerHTML = html || (vazio ? `<div class="vazio">${vazio}</div>`
     : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Caixa de Entrada vazia${quem}.`));
   if (idFoco) $("cx-lista").querySelector(`.cx-l[data-id="${CSS.escape(idFoco)}"]`)?.focus();
@@ -145,6 +151,8 @@ const iniciais = n => (String(n || "?").trim().split(/\s+/).slice(0, 2).map(p =>
 function desenharAcoes() {
   const el = $("cx-acoes");
   const e = cx.sel && itemSelecionado();
+  const pode = !!(e && (cx.dados?.emails || []).some(x => x.id === e.id) && !cx.resolvendo[e.id]);
+  document.querySelectorAll("[data-cx-faixa]").forEach(b => { b.disabled = !pode; });
   if (!e) {
     el.classList.add("vazio-acoes");
     const c = cx.dados?.contagem || {};
@@ -171,7 +179,7 @@ function desenharAcoes() {
     <div class="quem"><b>${esc(enviado ? "Para: " + e.para : e.nome || e.de)}</b>
       <small>${esc(e.hotel || "")}${e.pc ? " · caixa no PC de " + esc(nomeAgente(e.pc)) : ""} · ${esc(quando(e.quando))}</small>
       ${(e.classes || []).length ? `<div class="linha-et">${e.classes.map(etiqueta).join("")}</div>` : ""}</div>
-    <div class="botoes">${botoes}<button class="fechar" id="cx-fechar" aria-label="Fechar o e-mail" title="Fechar (Esc)">×</button></div>
+    <div class="botoes">${noEspelho && !cinza ? "" : botoes}<button class="fechar" id="cx-fechar" aria-label="Fechar o e-mail" title="Fechar (Esc)">×</button></div>
     ${noEspelho && !cinza ? `<span class="dica-prof so-texto" style="flex-basis:100%">Atalhos: Ctrl+R responder · Ctrl+Shift+R com NF · Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido</span>` : ""}`;
 }
 
@@ -386,9 +394,11 @@ function desenharLeituraCorreio() {
   const el = $("cx-leitura");
   if (typeof envNF !== "undefined" && envNF && envNF.alvo === el) return;   // escrevendo uma resposta: não apaga
   const e = cx.sel && itemSelecionado();
-  $("cx-mesa").classList.toggle("com-leitura", !!e);
-  el.classList.toggle("oculta", !e);
-  if (!e) { el.innerHTML = ""; return; }
+  if (!e) {   // a leitura fica sempre à direita, como no Outlook (o topo da página não some: é onde está a pesquisa)
+    el.innerHTML = `<div class="cx-ler-vazio"><svg aria-hidden="true"><use href="#i-mail"/></svg><b>Selecione um e-mail para ler</b>
+      <span>Clique numa linha da lista · as setas ↑ ↓ andam pelos e-mails</span></div>`;
+    return;
+  }
   if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA|SUMMARY/.test(document.activeElement.tagName)) return;
   const enviado = e.pasta === "enviado";
   const h = !enviado && e.de ? cx.hist[e.de] : null;
@@ -526,6 +536,47 @@ function correioRespondido(idEmail) {
   (cx.dados?.emails || []).filter(x => e && x.de === e.de).forEach(x => cx.resolvendo[x.id] = Date.now());
   if (pn.vista === "correio") desenharCorreio();
 }
+
+// Caixas de entrada à esquerda, como as pastas do Outlook (usuário, 15/10/2026: "só as caixas de entrada"):
+// todas as caixas no alto e, por agente, a caixa de cada hotel com os não lidos. Clicar filtra a lista.
+function desenharPastas() {
+  const el = $("cx-pastas");
+  if (!el) return;
+  const naoLidos = {}, entrada = emailsDa("entrada");
+  entrada.forEach(e => { if (e.lido === false) (e.hotel || "").split(" / ").forEach(h => h && (naoLidos[h] = (naoLidos[h] || 0) + 1)); });
+  const total = entrada.filter(e => e.lido === false).length;
+  const grupos = {};
+  (st.hoteis || []).forEach(h => { if (doAgente([h.agente])) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
+  const n = v => v ? `<em>${v.toLocaleString("pt-BR")}</em>` : "";
+  el.innerHTML = `<button type="button" class="cx-pa todas ${cx.hotel ? "" : "on"}" data-cx-pasta="">
+      <svg class="ic" aria-hidden="true"><use href="#i-caixa"/></svg><span class="nm">Todas as caixas</span>${n(total)}</button>` +
+    Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b, "pt")).map(([ag, hs]) => {
+      const aberto = !cx.fechados[ag], soma = hs.reduce((s, h) => s + (naoLidos[h] || 0), 0);
+      return `<button type="button" class="cx-pg" data-cx-grupo="${esc(ag)}" aria-expanded="${aberto}"><span class="seta">▼</span>${esc(ag)}${soma ? `<small>${soma}</small>` : ""}</button>` +
+        (aberto ? hs.sort((x, y) => x.localeCompare(y, "pt")).map(h => `<button type="button" class="cx-pa ${naoLidos[h] ? "tem" : ""} ${cx.hotel === h ? "on" : ""}"
+          data-cx-pasta="${esc(h)}" title="Caixa de entrada · ${esc(h)}"><span class="nm">${esc(h)}</span>${n(naoLidos[h])}</button>`).join("") : "");
+    }).join("");
+}
+try { cx.fechados = JSON.parse(localStorage.getItem("painel.caixasFechadas") || "{}") || {}; } catch (e) {}
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-cx-pasta],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa]");
+  if (!t) return;
+  const d = t.dataset;
+  if (d.cxPasta !== undefined) { cx.hotel = d.cxPasta; cx.sel = null; return desenharCorreio(); }
+  if (d.cxGrupo !== undefined) {
+    cx.fechados[d.cxGrupo] = !cx.fechados[d.cxGrupo];
+    try { localStorage.setItem("painel.caixasFechadas", JSON.stringify(cx.fechados)); } catch (e) {}
+    return desenharPastas();
+  }
+  if (d.cxFiltro) { cx.soNaoLidos = d.cxFiltro === "naolidos"; cx.sel = null; return desenharCorreio(); }
+  const id = cx.sel;
+  if (!id || t.disabled) return;
+  if (d.cxFaixa === "resp") return escrever(id, "resp");
+  if (d.cxFaixa === "nf") return escrever(id, "nf");
+  if (d.cxFaixa === "enc") return escrever(id, "enc");
+  if (d.cxFaixa === "exc") return excluir(id);
+  if (d.cxFaixa === "naolido") return marcarNaoLido(id);
+});
 
 function abrirCaixa(caixa) {
   cx.caixa = caixa; cx.sel = null; cx.hotel = "";
