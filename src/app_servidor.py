@@ -342,7 +342,7 @@ class Estado:
             return []
 
     def _ultimo_robo(self):
-        """Quando o robô de envio (main.py, a cada 30 min no principal) terminou por último: aba Status (coluna B)."""
+        """Quando o robô de envio (main.py, a cada 10 min no principal) terminou por último: aba Status (coluna B)."""
         if not e_principal(self.cfg):
             return ""
         q = str((self.status or {}).get("ultima_execucao", "")).strip()
@@ -354,6 +354,7 @@ class Estado:
     def problemas_de_saude(self):
         """Faixa de saúde: o que os PCs publicam + o atraso do Mail Analytics (do relatório guardado)."""
         lista = saude.problemas(self.pcs())
+        lista += saude.pedidos_sem_envio(list(getattr(self, "solicitacoes", []) or []))   # pedido parado (15/10/2026)
         rel = getattr(self, "_ultimo_relatorio", None)
         if rel:
             lista += saude.mail_analytics_atrasado(rel.get("ultimo_dia"), datetime.date.today())

@@ -1,5 +1,5 @@
 @echo off
-:: Agendador: cópia dos hotéis + envio (a cada 30 min)
+:: Agendador: cópia dos hotéis + envio (a cada 10 min)
 chcp 65001 > nul
 set PYTHONIOENCODING=utf-8
 cd /d "%~dp0.."

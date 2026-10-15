@@ -6,7 +6,7 @@ quantos e-mails estão presos na Caixa de Saída dele e (o PC principal) quando 
 """
 import datetime
 
-COPIA_ATRASADA_MIN = 75          # a cópia roda a cada 30 min: duas voltas perdidas + folga
+COPIA_ATRASADA_MIN = 35          # a cópia roda a cada 10 min (15/10/2026): duas voltas perdidas + folga
 SAIDA_TRAVADA_MIN = 10           # e-mail parado na Caixa de Saída há mais que isso
 HORARIO_COPIA = ("07:00", "23:30")
 SEM_EMAIL_HORAS = 6              # caixa deste PC sem e-mail novo há mais que isso...
@@ -160,6 +160,37 @@ def problemas(pcs, agora=None):
         saida.append({"nivel": "aviso", "pc": "", "texto": f"Cadastro incompleto: {', '.join(faltam[:4])}{'…' if len(faltam) > 4 else ''} sem cadastro — "
                       "as planilhas desses hotéis não são copiadas (veja em Máquinas)"})
     return sorted(saida, key=lambda x: x["nivel"] != "erro")
+
+
+PEDIDO_SEM_ENVIO_HORAS = 2       # ciclo de 10 min + até 75 min esperando o robô antigo: passou disso, está parado
+
+
+def pedidos_sem_envio(solicitacoes, agora=None, horas=PEDIDO_SEM_ENVIO_HORAS):
+    """Pedido de formulário que está na Central sem TRUE há mais de `horas` (usuário, 15/10/2026: "faça com que esse
+    erro nunca mais aconteça"). O ciclo copia+envia roda a cada 10 min; o que passa de 2 h ficou para trás.
+    -> [aviso] (no horário do robô), agrupado por hotel."""
+    import re
+    agora = agora or datetime.datetime.now()
+    if not HORARIO_COPIA[0] <= agora.strftime("%H:%M") <= HORARIO_COPIA[1]:
+        return []
+    por_hotel = {}
+    for s in solicitacoes or []:
+        if s.get("enviado") or not s.get("data"):
+            continue
+        m = re.search(r"(\d{1,2}):(\d{2})", str(s.get("carimbo", "")))
+        try:
+            chegou = datetime.datetime.fromisoformat(s["data"]).replace(hour=int(m.group(1)), minute=int(m.group(2))) if m \
+                else datetime.datetime.fromisoformat(s["data"])
+        except ValueError:
+            continue
+        if agora - chegou > datetime.timedelta(hours=horas):
+            por_hotel[s.get("hotel") or "?"] = por_hotel.get(s.get("hotel") or "?", 0) + 1
+    if not por_hotel:
+        return []
+    n = sum(por_hotel.values())
+    lista = ", ".join(f"{h} ({q})" for h, q in sorted(por_hotel.items(), key=lambda x: -x[1])[:4]) + ("…" if len(por_hotel) > 4 else "")
+    return [{"nivel": "erro", "pc": "", "texto": f"{n} pedido(s) de formulário sem envio ao hotel há mais de {horas} h: {lista}. "
+             "O robô copia e envia a cada 10 min; confira o Monitoramento (robô de envio e cópia dos hotéis)"}]
 
 
 def mail_analytics_atrasado(ultimo_dia, hoje):

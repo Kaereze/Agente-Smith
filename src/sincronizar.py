@@ -335,7 +335,7 @@ def _como_texto(linhas):
     return saida
 
 
-def _limpar_backups_antigos(manter=48):   # 24h de cópias a cada 30 min
+def _limpar_backups_antigos(manter=144):   # 24h de cópias a cada 10 min (usuário, 15/10/2026: era 30 min)
     backups = sorted(PASTA_ESTADO.glob("backup_central_*.json"))
     for velho in backups[:-manter]:
         try:
@@ -407,7 +407,7 @@ def copiar_e_enviar():
         from historico import ORIGEM_SOLICITACAO_NOVA
         logger.info("📨 Cópia feita — conferindo se tem solicitação pendente pra disparar...")
         codigo_envio = robo_envio.rodar(codigo_se_ocupado=0, origem=ORIGEM_SOLICITACAO_NOVA,
-                                        quem="Robô (a cada 30 min)")
+                                        quem="Robô (a cada 10 min)")
     except Exception:
         logger.exception("❌ O envio automático deu erro — tento de novo na próxima volta.")
         codigo_envio = 1

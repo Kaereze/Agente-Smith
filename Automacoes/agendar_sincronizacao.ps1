@@ -1,5 +1,5 @@
 ﻿# SOLICITACOES NF - agenda a COPIA das planilhas dos hoteis pra Planilha Central
-param([int]$Minutos = 30)
+param([int]$Minutos = 10)   # 10 min: pedido do usuario, 15/10/2026 (era 30)
 
 $pastaProjeto = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $batPath = Join-Path $pastaProjeto "Bat\sincronizar_agendado.bat"

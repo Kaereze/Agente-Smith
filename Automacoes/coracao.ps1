@@ -158,8 +158,8 @@ Ok "Tarefa SolicitacoesNF_Conferente ligada"
 # 8. Copia + envio: so no PC principal
 Passo 8 "Copia das planilhas + envio"
 if ($papel -eq "principal") {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_sincronizacao.ps1") -Minutos 30 | Out-Null
-    Ok "Tarefa SolicitacoesNF_CopiaHoteis (a cada 30 min)"
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_sincronizacao.ps1") -Minutos 10 | Out-Null
+    Ok "Tarefa SolicitacoesNF_CopiaHoteis (a cada 10 min)"
 } else {
     Aviso "Pulado: este PC e conferente. Copia e envio rodam so no PC principal."
 }

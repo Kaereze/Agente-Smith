@@ -141,7 +141,7 @@ def classificar(r, mudou_depois_da_copia):
         return PROBLEMA, " | ".join(problemas)
     if r["faltando"]:
         return NOVIDADE, (f"{len(r['faltando'])} solicitação(ões) nova(s) chegaram depois da última cópia — "
-                          f"entram na próxima (a cada 30 min): {'; '.join(r['faltando'][:MAX_EXEMPLOS])}")
+                          f"entram na próxima (a cada 10 min): {'; '.join(r['faltando'][:MAX_EXEMPLOS])}")
     extra = f" ({r['so_central']} linha(s) antiga(s) que só existem na Central, mantidas)" if r["so_central"] else ""
     return OK, f"Todas as {r['linhas_origem']} solicitações estão na Central, com os mesmos dados{extra}."
 
