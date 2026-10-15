@@ -4,11 +4,14 @@ Serve pro que é ao vivo e não deve passar pela planilha (nem gastar cota do Go
   /rede/buscar   pesquisa no Outlook deste PC (hóspede, CPF, frase...)
   /rede/texto    texto inteiro de um e-mail das caixas deste PC
   /rede/ping     "estou aqui"
+  /rede/enviar   o robô (PC principal) pede: manda o e-mail do formulário da caixa do hotel que está neste Outlook,
+                 para ela mesma (envio_pc_dono, 15/10/2026); /rede/conferir_envio: ele já está em Itens Enviados?
 Segurança:
 - Só aceita pedido de IP da rede local (10.x, 172.16-31.x, 192.168.x).
 - Todo pedido vem assinado (HMAC) com um segredo tirado da chave do Google — só os 4 PCs do financeiro têm. A
   assinatura leva a hora: um pedido copiado da rede não serve de novo depois de 2 minutos.
-- Só e-mail das caixas dos hotéis sai (nunca uma caixa pessoal), e só leitura: nada é mexido no Outlook.
+- Só e-mail das caixas dos hotéis sai (nunca uma caixa pessoal). Fora o /rede/enviar, só leitura; e o /rede/enviar
+  só manda o e-mail do robô (código NF-) da caixa do hotel para ela mesma, nunca para fora.
 O endereço de cada PC (ip:porta) vai na aba PCs_Painel.
 """
 import hashlib
@@ -29,7 +32,7 @@ logger = configurar_logging("rede_local")
 PORTA = 8766
 VALIDADE_ASSINATURA = 120
 TEMPO_RESPOSTA = 12
-MAX_CORPO = 64 * 1024
+MAX_CORPO = 2 * 1024 * 1024   # o /rede/enviar leva o HTML do e-mail (até ~40 KB)
 
 
 def segredo_da_chave(caminho_chave):

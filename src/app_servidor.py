@@ -38,6 +38,7 @@ import hospedes
 import cota_google
 import envio_nf
 import espelho_emails
+import envio_pc_dono
 import rede_local
 import rede_pcs
 import contagem_painel
@@ -830,6 +831,19 @@ class Estado:
         pythoncom.CoInitialize()
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         return {**busca_outlook.ler_anexo(ns, entry, self._caixas_de_hotel(), str(corpo.get("nome", ""))), "pc": socket.gethostname()}
+
+    def rede_enviar(self, corpo):
+        """Pedido do robô (PC principal, 15/10/2026): manda o e-mail do formulário da própria caixa do hotel, que
+        está neste Outlook, para ela mesma (envio_pc_dono.enviar_aqui)."""
+        import pythoncom
+        pythoncom.CoInitialize()
+        app = outlook_vivo.aplicativo()
+        return envio_pc_dono.enviar_aqui(app, app.GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
+
+    def rede_conferir_envio(self, corpo):
+        import pythoncom
+        pythoncom.CoInitialize()
+        return envio_pc_dono.conferir_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
 
     def rede_ping(self, _corpo):
         return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
@@ -1648,7 +1662,9 @@ def main():
     if not modo_demo and not so_ver:
         estado.segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
         estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
-                                                                  "anexo": estado.rede_anexo, "ping": estado.rede_ping}).iniciar()
+                                                                  "anexo": estado.rede_anexo, "ping": estado.rede_ping,
+                                                                  "enviar": estado.rede_enviar,
+                                                                  "conferir_envio": estado.rede_conferir_envio}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
     estado.uso_ref = ultimo_uso

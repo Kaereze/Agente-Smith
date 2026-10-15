@@ -16,6 +16,7 @@ from historico import (ATENCAO, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_MANUAL, SUCE
                        JaEnviadas, explicar_aba_pulada, texto_simples)
 from config import e_principal, PASTA_ESTADO, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, caminho_chave_google, carregar_config
 import robo_antigo
+from envio_pc_dono import NaoEnviado, com_pc_dono
 from diario_envios import MINUTOS_ATE_DESISTIR, DiarioEnvios, idade_minutos, solicitacoes_da_entrada
 from log_util import configurar_logging
 from montar_email import montar_emails
@@ -325,6 +326,8 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
             enviados.append(email)
         except Exception as e:
             logger.error(f"❌ Falha ao enviar {email.codigo} pra {email.destinatario}: {e}")
+            if isinstance(e, NaoEnviado) and modo == "PRODUCAO":
+                diario.remover([email.codigo])   # certeza de que não saiu (PC dono desligado...): vai na próxima volta
             falhas_envio.append(email)
             log_exec.email(email, ERRO, "Não foi enviado. " + texto_simples(e) +
                            " As linhas continuam sem TRUE e vão de novo na próxima execução.", ok=False)
@@ -422,7 +425,8 @@ def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None):
     log_exec = Execucao(origem, quem, cfg["modo"])
     try:
         backend = BackendGoogle(caminho_chave_google(cfg), somente_leitura=cfg["modo"] == "SIMULACAO")
-        return executar(cfg, backend, OutlookNF(cfg), log_exec=log_exec, selecao=selecao)
+        # caixa do hotel em outro PC: o PC dono manda (usuário, 15/10/2026: não usar a caixa do Ondina)
+        return executar(cfg, backend, com_pc_dono(OutlookNF(cfg), backend, cfg), log_exec=log_exec, selecao=selecao)
     except Exception as e:
         if isinstance(e, ErroPlanilha):
             logger.error(f"❌ {e}")
