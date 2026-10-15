@@ -64,4 +64,9 @@ tags: [cerebro/andamento]
   junta sozinho.
 - [ ] Planilhas do CAMPO GRANDE e do IDEAL com data em formato misturado (dia/mês e mês/dia): conferir com calma.
 - [x] ~~Passar o design "E-mails · igual ao Outlook" para o Painel~~ — feito em 15/10/2026 (`c23d165`), só com as caixas de entrada.
+- [ ] **Velocidade ao abrir e-mail (conversar com o João):** (1) guardar o texto inteiro de todos os e-mails da caixa de
+  entrada na cópia de cada PC (hoje só os sem resposta) para abrir sem perguntar ao PC dono; (2) histórico do hóspede só
+  com o que já está no Painel + botão "buscar mais antigos" em vez de buscar sempre nos 4 PCs; (3) ampliar a regra do
+  firewall para a rede da Clara (10.80.x) voltar a responder na hora.
+- [ ] Ficha do pedido: CPF do hóspede vazio aparece como "falta pedir"; decidir se entra no "Pedir o que falta".
 
