@@ -1548,6 +1548,34 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 @media (max-width:1180px){#v-correio.ol #cx-mesa{grid-template-columns:340px minmax(0,1fr)} #v-correio.ol .cx-pastas{display:none}}
 @media (max-width:800px){#v-correio.ol #cx-mesa{grid-template-columns:1fr;grid-template-rows:minmax(0,45%) minmax(0,1fr)}
   #v-correio.ol .cx-quadro{border-right:0;border-bottom:1px solid #21402c}}
+/* Todas as páginas no layout do Outlook (usuário, 15/10/2026 à noite): mesma faixa no topo, cores e fonte */
+.app.modo-ol{--f-titulo:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif}
+.modo-ol .topo{flex-wrap:wrap}
+.modo-ol .palco:has(> .vista:not(.oculta) .com-leitura) > .topo{display:flex!important}
+.ol-faixa-g{display:none}
+.modo-ol:not(.vista-correio) .ol-faixa-g{display:flex;align-items:center;gap:2px;flex-wrap:wrap;flex-basis:100%;margin:0 -14px;padding:6px 14px 8px;
+  border-bottom:1px solid #21402c}
+.modo-ol .ol-faixa-g button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px;border:0;border-radius:6px;background:none;
+  color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:none;margin:0}
+.modo-ol .ol-faixa-g button:hover{background:#173222;color:#f1f5ee}
+.modo-ol .ol-faixa-g button.p{background:#3da755;color:#06220f;font-weight:600}
+.modo-ol .ol-faixa-g svg{width:16px;height:16px;flex:none}
+.modo-ol .ol-faixa-g .sep{width:1px;height:20px;background:#2c5138;margin:0 6px}
+.modo-ol:not(.vista-correio) .ol-contagem{display:none}
+.modo-ol .vista{background:#0d2116}
+/* formulário aberto: Campo / Valor separados, como o e-mail que chega no Outlook */
+.ol-form{margin-top:4px;max-width:900px}
+.ol-form .ol-hot{margin:0 0 8px;padding:6px 12px;background:#2f8f6a;color:#fff;font-weight:600;border-radius:4px}
+.ol-form .ol-sol{color:#5fc27a;font-weight:600;margin:6px 0 8px}
+.ol-form table{width:100%;border-collapse:collapse;font-size:13px;border:1px solid #2c5138}
+.ol-form th{background:#2f8f6a;color:#fff;text-align:left;padding:7px 12px;font-weight:600}
+.ol-form td{padding:7px 12px;border-bottom:1px solid #2c5138;color:#f1f5ee;vertical-align:top;overflow-wrap:anywhere}
+.ol-form td + td{border-left:1px solid #2c5138}
+.ol-form tr:nth-child(even) td{background:#13301f}
+.ol-form td:first-child{font-weight:600;color:#c3d2c4;width:38%}
+.ol-ficha .fg{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ol-ficha .ft .div{padding:1px 7px;border-radius:4px;background:#e9dcb6;color:#5c4720;font-size:11.5px;font-weight:600}
+.cx-h-nota{font-size:12px;color:#93aa97;padding:6px 0}
 </style>
 </head>
 <body>
@@ -1626,6 +1654,7 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
       </div>
       <label class="busca"><svg class="ic"><use href="#i-busca"/></svg><input id="busca" type="search" placeholder="Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…" aria-label="Pesquisar no Outlook"></label>
       <div class="topo-filtro" id="topo-filtro"></div>
+      <div class="ol-faixa-g" id="ol-faixa-g" role="toolbar" aria-label="Comandos"></div>
     </header>
 
     <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>

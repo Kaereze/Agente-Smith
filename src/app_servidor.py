@@ -85,6 +85,7 @@ CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
 CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
 CANCELADAS_MINUTOS = 10
 VERIFICAR_ATUALIZACAO_MINUTOS = 15
+SEM_REDE_SEGUNDOS = 300      # PC que não respondeu pela rede: 5 min usando a cópia, sem esperar
 CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
 ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
@@ -799,8 +800,19 @@ class Estado:
         return saida
 
     def _enderecos_rede(self, so_online=True):
+        """PC que não respondeu pela rede nos últimos 5 min fica de fora (usuário, 15/10/2026: o e-mail e o histórico
+        demoravam porque cada pedido esperava 12 s pelo PC da Clara, que está em outra faixa de rede): usa a cópia."""
+        agora, fora = time.monotonic(), getattr(self, "_sem_rede", {})
         return {p["pc"]: p["rede"] for p in self.pcs() if p.get("rede") and (p["online"] or not so_online)
-                and p["pc"] != socket.gethostname()}
+                and p["pc"] != socket.gethostname() and agora - fora.get(p["pc"], -1e9) > SEM_REDE_SEGUNDOS}
+
+    def _anotar_rede(self, respostas):
+        fora = self.__dict__.setdefault("_sem_rede", {})
+        for pc, r in (respostas or {}).items():
+            if "não respondeu pela rede" in str((r or {}).get("erro", "")):
+                fora[pc] = time.monotonic()
+            elif r and "erro" not in r:
+                fora.pop(pc, None)
 
     # --- chamadas que chegam dos outros PCs (rede_local) ---
     def rede_buscar(self, corpo):
@@ -859,7 +871,8 @@ class Estado:
             return {**self.rede_texto({"id": id_email, "entry": entry}), "origem": "este PC"}
         endereco = self._enderecos_rede().get(pc)
         if endereco and self.segredo:
-            r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "texto", {"id": id_email, "entry": entry}).get(pc, {})
+            r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "texto", {"id": id_email, "entry": entry}, tempo=6).get(pc, {})
+            self._anotar_rede({pc: r})
             if "erro" not in r:
                 return {**r, "origem": "ao vivo"}
         if not id_email:
@@ -879,6 +892,7 @@ class Estado:
             raise KeyError("o PC dono desse e-mail está desligado ou sem rede agora: o anexo só pode ser aberto por lá")
         r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "anexo", {"id": id_email, "entry": entry, "nome": nome},
                                          tempo=45).get(pc, {})
+        self._anotar_rede({pc: r})
         if "erro" in r:
             raise KeyError(f"o PC dono não mandou o anexo: {r['erro']}")
         return r
@@ -905,13 +919,15 @@ class Estado:
         fio = _t.Thread(target=lambda: local.update(r=self._buscar_local(termo)))
         fio.start()
         if enderecos and self.segredo:
-            respostas = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", {"q": termo})
+            respostas = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", {"q": termo}, tempo=8)
+            self._anotar_rede(respostas)
         fio.join(busca_outlook.TEMPO_MAXIMO + 3)
         respostas[socket.gethostname()] = local.get("r", {"erro": "o Outlook deste PC não respondeu a tempo"})
         pcs = self._pcs_por_nome()
         for p in pcs.values():
             if p["pc"] not in respostas:
-                respostas[p["pc"]] = {"erro": "desligado" if not p["online"] else "sem endereço de rede (atualize o Painel dele)"}
+                respostas[p["pc"]] = {"erro": "desligado" if not p["online"] else "sem rede agora (usa a cópia)" if p.get("rede")
+                                      else "sem endereço de rede (atualize o Painel dele)"}
         resultados = [r for resp in respostas.values() for r in resp.get("resultados", [])]
         resultados.sort(key=lambda r: r["quando"], reverse=True)
         situacao = {pc: ({"ok": True, "achados": len(r.get("resultados", [])), "completo": r.get("completo", True)}

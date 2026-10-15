@@ -122,6 +122,7 @@ function desenharCorreio() {
     : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Caixa de Entrada vazia${quem}.`));
   if (idFoco) $("cx-lista").querySelector(`.cx-l[data-id="${CSS.escape(idFoco)}"]`)?.focus();
   desenharLeituraCorreio();
+  if (!busca) preCarregar(lista);
 }
 
 function statusBusca(busca) {
@@ -290,6 +291,7 @@ function abrirEmail(id) {
   if (!e) return;
   carregarTexto(e);
   if (e.pasta !== "enviado" && e.de) carregarHistorico(e.de);
+  preCarregarAnexos(e);
   if (e.lido === false && !cx.manterNaoLido[e.id]) {   // abriu = lido (pra equipe toda)
     api("/api/correio/evento", { ids: [e.id], acao: "LIDO" });
     e.lido = true;
@@ -306,23 +308,59 @@ async function carregarTexto(e) {
   const q = new URLSearchParams({ id: espelho ? e.id : "", pc: e.pc || "", entry: e.entry || "" });
   const r = await api("/api/correio/texto?" + q);
   cx.textos[chave] = r.erro ? { erro: r.erro } : r;
-  desenharLeituraCorreio();
+  if (cx.sel === chave || cx.hist.aberto === chave) desenharLeituraCorreio();   // pré-carregado: só guarda
+}
+// Abrir na hora (usuário, 15/10/2026: "quando eu clicar, abrir instantaneamente"): o texto dos primeiros e-mails da
+// lista e dos vizinhos do aberto já vem antes do clique; as fotos do e-mail aberto também
+let preFila = [], preAtivos = 0;
+function preCarregar(lista) {
+  const i = lista.findIndex(e => e.id === cx.sel);
+  const alvos = [...(i >= 0 ? [lista[i + 1], lista[i - 1], lista[i + 2]] : []), ...lista.slice(0, 15)]
+    .filter(e => e && !cx.textos[e.id] && e.pasta !== "excluido");
+  preFila = [...new Map(alvos.map(e => [e.id, e])).values()];
+  puxarFila();
+}
+function puxarFila() {
+  while (preAtivos < 2 && preFila.length) {
+    const e = preFila.shift();
+    if (cx.textos[e.id]) continue;
+    preAtivos++;
+    carregarTexto(e).finally(() => { preAtivos--; puxarFila(); });
+  }
+}
+async function preCarregarAnexos(e) {
+  const fotos = (e.anexos || []).filter(n => /\.(png|jpe?g|gif|webp|bmp)$/i.test(n)).slice(0, 3);
+  for (const nome of fotos) {
+    const k = e.id + "|" + nome;
+    if (visor.urls[k]) continue;
+    const q = new URLSearchParams({ id: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc || "", entry: e.entry || "", nome });
+    const r = await api("/api/correio/anexo?" + q);
+    if (r.erro || !r.b64 || visor.urls[k]) continue;
+    const bin = atob(r.b64), bytes = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+    visor.urls[k] = { url: URL.createObjectURL(new Blob([bytes], { type: r.tipo })), tipo: r.tipo, tamanho: r.tamanho };
+  }
 }
 async function carregarHistorico(de) {   // tudo do hóspede no Outlook dos PCs (qualquer pasta e data) + formulários
   if (cx.hist[de]) return;
-  cx.hist[de] = { carregando: true };
-  const [r, conv] = await Promise.all([api("/api/correio/buscar?q=" + encodeURIComponent(de)),
-                                       api("/api/correio/conversa?de=" + encodeURIComponent(de))]);
-  cx.hist[de] = { resultados: (r.resultados || []).filter(x => x.de === de || (x.para || "").includes(de)), pcs: r.pcs || {},
-                  agentes: r.agentes || {}, conv: conv.erro ? null : conv };
+  // na hora: o que o Painel já tem deste endereço (caixa de entrada e enviados); a busca nos 4 PCs completa depois
+  const doEnd = x => x.de === de || String(x.para || "").toLowerCase().includes(String(de).toLowerCase());
+  const locais = [...(cx.dados?.emails || []).map(x => ({ ...x, pasta: x.pasta || "entrada" })),
+                  ...(cx.dados?.enviados || []).map(x => ({ ...x, pasta: "enviado" }))].filter(doEnd);
+  cx.hist[de] = { resultados: locais, pcs: {}, agentes: {}, conv: null, parcial: true };
   desenharLeituraCorreio();
-  // hóspede único: os e-mails dos outros endereços dele (mesmo CPF/CNPJ) entram no histórico também
-  const outros = (conv.enderecos || []).slice(0, 2);
-  if (!outros.length) return;
-  const extras = await Promise.all(outros.map(x => api("/api/correio/buscar?q=" + encodeURIComponent(x))));
-  const vistos = new Set(cx.hist[de].resultados.map(x => x.id));
-  extras.forEach((rx, k) => (rx.resultados || []).filter(x => (x.de === outros[k] || (x.para || "").includes(outros[k])) && !vistos.has(x.id) && vistos.add(x.id))
-    .forEach(x => cx.hist[de].resultados.push(x)));
+  const juntar = (lista, extra) => { const vistos = new Set(lista.map(x => x.id)); extra.forEach(x => vistos.has(x.id) || (vistos.add(x.id), lista.push(x))); };
+  api("/api/correio/conversa?de=" + encodeURIComponent(de)).then(conv => {
+    if (!cx.hist[de] || conv.erro) return;
+    cx.hist[de].conv = conv; desenharLeituraCorreio();
+    const outros = (conv.enderecos || []).slice(0, 2);   // hóspede único: os outros endereços dele (mesmo CPF/CNPJ)
+    outros.forEach(x => api("/api/correio/buscar?q=" + encodeURIComponent(x)).then(rx => {
+      juntar(cx.hist[de].resultados, (rx.resultados || []).filter(y => y.de === x || (y.para || "").includes(x))); desenharLeituraCorreio(); }));
+  });
+  const r = await api("/api/correio/buscar?q=" + encodeURIComponent(de));
+  if (!cx.hist[de]) return;
+  juntar(cx.hist[de].resultados, (r.resultados || []).filter(x => x.de === de || (x.para || "").includes(de)));
+  Object.assign(cx.hist[de], { pcs: r.pcs || {}, agentes: r.agentes || {}, parcial: false });
   desenharLeituraCorreio();
 }
 
@@ -425,6 +463,17 @@ function desenharFaixa() {
       `<span class="sep"></span>` + bt('data-cx-faixa="lido"', "lido", "Não lido/Lido", 'title="Ctrl+U / Ctrl+Q"') + bt("", "band", "Sinalizar", nao) +
       `<div class="dir">${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
 }
+function desenharFaixaGlobal() {
+  const el = $("ol-faixa-g");
+  if (!el) return;
+  document.querySelectorAll("[data-ol-aba]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.olAba === cx.aba)));
+  const bt = (attr, ic, txt, cls = "") => `<button type="button" class="${cls}" ${attr}>${SVG(IC[ic])} ${txt}</button>`;
+  el.innerHTML = cx.aba === "enviar" ? bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas as pastas") + bt('data-ol-acao="pendentes"', "env", "Enviar solicitações pendentes")
+    : cx.aba === "exibir" ? bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
+    : bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
+      bt('data-vista="correio" data-caixa="urgencia"', "alerta", "Urgência") + bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
+      bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
+}
 const hotelDaCaixa = c => (st.hoteis || []).filter(h => h.email === c).map(h => h.hotel).join(" / ");
 const nomeDaCaixa = c => hotelDaCaixa(c) || String(c).split("@")[1]?.replace(/^(redeandrade|hotel)/, "").replace(/(hotel)?\.com(\.br)?$/, "").toUpperCase() || c;
 // Ficha do pedido (creme), no topo do e-mail como na prévia: tomador, documento, o que pede, nota, prazo e os 3 botões
@@ -435,16 +484,32 @@ function fichaPedidoOl(e) {
   const tom = campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/);
   const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
   const pede = campoDoPedido(s, /informac/, /o que.*nota/, /itens/);
-  const v = (x, dado) => x ? `<span>${esc(x)}</span>` : `<span class="falta">falta pedir</span>`;
+  // hóspede e o CPF dele SEMPRE, mesmo com a nota no CNPJ (usuário, 15/10/2026: "nunca esquece isso")
+  const hosp = campoDoPedido(s, /nome.*titular/, /nome do hospede/, /^hospede/) || (soDigitos(doc).length === 11 ? tom : "");
+  const cpfH = campoDoPedido(s, /cpf.*titular/, /documento do hospede/, /cpf.*hospede/) || (soDigitos(doc).length === 11 ? doc : "");
+  const v = x => x ? `<span>${esc(x)}</span>` : `<span class="falta">falta pedir</span>`;
   const i = prazoInfo(s.prazo);
   const barra = i ? Math.max(4, Math.min(100, Math.round(100 * i.resta / (s.prazo.horas || 48)))) : 0;
-  return `<section class="ol-ficha" aria-label="Ficha do pedido"><div class="ft"><b>Ficha do pedido</b> · ${esc(s.hotel)}${s.dono ? " · com " + esc(s.dono) : ""}
+  const div = s.dividida || s.partes > 1 ? `<span class="div">nota dividida em ${Math.max(s.partes || 2, 2)}</span>` : "";
+  return `<section class="ol-ficha" aria-label="Ficha do pedido"><div class="ft"><b>Ficha do pedido</b> · ${esc(s.hotel)}${s.dono ? " · com " + esc(s.dono) : ""} ${div}
+      ${s.nfs?.length ? `<span class="div">NF ${esc(s.nfs.join(", "))}</span>` : ""}
       ${i ? `<span class="prz ${i.nivel}">prazo: ${esc(i.texto)} <i><b style="width:${barra}%"></b></i></span>` : ""}</div>
-    <div class="fg"><div><small>Tomador</small>${v(tom)}</div><div><small>CNPJ / CPF</small>${v(doc, true)}</div>
-      <div><small>O que pede</small>${v(pede)}</div><div><small>Nota</small><span>${s.dividida || s.partes > 1 ? `Dividida em ${Math.max(s.partes || 2, 2)}` : "Única"}${s.nfs?.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span></div></div>
+    <div class="fg"><div><small>Tomador</small>${v(tom)}</div><div><small>CNPJ / CPF</small>${v(doc)}</div>
+      <div><small>O que pede</small>${v(pede)}</div><div><small>Hóspede</small>${v(hosp)}</div><div><small>CPF do hóspede</small>${v(cpfH)}</div></div>
     <div class="fb"><button type="button" class="p" data-cx-faixa="nf">Enviar NF</button>
       ${faltaDados(s).length ? `<button type="button" data-pedir-dados="${esc(s.chave)}">Pedir o que falta</button>` : ""}
       <button type="button" data-abrir-ficha="${esc(s.chave)}">Marcar tratativa</button></div></section>`;
+}
+// Formulário aberto como o e-mail que chega no Outlook: o hotel, a solicitação e a tabela Campo / Valor, linha a linha
+const OCULTOS_FORM = /^(enviado|carimbo|termos|importante|avalia|preenchimento|ritmo|sugest|sincroniz)/i;
+function formularioHtml(s) {
+  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const linhas = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)));
+  const nome = campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/) || s.nome || "";
+  return `<div class="ol-form"><div class="ol-hot">${esc(s.hotel)} <span style="font-weight:400;opacity:.85">(formulário de ${esc(dataBr(s.data))})</span></div>
+    <div class="ol-sol">Solicitação — ${esc(nome)}</div>
+    <table><tr><th>Campo</th><th>Valor</th></tr>${[["E-mail do hóspede", s.email], ...linhas].map(([k, val]) =>
+      `<tr><td>${esc(k)}</td><td>${esc(val)}</td></tr>`).join("")}</table></div>`;
 }
 function desenharLeituraCorreio() {
   desenharAcoes();
@@ -482,7 +547,7 @@ function desenharLeituraCorreio() {
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
     ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
     ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
-    <div class="ol-corpo">${corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}</div>
+    <div class="ol-corpo">${robo && pedidoDoEmail(e) ? formularioHtml(pedidoDoEmail(e)) : corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}</div>
     ${h ? historicoHtml(h, e) : ""}`;
 }
 
@@ -506,10 +571,10 @@ function avisoNfJaEnviada(h) {
 }
 
 function historicoHtml(h, atual) {
-  if (h.carregando) return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook</div><p class="dica">Procurando no Outlook dos PCs…</p></section>`;
+  if (h.carregando) return "";
   const forms = (h.conv?.linha_do_tempo || []).filter(x => x.tipo === "formulario");
   const itens = h.resultados.filter(x => x.id !== atual.id);
-  const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok).map(([pc]) => h.agentes[pc] || pc);
+  const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok && s.erro !== "sem rede agora (usa a cópia)").map(([pc]) => h.agentes[pc] || pc);
   const linhas = [...itens.map(x => ({ q: x.quando, html: linhaHist(x) })),
     ...forms.map(f => ({ q: f.quando, html: `<div class="cx-h form"><span class="cx-h-tipo">Formulário</span><span class="cx-h-data">${dataBr(f.quando)}</span>
       <span class="cx-h-ass">${esc(f.hotel)} · ${NOMES[f.situacao] || f.situacao}${f.nfs.length ? " · NF " + esc(f.nfs.join(", ")) : ""}</span>
@@ -518,7 +583,8 @@ function historicoHtml(h, atual) {
   const outros = h.conv?.enderecos || [];
   return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook <span>${linhas.length}</span></div>
     ${outros.length ? `<p class="dica">Mesmo hóspede (mesmo CPF/CNPJ) também usa: ${esc(outros.join(", "))}</p>` : ""}
-    ${linhas.map(l => l.html).join("") || `<p class="dica">Nenhum outro e-mail deste endereço no Outlook dos PCs ligados.</p>`}
+    ${linhas.map(l => l.html).join("") || (h.parcial ? "" : `<p class="dica">Nenhum outro e-mail deste endereço no Outlook dos PCs ligados.</p>`)}
+    ${h.parcial ? `<div class="cx-h-nota">Completando com o Outlook dos 4 PCs (e-mails antigos, outras pastas)…</div>` : ""}
     ${sem.length ? `<p class="dica">Sem resposta de: ${esc(sem.join(", "))} (desligado).</p>` : ""}</section>`;
 }
 function linhaHist(x) {
@@ -643,13 +709,14 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
   if (!t) { if (cx.menu && !ev.target.closest(".ol-menu")) { cx.menu = false; desenharLeituraCorreio(); } return; }
   const d = t.dataset;
-  if (d.olAba) { cx.aba = d.olAba; if (pn.vista !== "correio") trocarVista("correio"); return desenharFaixa(); }
+  if (d.olAba) { cx.aba = d.olAba; desenharFaixaGlobal(); return desenharFaixa(); }
   if (d.olAcao) {
     if (d.olAcao === "sync") { toast("Relendo as caixas dos 4 PCs…"); $("btn-atualizar")?.click(); carregarCorreio(); }
     if (d.olAcao === "pendentes") $("btn-enviar")?.click();
     if (d.olAcao === "pastas") { cx.semPastas = !cx.semPastas; desenharCorreio(); }
     if (d.olAcao === "tema") $("btn-tema")?.click();
     if (d.olAcao === "prof") $("btn-prof")?.click();
+    if (d.olAcao === "novo") abrirEnvioNF(null, { novo: true });
     return;
   }
   if (d.olMenu !== undefined) { cx.menu = !cx.menu; return desenharLeituraCorreio(); }
