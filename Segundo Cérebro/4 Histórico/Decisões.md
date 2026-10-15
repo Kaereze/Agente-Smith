@@ -38,3 +38,5 @@ tags: [cerebro/historico]
 
 Ver: [[O que não mexer]].
 | 14/10/2026 | **Repaginação v2 aprovada e no Painel**: escuro, menu recolhível, Monitoramento só admin, avisos no canto, tags só urgência/dividida/falta dado, "Pedir o que falta", resumo de ontem, Gerência = relatório do mês | Telas limpas e empresariais, foco no usuário |
+| 15/10/2026 | Copiar e enviar **a cada 10 min** (era 30) e alarme de **pedido parado** (+2 h sem envio) | O João viu pedidos "não enviados" no Rondonópolis e quer que nunca mais aconteça |
+| 15/10/2026 | O robô passa a marcar **TRUE na coluna Enviado da planilha do hotel** (só essa coluna), e corrigiu os antigos | O robô novo marcava só na Central; a planilha do hotel parecia não enviada (84 no Rondonópolis, todos enviados de verdade) |

@@ -139,6 +139,76 @@ def mesclar(origem, destino, cfg, chaves_ja_enviadas=frozenset()):
     return novas, resumo
 
 
+def _letra_coluna(indice):
+    """0 -> A, 25 -> Z, 26 -> AA (notação A1)."""
+    letras, indice = "", indice + 1
+    while indice:
+        indice, resto = divmod(indice - 1, 26)
+        letras = chr(65 + resto) + letras
+    return letras
+
+
+def linhas_para_marcar_no_hotel(origem, novas, cfg):
+    """TRUE também na planilha do hotel (usuário, 15/10/2026: o robô novo marcava só na Central e a planilha do hotel
+    parecia "não enviada"). origem: planilha do hotel; novas: o resultado do mesclar (TRUE vindo da Central ou da lista
+    do robô). -> (letra da coluna Enviado do hotel | None, [números das linhas no Sheets ainda sem TRUE])"""
+    cab = [str(c).strip() for c in origem[0]]
+    i_env = _achar_coluna(cab, cfg["colunas"]["enviado"])
+    if i_env is None:   # a planilha do hotel não tem a coluna: não criamos coluna na planilha de ninguém
+        return None, []
+    linhas_hotel = [i + 1 for i, l in enumerate(origem) if i and any(str(v).strip() for v in l)]   # mesma ordem do mesclar
+    marcar = []
+    for j, numero in enumerate(linhas_hotel):
+        if 1 + j >= len(novas):
+            break
+        if novas[1 + j][i_env] is True and normalizar(_celula(origem[numero - 1], i_env)) in VALORES_PENDENTE:
+            marcar.append(numero)
+    return _letra_coluna(i_env), marcar
+
+
+def escrever_true_no_hotel(cliente, arquivo_id, aba, letra, linhas):
+    """Escreve TRUE só na coluna Enviado, nas linhas dadas (uma chamada a cada 500 células). -> quantas"""
+    dados = [{"range": f"{nome_intervalo(aba)}!{letra}{n}", "values": [["TRUE"]]} for n in linhas]
+    for i in range(0, len(dados), 500):
+        lote = dados[i:i + 500]
+        _api("escrita", lambda lote=lote: cliente.http_client.values_batch_update(
+            arquivo_id, body={"valueInputOption": "USER_ENTERED", "data": lote}))
+    return len(dados)
+
+
+def espelhar_true_nos_hoteis(backend, cfg, hoteis=None):
+    """Põe TRUE na planilha do hotel em tudo que já foi enviado (TRUE na Central ou na lista do robô).
+    hoteis: nomes do cadastro (None = todos). -> {hotel: quantas linhas marcadas | "sem coluna Enviado"}"""
+    chave = caminho_chave_google(cfg)
+    cliente, central = backend._cliente, cfg["planilha_central_id"]
+    m = mapear_fontes(backend, cfg, chave)
+    alvo = sorted(m["por_hotel"])
+    if hoteis is not None:
+        quero = {normalizar(h) for h in hoteis}
+        alvo = [h for h in alvo if normalizar(h) in quero]
+    destinos = m["destino_do_hotel"]
+    dados_central, _ = backend.ler_abas(central, [destinos[h] for h in alvo if h in destinos])
+    lista = chaves_da_lista_ja_enviadas(PASTA_ESTADO / "ja_enviadas.json")
+    saida = {}
+    for hotel in alvo:
+        destino = dados_central.get(destinos.get(hotel, ""), [])
+        for arquivo in sorted(m["por_hotel"][hotel], key=lambda a: a["modifiedTime"], reverse=True):
+            time.sleep(PAUSA_ENTRE_LEITURAS)
+            aba_origem, origem = _ler_planilha_hotel(cliente, arquivo, cfg)
+            if len(origem) > 1:   # a mesma que a cópia usa: a mais recente com dados
+                break
+        else:
+            continue
+        novas, _ = mesclar(origem, destino, cfg, lista)
+        letra, marcar = linhas_para_marcar_no_hotel(origem, novas, cfg)
+        if letra is None:
+            saida[hotel] = "sem coluna Enviado"
+        elif marcar:
+            saida[hotel] = escrever_true_no_hotel(cliente, arquivo["id"], aba_origem, letra, marcar)
+            logger.info(f"✔️ {hotel}: {saida[hotel]} linha(s) marcada(s) TRUE na planilha do hotel (já enviadas)")
+    return saida
+
+
 def _chave_tem_hora_diferente(linhas_d, idx, k, destino, col, fmt):
     """Casamento só por data+e-mail vale se a linha da Central não tiver hora ou tiver a mesma."""
     cab_d = [str(c).strip() for c in destino[0]]
@@ -300,6 +370,14 @@ def sincronizar(gravar=False, completa=None):
                       linhas_central_antes=max(len(destino) - 1, 0), criar_aba=aba_destino not in abas_central,
                       outras_planilhas=[x[0]["name"] for x in lidas[1:]] if len(lidas) > 1 else [],
                       mudou=_como_texto(novas) != _como_texto(destino))
+        if gravar and cfg.get("marcar_true_no_hotel", True):
+            try:
+                letra, marcar = linhas_para_marcar_no_hotel(origem, novas, cfg)
+                if letra and marcar:
+                    resumo["true_no_hotel"] = escrever_true_no_hotel(cliente, arquivo["id"], aba_origem, letra, marcar)
+                    logger.info(f"✔️ {hotel}: {resumo['true_no_hotel']} linha(s) marcada(s) TRUE na planilha do hotel (já enviadas)")
+            except Exception as e:
+                logger.warning(f"⚠️ {hotel}: não consegui marcar TRUE na planilha do hotel ({e}) — tento na próxima volta")
         relatorio.append(resumo)
         if gravar and resumo["mudou"]:
             if destino:

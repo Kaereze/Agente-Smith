@@ -38,6 +38,17 @@ def _marcar_e_registrar(backend, cfg, solicitacoes, registrar=True):
     logger.info(f"✅ {marcadas} solicitação(ões) marcada(s) como Enviado = TRUE.")
     if registrar:
         registrar_central(backend, cfg, solicitacoes)
+    # TRUE também na planilha do hotel, na hora (usuário, 15/10/2026); falhou, a próxima cópia corrige
+    if cfg.get("modo") == "PRODUCAO" and cfg.get("marcar_true_no_hotel", True) and hasattr(backend, "_cliente"):
+        try:
+            import sincronizar
+            feitos = sincronizar.espelhar_true_nos_hoteis(backend, cfg, {s.hotel.nome for s in solicitacoes})
+            n = sum(v for v in feitos.values() if isinstance(v, int))
+            if n:
+                logger.info(f"✔️ {n} linha(s) marcada(s) TRUE também na planilha do hotel.")
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui marcar TRUE na planilha do hotel ({e}). A Central está certa; "
+                           f"a próxima cópia das planilhas tenta de novo.")
     return True
 
 

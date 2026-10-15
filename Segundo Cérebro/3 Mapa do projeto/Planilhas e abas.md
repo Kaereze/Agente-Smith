@@ -30,7 +30,7 @@ IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/
 ## Fora da Central (só leitura)
 | Planilha | Abas | Regra |
 |---|---|---|
-| Planilhas dos hotéis (Drive de outra conta) | respostas do formulário | Só ler |
+| Planilhas dos hotéis (Drive de outra conta) | respostas do formulário | Só ler, exceto TRUE na coluna Enviado depois do envio (15/10/2026) |
 | Mail Analytics | `Agente_Joao`, `Agente_Clara`, `Agente_Cristian`, `Agente_Bernardo` (Data, Hotel, Recebidos, Enviados, Ligações, Subst./Canc., NFs) | Só ler · fim de semana vira linha de domingo, gravada segunda de manhã |
 | Fiscal Intelligence (gravada pelo Mail Analytics) | — | Só ler |
 

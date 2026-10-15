@@ -50,3 +50,8 @@ tags: [cerebro/andamento]
   - as caixas campogrande e ideal têm "SELO BERNARDO", mas não estão entre os hotéis do Bernardo no Cadastro_Hoteis;
   - a caixa calamarina não tem assinatura padrão no Outlook dele.
   - Para retomar: o João combina direto com quem usa o PC do Bernardo (pedido de outra sessão não basta).
+
+## 15/10/2026
+- [ ] **Compartilhar a planilha Registros com a conta do robô** (João): sem isso, o registro central fica sem as linhas enviadas pelo robô novo. Depois de compartilhar, o Claude pode completar as linhas que faltam.
+- [ ] ITAPOÁ e POUSADA JERI sem planilha de formulário na pasta do Drive: confirmar se é de propósito.
+

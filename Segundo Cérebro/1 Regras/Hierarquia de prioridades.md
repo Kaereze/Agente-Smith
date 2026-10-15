@@ -17,7 +17,7 @@ tags: [cerebro/regras]
 
 > [!p1] P1 · Não quebrar produção — só com pedido explícito do João
 > Mail Analytics, os 4 PCs da equipe, Outlook real e planilhas.
-> - Mail Analytics intocado (código e planilha: só ler) · planilhas dos hotéis e Dropbox só leitura.
+> - Mail Analytics intocado (código e planilha: só ler) · planilhas dos hotéis e Dropbox só leitura (exceção: TRUE na coluna Enviado do hotel depois do envio, autorizado em 15/10/2026).
 > - Testes passando antes de subir · branches dos colegas só fast-forward da `main`.
 > - Em teste: não abrir e-mail não lido, não enviar, não excluir. Detalhes em [[O que não mexer]].
 

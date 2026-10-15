@@ -44,7 +44,7 @@ tags: [cerebro/mapa]
 **Robôs (`src/`)**
 | Arquivo | Linhas | Para quê |
 |---|---|---|
-| `sincronizar.py` | 446 | Cópia das planilhas dos hotéis (30 min) |
+| `sincronizar.py` | 520 | Cópia das planilhas dos hotéis (a cada 10 min) + TRUE de volta na planilha do hotel |
 | `main.py` · `montar_email.py` · `outlook.py` | 432 · 281 · 126 | Envio das solicitações |
 | `conferente.py` | 794 | Processo contínuo de cada PC |
 | `espelho_emails.py` | 790 | Espelho do Outlook de cada PC |
