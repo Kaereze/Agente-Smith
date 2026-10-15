@@ -300,6 +300,29 @@ def _achar_coluna(cabecalhos, nomes_aceitos):
     return None
 
 
+def _achar_colunas(cabecalhos, nomes_aceitos):
+    """Como _achar_coluna, mas todas as que casam, em ordem de preferência. A aba da Central de um hotel pode juntar
+    o formulário antigo e o novo (15/10/2026): na linha do novo, 'Endereço de e-mail' fica vazio e o e-mail está em 'E-mail'."""
+    if isinstance(nomes_aceitos, str):
+        nomes_aceitos = [nomes_aceitos]
+    normalizados = [normalizar(c) for c in cabecalhos]
+    saida = []
+    for alvo in (normalizar(n) for n in nomes_aceitos if str(n).strip()):
+        saida += [i for i, c in enumerate(normalizados) if c == alvo and i not in saida]
+    return saida
+
+
+def _coluna_da_linha(linha, indices):
+    """Das colunas de _achar_colunas, a primeira com valor nesta linha (nenhuma com valor: a primeira).
+    Um índice só (int ou None) passa direto."""
+    if not isinstance(indices, (list, tuple)):
+        return indices
+    for i in indices:
+        if _celula(linha, i):
+            return i
+    return indices[0] if indices else None
+
+
 def _celula(linha, indice):
     if indice is None or indice >= len(linha):
         return ""
@@ -390,7 +413,7 @@ def _nome_titulo(cabecalhos, linha, cfg):
     colunas = cfg["colunas"]
     i_tomador = _achar_coluna(cabecalhos, colunas.get("reserva_no_tomador", ""))
     i_pf = _achar_coluna(cabecalhos, colunas.get("nome_pessoa_fisica", ""))
-    i_hospede = _achar_coluna(cabecalhos, colunas.get("nome_hospede", ""))
+    i_hospede = _coluna_da_linha(linha, _achar_colunas(cabecalhos, colunas.get("nome_hospede", "")))
     if normalizar(_celula(linha, i_tomador)) == "sim" and _celula(linha, i_pf):
         return _celula(linha, i_pf)
     return " ".join(_celula(linha, i_hospede).split()) or "Hóspede"
@@ -427,7 +450,7 @@ def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
     colunas = cfg["colunas"]
     i_enviado = _achar_coluna(cabecalhos, colunas["enviado"])
     i_carimbo = _achar_coluna(cabecalhos, colunas["carimbo"])
-    i_email = _achar_coluna(cabecalhos, colunas.get("email_hospede", ""))
+    i_emails = _achar_colunas(cabecalhos, colunas.get("email_hospede", ""))
     if i_enviado is None:
         return [], f"sem a coluna '{colunas['enviado']}'"
     if i_carimbo is None:
@@ -437,7 +460,6 @@ def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
     formato = detectar_formato_data((_celula(l, i_carimbo) for l in linhas[1:]),
                                     cfg.get("formato_data_planilha", "americano"))
     documentos = cfg.get("colunas_documento", {})
-    esconder = {i_email} if i_email is not None else set()
     pendentes = []
     for numero, linha in enumerate(linhas[1:], start=2):
         linha = list(linha) + [""] * (len(cabecalhos) - len(linha))
@@ -452,6 +474,8 @@ def interpretar_aba(hotel, linhas, cfg, incluir_linhas=None):
         if not carimbo:
             logger.warning(f"⚠️ {hotel.aba} linha {numero}: sem carimbo de data/hora — pulada (não dá pra identificar).")
             continue
+        i_email = _coluna_da_linha(linha, i_emails)
+        esconder = {i_email} if i_email is not None else set()
         pendentes.append(Solicitacao(
             hotel=hotel,
             linha=numero,
@@ -519,13 +543,14 @@ def marcar_enviados(backend, cfg, solicitacoes):
             cabecalhos = [str(c).strip() for c in linhas[0]]
             i_enviado = _achar_coluna(cabecalhos, colunas["enviado"])
             i_carimbo = _achar_coluna(cabecalhos, colunas["carimbo"])
-            i_email = _achar_coluna(cabecalhos, colunas.get("email_hospede", ""))
+            i_emails = _achar_colunas(cabecalhos, colunas.get("email_hospede", ""))
             if i_enviado is None or i_carimbo is None:
                 nao_encontradas.extend(lista)
                 continue
             linhas_por_chave = {}
             for numero, linha in enumerate(linhas[1:], start=2):
-                chave = (_celula(linha, i_carimbo), _celula(linha, i_email), assinatura_da_linha(linha, i_enviado))
+                chave = (_celula(linha, i_carimbo), _celula(linha, _coluna_da_linha(linha, i_emails)),
+                         assinatura_da_linha(linha, i_enviado))
                 linhas_por_chave.setdefault(chave, []).append(numero)
             for s in lista:
                 numeros = linhas_por_chave.get((s.carimbo, s.email_hospede, s.assinatura))

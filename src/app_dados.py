@@ -8,7 +8,8 @@ resolvem sem trava: vale a linha que entrou primeiro.
 import datetime
 import re
 
-from sheets import VALORES_PENDENTE, _achar_coluna, _celula, _dados_para_conferencia, _nome_titulo
+from sheets import (VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha, _dados_para_conferencia,
+                    _nome_titulo)
 from tratamento import campos_para_email, detectar_formato_data, ler_data, normalizar
 
 ABA_TRATAMENTO = "Tratamento"
@@ -75,17 +76,18 @@ def ler_solicitacoes(aba, hotel, linhas, cfg):
     cab = [str(c).strip() for c in linhas[0]]
     col = cfg["colunas"]
     i_env, i_car = _achar_coluna(cab, col["enviado"]), _achar_coluna(cab, col["carimbo"])
-    i_email = _achar_coluna(cab, col.get("email_hospede", ""))
+    i_emails = _achar_colunas(cab, col.get("email_hospede", ""))
     if i_car is None:
         return []
     formato = detectar_formato_data((_celula(l, i_car) for l in linhas[1:]), cfg.get("formato_data_planilha", "americano"))
-    esconder = {i_email} if i_email is not None else set()
     saida = []
     for numero, linha in enumerate(linhas[1:], start=2):
         linha = list(linha) + [""] * (len(cab) - len(linha))
         carimbo = _celula(linha, i_car)
         if not carimbo:
             continue
+        i_email = _coluna_da_linha(linha, i_emails)   # formulário antigo e novo na mesma aba (15/10/2026)
+        esconder = {i_email} if i_email is not None else set()
         email = _celula(linha, i_email)
         emails, nomes, partes = _dados_para_conferencia(cab, linha, cfg)
         data = ler_data(carimbo, formato)

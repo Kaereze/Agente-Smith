@@ -17,8 +17,9 @@ garantir_utf8()
 
 from config import PASTA_ESTADO, carregar_config, caminho_chave_google
 from log_util import configurar_logging
-from sheets import VALORES_PENDENTE, _achar_coluna, _celula
-from sincronizar import PAUSA_ENTRE_LEITURAS, _chave_linha, _gravar_aba, _hora, _ler_planilha_hotel, mapear_fontes
+from sheets import VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha
+from sincronizar import (PAUSA_ENTRE_LEITURAS, _chave_linha, _gravar_aba, _hora, _ler_planilha_hotel, juntar_planilhas,
+                         mapear_fontes)
 from tratamento import detectar_formato_data, normalizar
 
 logger = configurar_logging("conferir_copia")
@@ -38,7 +39,7 @@ def _linhas_com_dados(linhas):
 
 
 def _resumo_linha(l, i_car, i_email, i_nome):
-    partes = [_celula(l, i_car), _celula(l, i_nome) if i_nome is not None else "", _celula(l, i_email)]
+    partes = [_celula(l, i_car), _celula(l, _coluna_da_linha(l, i_nome)), _celula(l, _coluna_da_linha(l, i_email))]
     return " · ".join(p for p in partes if p)
 
 
@@ -53,9 +54,9 @@ def comparar(origem, central, cfg):
     cab_o = [str(c).strip() for c in origem[0]]
     cab_c = [str(c).strip() for c in central[0]] if central else []
     i_env_o, i_car_o = _achar_coluna(cab_o, col["enviado"]), _achar_coluna(cab_o, col["carimbo"])
-    i_mail_o, i_nome_o = _achar_coluna(cab_o, col.get("email_hospede", "")), _achar_coluna(cab_o, col.get("nome_hospede", ""))
+    i_mail_o, i_nome_o = _achar_colunas(cab_o, col.get("email_hospede", "")), _achar_colunas(cab_o, col.get("nome_hospede", ""))
     i_env_c, i_car_c = _achar_coluna(cab_c, col["enviado"]), _achar_coluna(cab_c, col["carimbo"])
-    i_mail_c = _achar_coluna(cab_c, col.get("email_hospede", ""))
+    i_mail_c = _achar_colunas(cab_c, col.get("email_hospede", ""))
 
     pos_c = {normalizar(c): i for i, c in enumerate(cab_c) if c}
     comparaveis = []
@@ -183,12 +184,16 @@ def conferir(backend=None, cfg=None):
                     logger.warning(f"⚠️ [{n}/{total}] {hotel}: não consegui ler a planilha '{a['name']}' "
                                    f"({str(e)[:90]})" + (" — espero 45s e tento de novo." if tentativa == 1 else ""))
             lidas.append((a, linhas))
-        com_dados = [x for x in lidas if x[1] and len(x[1]) > 1]
-        usada = com_dados[0] if com_dados else (lidas[0] if lidas else (None, None))
-        arquivo, origem = usada
+        com_dados = [(a, "", linhas) for a, linhas in lidas if linhas and len(linhas) > 1]
+        nao_lidas = [a["name"] for a, linhas in lidas if linhas is None]
+        if com_dados:   # a cópia junta todas as planilhas do hotel com dados (15/10/2026); a conferência também
+            origem, nomes = juntar_planilhas(com_dados, cfg)[0], " + ".join(a["name"] for a, _aba, _l in com_dados)
+        else:
+            arquivo, origem = next(((a, l) for a, l in lidas if l is not None), lidas[0] if lidas else (None, None))
+            nomes = arquivo["name"] if arquivo else ""
         central_linhas = dados_central.get(aba_central, []) if aba_central else []
 
-        linha = {"hotel": hotel, "planilha": arquivo["name"] if arquivo else "", "aba": aba_central or "(não existe)"}
+        linha = {"hotel": hotel, "planilha": nomes, "aba": aba_central or "(não existe)"}
         if origem is None:
             resultado, frase, r = PROBLEMA, "Não consegui ler a planilha do hotel no Drive.", comparar([], central_linhas, cfg)
         elif not aba_central or aba_central in erros_central:
@@ -197,12 +202,9 @@ def conferir(backend=None, cfg=None):
         else:
             r = comparar(origem, central_linhas, cfg)
             resultado, frase = classificar(r, _todas_depois(r["faltando_quando"], ultima_copia))
-        # Hotel com duas planilhas: só a mais recente com dados é copiada; a outra não pode ter pedidos
-        for outra, linhas_outra in lidas:
-            if outra is not arquivo and linhas_outra and len(_linhas_com_dados(linhas_outra)) > 0:
-                resultado = PROBLEMA
-                frase += (f" | A planilha '{outra['name']}' também é deste hotel e tem "
-                          f"{len(_linhas_com_dados(linhas_outra))} solicitação(ões) — ela NÃO é copiada.")
+        if nao_lidas and origem is not None:   # uma das planilhas do hotel não abriu: conferência incompleta
+            resultado = PROBLEMA
+            frase += f" | Não consegui ler a planilha {', '.join(nao_lidas)} — conferência incompleta."
         linha.update(resultado=resultado, frase=frase, r=r)
         resultados.append(linha)
         marca = {OK: "✅", NOVIDADE: "⏳", PROBLEMA: "❌"}[resultado]

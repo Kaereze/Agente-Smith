@@ -43,14 +43,24 @@ def chave(email, quando):
     return (str(email or "").strip().lower(), quando)
 
 
-def registrar_atividade(caminho, vistos):
-    """vistos = {hotel: pedido mais recente que o robô antigo marcou TRUE}"""
+def _ate(iso, limite):
+    try:
+        return datetime.datetime.fromisoformat(iso) <= limite
+    except (TypeError, ValueError):
+        return False
+
+
+def registrar_atividade(caminho, vistos, agora=None):
+    """vistos = {hotel: pedido mais recente que o robô antigo marcou TRUE}. Data no futuro (carimbo lido no formato
+    errado: 10/12 virou dezembro) não vale e sai do arquivo: deixaria o hotel "esperando o robô antigo" até lá."""
+    limite = (agora or datetime.datetime.now()) + datetime.timedelta(days=1)
     try:
         atual = json.load(open(caminho, encoding="utf-8"))
     except (FileNotFoundError, ValueError):
         atual = {}
+    atual = {h: iso for h, iso in atual.items() if _ate(iso, limite)}
     for hotel, quando in vistos.items():
-        if quando and (hotel not in atual or quando.isoformat() > atual[hotel]):
+        if quando and quando <= limite and (hotel not in atual or quando.isoformat() > atual[hotel]):
             atual[hotel] = quando.isoformat(timespec="seconds")
     salvar_json(caminho, atual)
 

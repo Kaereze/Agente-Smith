@@ -5,6 +5,27 @@ import sincronizar as sz
 CFG = {"colunas": {"enviado": "Enviado", "carimbo": "Carimbo de data/hora", "email_hospede": ["E-mail"]},
        "formato_data_planilha": "americano"}
 CAB = ["Carimbo de data/hora", "E-mail", "Nome", "Enviado"]
+ARQ = {"id": "PLANILHA", "name": "Nota Fiscal (Barra) (respostas)"}
+
+
+class Http:
+    def __init__(self):
+        self.chamadas = []
+
+    def values_batch_update(self, id, body=None):
+        self.chamadas.append((id, body))
+
+
+class Cliente:
+    def __init__(self):
+        self.http_client = Http()
+
+
+def _plano(origem, central, lista=frozenset()):
+    lidas = [(ARQ, "Respostas ao formulário 1", origem)]
+    o, fontes = sz.juntar_planilhas(lidas, CFG)
+    novas, _ = sz.mesclar(o, central, CFG, lista)
+    return sz.linhas_para_marcar_no_hotel(lidas, fontes, novas, CFG)
 
 
 def test_letra_coluna():
@@ -21,31 +42,25 @@ def test_marca_so_o_que_a_central_ja_enviou_e_respeita_linha_vazia():
                ["10/1/2026 9:00:00", "a@x.com", "Ana", "TRUE"],
                ["10/2/2026 10:00:00", "b@x.com", "Bia", "TRUE"],
                ["10/3/2026 11:00:00", "c@x.com", "Caio", "FALSE"]]
-    novas, _ = sz.mesclar(origem, central, CFG)
-    assert sz.linhas_para_marcar_no_hotel(origem, novas, CFG) == ("D", [4])
+    assert _plano(origem, central) == [(ARQ, "Respostas ao formulário 1", "D", [4])]
 
 
 def test_lista_do_robo_tambem_conta_e_sem_coluna_nao_mexe():
+    enviada = {("2026-10-02", "10:00:00", "b@x.com")}
     origem = [CAB, ["10/2/2026 10:00:00", "b@x.com", "Bia", ""]]
-    novas, _ = sz.mesclar(origem, [], CFG, {("2026-10-02", "10:00:00", "b@x.com")})
-    assert sz.linhas_para_marcar_no_hotel(origem, novas, CFG) == ("D", [2])
+    assert _plano(origem, [], enviada) == [(ARQ, "Respostas ao formulário 1", "D", [2])]
     sem = [["Carimbo de data/hora", "E-mail"], ["10/2/2026 10:00:00", "b@x.com"]]
-    novas, _ = sz.mesclar(sem, [], CFG, {("2026-10-02", "10:00:00", "b@x.com")})
-    assert sz.linhas_para_marcar_no_hotel(sem, novas, CFG) == (None, [])
+    plano = _plano(sem, [], enviada)
+    assert plano == [(ARQ, "Respostas ao formulário 1", None, [2])]
+    cliente = Cliente()
+    assert sz.marcar_true_nos_arquivos(cliente, plano) == (0, [ARQ["name"]])   # não cria coluna na planilha de ninguém
+    assert cliente.http_client.chamadas == []
 
 
 def test_escreve_so_a_coluna_enviado():
-    chamadas = []
-
-    class Http:
-        def values_batch_update(self, id, body=None):
-            chamadas.append((id, body))
-
-    class Cliente:
-        http_client = Http()
-
-    assert sz.escrever_true_no_hotel(Cliente(), "PLANILHA", "Respostas ao formulário 1", "D", [4, 9]) == 2
-    (pid, corpo), = chamadas
+    cliente = Cliente()
+    assert sz.escrever_true_no_hotel(cliente, "PLANILHA", "Respostas ao formulário 1", "D", [4, 9]) == 2
+    (pid, corpo), = cliente.http_client.chamadas
     assert pid == "PLANILHA" and corpo["valueInputOption"] == "USER_ENTERED"
     assert [d["range"] for d in corpo["data"]] == ["'Respostas ao formulário 1'!D4", "'Respostas ao formulário 1'!D9"]
     assert all(d["values"] == [["TRUE"]] for d in corpo["data"])
