@@ -1576,6 +1576,33 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .ol-ficha .fg{grid-template-columns:repeat(5,minmax(0,1fr))}
 .ol-ficha .ft .div{padding:1px 7px;border-radius:4px;background:#e9dcb6;color:#5c4720;font-size:11.5px;font-weight:600}
 .cx-h-nota{font-size:12px;color:#93aa97;padding:6px 0}
+/* Tipografia única, igual à caixa de entrada aprovada (usuário, 17/10/2026: "verifica o espaçamento das letras"):
+   texto sem espaçamento; títulos -0,01em; rótulos pequenos em maiúsculas 11px com 0,05em; números na fonte do texto,
+   alinhados (a fonte "de máquina" fica só no e-mail das caixas e no nome dos PCs) */
+.app.modo-ol{--f-dado:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0}
+.modo-ol :is(.rot,.linhas-cab span,.linhas-cab button,.kpi .r,.tabela th,.ativ-tab th,.stc-r,.pop-grupo,.ord,.quadro-e2 > b,.kpi-r,.rot-nav,.cx-tipo,.st-rot,.cx-fl > span:first-child,.cx-verifica b,.cx-hist-t,.fr-rot,.ger-tab th,.ajuda-corpo h4,.ficha-tit .rot,.nf-cab span,.rot-barra,.sec-tit,.sc-grupo,.fr-bloco h4,.cx-pedido small,.rd-kpi small,.rd-tab th,.g-kpi small,.ol-pc,.ol-ficha .fg small){letter-spacing:.05em!important;font-size:11px!important;font-weight:600!important;color:var(--tinta-3)}
+.modo-ol :is(.col-hotel,.cx-hotel){letter-spacing:0!important;text-transform:none!important}
+.modo-ol :is(.pilula,.envio,.tipo,.tipo-o,.op-cartao .op-nome,.ln .n.em-teste){letter-spacing:.04em!important}
+.modo-ol .vista :is(h1,h2){letter-spacing:-.01em!important}
+.modo-ol .vista h1{font-size:19px!important;font-weight:600!important}
+.modo-ol .vista h2{font-size:15px;font-weight:600}
+.modo-ol .ol-pc span,.modo-ol .ol-cx .nm small{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace!important}
+/* Notas fiscais organizadas como a caixa de entrada (usuário, 17/10/2026): linhas de 2 andares (hóspede e hora; hotel,
+   agente e prazo; etiquetas) e a ficha sempre à direita */
+.modo-ol #mesa .nf-cab,.modo-ol #linhas-cab:has(.nf-cab){display:none!important}
+.modo-ol #mesa .nf-l.col{grid-template-columns:minmax(0,1fr) auto auto!important;grid-template-areas:"nome nome hora" "hotel op prazo" "sit sit sit";
+  gap:2px 10px!important;padding:8px 14px 8px 17px!important;align-items:baseline;border-bottom:1px solid #18341f}
+.modo-ol #mesa .nf-l.col:hover{background:#122a1c}
+.modo-ol #mesa .nf-l.col.sel{background:#2b2716;outline:1px solid #4a4227;outline-offset:-1px}
+.modo-ol #mesa .nf-l.col .c-nome{grid-area:nome;font-size:13.5px;color:#f1f5ee}
+.modo-ol #mesa .nf-l.col .c-hora{grid-area:hora;font-size:12px;color:#93aa97}
+.modo-ol #mesa .nf-l.col.nao-lido .c-hora{color:#7fd492;font-weight:600}
+.modo-ol #mesa .nf-l.col .c-hotel{grid-area:hotel;font-size:12.5px;color:#c3d2c4}
+.modo-ol #mesa .nf-l.col .c-op{grid-area:op;font-size:12px;color:#93aa97}
+.modo-ol #mesa .nf-l.col .c-prazo{grid-area:prazo;justify-self:end;font-size:12px}
+.modo-ol #mesa .nf-l.col .c-sit{grid-area:sit;white-space:normal;display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.modo-ol #mesa .nf-l.col .c-sit:empty{display:none}
+.modo-ol #mesa .nf-l.col .c-op,.modo-ol #mesa .nf-l.col .c-prazo{display:block!important}
 </style>
 </head>
 <body>
@@ -2382,10 +2409,12 @@ function desenhar(){
 
 function desenharDetalhe() {
   const s = sel && acharPedido(sel), e = emailSel && st.emails.find(x => x.id === emailSel);
-  $("mesa").classList.toggle("com-leitura", !!(s || e));
-  $("detalhe").classList.toggle("oculta", !(s || e));
+  const ol = !!document.querySelector(".app.modo-ol");   // igual à caixa de entrada: a ficha fica sempre à direita (17/10/2026)
+  $("mesa").classList.toggle("com-leitura", !!(s || e) || ol);
+  $("detalhe").classList.toggle("oculta", !(s || e) && !ol);
   if (e) return desenharDetalheEmail(e);
-  if (!s) { $("detalhe").innerHTML = ""; return; }
+  if (!s) { $("detalhe").dataset.k = ""; $("detalhe").innerHTML = ol ? `<div class="ol-vazio"><svg aria-hidden="true"><use href="#i-nf"/></svg>
+    <b>Selecione uma solicitação para abrir a ficha</b><span>Clique numa linha da lista · as setas ↑ ↓ andam pelas solicitações</span></div>` : ""; return; }
   if (typeof envNF !== "undefined" && envNF && envNF.alvo === $("detalhe")) return;   // escrevendo o e-mail da NF: não apaga
   // não redesenha enquanto alguém digita no painel de leitura (a lista atualiza sozinha a cada 15 s)
   const foco = document.activeElement;
