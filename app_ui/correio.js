@@ -471,7 +471,7 @@ function desenharFaixaGlobal() {
   el.innerHTML = cx.aba === "enviar" ? bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas as pastas") + bt('data-ol-acao="pendentes"', "env", "Enviar solicitações pendentes")
     : cx.aba === "exibir" ? bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
     : bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
-      bt('data-vista="correio" data-caixa="urgencia"', "alerta", "Urgência") + bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
+      bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
 }
 const hotelDaCaixa = c => (st.hoteis || []).filter(h => h.email === c).map(h => h.hotel).join(" / ");
