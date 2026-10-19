@@ -53,6 +53,7 @@ tags: [cerebro/trabalho]
 | **Modo demonstração / modo casa** | `demo.py`; servidor `main()` (`--demo`, `--visualizar`); `sheets.BackendSoLeitura`; `PAINEL_DEMO_EM_CASA.bat` |
 | **Avisos do Windows** | `avisos_windows.py` |
 | **Configuração** | `config.json` (todos), `config.local.json` (só do PC, papel principal/conferente), `config.py` |
+| **Travas de entrega** (pre-commit, guarda do git, testes no GitHub) | `ferramentas/checar_commit.py` (via `.githooks/pre-commit`), `ferramentas/guarda_git.py` (hook do Claude Code em `NOTAS/.claude/settings.json`), `.github/workflows/testes.yml`; testes em `testes/test_ferramentas.py` |
 
 ## Armadilhas conhecidas
 - **Nunca** chamar `win32com.client.Dispatch("Outlook.Application")` direto: use `outlook_vivo.aplicativo()` (o Dispatch com o Outlook fechado cria um Outlook **sem janela**, que não baixa e-mail POP3).

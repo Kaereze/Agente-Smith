@@ -19,6 +19,7 @@ tags: [cerebro/mapa]
 | [[apps_script]] | 🟧 produção | Menu da Planilha Central |
 | [[Arquivos da raiz]] | 🟧 produção | `config.json`, `robo.py`, instaladores `.bat` |
 | [[testes]] | 🟩 livre | Testes automáticos |
+| `ferramentas/` · `.githooks/` · `.github/` | 🟦 entrega | Travas: pre-commit, guarda do git e testes no GitHub (19/10/2026) |
 | [[Cofre (Segundo Cérebro)]] | 🟩 livre | Este cofre |
 | [[NOTAS (pasta de cima)]] | 🟩 livre | `CLAUDE.md`, `.mcp.json` (só no PC do trabalho) |
 | [[estado]] | 🟥 não mexer à mão | Memória local, backups, dados de hóspedes |

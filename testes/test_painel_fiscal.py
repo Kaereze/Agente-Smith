@@ -138,7 +138,7 @@ def test_serie_marca_domingo_somado():
 
 
 AVISO_SOMA = ("⚠️ Fim de semana de 04/10/2026 somado SEM sábado 03/10 (dia não contado nesta máquina) em 18 hotel(is). "
-              "Pra completar: python src\main.py --data=2026-10-03")
+              "Pra completar: python src\\main.py --data=2026-10-03")
 
 
 def test_quem_nao_soma_fim_de_semana_nao_recebe_aviso_de_soma_incompleta():

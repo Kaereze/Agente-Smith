@@ -41,5 +41,6 @@ tags: [cerebro/historico]
 | 15/10/2026 | A cópia **junta todas as planilhas do hotel** numa aba só da Central (formulário antigo + novo, cada coluna pelo nome; o TRUE volta para a planilha de onde a linha veio) | O formulário novo grava numa planilha nova e a antiga para; copiar só a mais recente deixou 26 pedidos sem envio (Boa Viagem e São Francisco) |
 | 15/10/2026 | **E-mail do robô sai do PC dono da caixa do hotel**, da caixa do hotel para ela mesma. A caixa do Ondina não manda mais e-mail de outro hotel (só o e-mail de teste) | João: "por que está sendo utilizado meu e-mail do Ondina? mande uma requisição para o PC dono daquele hotel e ele mesmo envia" |
 | 15/10/2026 | **E-mails igual ao Outlook** aprovado (prévia no Claude, página "E-mails · igual ao Outlook"): pastas de cada caixa por PC à esquerda, lista por dia no meio, leitura à direita, faixa de comandos do Outlook e a Ficha do pedido no topo | João: "Perfeito! Ficou ótimo!" |
+| 19/10/2026 | **Travas de empresa**: testes no GitHub Actions a cada push, pre-commit (credenciais, `estado/`, testes) e guarda do git no Claude Code. A guarda **não** bloqueia o push normal (é a entrega dos 4 PCs), só o que apaga trabalho | João: "ficar ainda mais com cara de projeto empresarial"; um erro sobe para os 4 PCs de uma vez |
 
 Ver: [[O que não mexer]].

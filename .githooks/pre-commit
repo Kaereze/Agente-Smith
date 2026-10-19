@@ -1,0 +1,3 @@
+#!/bin/sh
+# Checagem antes de cada commit: credenciais, dados do robô e testes (ver ferramentas/checar_commit.py).
+exec python ferramentas/checar_commit.py
