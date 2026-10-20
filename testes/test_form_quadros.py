@@ -80,3 +80,23 @@ def test_historico_do_formulario_e_do_hospede_e_desta_hospedagem():
     assert pelo_texto == {"de": "marina.exemplo@gmail.com", "desde": "2026-09-14", "caixa": "nf@hotel.com", "hotel": "LUXOR"}
     assert sem_checkin == {"de": "marina.exemplo@gmail.com"}   # sem check-in: tudo do hóspede
     assert enviado is None
+
+
+def test_responder_formulario_usa_a_tabela_e_o_email_de_quem_preencheu():
+    if not shutil.which("node"):
+        pytest.skip("Node não instalado")
+    form = re.search(r"const ROTULOS_FORM = .*?\nfunction formDoTexto\(texto\) \{.*?\n\}\n", JS, re.S).group(0)
+    dados = re.search(r"function dadosDoFormulario\(e\) \{.*?\nfunction emailDoFormulario\(e\) \{.*?\n\}\n", JS, re.S).group(0)
+    stub = "const cx = { textos: {} }; const pedidoDoEmail = () => null;\n"
+    casos = """[
+      (cx.textos.f = { texto: T }, emailDoFormulario({ id: "f", classes: ["formulario"], de: "emissor@x.com" })),
+      emailDoFormulario({ id: "g", classes: ["formulario"], de: "emissor@x.com" }),
+      emailDoFormulario({ id: "f", classes: [], de: "hospede@x.com" })
+    ]"""
+    codigo = stub + form + dados + f"const T = {json.dumps(TEXTO)};\nconsole.log(JSON.stringify({casos}));"
+    saida = subprocess.run(["node", "-e", codigo], capture_output=True, text=True, encoding="utf-8", timeout=30)
+    assert saida.returncode == 0, saida.stderr
+    assert json.loads(saida.stdout) == ["marina.exemplo@gmail.com", "", ""]   # sem texto: vazio (nunca o Emissor)
+    assert "form ? formularioHtml(form, e)" in JS   # a citação usa a mesma tabela da leitura
+    painel = (Path(__file__).resolve().parents[1] / "app_ui" / "painel.js").read_text(encoding="utf-8")
+    assert '$("nf-para").value = emailDoFormulario(emForm)' in painel

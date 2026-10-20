@@ -73,6 +73,8 @@ Digite 3 letras de um nome, CPF/CNPJ, e-mail, hotel ou número de NF.
 
 ## Responder e enviar a NF (sem espera)
 1. Responder, Responder com a NF ou Encaminhar abre a mensagem **dentro da leitura**, com o original citado embaixo.
+   Num **formulário**, o original aparece na mesma tabela verde e creme e o **Para** já vem com o e-mail de quem
+   preencheu ("Enviado por"), nunca o do Emissor Automático. Sem esse e-mail no formulário, o Para fica vazio.
 2. Anexe a NF (arraste ou escolha); o Painel **confere a NF com o pedido** (CPF/CNPJ, valor, nome) e só avisa se algo não bate.
 3. Clicou em **Enviar**: a janela **fecha na hora**. O aviso no canto esquerdo de baixo acompanha:
    *Entregue ao PC de …* → *Saindo pela caixa do hotel* → *Conferido em Itens Enviados* (✓ com a hora).

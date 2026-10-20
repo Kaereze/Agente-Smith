@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.18] — 2026-10-20
+
+### Corrigido
+
+- **Responder um formulário** punha no Para o e-mail do Emissor Automático (o Gmail do robô). Agora vem o e-mail de quem
+  preencheu ("Enviado por"); sem ele no texto, o Para fica vazio para quem envia preencher. A NF enviada fica ligada ao
+  pedido do hóspede do Para.
+
+### Mudou
+
+- **Responder/encaminhar um formulário**: o e-mail original embaixo aparece na mesma tabela verde e creme da leitura
+  (a mesma peça, `formularioHtml`). É só da tela: o e-mail que sai leva o original que o Outlook coloca.
+
 ## [2026.10.20.17] — 2026-10-20
 
 ### Corrigido

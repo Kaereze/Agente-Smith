@@ -338,11 +338,22 @@ function itemSelecionado() {
   return todos.find(e => e.id === cx.sel);
 }
 // Responder / encaminhar dentro do painel de leitura, com o original citado embaixo (como o Outlook)
+// Formulário do Emissor Automático (usuário, 20/10/2026): o original embaixo da resposta é a mesma tabela da leitura
+// (formularioHtml, peça única) e o e-mail do hóspede é o "Enviado por" (o remetente é o Emissor, o mesmo de todos).
+function dadosDoFormulario(e) {
+  if (!e || !(e.classes || []).includes("formulario")) return null;
+  return pedidoDoEmail(e) || formDoTexto(cx.textos[e.id]?.texto);
+}
+function emailDoFormulario(e) {
+  const d = dadosDoFormulario(e), x = String(d?.email || "").trim().toLowerCase();
+  return x.includes("@") ? x : "";
+}
 function citacaoHtml(id) {
   const e = itemSelecionado() || (cx.dados?.emails || []).find(x => x.id === id), t = cx.textos[id] || {};
   if (!e) return "";
+  const form = dadosDoFormulario(e);
   return `<div class="cx-cit-cab"><b>De:</b> ${esc(e.nome || e.de)} &lt;${esc(e.de)}&gt;<br><b>Enviado:</b> ${esc(dataLonga(e.quando))}<br>
-    <b>Para:</b> ${esc(e.caixa || e.para || "")}<br><b>Assunto:</b> ${esc(e.assunto || "")}</div><div class="cx-texto">${esc(t.texto || e.previa || "")}</div>`;
+    <b>Para:</b> ${esc(e.caixa || e.para || "")}<br><b>Assunto:</b> ${esc(e.assunto || "")}</div>${form ? formularioHtml(form, e) : `<div class="cx-texto">${esc(t.texto || e.previa || "")}</div>`}`;
 }
 function escrever(id, modo) {   // modo: "resp" | "nf" | "enc"
   const alvo = $("cx-leitura");

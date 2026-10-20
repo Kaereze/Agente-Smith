@@ -591,6 +591,10 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   // todo envio abre com a mensagem padrão (usuário, 13/10/2026); a solicitação de dados fica no botão das Respostas prontas
   $("nf-msg").innerText = resp ? (o.corpo_nf || o.corpo) : o.corpo;
   if (resp) { $("nf-assunto").value = novo ? `Nota Fiscal - ${o.hotel}` : o.assunto; $("nf-msg").addEventListener("input", validarEnvioNF); }
+  // resposta a um formulário (20/10/2026): o Para é quem preencheu ("Enviado por"), nunca o Emissor Automático;
+  // sem o e-mail no texto, fica vazio pra quem envia preencher
+  const emForm = resp && !novo && !enc && typeof emailDoFormulario === "function" ? (cx.dados?.emails || []).find(x => x.id === resp.id) : null;
+  if (emForm && (emForm.classes || []).includes("formulario")) $("nf-para").value = emailDoFormulario(emForm);
   if (novo) comboDe(o);
   if (novo && resp.para) $("nf-para").value = resp.para;
   if (novo && resp.solicitar) {

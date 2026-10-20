@@ -1157,9 +1157,11 @@ class Estado:
 
     def responder_email(self, corpo, quem):
         e = self._email(str(corpo.get("id", "")))
-        sol = self._solicitacao_do_email(e["de"]) or {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"],
-                                                       "nome": e["nome"] or e["de"]}
         para, assunto = str(corpo.get("para", "")).strip(), str(corpo.get("assunto", "")).strip()
+        # formulário do Emissor Automático (20/10/2026): o pedido é o do hóspede do Para, não o do remetente (o Emissor)
+        do_form = self._solicitacao_do_email(para.lower()) if "formulario" in (e.get("classes") or []) and "@" in para else None
+        sol = do_form or self._solicitacao_do_email(e["de"]) or {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"],
+                                                                 "nome": e["nome"] or e["de"]}
         if "@" not in para or not assunto:
             raise ValueError("preencha o destinatário e o assunto")
         import base64
