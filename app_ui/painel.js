@@ -79,7 +79,7 @@ function desenharLog() {
           : "todos os PCs no ar"}</span></div>
     </div>
     <div class="abas-log" role="tablist">${ABAS_LOG.map(([v, n]) => `<button class="aba ${at.aba === v ? "sel" : ""}" role="tab" aria-selected="${at.aba === v}" data-at-aba="${v}">${n}</button>`).join("")}
-      <label class="sel sel-pc"><select id="at-pc" aria-label="PC"><option value="">Todos os PCs</option>${pcsLista.map(p => `<option ${p === at.pc ? "selected" : ""}>${esc(p)}</option>`).join("")}</select></label></div>
+      ${menuPcLog(d, pcsLista)}</div>
     <div class="tabela-wrap"><table class="ativ-tab"><thead><tr><th>Quando</th><th>O quê</th><th>Máquina</th><th>Hotel / pedido</th><th>Detalhe</th></tr></thead>
       <tbody>${evs.slice(0, 300).map(e => `<tr>
         <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
@@ -88,9 +88,26 @@ function desenharLog() {
         <td>${esc(e.hotel || "")}<div class="dica">${esc(e.pedido || "")}</div></td>
         <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table></div>
     <p class="dica">Mostra os ${d.eventos.length} registros mais recentes da aba Atividade_Robo da Planilha Central.</p>`;
-  const sel = $("at-pc");
-  if (sel) sel.onchange = () => { at.pc = sel.value; desenharLog(); };
 }
+// Escolher o PC do log com as mesmas peças do Filtro da caixa de entrada (usuário, 20/10/2026: peças únicas)
+function menuPcLog(d, pcsLista) {
+  const info = p => d.pcs.find(x => x.pc === p) || {};
+  const nome = p => info(p).agente || p;
+  const ic = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>';
+  return `<span class="ol-filtro at-pc"><button type="button" class="ol-filtro-bt ${at.pc ? "on" : ""}" data-at-pc-abrir aria-haspopup="menu" aria-expanded="${!!at.pcAberto}">${ic}PC: ${esc(at.pc ? nome(at.pc) : "Todos")}</button>
+    ${at.pc ? `<button type="button" class="ol-filtro-x" data-at-pc="" aria-label="Tirar o filtro de PC">✕</button>` : ""}
+    ${at.pcAberto ? `<div class="ol-filtro-menu" role="menu" aria-label="PC">${[["", "Todos os PCs"], ...pcsLista.map(p => [p, nome(p)])].map(([v, n]) =>
+      `<button type="button" role="menuitemradio" aria-checked="${at.pc === v}" data-at-pc="${esc(v)}">${v ? `<i class="pc-bol ${info(v).online ? "on" : ""}" aria-hidden="true"></i>` : ""}${esc(n)}<em>${
+        v ? (info(v).online ? esc(v) : "desligado") : d.pcs.filter(x => x.online).length + " ligados"}</em></button>`).join("")}</div>` : ""}</span>`;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.("[data-at-pc-abrir],[data-at-pc]");
+  if (!b) { if (at.pcAberto && !ev.target.closest?.(".at-pc")) { at.pcAberto = false; desenharLog(); } return; }
+  if (b.hasAttribute("data-at-pc-abrir")) at.pcAberto = !at.pcAberto;
+  else { at.pc = b.dataset.atPc; at.pcAberto = false; }
+  desenharLog();
+});
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && at.pcAberto) { at.pcAberto = false; desenharLog(); } });
 
 // "aberto|E-mails|14:32": o Painel está aberto nesse PC agora, nessa tela
 function usoHtml(p) {

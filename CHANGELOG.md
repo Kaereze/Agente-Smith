@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.19] — 2026-10-20
+
+### Mudou
+
+- **Peças únicas, 1º passo:** o botão e o menu do Filtro da caixa de entrada passam a servir para qualquer tela.
+- **Monitoramento:** escolher o PC usa essas peças (botão "PC: Todos", menu escuro com a bolinha de ligado/desligado e
+  o ✕ para tirar), no lugar da lista branca do Windows.
+- **Botões de alternar** (Visão geral: Ontem/Hoje e Período; Gerência: Comparação) com o mesmo visual, no azul do Filtro.
+
 ## [2026.10.20.18] — 2026-10-20
 
 ### Corrigido

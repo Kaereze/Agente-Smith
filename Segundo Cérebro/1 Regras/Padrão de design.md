@@ -54,3 +54,10 @@ Ver: [[Decisões]].
 
 ## Formulário do hóspede (20/10/2026)
 - **Tela 1b do quadro** (aprovada pelo João em 20/10/2026: "ficou perfeito"): tabela Campo / Valor em grupos, **letras creme, fundo cinza, verde nos títulos**. Cabeçalho verde #2f6b4f (texto creme #f6efdc); faixa do grupo verde escuro #1e3f2e (texto creme, 11,5 px maiúsculo); coluna Campo cinza #2e2e2e (texto creme apagado #d9cfb3, 600); coluna Valor cinza #262626 (texto creme #f6efdc, 600; observação #bfb595); linhas separadas por #3a3a3a; borda 1 px #2f6b4f, cantos 8 px; botão copiar 30 px #7fbf9a. Texto sempre quebra (nunca cortado).
+
+## Peças únicas (20/10/2026)
+O João: "tudo que for necessário será reutilizado". Uma peça, várias telas; mudou uma vez, muda em todas.
+- **Tabela do formulário** (`formularioHtml`): leitura do e-mail e citação ao responder/encaminhar.
+- **Botão e menu de filtro** (`.ol-filtro`, `.ol-filtro-bt`, `.ol-filtro-menu`): Filtro da caixa de entrada e PC do Monitoramento (próximo: Notas fiscais, esperando a captura).
+- **Botões de alternar** (`.seg`, `.seg-rd`): fundo #242424, borda #3a3a3a, cantos 8 px; escolhido #173b63 com texto branco.
+- **Menus das pílulas** (`#pop`): mesmo visual do menu Filtro.

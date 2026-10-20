@@ -1820,14 +1820,14 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .modo-ol .ol-lcab .ol-filtro{position:relative;margin-left:auto;display:inline-flex;align-items:center;gap:2px}
 .modo-ol .ol-lcab .ol-filtro + .ol-ord{margin-left:10px}
 .modo-ol .ol-lcab .ol-filtro:has(.ol-filtro-bt.on) + .ol-ord{display:none}   /* com filtro, o botão já diz o que vale */
-.modo-ol .ol-lcab .ol-filtro-bt{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px!important;border:1px solid #4a4a4a!important;border-radius:14px!important;
+.modo-ol .ol-filtro-bt{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px!important;border:1px solid #4a4a4a!important;border-radius:14px!important;
   font-size:12.5px!important;color:#e0e0e0!important;background:none}
-.modo-ol .ol-lcab .ol-filtro-bt svg{width:14px;height:14px;color:#bdbdbd}
-.modo-ol .ol-lcab .ol-filtro-bt:hover{background:#2d2d2d}
-.modo-ol .ol-lcab .ol-filtro-bt.on{background:#173b63;border-color:#479ef5!important;color:#fff!important}
-.modo-ol .ol-lcab .ol-filtro-bt.on svg{color:#cfe5fb}
-.modo-ol .ol-lcab .ol-filtro-x{width:24px;height:24px;padding:0!important;border-radius:50%!important;font-size:11px!important;color:#cfe5fb!important;border:0!important}
-.modo-ol .ol-lcab .ol-filtro-x:hover{background:#2d2d2d}
+.modo-ol .ol-filtro-bt svg{width:14px;height:14px;color:#bdbdbd}
+.modo-ol .ol-filtro-bt:hover{background:#2d2d2d}
+.modo-ol .ol-filtro-bt.on{background:#173b63;border-color:#479ef5!important;color:#fff!important}
+.modo-ol .ol-filtro-bt.on svg{color:#cfe5fb}
+.modo-ol .ol-filtro-x{width:24px;height:24px;padding:0!important;border-radius:50%!important;font-size:11px!important;color:#cfe5fb!important;border:0!important}
+.modo-ol .ol-filtro-x:hover{background:#2d2d2d}
 .modo-ol .ol-filtro-menu{position:absolute;top:34px;right:0;z-index:20;min-width:230px;padding:6px;border:1px solid #4a4a4a;border-radius:8px;background:#2b2b2b;
   box-shadow:0 12px 32px rgba(0,0,0,.45);animation:olEntra .16s cubic-bezier(.2,.8,.2,1)}
 .modo-ol .ol-filtro-menu button{display:flex!important;align-items:center;width:100%;gap:10px;padding:9px 12px!important;border:0!important;border-radius:6px!important;
@@ -1885,6 +1885,18 @@ body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important
 .ol-form.fg .fg-pe{display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:14px;font-size:13px;color:#bdbdbd}
 .ol-form.fg .fg-pe b{color:#e6e6e6;font-weight:600}
 .ol-form.fg .fg-pe .ok{display:inline-flex;align-items:center;gap:6px;color:#8fd19e}
+/* Peças únicas (usuário, 20/10/2026): o botão e o menu do Filtro servem pra qualquer tela; aqui só onde ficam */
+.modo-ol .ol-filtro{position:relative;display:inline-flex;align-items:center;gap:2px}
+.modo-ol .abas-log .at-pc{margin-left:auto}
+.modo-ol .ol-filtro-menu .pc-bol{width:8px;height:8px;border-radius:50%;background:#6b6b6b;flex:none}
+.modo-ol .ol-filtro-menu .pc-bol.on{background:#4caf6a}
+/* Botões de alternar iguais em todas as telas (Visão geral, Gerência): o azul do escolhido é o do Filtro e do Hotel */
+.modo-ol :is(.seg,.seg-rd){display:inline-flex!important;align-items:center;gap:2px;padding:3px!important;border:1px solid #3a3a3a!important;border-radius:8px!important;background:#242424!important;overflow:visible!important}
+.modo-ol :is(.seg,.seg-rd) button{height:28px;padding:0 14px!important;border:0!important;border-radius:6px!important;background:none!important;color:#d0d0d0!important;
+  font:400 12.5px "Segoe UI",system-ui,sans-serif!important;cursor:pointer}
+.modo-ol :is(.seg,.seg-rd) button:hover{background:#2d2d2d!important}
+.modo-ol :is(.seg,.seg-rd) button:is(.sel,[aria-pressed="true"]){background:#173b63!important;color:#fff!important;font-weight:600!important}
+.modo-ol :is(.seg,.seg-rd) button:disabled{opacity:.4;cursor:default}
 </style>
 </head>
 <body>
