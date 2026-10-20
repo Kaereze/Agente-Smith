@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.15] — 2026-10-20
+
+### Mudou
+
+- **Formulário do hóspede = tela 1 do quadro de design** (escolhida pelo João), em verde e creme: a tabela Campo / Valor
+  como chega no e-mail, separada em Tomador da nota, Estadia e Como quer a nota. CPF/CNPJ, CEP e telefone formatados
+  (com "CPF"/"CNPJ" ao lado), número de diárias junto das datas e botão de copiar nas linhas que se digitam na emissão.
+  "Aceitou os termos" e "Enviado em" no rodapé. Substitui os quadros da 2026.10.20.14.
+
 ## [2026.10.20.14] — 2026-10-20
 
 ### Mudou

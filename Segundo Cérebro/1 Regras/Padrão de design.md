@@ -53,4 +53,4 @@ Ver: [[Decisões]].
 - Vale para o Filtro, os menus das pílulas (`#pop`: Hotel e os outros) e o botão direito no e-mail.
 
 ## Formulário do hóspede (20/10/2026)
-- Quadros por grupo (Tomador da nota · Estadia · Como quer a nota): rótulo em faixa **verde #2f6b4f** (texto #e9f6ee, 12 px 600) e valor em **creme #f6efdc** (texto #2a2418, 14 px 600); cantos 6 px; grade `minmax(160px, 1fr)` com 10 px; valor com mais de 20 letras ocupa 2 colunas; texto sempre quebra (nunca cortado). Pedido do João: "cores verdes e creme em uma tabela quadrada informando 'nome' e o nome do hóspede abaixo".
+- **Tela 1 do quadro** (escolhida pelo João em 20/10/2026, substitui os quadros): tabela Campo / Valor em grupos. Cabeçalho **verde #2f6b4f** (texto #eef8f2); faixa do grupo #dcebe1 (texto #1f5a3f, 11,5 px maiúsculo); coluna Campo #efe6cc (texto #2f6b4f 600); coluna Valor **creme #f6efdc** (texto #2a2418 600); linhas separadas por #d8ccae; borda 1 px #2f6b4f, cantos 8 px; botão copiar 30 px no fim da linha. Texto sempre quebra (nunca cortado).

@@ -55,7 +55,7 @@ tags: [cerebro/trabalho]
 | **Avisos do Windows** | `avisos_windows.py` |
 | **Prévia 5: visual do Outlook escuro** (cores, espaços, ficha em 3 faixas, faixa de comandos) | `index.html`: camada "Prévia 5 no Painel" no fim do `<style>` |
 | **Leitura do e-mail igual ao Outlook** (cabeçalho, de onde veio, anexos em cima, ficha, texto) | `correio.js` → `desenharLeituraCorreio`, `fichaPedidoOl`, `linhaEmail` (urgente, formulário) |
-| **Formulário aberto** (quadros verde/creme por grupo, clique copia) | `correio.js` → `formularioHtml(s, e)`, `GRUPOS_FORM`, `OCULTOS_FORM`; sem o pedido na lista: `formDoTexto` (lê "Campo<tab>Valor" do texto, `ROTULOS_FORM`); estilo `.ol-form.fq` em `index.html` |
+| **Formulário aberto** (tabela verde/creme em grupos, botão copiar) | `correio.js` → `formularioHtml(s, e)`, `GRUPOS_FORM`, `valorDoForm` (formata CPF/CNPJ, CEP, telefone, diárias), `SEM_COPIAR_FORM`, `OCULTOS_FORM`; sem o pedido na lista: `formDoTexto` (lê "Campo<tab>Valor" do texto, `ROTULOS_FORM`); estilo `.ol-form.fg` em `index.html` |
 | **Filtro da lista dos e-mails** (Pedido de correção, Sem resposta, Com anexo, Nota dividida) | `correio.js` → `FILTROS_LISTA`, `filtroDaListaHtml`, `itensDaTela` (`cx.filtroL`); clique: `data-ol-filtro`, `data-ol-filtro-abrir` |
 | **Pesquisa instantânea** (pedidos na hora + espelho; Outlook ao vivo depois) | `correio.js` → `secoesDaBusca`, `pedidosDaBusca`, `linhaPedidoBusca`, `marcarBusca`; ao vivo: `agendarBusca`/`buscarNoOutlook` |
 | **Envio sem espera** (janela fecha na hora; aviso no canto) | `painel.js` → `enviarNF` (fim), `seguirEnvio`, `verEnvio`, `desenharEnvio`, `fecharEnvio`; status: `/api/envio_nf/status` |

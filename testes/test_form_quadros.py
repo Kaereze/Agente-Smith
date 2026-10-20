@@ -42,4 +42,17 @@ def test_email_comum_continua_texto():
 
 def test_quadros_por_grupo_na_tela():
     assert '["Tomador da nota"' in JS and '["Estadia"' in JS and '["Como quer a nota"' in JS
-    assert "formularioHtml(f, e)" in JS and 'class="fq-v" data-copiar' in JS
+    assert "formularioHtml(f, e)" in JS and 'class="fg-cp" data-copiar' in JS   # tela 1 do quadro (20/10/2026)
+
+
+def test_cpf_cnpj_cep_telefone_formatados():
+    trecho = re.search(r"function valorDoForm\(rot, v\) \{.*?\n\}\n", JS, re.S).group(0)
+    if not shutil.which("node"):
+        pytest.skip("Node não instalado")
+    casos = [["CPF/CNPJ", "12345678000195"], ["CPF do titular", "52998224725"], ["CEP", "01001000"], ["Telefone", "65999990000"],
+             ["Datas", "14/10/2026 → 17/10/2026"], ["Nome", "Marina Exemplo Costa"]]
+    saida = subprocess.run(["node", "-e", trecho + f"\nconsole.log(JSON.stringify({json.dumps(casos)}.map(([r, v]) => valorDoForm(r, v))));"],
+                           capture_output=True, text=True, encoding="utf-8", timeout=30)
+    assert saida.returncode == 0, saida.stderr
+    assert json.loads(saida.stdout) == [["12.345.678/0001-95", "CNPJ"], ["529.982.247-25", "CPF"], ["01001-000", ""],
+                                        ["(65) 99999-0000", ""], ["14/10/2026 → 17/10/2026", "3 diárias"], ["Marina Exemplo Costa", ""]]

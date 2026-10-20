@@ -571,37 +571,61 @@ function fichaPedidoOl(e) {
 const OCULTOS_FORM = /^(enviado|carimbo|importante|avalia|preenchimento|ritmo|sugest|sincroniz|endereco de e-?mail|e-?mail$)/i;
 const ORDEM_FORM = [/^termos/, /documento.*tomador/, /nome.*tomador/, /^cep/, /telefone/, /cpf.*titular/, /nome.*titular/,
   /check.?in/, /check.?out/, /informac/, /^nota dividida/, /dividida em|quantas vezes/, /valor.*nota/];
-// Quadros por grupo (usuário, 20/10/2026): o nome do campo em cima (verde) e o valor embaixo (creme), como a ficha
-// (Tomador da nota · Estadia · Como quer a nota). Clicar no valor copia (CPF/CNPJ, CEP, nome pra emitir a nota).
+// Tabela do e-mail arrumada em grupos (usuário, 20/10/2026: escolheu a tela 1 do quadro, em verde e creme): Campo /
+// Valor como chega no e-mail, separada em Tomador da nota · Estadia · Como quer a nota; CPF/CNPJ, CEP e telefone
+// formatados; o botão copia o valor como o hóspede escreveu (pra colar na emissão).
 const GRUPOS_FORM = [
   ["Tomador da nota", [[/nome.*tomador/, "Nome"], [/documento.*tomador/, "CPF/CNPJ"], [/^cep/, "CEP"], [/telefone/, "Telefone"]]],
-  ["Estadia", [[/^hotel$/, "Hotel"], [/nome.*titular/, "Titular"], [/cpf.*titular/, "CPF do titular"], [/^datas$/, "Datas"], [/check.?in/, "Check-in"], [/check.?out/, "Check-out"]]],
-  ["Como quer a nota", [[/informac/, "Pedido"], [/^nota dividida/, "Dividida"], [/dividida em|quantas vezes/, "Dividir em"], [/valor.*nota/, "Valor"], [/^enviar para$/, "Enviar para"]]],
+  ["Estadia", [[/^hotel$/, "Hotel"], [/nome.*titular/, "Titular da reserva"], [/cpf.*titular/, "CPF do titular"], [/^datas$/, "Datas"], [/check.?in/, "Check-in"], [/check.?out/, "Check-out"]]],
+  ["Como quer a nota", [[/informac/, "O que pede"], [/^nota dividida/, "Nota dividida"], [/dividida em|quantas vezes/, "Dividir em"], [/valor.*nota/, "Valor"], [/^enviar para$/, "Enviar para"]]],
 ];
+const SEM_COPIAR_FORM = new Set(["Hotel", "Datas", "Check-in", "Check-out", "O que pede", "Nota dividida", "Dividir em"]);
+function valorDoForm(rot, v) {   // -> [como mostrar, observação]
+  const d = String(v || "").replace(/\D/g, "");
+  if (/CPF|CNPJ/.test(rot) && d.length === 11) return [`${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`, "CPF"];
+  if (/CPF|CNPJ/.test(rot) && d.length === 14) return [`${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`, "CNPJ"];
+  if (rot === "CEP" && d.length === 8) return [`${d.slice(0, 5)}-${d.slice(5)}`, ""];
+  if (rot === "Telefone" && (d.length === 10 || d.length === 11)) return [`(${d.slice(0, 2)}) ${d.slice(2, -4)}-${d.slice(-4)}`, ""];
+  if (rot === "Datas") {
+    const [a, b] = String(v).split(" → ").map(x => x.trim().split("/").map(Number));
+    const n = a?.length === 3 && b?.length === 3 ? Math.round((new Date(b[2], b[1] - 1, b[0]) - new Date(a[2], a[1] - 1, a[0])) / 864e5) : 0;
+    return [String(v), n > 0 ? `${n} diária${n > 1 ? "s" : ""}` : ""];
+  }
+  return [String(v), ""];
+}
 function formularioHtml(s, e = {}) {
-  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const semAc = x => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
   const campos = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)));
   const extras = [["Hotel", s.hotel || e.hotel || ""], ["Enviar para", s.email || ""]].filter(([, v]) => v);
   const usados = new Set(), termos = campos.find(([k]) => /^termos/.test(semAc(k)));
   if (termos) usados.add(termos);
   const ci = campos.find(([k]) => /check.?in/.test(semAc(k))), co = campos.find(([k]) => /check.?out/.test(semAc(k)));
   if (ci && co) { extras.push(["Datas", `${ci[1]} → ${co[1]}`]); usados.add(ci); usados.add(co); }   // como a ficha
-  const quadro = (rot, val) => `<div class="fq-c${String(val).length > 20 ? " largo" : ""}"><span class="fq-r">${esc(rot)}</span>
-    <button type="button" class="fq-v" data-copiar="${esc(val)}" title="Clique para copiar">${esc(val)}</button></div>`;
+  const copiar = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+  const linha = (rot, val) => {
+    const [mostra, obs] = valorDoForm(rot, val);
+    return `<div class="fg-l" role="row"><span class="k" role="cell">${esc(rot)}</span><span class="v" role="cell">${esc(mostra)}${obs ? `<small>${esc(obs)}</small>` : ""}</span>${SEM_COPIAR_FORM.has(rot) ? "<span></span>"
+      : `<button type="button" class="fg-cp" data-copiar="${esc(val)}" aria-label="Copiar ${esc(rot)}" title="Copiar">${copiar}</button>`}</div>`;
+  };
   const grupos = GRUPOS_FORM.map(([titulo, regras]) => {
-    const quadros = regras.map(([re, rot]) => {
+    const linhas = regras.map(([re, rot]) => {
       const c = [...campos, ...extras].find(x => !usados.has(x) && re.test(semAc(x[0])));
       if (!c) return "";
       usados.add(c);
-      return quadro(rot, c[1]);
+      return linha(rot, c[1]);
     }).join("");
-    return quadros ? `<section class="fq-g"><h4>${esc(titulo)}</h4><div class="fq-grade">${quadros}</div></section>` : "";
+    return linhas ? `<div class="fg-grp" role="row"><span role="rowheader">${esc(titulo)}</span></div>${linhas}` : "";
   }).join("");
   const resto = campos.filter(c => !usados.has(c));
-  return `<div class="ol-form fq">${s.email ? `<div class="por">Enviado por: <span class="lnk">${esc(s.email)}</span></div>` : ""}
-    <h3>Dados para emissão de Nota Fiscal</h3>${grupos}
-    ${resto.length ? `<section class="fq-g"><h4>Outros campos</h4><div class="fq-grade">${resto.map(([k, v]) => quadro(k, v)).join("")}</div></section>` : ""}
-    <div class="fq-pe">${termos ? `<span><b>Termos de aceite:</b> ${esc(termos[1])}</span>` : ""}<span><b>Enviado em:</b> ${esc(s.carimbo || dataBr(s.data) || "")}</span></div></div>`;
+  const aceitou = termos && /acordo|aceit/i.test(termos[1]);
+  return `<div class="ol-form fg">${s.email ? `<div class="por">Enviado por: <span class="lnk">${esc(s.email)}</span></div>` : ""}
+    <h3>Dados para emissão de Nota Fiscal</h3>
+    <div class="fg-tab" role="table" aria-label="Dados para emissão de Nota Fiscal">
+      <div class="fg-cab" role="row"><span role="columnheader">Campo</span><span role="columnheader">Valor</span><span role="columnheader" aria-label="Copiar"></span></div>
+      ${grupos}${resto.length ? `<div class="fg-grp" role="row"><span role="rowheader">Outros campos</span></div>${resto.map(([k, v]) => linha(k, v)).join("")}` : ""}
+    </div>
+    <div class="fg-pe">${termos ? (aceitou ? `<span class="ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Aceitou os termos</span>`
+      : `<span><b>Termos de aceite:</b> ${esc(termos[1])}</span>`) : ""}<span><b>Enviado em:</b> ${esc(s.carimbo || dataBr(s.data) || "")}</span></div></div>`;
 }
 // E-mail do Emissor Automático sem o pedido na lista do Painel: os campos saem do próprio texto ("Campo<tab>Valor")
 const ROTULOS_FORM = ["Termos de aceite", "Documento Tomador", "Nome Tomador", "CEP", "Telefone para contato", "CPF do Titular da Reserva",
@@ -627,7 +651,7 @@ function formDoTexto(texto) {
   return { campos, email: por ? por[1] : "", carimbo: em ? em[1].replace(/\s*GMT.*$/, "").trim() : "" };
 }
 document.addEventListener("click", ev => {
-  const b = ev.target.closest?.(".fq-v[data-copiar]");
+  const b = ev.target.closest?.(".ol-form [data-copiar]");
   if (!b) return;
   const txt = b.dataset.copiar;
   (navigator.clipboard?.writeText(txt) || Promise.reject()).then(() => toast(`Copiado: ${txt.length > 40 ? txt.slice(0, 40) + "…" : txt}`),
