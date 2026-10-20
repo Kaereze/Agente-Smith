@@ -20,7 +20,7 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 | Parte | O que é |
 |---|---|
 | Trilho da esquerda | Ícones das telas: E-mails, Notas fiscais, Visão geral, Gerência, Monitoramento (só admin). O traço azul marca onde você está; o número vermelho é o que espera. |
-| Abas do topo | Página Inicial · Enviar/Receber · Exibir, como no Outlook, **só na tela de e-mails** (nas outras telas a faixa mostra sempre os comandos principais). "Caixa de" filtra por agente. A **pesquisa** fica à direita (atalho Ctrl+E). |
+| Abas do topo | Página Inicial · Enviar/Receber · Exibir, como no Outlook, **só na tela de e-mails**, junto com a faixa de botões (nas outras telas, nenhuma das duas aparece). "Caixa de" filtra por agente. A **pesquisa** fica à direita (atalho Ctrl+E). |
 | Faixa de comandos | A caixa cinza com os botões da tela (Novo e-mail, Responder, Encaminhar, Enviar NF…). Botão apagado = ainda não dá pelo Painel; faça no Outlook. |
 | Barra de baixo | Itens e não lidos; Central sincronizada, robô, PCs no ar, tema, Modo professor e ajuda (tecla ?). |
 | Avisos | A caixinha no canto direito de baixo mostra o que saiu do normal. O que fazer com cada aviso: [[Se o robô parar]]. |

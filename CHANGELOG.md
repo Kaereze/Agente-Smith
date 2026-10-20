@@ -9,6 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.8] — 2026-10-20
+
+### Mudou
+
+- A faixa de botões do topo (Novo e-mail, Caixa de Entrada, Notas fiscais, Enviar pendentes, Enviar/Receber) também fica
+  só na tela de e-mails; some do resumo, da Gerência e das outras telas. "Enviar pendentes" segue no ícone de avião da
+  barra da esquerda e "reler" no ↻ da barra de baixo.
+
 ## [2026.10.20.7] — 2026-10-20
 
 ### Corrigido
