@@ -53,4 +53,4 @@ Ver: [[Decisões]].
 - Vale para o Filtro, os menus das pílulas (`#pop`: Hotel e os outros) e o botão direito no e-mail.
 
 ## Formulário do hóspede (20/10/2026)
-- **Tela 1 do quadro** (escolhida pelo João em 20/10/2026, substitui os quadros): tabela Campo / Valor em grupos. Cabeçalho **verde #2f6b4f** (texto #eef8f2); faixa do grupo #dcebe1 (texto #1f5a3f, 11,5 px maiúsculo); coluna Campo #efe6cc (texto #2f6b4f 600); coluna Valor **creme #f6efdc** (texto #2a2418 600); linhas separadas por #d8ccae; borda 1 px #2f6b4f, cantos 8 px; botão copiar 30 px no fim da linha. Texto sempre quebra (nunca cortado).
+- **Tela 1b do quadro** (aprovada pelo João em 20/10/2026: "ficou perfeito"): tabela Campo / Valor em grupos, **letras creme, fundo cinza, verde nos títulos**. Cabeçalho verde #2f6b4f (texto creme #f6efdc); faixa do grupo verde escuro #1e3f2e (texto creme, 11,5 px maiúsculo); coluna Campo cinza #2e2e2e (texto creme apagado #d9cfb3, 600); coluna Valor cinza #262626 (texto creme #f6efdc, 600; observação #bfb595); linhas separadas por #3a3a3a; borda 1 px #2f6b4f, cantos 8 px; botão copiar 30 px #7fbf9a. Texto sempre quebra (nunca cortado).

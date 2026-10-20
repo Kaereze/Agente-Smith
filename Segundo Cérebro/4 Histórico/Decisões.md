@@ -53,5 +53,6 @@ tags: [cerebro/historico]
 | 20/10/2026 | **E-mail da Ouvidoria = urgente** (remetente ou nome com "ouvidoria") | João: "a tag de urgência pra quando vier os e-mails diretos da ouvidoria" |
 | 20/10/2026 | **Pesquisa pelo índice local de cada PC** (12 meses, `estado/indice_emails.sqlite`), Outlook ao vivo só no botão. Substitui a regra de 08/10 "busca sempre ao vivo" | João aprovou ("Sim, as duas"). Medido: 11 a 13 s ao vivo x 11 a 36 ms no índice. Fica só no PC: nada vai pro Google |
 | 20/10/2026 | **Velocidade aos poucos**: uma melhoria por entrega (índice → envio direto pela rede → e-mail novo mais rápido → Painel mais leve); a Graft só como ponte para o Claude, depois | João: "aos poucos" e "ponte para o Claude" |
+| 20/10/2026 | **Design primeiro, mudança só com confirmação**: todo pedido vira design no quadro (ou captura da demonstração) e só vai pro Painel/GitHub/PCs depois do João confirmar, mesmo quando ele diz "faz" | João: "nunca altera nada sem antes minha confirmação… me confirma pra ver se eu realmente quero fazer" |
 
 Ver: [[O que não mexer]].
