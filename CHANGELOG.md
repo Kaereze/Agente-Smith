@@ -20,11 +20,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Decisões de LGPD: 2 e-mails simulados de 24/09 com dados reais apagados de `saida_simulacao/`; regra de 12 meses para
   `logs/Historico_de_Envios.csv`; histórico do git mantido (repositório privado).
 
-### Problemas conhecidos
+### Corrigido
 
-- **Log disputado.** O robô, o conferente e o Painel escrevem no mesmo `logs/solicitacoes_nf.log`. Quando ele chega a
-  5 MB, o Windows não deixa girar (`PermissionError`, WinError 32) e cada linha vira um "Logging error" na saída da tela
-  (14.017 vezes até 20/10). O envio não é afetado. Conserto proposto: um arquivo de log por programa.
+- **Log disputado: um arquivo de log por programa.** O robô, o conferente e o Painel escreviam no mesmo
+  `logs/solicitacoes_nf.log`. Quando ele chegava a 5 MB, o Windows não deixava girar (`PermissionError`, WinError 32) e
+  cada linha virava um "Logging error" na saída da tela (14.017 vezes até 20/10). Agora o robô fica em
+  `solicitacoes_nf.log`, o conferente em `conferente.log` e o Painel em `painel.log` (`log_util.arquivo_do_programa`).
+  O envio nunca foi afetado.
 
 ## [2026.10.19] — 2026-10-19
 

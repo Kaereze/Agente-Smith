@@ -106,7 +106,7 @@ echo.
 echo        Mande uma foto desta tela pro Claude.
 goto :fim_erro
 :erro_painel
-echo [ERRO] O Painel nao abriu. Veja logs\solicitacoes_nf.log na pasta do projeto.
+echo [ERRO] O Painel nao abriu. Veja logs\painel.log na pasta do projeto.
 goto :fim_erro
 :fim_erro
 echo        Registro completo: %LOGDEMO%

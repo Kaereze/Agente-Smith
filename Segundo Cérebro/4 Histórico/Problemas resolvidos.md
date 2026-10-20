@@ -24,6 +24,7 @@ tags: [cerebro/historico]
 | 15/10/2026 | CAMPO GRANDE e IDEAL "com robô antigo ativo" até 10/12/2026 (pedido novo esperava 75 min) | Carimbo lido no formato errado (10/12 virou dezembro) | `robo_antigo.registrar_atividade` e o `mesclar` ignoram data no futuro |
 | 15/10/2026 | E-mails do robô de hotéis de **outros PCs saíam pela caixa do Ondina** (Araras e Porto Center hoje; uns 25 hotéis desde setembro) | Caixa do hotel fora do Outlook do PC principal = `conta_remetente` (Ondina) | `envio_pc_dono`: o robô pede ao PC dono (rede 8766; plano B pela fila Envios_NF) e ele manda da caixa do hotel (`ff77295`, `68b0539`) |
 | 15/10/2026 | O pedido pela rede **não chega no PC da Clara** | O PC dela está em outra faixa (10.80.150.107; os outros em 10.145.150.x) e a regra do firewall (`liberar_rede.ps1`) só aceita a mesma faixa (`LocalSubnet`) | Plano B pela fila da Central (`68b0539`). Para a busca ao vivo e o envio na hora voltarem com ela: ampliar a regra (precisa de administrador) |
+| 20/10/2026 | 14.017 "Logging error" na saída da cópia; `saida_console_sincronizar.txt` com 30 MB | Robô, conferente e Painel escreviam no mesmo `logs/solicitacoes_nf.log`; ao girar (5 MB) o Windows não deixa renomear arquivo aberto por outro processo (`PermissionError` WinError 32) | Um arquivo por programa (`log_util.arquivo_do_programa`: robô = `solicitacoes_nf.log`, `conferente.log`, `painel.log`); a saída da cópia gira em 5 MB |
 
 ## Cuidados aprendidos
 - Scripts de alteração: escrever o arquivo `.py` pelo editor, não por heredoc (barras invertidas quebram).

@@ -43,5 +43,5 @@ Register-ScheduledTask -TaskName $nomeTarefa -Action $acao -Trigger @($gatilho, 
 Start-ScheduledTask -TaskName $nomeTarefa
 Write-Host ""
 Write-Host "Conferente ligado agora e configurado pra ligar sozinho ao entrar no Windows." -ForegroundColor Green
-Write-Host "O que ele faz fica em logs\solicitacoes_nf.log (linhas [conferente])."
+Write-Host "O que ele faz fica em logs\conferente.log."
 Write-Host "Pra desligar:  Stop-ScheduledTask -TaskName $nomeTarefa ; Disable-ScheduledTask -TaskName $nomeTarefa"

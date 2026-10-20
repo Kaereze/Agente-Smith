@@ -977,8 +977,9 @@ Abre o Painel. Ele liga o servidor escondido sozinho, se não estiver rodando.
 
 | Arquivo | O que tem |
 |---|---|
-| `logs\solicitacoes_nf.log` | **Principal.** Tudo que robô, conferente e Painel fizeram. ❌ = erro, ⚠️ = aviso. Os antigos viram `.log.1`, `.log.2`... |
-| `logs\saida_console_sincronizar.txt` | Saída da cópia + envio agendados (só no principal) |
+| `logs\solicitacoes_nf.log` | **Principal: o robô** (cópia dos hotéis + envio). ❌ = erro, ⚠️ = aviso. Os antigos viram `.log.1`, `.log.2`... |
+| `logs\conferente.log` · `logs\painel.log` | O conferente e o servidor do Painel, cada um no seu (desde 20/10/2026) |
+| `logs\saida_console_sincronizar.txt` | Saída da cópia + envio agendados (só no principal; gira em 5 MB) |
 | `logs\Historico_de_Envios.csv` | Histórico dos e-mails enviados aos hotéis |
 | Aba **`Status`** da Central | Interruptor "robô ligado" (B1) e sinais de vida |
 | Aba **`PCs_Painel`** da Central | Quais PCs estão com o Painel ligado e com quais caixas |

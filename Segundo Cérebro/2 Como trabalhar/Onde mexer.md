@@ -52,6 +52,7 @@ tags: [cerebro/trabalho]
 | **Saúde: último e-mail recebido, alarme "nenhum e-mail chega"** | `saude.py` → `ultimo_recebido`, `problemas`; coletado no `app_servidor.vigiar_caixa_de_saida` |
 | **Modo demonstração / modo casa** | `demo.py`; servidor `main()` (`--demo`, `--visualizar`); `sheets.BackendSoLeitura`; `PAINEL_DEMO_EM_CASA.bat` |
 | **Avisos do Windows** | `avisos_windows.py` |
+| **Logs** (um arquivo por programa) | `log_util.py` → `arquivo_do_programa`, `PROGRAMAS` (script de entrada → arquivo); teste `testes/test_log_util.py` |
 | **Configuração** | `config.json` (todos), `config.local.json` (só do PC, papel principal/conferente), `config.py` |
 | **Travas de entrega** (pre-commit, guarda do git, testes no GitHub) | `ferramentas/checar_commit.py` (via `.githooks/pre-commit`), `ferramentas/guarda_git.py` (hook do Claude Code em `NOTAS/.claude/settings.json`), `.github/workflows/testes.yml`; testes em `testes/test_ferramentas.py`; padrão do código `ruff.toml` (+ `requirements-dev.txt`); versões em `CHANGELOG.md` |
 

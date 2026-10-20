@@ -169,7 +169,7 @@ def main():
 
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
     if not garantir_servidor():
-        ctypes.windll.user32.MessageBoxW(0, "O Painel não conseguiu ligar o servidor local. Veja logs\\solicitacoes_nf.log.",
+        ctypes.windll.user32.MessageBoxW(0, "O Painel não conseguiu ligar o servidor local. Veja logs\\painel.log.",
                                          TITULO, 0x10)
         return 1
 

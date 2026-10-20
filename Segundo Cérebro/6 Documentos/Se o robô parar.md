@@ -57,7 +57,7 @@ tags: [cerebro/documentos, manual]
 **Impacto:** solicitações novas **não vão para os hotéis**.
 1. No **PC do João**, a tarefa `SolicitacoesNF_CopiaHoteis` está ligada? (Agendador de Tarefas → Biblioteca). Se estiver desativada, **ative**.
 2. A aba **Status → B1** está marcada? Se não, alguém desligou: pergunte antes de religar.
-3. Abra `logs\solicitacoes_nf.log` e procure as últimas linhas com ❌.
+3. Abra `logs\solicitacoes_nf.log` (o log do robô) e procure as últimas linhas com ❌. O conferente e o Painel têm o seu: `logs\conferente.log` e `logs\painel.log`.
 4. Para ver tudo na tela: `Bat\executar_robo.bat` (**só no PC do João**; nos outros PCs a regra é nada de .bat).
 5. Existe `FALHA_CRITICA.txt` na pasta do projeto? O robô nem iniciou: mande o arquivo para o Claude.
 6. **Confira:** em até 10 min o aviso some e o Monitoramento mostra a hora nova do robô.
