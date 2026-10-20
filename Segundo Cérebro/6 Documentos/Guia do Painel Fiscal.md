@@ -32,6 +32,10 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 - **Lista** no meio, por dia (Hoje, Ontem…): quem mandou e a hora; o assunto em azul; a prévia.
   - Traço azul = não lido. Linha **avermelhada com bandeira** = urgente. Clipe = tem anexo. Quadradinho azul = formulário.
   - Setas ↑ ↓ andam pela lista e já abrem o e-mail.
+  - **Botão direito** num e-mail (ou Shift+F10): **Marcar como lido / não lido** e **Marcar como urgente / Tirar urgência**.
+    A urgência vale na hora para a equipe toda e fica guardada no Outlook do PC dono (categoria vermelha "Urgente (Painel)").
+    "Tirar urgência" vence a urgência automática (fica a categoria "Sem urgência (Painel)"). Esc fecha o menu.
+  - **E-mail da Ouvidoria** chega já como urgente (motivo "E-mail da Ouvidoria").
   - **Filtro** (botão ao lado de "Por Data"): Pedido de correção · Sem resposta · Com anexo · Nota dividida, com quantos e-mails cada um tem na caixa aberta. Um por vez; o ✕ limpa.
 - **Leitura** à direita, como o Outlook: assunto; o círculo com as iniciais; quem mandou, Para; os botões Responder, Responder a todos, Encaminhar e ⋯; a data.
   Embaixo: de onde veio (hotel e PC), os **anexos** (clique abre o visualizador), a **ficha do pedido** e o texto.
@@ -75,7 +79,7 @@ prazo; etiquetas) e a ficha sempre à direita. Prazo: 48 h corridas do pedido (v
 
 ## Atalhos
 Ctrl+E pesquisar · ↑ ↓ andar na lista · Enter abrir · Esc fechar · Ctrl+R responder · Ctrl+Shift+R responder com NF ·
-Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido · Ctrl+Q lido · ? ajuda.
+Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido · Ctrl+Q lido · Shift+F10 menu do e-mail (= botão direito) · ? ajuda.
 
 ## Para quem mexe no código
 Onde fica cada coisa: [[Onde mexer]] (linhas "Prévia 5"). Regras de visual: [[Padrão de design]].

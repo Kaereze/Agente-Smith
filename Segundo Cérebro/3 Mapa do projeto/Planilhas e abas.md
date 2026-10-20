@@ -19,7 +19,7 @@ IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/
 | `Envios_NF`, `Envios_NF_Anexos` | Painel (Enviar NF) e robô (e-mail do formulário, 15/10/2026) | PC dono da caixa | Fila de envio entre PCs. Pedido do robô: `acao` "formulario", PC em `pc_formulario`, HTML na Envios_NF_Anexos (apagado depois) |
 | `PCs_Painel` | Cada PC | Todos | Versão, Outlook, saúde (coluna L) |
 | `Comandos_PC` | Painel ("Atualizar todos") | Cada PC | Respostas na mesma aba |
-| `Eventos_Correio` | Painel (lido/excluído) | Todos | Faxina 3 dias |
+| `Eventos_Correio` | Painel (lido/excluído/urgência) | Todos | Faxina 3 dias |
 | `Correio_<PC>` | `espelho_emails.py` do PC | Painel | Caixa de entrada espelhada (coluna "Lido Outlook") |
 | `CorreioTexto_<PC>` | idem | Painel | Texto dos e-mails |
 | `CaixaPedidos_<PC>` | idem | Painel | Solicitações do robô na Caixa de Entrada |

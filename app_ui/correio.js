@@ -844,6 +844,64 @@ document.addEventListener("click", e => {
   if (d.cxExcluir) return excluir(d.cxExcluir);
   if (d.cxNaolido) marcarNaoLido(d.cxNaolido);
 });
+// Botão direito no e-mail (usuário, 20/10/2026): lido/não lido e urgência. Shift+F10 ou a tecla de menu abrem também.
+function abrirMenuEmail(id, x, y) {
+  const e = (cx.dados?.emails || []).find(m => m.id === id);
+  fecharMenuEmail();
+  if (!e || cx.resolvendo[id]) return;
+  const m = document.createElement("div");
+  m.id = "cx-ctx"; m.className = "cx-ctx"; m.setAttribute("role", "menu");
+  const ic = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  m.innerHTML = `<div class="cx-ctx-t">${esc(e.nome || e.de || "")}</div>
+    <button type="button" role="menuitem" data-ctx="${e.lido === false ? "lido" : "naolido"}">${ic('<path d="M3 9l9-6 9 6v10H3z"/><path d="M3 9l9 6 9-6"/>')}${e.lido === false ? "Marcar como lido" : "Marcar como não lido"}</button>
+    <button type="button" role="menuitem" data-ctx="${e.urgente ? "normal" : "urgente"}" class="${e.urgente ? "" : "urg"}">${ic('<path d="M5 21V4h11l-2 4 2 4H5"/>')}${e.urgente ? "Tirar urgência" : "Marcar como urgente"}</button>
+    ${e.urgente && e.motivo_urgencia ? `<div class="cx-ctx-n">${esc(e.motivo_urgencia)}</div>` : ""}`;
+  document.body.appendChild(m);
+  m.dataset.id = id;
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.min(x, innerWidth - r.width - 8) + "px";
+  m.style.top = Math.min(y, innerHeight - r.height - 8) + "px";
+  m.querySelector("button")?.focus({ preventScroll: true });
+}
+function fecharMenuEmail() { document.getElementById("cx-ctx")?.remove(); }
+async function acaoMenuEmail(id, acao) {
+  fecharMenuEmail();
+  const e = (cx.dados?.emails || []).find(m => m.id === id);
+  if (!e) return;
+  if (acao === "naolido") return marcarNaoLido(id);
+  if (acao === "lido") {
+    api("/api/correio/evento", { ids: [id], acao: "LIDO" }); e.lido = true;
+    if (cx.dados?.contagem) cx.dados.contagem.entrada_nao_lidos = Math.max(0, cx.dados.contagem.entrada_nao_lidos - 1);
+    desenharLateralCorreio(); desenharCorreio(); return toast("Marcado como lido para a equipe");
+  }
+  const antes = [e.urgente, e.motivo_urgencia];
+  e.urgente = acao === "urgente"; e.motivo_urgencia = e.urgente ? "Marcado como urgente" : "";
+  desenharLateralCorreio(); desenharCorreio();
+  const r = await api("/api/correio/urgencia", { id, marcar: acao });
+  if (!r.ok) { [e.urgente, e.motivo_urgencia] = antes; desenharLateralCorreio(); desenharCorreio(); return toast(r.motivo || r.erro || "Não deu pra marcar agora", true); }
+  toast(e.urgente ? "Marcado como urgente para a equipe (fica no Outlook do PC dono)" : "Urgência tirada para a equipe");
+}
+document.addEventListener("contextmenu", ev => {
+  const l = ev.target.closest?.("#cx-lista .cx-l");
+  if (!l || !l.dataset.id) return;
+  ev.preventDefault();
+  abrirMenuEmail(l.dataset.id, ev.clientX, ev.clientY);
+});
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.("#cx-ctx [data-ctx]");
+  if (b) return acaoMenuEmail(b.closest("#cx-ctx").dataset.id, b.dataset.ctx);
+  if (!ev.target.closest?.("#cx-ctx")) fecharMenuEmail();
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape") fecharMenuEmail();
+  const l = ev.target.closest?.("#cx-lista .cx-l");
+  if (l?.dataset.id && (ev.key === "ContextMenu" || (ev.shiftKey && ev.key === "F10"))) {
+    ev.preventDefault(); const r = l.getBoundingClientRect(); abrirMenuEmail(l.dataset.id, r.left + 40, r.top + r.height / 2);
+  }
+});
+["scroll", "resize"].forEach(t => window.addEventListener(t, fecharMenuEmail, true));
+window.addEventListener("blur", fecharMenuEmail);   // só a janela: o foco indo pro menu não pode fechá-lo
+
 function marcarNaoLido(id) {
   const x = (cx.dados?.emails || []).find(m => m.id === id);
   api("/api/correio/evento", { ids: [id], acao: "NAO_LIDO" });

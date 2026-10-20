@@ -25,9 +25,11 @@ def _data(iso):
         return None
 
 
-def motivo_urgencia(classes, dias, alerta=""):
+def motivo_urgencia(classes, dias, alerta="", de="", nome=""):
     if alerta:
         return alerta
+    if "ouvidoria" in f"{de} {nome}".lower():   # e-mail da Ouvidoria entra como urgente (usuário, 20/10/2026)
+        return "E-mail da Ouvidoria"
     if "corrigir" in classes:
         return "Pedido de correção/cancelamento da NF"
     return f"{int(dias)} dias sem resposta" if dias > ee.URGENCIA_DIAS else ""
@@ -70,7 +72,14 @@ def juntar(emails, eventos, agora, alertas=None):
         especial = respondido or bool({"formulario", "aviso"} & set(e["classes"]))
         quando = _data(e["quando"])
         dias = (agora - quando).total_seconds() / 86400 if quando else 0
-        motivo = "" if especial else motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""))
+        motivo = "" if especial else motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""), e["de"], e.get("nome", ""))
+        # marcado pela equipe (botão direito): vale o clique enquanto o PC dono não grava no Outlook; depois, a categoria
+        marca = ev.get("urgencia") if ev.get("urgencia_em") and ev["urgencia_em"] >= e.get("atualizado", "") else \
+            {"marcado_urgente": "urgente", "marcado_normal": "normal"}.get(next((c for c in e["classes"] if c.startswith("marcado_")), ""), "")
+        if marca == "urgente":
+            motivo = "Marcado como urgente" + (f" por {ev['urgencia_por']}" if ev.get("urgencia") == "urgente" and ev.get("urgencia_por") else "")
+        elif marca == "normal":
+            motivo = ""
         entrada.append({**e, "respondido": respondido, "pendente": not especial,
                         "lido": lido_atual(e, ev), "lido_por": ev.get("lido_por", ""),
                         "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),

@@ -59,7 +59,20 @@ ABA_EVENTOS = "Eventos_Correio"
 PREFIXO_PEDIDOS = "CaixaPedidos_"
 CAB_PEDIDOS = ["ID", "Caixa", "Hotel", "Assunto", "Recebido", "Lido", "PC", "Atualizado", "Pedidos"]
 CAB_EVENTOS = ["Quando", "ID", "Ação", "Agente", "PC"]
-EVENTOS = ("LIDO", "NAO_LIDO", "EXCLUIR")
+EVENTOS = ("LIDO", "NAO_LIDO", "EXCLUIR", "URGENTE", "NAO_URGENTE")
+# Urgência marcada pela equipe (usuário, 20/10/2026: botão direito no e-mail): fica no Outlook do PC dono como categoria
+CATEGORIA_URGENTE, CATEGORIA_SEM_URGENCIA = "Urgente (Painel)", "Sem urgência (Painel)"
+MARCAS = {CATEGORIA_URGENTE: "marcado_urgente", CATEGORIA_SEM_URGENCIA: "marcado_normal"}
+
+
+def marca_das_categorias(categorias):
+    """Categorias do Outlook ("Pedido de NF, Urgente (Painel)") -> "marcado_urgente" | "marcado_normal" | ""."""
+    atuais = [c.strip() for c in re.split(r"[;,]", str(categorias or "")) if c.strip()]
+    return next((classe for nome, classe in MARCAS.items() if nome in atuais), "")
+
+
+def com_marca(classes, marca):
+    return [c for c in (classes or []) if c not in MARCAS.values()] + ([marca] if marca else [])
 ENTRADA, ENVIADO, RESPOSTA = "entrada", "enviado", "resposta"
 JANELA_DIAS = 14                  # sem resposta há mais que isso: sai do espelho
 RECENTE_HORAS = 24                # Itens Enviados: só as últimas 24 h
@@ -445,13 +458,15 @@ def dobrar_eventos(linhas):
         if not i or acao not in EVENTOS:
             continue
         e = estado.setdefault(i, {"lido": False, "lido_por": "", "lido_em": "", "excluido": False, "excluido_por": "",
-                                  "lido_mudou_em": ""})
+                                  "lido_mudou_em": "", "urgencia": "", "urgencia_por": "", "urgencia_em": ""})
         if acao == "LIDO":
             e.update(lido=True, lido_por=agente, lido_em=quando, lido_mudou_em=quando)
         elif acao == "NAO_LIDO":
             e.update(lido=False, lido_por="", lido_em="", lido_mudou_em=quando)
         elif acao == "EXCLUIR":
             e.update(excluido=True, excluido_por=agente)
+        elif acao in ("URGENTE", "NAO_URGENTE"):
+            e.update(urgencia="urgente" if acao == "URGENTE" else "normal", urgencia_por=agente, urgencia_em=quando)
     return estado
 
 
@@ -641,7 +656,7 @@ class Espelho:
                 logger.info(f"🔀 Nota dividida pelo voucher: {n} quartos ({'; '.join(nomes)}) · "
                             f"{str(item.Subject or '')[:60]} ({caixa})")
         proprio, citado = dividir_historico(corpo)
-        classes = classificar(item.Subject, proprio, anexos)
+        classes = com_marca(classificar(item.Subject, proprio, anexos), marca_das_categorias(getattr(item, "Categories", "")))
         analise = self._analisar(item, caixas.get(caixa, ""), str(item.SenderName or ""), str(item.Subject or ""),
                                  proprio, recebido) if "corrigir" in classes else ""
         self.itens[i] = {"id": i, "entry_id": item.EntryID, "pasta": ENTRADA, "caixa": caixa,
@@ -747,6 +762,7 @@ class Espelho:
                     del self.itens[i]
                 else:
                     e["lido_outlook"] = not bool(getattr(item, "UnRead", True))
+                    e["classes"] = com_marca(e.get("classes", []), marca_das_categorias(getattr(item, "Categories", "")))
             except Exception:
                 del self.itens[i]
 

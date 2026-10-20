@@ -28,6 +28,7 @@ Tudo em `src/app_servidor.py` → `criar_handler`. `POST` exige o cabeçalho `X-
 |---|---|
 | `/api/acao` | Marcar NF, anotar, tratativa |
 | `/api/correio/evento` | Lido / não lido |
+| `/api/correio/urgencia` | Botão direito: `{id, marcar: "urgente" | "normal"}` (evento na hora + categoria no Outlook do PC dono) |
 | `/api/correio/excluir`, `/api/correio/encaminhar`, `/api/email/responder` | E-mails |
 | `/api/envio_nf`, `/api/envio_nf/conferir` | Enviar NF (com conferência antes) |
 | `/api/enviar` | Enviar pendentes |

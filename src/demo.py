@@ -330,7 +330,7 @@ def preparar(estado, backend):
     def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao=""):
         contador["n"] += 1
         id_envio = f"DEMO-{contador['n']}"
-        pc = backend.excluir(responder) if acao == envio_nf.EXCLUIR else backend.responder(responder) if responder and acao != envio_nf.ENCAMINHAR else ""
+        pc = backend.excluir(responder) if acao == envio_nf.EXCLUIR else backend.responder(responder) if responder and acao not in (envio_nf.ENCAMINHAR, envio_nf.URGENCIA) else ""
         self.locais[id_envio] = {"estado": "enviado", "pc": pc or "DEMO-JOAO"}
         return {"ok": True, "id": id_envio, "destino": pc or "DEMO-JOAO",
                 "aviso": "modo demonstração: nada foi enviado de verdade"}

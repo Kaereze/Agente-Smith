@@ -49,5 +49,7 @@ tags: [cerebro/historico]
 | 20/10/2026 | **Envio sem espera**: clicou em Enviar, a janela fecha e um aviso acompanha; falhou, reabre com o texto | "estamos em ligação com o hóspede": não pode ficar esperando |
 | 20/10/2026 | **Pesquisa: pedidos e espelho na hora**, Outlook ao vivo completa depois. O índice local em cada PC e o envio direto pela rede **esperam o OK do João** (mudam a regra de 08/10) | Rapidez sem pesar o Painel nem mudar regra sem pedido |
 | 20/10/2026 | **Caixa de Entrada contada exatamente**: a cada volta (2 min) o robô confere o total de cada caixa no Outlook com o espelho e relê a caixa que não bater | João: "precisam ser contabilizados exatamente o que tiver na caixa de entrada de cada email cadastrado" |
+| 20/10/2026 | **Urgência marcada pela equipe fica no Outlook do PC dono** (categoria "Urgente (Painel)" / "Sem urgência (Painel)"), pela mesma fila do Excluir; o evento na Central só faz valer na hora | O evento some na faxina de 3 dias; a categoria não. "Tirar urgência" vence a automática, senão o clique não teria efeito |
+| 20/10/2026 | **E-mail da Ouvidoria = urgente** (remetente ou nome com "ouvidoria") | João: "a tag de urgência pra quando vier os e-mails diretos da ouvidoria" |
 
 Ver: [[O que não mexer]].

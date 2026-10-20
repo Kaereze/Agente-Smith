@@ -1025,6 +1025,23 @@ class Estado:
         self._montar_correio()
         return r
 
+    def marcar_urgencia(self, id_email, marcar, agente):
+        """Botão direito (usuário, 20/10/2026): vale na hora pra equipe (Eventos_Correio) e o PC dono põe a categoria no
+        Outlook, que é onde fica guardado (o evento some na faxina de 3 dias; a categoria não)."""
+        if marcar not in ("urgente", "normal"):
+            raise ValueError("marcar: urgente ou normal")
+        e = self._email(id_email)
+        sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+        r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, mensagem=marcar, responder=e["id"],
+                                acao=envio_nf.URGENCIA)
+        if not r.get("ok"):
+            return r
+        linha = espelho_emails.evento(e["id"], "URGENTE" if marcar == "urgente" else "NAO_URGENTE", agente)
+        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
+        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
+        self._montar_correio()
+        return r
+
     def encaminhar_email(self, corpo, quem):
         e = self._email(str(corpo.get("id", "")))
         para = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("para", ""))) if "@" in x)
@@ -1596,6 +1613,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                                                             nome_do_agente()))
                 if path == "/api/correio/excluir":
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
+                if path == "/api/correio/urgencia":
+                    return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
                 if path == "/api/correio/encaminhar":
                     return self._json(estado.encaminhar_email(corpo, nome_do_agente()))
                 if path == "/api/comando":

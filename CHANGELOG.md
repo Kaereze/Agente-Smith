@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.11] — 2026-10-20
+
+### Adicionado
+
+- **Botão direito no e-mail** (lista da tela de e-mails): Marcar como lido / não lido e Marcar como urgente / Tirar
+  urgência. Também abre com Shift+F10 ou a tecla de menu; Esc fecha. A marca vale na hora para a equipe e o PC dono põe a
+  categoria "Urgente (Painel)" (ou "Sem urgência (Painel)") no e-mail do Outlook, onde fica guardada.
+- **E-mail da Ouvidoria entra como urgente** sozinho (remetente ou nome com "ouvidoria"), com o motivo "E-mail da Ouvidoria".
+
 ## [2026.10.20.10] — 2026-10-20
 
 ### Removido

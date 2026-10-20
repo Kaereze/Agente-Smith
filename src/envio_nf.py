@@ -43,6 +43,7 @@ PC_ONLINE_SEGUNDOS = 180
 SEM_RESPOSTA_SEGUNDOS = 90
 FILA_ESPERA_HORAS = 24           # PC dono desligado: o pedido espera ele ligar por até 24 h; depois expira
 EXCLUIR, ENCAMINHAR = "excluir", "encaminhar"   # ações no Outlook do PC dono (além de enviar/responder)
+URGENCIA = "urgencia"   # botão direito no Painel: categoria "Urgente (Painel)" / "Sem urgência (Painel)" no e-mail
 DISPID_SEND_USING_ACCOUNT = 64209
 
 MENSAGEM_PADRAO = (
@@ -682,6 +683,28 @@ def excluir_no_outlook(entry_id):
     return True
 
 
+def marcar_urgencia_no_outlook(entry_id, marcar):
+    """Põe a categoria de urgência no e-mail (tira a outra). marcar: "urgente" | "normal". Só mexe nas categorias."""
+    import espelho_emails
+    import pythoncom
+    pythoncom.CoInitialize()
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+    try:
+        item = ns.GetItemFromID(entry_id)
+    except Exception:
+        return False   # já não está mais lá
+    nova = espelho_emails.CATEGORIA_URGENTE if marcar == "urgente" else espelho_emails.CATEGORIA_SEM_URGENCIA
+    try:
+        if nova not in {c.Name for c in ns.Categories}:
+            ns.Categories.Add(nova, 1 if marcar == "urgente" else 0)   # 1 = vermelho
+    except Exception:
+        pass   # sem a lista mestra, a categoria funciona igual
+    atuais = [c.strip() for c in re.split(r"[;,]", str(item.Categories or "")) if c.strip() and c.strip() not in espelho_emails.MARCAS]
+    item.Categories = ", ".join(atuais + [nova])
+    item.Save()
+    return True
+
+
 # ---------- pedido ----------
 def novo_id():
     return "ENV-" + uuid.uuid4().hex[:10].upper()
@@ -738,6 +761,7 @@ class ServicoEnvio:
         # resolvidos na hora da chamada (os testes trocam as funções do módulo)
         self.enviar = enviar or (lambda *a, **k: enviar_pelo_outlook(*a, **k))
         self.excluir = lambda entry: excluir_no_outlook(entry)
+        self.marcar_urgencia = lambda entry, marcar: marcar_urgencia_no_outlook(entry, marcar)
         self.ler_contas = ler_contas or (lambda: contas_do_outlook())
         self.relogio = relogio
         self.agente = ""
@@ -893,6 +917,10 @@ class ServicoEnvio:
                 entry = espelho_emails.entry_do_email(p["responder"])
                 if entry:
                     self.excluir(entry)
+            elif acao == URGENCIA:
+                entry = espelho_emails.entry_do_email(p["responder"])
+                if entry:
+                    self.marcar_urgencia(entry, p.get("mensagem", ""))
             else:
                 linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
                 arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
@@ -918,6 +946,10 @@ class ServicoEnvio:
             logger.info(f"📤 {id_envio} ({p.get('codigo')}): e-mail do robô saiu de {p['conta_de']} (pela fila)"
                         + ("" if resultado.get("confirmado") else " — ainda sem aparecer em Itens Enviados"))
             self._apagar_anexos(id_envio)
+            return
+        if p.get("acao") == URGENCIA:   # só categoria: não é NF, não registra nada
+            logger.info(f"🚩 {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} marcado como "
+                        f"{'urgente' if p.get('mensagem') == 'urgente' else 'sem urgência'} (pedido de {e['quem']})")
             return
         if p.get("acao") == EXCLUIR:
             logger.info(f"🗑️ {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} movido pra Itens Excluídos "
