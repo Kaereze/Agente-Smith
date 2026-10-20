@@ -717,11 +717,14 @@ function desenharPastas() {
   if (!el) return;
   const entrada = emailsDa("entrada"), nl = {};
   entrada.forEach(e => { if (e.lido === false) { const c = String(e.caixa || "").toLowerCase(); nl[c] = (nl[c] || 0) + 1; } });
+  // Pastas redesenhadas (usuário, 20/10/2026: "informações muito juntas"): título pequeno por grupo, cabeçalho de cada PC
+  // (pessoa, ligado/desligado, nome do PC, total), caixa em 2 linhas (hotel; e-mail) com o número numa pílula
   const n = (v, cls = "") => v ? `<em class="${cls}">${v.toLocaleString("pt-BR")}</em>` : "";
+  const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
   const favAberto = !cx.fechados.__fav;
-  const fav = (k, ic, txt, v, on, cls) => `<button type="button" class="ol-fav ${on ? "on" : ""}" data-ol-fav="${k}">${SVG(IC[ic])}${txt}${n(v, cls)}</button>`;
+  const fav = (k, ic, txt, v, on, cls) => `<button type="button" class="ol-fav ${on ? "on" : ""}" data-ol-fav="${k}">${SVG(IC[ic])}<span class="tx">${txt}</span>${n(v, cls)}</button>`;
   const semPasta = !cx.caixaSel;
-  let h = `<button type="button" class="ol-gr" data-cx-grupo="__fav" aria-expanded="${favAberto}"><span class="chev">▼</span>Favoritos</button>` +
+  let h = `<button type="button" class="ol-gr" data-cx-grupo="__fav" aria-expanded="${favAberto}">${chev}Favoritos</button>` +
     (favAberto ? fav("entrada", "caixa", "Caixa de Entrada (todas)", entrada.filter(e => e.lido === false).length, semPasta && cx.caixa === "entrada" && !cx.soForm) +
       fav("urgencia", "alerta", "Urgência", emailsDa("urgencia").length, semPasta && cx.caixa === "urgencia", "r") +
       fav("form", "form", "Formulários do robô", entrada.filter(e => (e.classes || []).includes("formulario") && e.lido === false).length, semPasta && cx.soForm) +
@@ -733,18 +736,19 @@ function desenharPastas() {
       .map(c => ({ c, hotel: nomeDaCaixa(c), n: nl[c] || 0 })).sort((a, b) => a.hotel.localeCompare(b.hotel, "pt"));
     const aberto = cx.pcsAbertos[p.pc] ?? (p.pc === meu || contas.some(x => x.c === cx.caixaSel) || pcs.length === 1);
     const soma = contas.reduce((s, x) => s + x.n, 0);
-    h += `<div class="ol-pc" data-ol-pc="${esc(p.pc)}" title="${p.online ? "PC ligado" : "PC desligado"}">${esc(p.agente || p.pc)}<span>${esc(p.pc)}</span></div>`;
-    if (!aberto) { h += `<button type="button" class="ol-mais-cx fechado" data-ol-pc="${esc(p.pc)}"><span class="chev" style="transform:rotate(-90deg)">▼</span> ${contas.length} caixas${n(soma)}</button>`; continue; }
+    h += `<button type="button" class="ol-pc2 ${aberto ? "" : "fechado"}" data-ol-pc="${esc(p.pc)}" aria-expanded="${aberto}" title="${p.online ? "PC ligado" : "PC desligado"}">
+      ${chev}<span class="quem"><b>${esc(p.agente || p.pc)}</b><small><i class="${p.online ? "on" : "off"}"></i>${esc(p.pc)} · ${contas.length} caixas</small></span>${n(soma)}</button>`;
+    if (!aberto) continue;
     const todas = cx.pcsTodas[p.pc] || contas.length <= 6;
     const mostrar = todas ? contas : contas.filter((x, i) => i < 4 || x.c === cx.caixaSel);   // como a prévia: 4 e "+ N caixas"
     for (const x of mostrar) {
       const on = x.c === cx.caixaSel;
-      h += `<button type="button" class="ol-cx ${x.n ? "tem" : ""}" data-ol-caixa="${esc(x.c)}" aria-expanded="${on}" title="${esc(x.c)}"><span class="chev">▼</span>
-        <span class="nm"><b>${esc(x.hotel)}</b><small>${esc(x.c.split(".com")[0])}</small></span>${n(x.n)}</button>`;
+      h += `<button type="button" class="ol-cx ${x.n ? "tem" : ""} ${on ? "sel" : ""}" data-ol-caixa="${esc(x.c)}" aria-expanded="${on}" title="${esc(x.c)}">${chev}
+        <span class="nm"><b>${esc(x.hotel)}</b><small>${esc(x.c)}</small></span>${n(x.n)}</button>`;
       if (on) h += `<button type="button" class="ol-sub ${cx.caixa !== "enviados" ? "on" : ""}" data-ol-sub="entrada">Caixa de Entrada${n(x.n)}</button>
         <button type="button" class="ol-sub ${cx.caixa === "enviados" ? "on" : ""}" data-ol-sub="enviados">Itens Enviados</button>`;
     }
-    if (mostrar.length < contas.length) h += `<button type="button" class="ol-mais-cx" data-ol-todas="${esc(p.pc)}"><span class="chev" style="transform:rotate(-90deg)">▼</span> + ${contas.length - mostrar.length} caixas</button>`;
+    if (mostrar.length < contas.length) h += `<button type="button" class="ol-mais-cx" data-ol-todas="${esc(p.pc)}">Mostrar mais ${contas.length - mostrar.length} caixas</button>`;
   }
   el.innerHTML = h;
 }
@@ -771,8 +775,7 @@ document.addEventListener("click", ev => {
   if (d.olCaixa) { cx.caixaSel = cx.caixaSel === d.olCaixa && cx.caixa === "entrada" ? "" : d.olCaixa; cx.caixa = "entrada"; cx.soForm = false; cx.sel = null; cx.hotel = ""; return trocarVista("correio"); }
   if (d.olSub) { cx.caixa = d.olSub; cx.sel = null; return trocarVista("correio"); }
   if (d.olTodas) { cx.pcsTodas[d.olTodas] = true; return desenharPastas(); }
-  if (d.olPc) { const atual = $("cx-pastas").querySelector(`.ol-mais-cx.fechado[data-ol-pc="${CSS.escape(d.olPc)}"]`) ? false : true;
-    cx.pcsAbertos[d.olPc] = !atual; return desenharPastas(); }
+  if (d.olPc) { cx.pcsAbertos[d.olPc] = t.getAttribute("aria-expanded") !== "true"; return desenharPastas(); }
   if (d.cxGrupo !== undefined) {
     cx.fechados[d.cxGrupo] = !cx.fechados[d.cxGrupo];
     try { localStorage.setItem("painel.caixasFechadas", JSON.stringify(cx.fechados)); } catch (e) {}

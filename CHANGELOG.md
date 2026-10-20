@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.3] — 2026-10-20
+
+### Mudou
+
+- **Pastas dos e-mails redesenhadas.** O nome do hotel, o e-mail e o número estavam grudados. Agora há um título pequeno
+  por grupo, um cabeçalho para cada PC (pessoa, bolinha verde de ligado, nome do PC, quantas caixas e o total), cada caixa
+  em 2 linhas (hotel; e-mail inteiro) com os não lidos numa pílula azul, setas desenhadas do mesmo tamanho e o link
+  "Mostrar mais N caixas".
+
 ## [2026.10.20.2] — 2026-10-20
 
 ### Mudou

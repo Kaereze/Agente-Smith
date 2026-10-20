@@ -27,6 +27,8 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 
 ## E-mails (igual ao Outlook)
 - **Pastas** à esquerda: Favoritos (Caixa de Entrada de todas as caixas, Urgência, Formulários do robô, Itens Enviados) e as caixas de cada PC.
+  Cada PC tem um cabeçalho (pessoa, bolinha verde = ligado / cinza = desligado, nome do PC, quantas caixas e o total de não lidos);
+  cada caixa mostra o hotel em cima e o e-mail embaixo, com os não lidos na pílula azul. "Mostrar mais N caixas" abre o resto.
 - **Lista** no meio, por dia (Hoje, Ontem…): quem mandou e a hora; o assunto em azul; a prévia.
   - Traço azul = não lido. Linha **avermelhada com bandeira** = urgente. Clipe = tem anexo. Quadradinho azul = formulário.
   - Setas ↑ ↓ andam pela lista e já abrem o e-mail.

@@ -1776,6 +1776,42 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .modo-ol #mesa .nf-l.col.sel{background:#353535;outline:0;box-shadow:inset 3px 0 0 #479ef5}
 .modo-ol #mesa .nf-l.col .c-nome{font-size:14px;color:#f2f2f2}
 @media (prefers-reduced-motion: reduce){.modo-ol *,#envios-andamento *{animation:none!important;transition:none!important}}
+/* Pastas dos e-mails redesenhadas (usuário, 20/10/2026: "informações muito juntas… espaçamento desleixado"):
+   título pequeno por grupo; cabeçalho de cada PC; caixa em 2 linhas com o número numa pílula; setas desenhadas iguais */
+#v-correio.ol .cx-pastas{padding:10px 0 16px}
+#v-correio.ol .cx-pastas .chev{width:12px;height:12px;flex:none;color:#8a8a8a;transition:transform .15s}
+#v-correio.ol .cx-pastas [aria-expanded="false"] > .chev{transform:rotate(-90deg)}
+#v-correio.ol .cx-pastas .ol-gr{display:flex;align-items:center;gap:8px;margin:0 8px;width:calc(100% - 16px);padding:6px 10px;border-radius:4px;
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#a8a8a8}
+#v-correio.ol .cx-pastas .ol-gr:hover{background:#2a2a2a}
+#v-correio.ol .cx-pastas .ol-fav{display:flex;align-items:center;gap:10px;margin:2px 8px;width:calc(100% - 16px);padding:8px 12px 8px 16px;border-radius:6px;font-size:13.5px;color:#e6e6e6}
+#v-correio.ol .cx-pastas .ol-fav svg{width:16px;height:16px;color:#bdbdbd}
+#v-correio.ol .cx-pastas .ol-fav .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+#v-correio.ol .cx-pastas .ol-hr{margin:12px 16px}
+#v-correio.ol .cx-pastas em{margin-left:auto;flex:none;min-width:24px;padding:1px 8px;border-radius:10px;background:#173b63;color:#cfe5fb;
+  font-style:normal;font-size:12px;font-weight:600;text-align:center;line-height:18px}
+#v-correio.ol .cx-pastas em.r{background:#3a1d1f;color:#ff8d95}
+#v-correio.ol .cx-pastas .ol-pc2{display:flex;align-items:center;gap:10px;margin:14px 8px 4px;width:calc(100% - 16px);padding:8px 12px;border:0;border-top:1px solid #2b2b2b;
+  border-radius:0;background:none;color:#f0f0f0;cursor:pointer;text-align:left}
+#v-correio.ol .cx-pastas .ol-pc2:first-of-type{border-top:0;margin-top:4px}
+#v-correio.ol .cx-pastas .ol-pc2:hover{background:#2a2a2a}
+#v-correio.ol .cx-pastas .ol-pc2 .quem{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#v-correio.ol .cx-pastas .ol-pc2 b{font-size:13.5px;font-weight:600}
+#v-correio.ol .cx-pastas .ol-pc2 small{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#9a9a9a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#v-correio.ol .cx-pastas .ol-pc2 small i{width:7px;height:7px;border-radius:50%;flex:none;background:#6b6b6b}
+#v-correio.ol .cx-pastas .ol-pc2 small i.on{background:#3da755}
+#v-correio.ol .cx-pastas .ol-cx{display:flex;align-items:center;gap:10px;margin:2px 8px;width:calc(100% - 16px);min-height:52px;padding:8px 12px 8px 14px;
+  border-radius:6px;border-left:3px solid transparent;color:#d0d0d0}
+#v-correio.ol .cx-pastas .ol-cx .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;text-align:left}
+#v-correio.ol .cx-pastas .ol-cx .nm b{font-size:13.5px;font-weight:500;color:#e6e6e6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#v-correio.ol .cx-pastas .ol-cx.tem .nm b{font-weight:600;color:#ffffff}
+#v-correio.ol .cx-pastas .ol-cx .nm small{display:block;font-size:11.5px;color:#9a9a9a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#v-correio.ol .cx-pastas .ol-cx:hover{background:#2a2a2a}
+#v-correio.ol .cx-pastas .ol-cx.sel{background:#383838;border-left-color:#479ef5}
+#v-correio.ol .cx-pastas .ol-sub{display:flex;align-items:center;margin:1px 8px;width:calc(100% - 16px);padding:7px 12px 7px 42px;border-radius:6px;font-size:13px;color:#d0d0d0}
+#v-correio.ol .cx-pastas .ol-sub.on{background:#2f2f2f;color:#fff;font-weight:600;box-shadow:inset 3px 0 0 #479ef5}
+#v-correio.ol .cx-pastas .ol-mais-cx{display:block;margin:4px 8px 2px;width:calc(100% - 16px);padding:8px 12px 8px 39px;border-radius:6px;font-size:12.5px;font-weight:500;color:#6cb8f6;text-align:left}
+#v-correio.ol .cx-pastas .ol-mais-cx:hover{background:#2a2a2a;color:#9bd0fa}
 </style>
 </head>
 <body>
