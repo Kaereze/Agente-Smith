@@ -1,6 +1,5 @@
 """Ver o anexo do hóspede no Painel (14/10/2026): o PC dono lê o anexo do Outlook, só das caixas dos hotéis."""
 import base64
-import os
 
 import pytest
 

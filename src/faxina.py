@@ -15,7 +15,6 @@ Antes de mexer na Tratamento, uma cópia vai pra estado/backup_tratamento_*.json
 """
 import datetime
 import json
-import re
 
 import app_dados as dados
 import atividade

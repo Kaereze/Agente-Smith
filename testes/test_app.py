@@ -2,7 +2,7 @@ import datetime
 
 import app_dados as d
 from app_servidor import Estado
-from conftest import CENTRAL, ESTRELA
+from conftest import ESTRELA
 
 T = datetime.datetime(2026, 10, 1, 9, 0, 0)
 CAB = [d.CABECALHO_TRATAMENTO]

@@ -75,8 +75,10 @@ Requisitos: Python 3.14 e as dependências de `requirements.txt` (`pywin32`, `gs
 
 | Etapa | O que acontece |
 |---|---|
-| Antes do commit | `.githooks/pre-commit` barra credenciais, `estado/`, `logs/` e roda todos os testes. Ligar uma vez no PC: `git config core.hooksPath .githooks` |
-| No GitHub | A cada push em `main`, `Bernardo`, `Christian` ou `clara`, o GitHub Actions roda os testes no Windows ([testes.yml](.github/workflows/testes.yml)) |
+| Antes do commit | `.githooks/pre-commit` barra credenciais, `estado/`, `logs/` e CPF de hóspede real, roda o ruff e todos os testes. Ligar uma vez no PC: `git config core.hooksPath .githooks` e `pip install -r requirements-dev.txt` |
+| No GitHub | A cada push em `main`, `Bernardo`, `Christian` ou `clara`, o GitHub Actions roda o ruff e os testes no Windows ([testes.yml](.github/workflows/testes.yml)) |
+| Padrão do código | [`ruff.toml`](ruff.toml): só erro real (sintaxe, nome indefinido, import sem uso) |
+| Versões | Uma por dia de entrega (`AAAA.MM.DD`), com etiqueta no git: ver [CHANGELOG.md](CHANGELOG.md) |
 | Testes | `python -m pytest -q`: inclui a trava contra vazamento de credenciais (`testes/test_segredos.py`) |
 | Entrega | `git push origin main main:Bernardo main:Christian main:clara` e depois "Atualizar todos os PCs" no Painel |
 

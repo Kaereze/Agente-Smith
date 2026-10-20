@@ -71,8 +71,9 @@ tags: [cerebro/andamento]
 - [ ] Ficha do pedido: CPF do hóspede vazio aparece como "falta pedir"; decidir se entra no "Pedir o que falta".
 
 ## Skills de empresa (19/10/2026)
-~~Ficaram para depois~~ → **instaladas em 19/10/2026** (pedido do João: "pode seguir com as próximas skills"). Falta **usar** cada uma no projeto, quando o João pedir:
+~~Ficaram para depois~~ → **instaladas em 19/10/2026** (pedido do João: "pode seguir com as próximas skills"). Usadas em 19/10/2026: incident-runbook-templates ([[Se o robô parar]]), gdpr-data-handling + security-and-hardening ([[Dados de hóspedes (LGPD)]]), writing-changelogs (CHANGELOG.md), python-code-style (ruff). Ainda sem uso:
 - Documentação: documentation-and-adrs, git-workflow-and-versioning, writing-changelogs, incident-runbook-templates, readme-blueprint-generator.
 - Python: python-testing-patterns, python-code-style (ruff), systematic-debugging, python-observability.
 - Dados de hóspedes: gdpr-data-handling (parecida com a LGPD).
 - Revisão de segurança completa do Painel e da rede 8766 com a skill security-and-hardening (já instalada).
+- **Decisões de LGPD esperando o João** (19/10/2026): histórico do git com dados reais, log `saida_console_sincronizar.txt` sem limite, `saida_simulacao/` de 24/09, `backup_cristian_0508`, `Historico_de_Envios.csv` sem limite, limpar o espaço temporário do Claude. Ver [[Dados de hóspedes (LGPD)]].

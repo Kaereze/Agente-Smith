@@ -351,7 +351,7 @@ def relatorio(itens, agente, dias):
     linhas = [f"\n{'=' * 100}",
               f" CLASSIFICAÇÃO — {agente} · últimos {dias} dias · {len(itens)} solicitação(ões), "
               f"{len(pendentes)} em aberto",
-              f" Só leitura: nada foi gravado na Central e nenhum e-mail foi enviado.",
+              " Só leitura: nada foi gravado na Central e nenhum e-mail foi enviado.",
               f"{'=' * 100}"]
 
     emitidas = [it for it in pendentes if any("JÁ EMITIDA" in m for m in it["marcas"])]

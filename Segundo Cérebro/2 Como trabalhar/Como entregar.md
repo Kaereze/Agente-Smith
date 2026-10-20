@@ -12,7 +12,7 @@ tags: [cerebro/trabalho]
 0. `git pull` (pegar o que veio do outro PC).
 1. Rodar os testes (`python -m pytest -q` na pasta do projeto; 375 passando em 19/10). No PC do João o **pre-commit** já roda os testes e barra credenciais e `estado/` sozinho; depois do push, o **GitHub Actions** roda os testes de novo (aba Actions do repositório).
 2. Conferir a tela de verdade (captura no Edge sem janela, temas claro e escuro), sem erro de JavaScript.
-3. **Commit** em português, terminando com `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+3. **Commit** em português, terminando com `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Acrescentar a entrega no topo do `CHANGELOG.md` (versão = data, `AAAA.MM.DD`) e, no último commit do dia, a etiqueta: `git tag -a AAAA.MM.DD -m "Versão AAAA.MM.DD"` e `git push origin AAAA.MM.DD`.
 4. **Push** na `main`.
 5. Conferir se `Bernardo`, `Christian` e `clara` estão atrás da main (`git merge-base --is-ancestor`) e deixá-las iguais: `git push origin main:Bernardo main:Christian main:clara`.
 6. **"Atualizar todos os PCs"** (botão em Máquinas ou o comando `atualizar` para TODOS).

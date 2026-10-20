@@ -41,3 +41,6 @@ Ordem de importância: ver [[Hierarquia de prioridades]]. Credenciais: ver [[Cre
 - **Capturas com zoom** depois de mudança visual.
 - `git pull` antes de começar (o João mexe no trabalho **e** em casa). Ver [[Como entregar]].
 - Ler [[Onde mexer]] antes de procurar no código.
+
+## Dados de hóspedes em teste, exemplo e design (19/10/2026)
+- **Sempre dado inventado** (ex.: "Marina Exemplo Costa", CPF gerado). Nunca copiar caso real, nem "só para testar". O pre-commit barra CPF real. Ver [[Dados de hóspedes (LGPD)]].

@@ -1,0 +1,3 @@
+# Só para quem mexe no código (PC do João e GitHub Actions). Os PCs da equipe instalam só requirements.txt.
+-r requirements.txt
+ruff==0.17.1

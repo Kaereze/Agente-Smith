@@ -1,0 +1,10 @@
+# Padrão do código (skill python-code-style, 19/10/2026).
+# Só regras de ERRO REAL: sintaxe (E9) e pyflakes (F: nome indefinido, import/variável sem uso, redefinição).
+# Formatação NÃO é imposta: reformatar mexeria em quase todo arquivo que roda nos 4 PCs.
+# Roda no pre-commit (se o ruff estiver instalado) e no GitHub Actions.
+target-version = "py314"
+line-length = 130
+extend-exclude = ["Segundo Cérebro", "estado", "logs", "saida_simulacao", ".venv"]
+
+[lint]
+select = ["E9", "F"]

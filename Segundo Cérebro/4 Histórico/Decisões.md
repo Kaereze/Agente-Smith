@@ -42,5 +42,8 @@ tags: [cerebro/historico]
 | 15/10/2026 | **E-mail do robô sai do PC dono da caixa do hotel**, da caixa do hotel para ela mesma. A caixa do Ondina não manda mais e-mail de outro hotel (só o e-mail de teste) | João: "por que está sendo utilizado meu e-mail do Ondina? mande uma requisição para o PC dono daquele hotel e ele mesmo envia" |
 | 15/10/2026 | **E-mails igual ao Outlook** aprovado (prévia no Claude, página "E-mails · igual ao Outlook"): pastas de cada caixa por PC à esquerda, lista por dia no meio, leitura à direita, faixa de comandos do Outlook e a Ficha do pedido no topo | João: "Perfeito! Ficou ótimo!" |
 | 19/10/2026 | **Travas de empresa**: testes no GitHub Actions a cada push, pre-commit (credenciais, `estado/`, testes) e guarda do git no Claude Code. A guarda **não** bloqueia o push normal (é a entrega dos 4 PCs), só o que apaga trabalho | João: "ficar ainda mais com cara de projeto empresarial"; um erro sobe para os 4 PCs de uma vez |
+| 19/10/2026 | **Versão = data da entrega** (`AAAA.MM.DD`), com etiqueta no git e o CHANGELOG.md na raiz | O commit sozinho não diz o que mudou; o Painel continua mostrando o commit |
+| 19/10/2026 | **Ruff só com regras de erro real** (E9, F); formatação não imposta | Reformatar mexeria em todo arquivo que roda nos 4 PCs (P1) |
+| 19/10/2026 | **Teste, exemplo e design só com dado inventado**; trava de CPF real no commit | 4 testes tinham dados reais de hóspedes (P0) |
 
 Ver: [[O que não mexer]].

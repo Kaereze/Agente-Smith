@@ -3,7 +3,6 @@ import datetime
 
 import envio_nf as en
 import espelho_emails as ee
-from conftest import CENTRAL
 from test_envio_nf import CAIXA, Relogio, _ler, _prep
 
 SEM_FORM = {"aba": "", "carimbo": "", "email": "ana@gmail.com", "hotel": "NOVO CWB", "nome": "Ana"}

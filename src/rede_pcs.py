@@ -8,7 +8,6 @@ PCs sem precisar ficar trocando de máquina").
 """
 import datetime
 import json
-import subprocess
 import uuid
 
 import saude

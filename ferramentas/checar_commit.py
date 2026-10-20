@@ -5,7 +5,8 @@
 2. Nenhum conteúdo com cara de credencial no que vai ser commitado. O valor nunca aparece, só o arquivo e o tipo.
 3. Nenhum CPF de hóspede de verdade (LGPD): compara com os CPFs dos backups da Central em estado/ deste PC.
    Sem estado/ (PC de casa, GitHub), essa parte não roda. Teste usa CPF inventado (19/10/2026: 4 testes tinham dados reais).
-4. Todos os testes passando.
+4. Ruff sem erro (ruff.toml: só erro real). Sem o ruff instalado, avisa e segue (pip install -r requirements-dev.txt).
+5. Todos os testes passando.
 
 Ligar neste PC (uma vez):  git config core.hooksPath .githooks
 """
@@ -77,6 +78,16 @@ def main():
         print("COMMIT BARRADO: isto não pode ir pro GitHub:", *achados, sep="\n  - ", file=sys.stderr)
         print("Tire do commit com:  git restore --staged <arquivo>", file=sys.stderr)
         return 1
+    try:
+        ruff = subprocess.run([sys.executable, "-m", "ruff", "check", "--quiet", "."], cwd=RAIZ).returncode
+    except OSError:
+        ruff = None
+    if ruff == 1:
+        print("COMMIT BARRADO: o ruff achou erro no código (veja acima).", file=sys.stderr)
+        return 1
+    if ruff not in (0, 1):
+        print("Aviso: ruff não instalado neste Python; pulei essa conferência (pip install -r requirements-dev.txt).",
+              file=sys.stderr)
     testes = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=RAIZ)
     if testes.returncode:
         print("COMMIT BARRADO: há testes falhando (veja acima).", file=sys.stderr)

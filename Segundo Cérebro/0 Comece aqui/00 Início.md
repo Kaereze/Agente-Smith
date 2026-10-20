@@ -17,7 +17,7 @@ tags: [cerebro/inicio]
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (19/10/2026)
-- 19/10: travas de empresa no repositório: testes automáticos no GitHub a cada push, pre-commit que barra credenciais e `estado/`, guarda do git no Claude Code e README novo. Ver [[2026-10-19]].
+- 19/10: travas de empresa no repositório: testes automáticos no GitHub a cada push, pre-commit que barra credenciais e `estado/`, guarda do git no Claude Code e README novo. Depois: manual [[Se o robô parar]], [[Dados de hóspedes (LGPD)]] (dados reais tirados do repositório; 6 decisões esperam o João), CHANGELOG com versões por data e ruff. Ver [[2026-10-19]].
 - 15/10: robô copia e envia **a cada 10 min**, marca TRUE também na planilha do hotel, **junta as planilhas do formulário
   antigo e do novo** e manda o e-mail **pelo PC dono da caixa do hotel** (nunca mais pela caixa do Ondina). Versão `68b0539`
   nos 4 PCs. Ver [[2026-10-15]].
