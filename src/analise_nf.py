@@ -30,7 +30,7 @@ _MOTIVOS = [   # (motivo, padrão no texto do cliente)
 
 
 _DOC = re.compile(r"(?<![\d.])(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2})(?!\d)")
-VERSAO = 2   # muda quando a regra da análise muda: o espelho refaz as análises antigas na próxima volta
+VERSAO = 3   # muda quando a regra da análise muda: o espelho refaz as análises antigas na próxima volta (3: texto na nota)
 ROTULOS = {"valor": "valor da nota", "data": "datas da hospedagem", "mês": "mês / competência",
            "nome": "nome do tomador", "CPF/CNPJ": "CPF/CNPJ do tomador", "descrição": "descrição da nota"}
 
@@ -39,6 +39,43 @@ _FIM_DO_TEXTO = re.compile(r"\n--\s*\n|aviso de confidencialidade|confidentialit
 _RECLAMA = re.compile(r"falt|inclu|corrig|corre[cç][aã]o|errad|incorret|equivocad|alter|constar|\bconsta\b|deveria|precis|"
                       r"mudar|troc|ajust|diverg|n[aã]o\s+(?:saiu|veio|est[aá]|tem|consta|bate|confere)", re.I)
 _ELOGIA = re.compile(r"\bcorret[oa]s?\b|\bcert[oa]s?\b|n[aã]o\s+precisa|est[aá]\s+ok\b", re.I)
+
+
+# Texto que o hóspede quer na nota, entre aspas (usuário, 20/10/2026: "a própria hóspede disse na mensagem": "não consta a
+# identificação “UEM / Fulana”"). Só vale aspas num trecho que fala de constar/incluir/identificação na nota.
+_ASPAS = re.compile(r"[“\"«‘]\s*([^“”\"«»‘’\n]{2,120}?)\s*[”\"»’]")
+_PEDE_TEXTO = re.compile(r"identifica|\bconsta|inclu|inser|coloc|acrescent|adicion|falt|aparec|mencion|escrit|descri|"
+                         r"observa|discrimina|refer[eê]ncia|conter|contenha", re.I)
+
+
+def textos_pedidos(texto):
+    """Os textos entre aspas que o cliente pede pra constar na nota -> ["UEM / Fulana", ...] (até 3)."""
+    limpo = _FIM_DO_TEXTO.split(texto or "")[0]
+    achados = []
+    for trecho in re.split(r"(?<=[.!?;])\s+|\n", limpo):
+        if not _PEDE_TEXTO.search(trecho):
+            continue
+        for m in _ASPAS.finditer(trecho):
+            pedido = m.group(1).strip(" .,;:")
+            if len(re.sub(r"\W", "", pedido)) >= 2 and pedido not in achados:
+                achados.append(pedido)
+    return achados[:3]
+
+
+def _so_letras(texto):
+    return re.sub(r"[^a-z0-9]+", " ", normalizar(texto)).strip()
+
+
+def onde_aparece(pedido, texto_nf):
+    """O texto pedido está na NF? Sem acento, maiúscula ou pontuação ("UEM / Fulana" = "UEM - FULANA").
+    -> "inteiro" | "em partes" (todas as palavras, mas não juntas) | "" (não aparece)"""
+    alvo, nf = _so_letras(pedido), f" {_so_letras(texto_nf)} "
+    if not alvo:
+        return ""
+    if f" {alvo} " in nf:
+        return "inteiro"
+    palavras = [w for w in alvo.split() if len(w) > 1]
+    return "em partes" if palavras and all(f" {w} " in nf for w in palavras) else ""
 
 
 def pontos_de_reclamacao(texto):
@@ -68,7 +105,9 @@ def pedido_do_cliente(assunto, texto):
         if achados:
             posicoes[m] = achados[0].start()
             termos[m] = list(dict.fromkeys(a.group(0).strip().lower() for a in achados))[:4]
-    return {"motivos": [m for m, _ in _MOTIVOS if m in posicoes], "valores": list(dict.fromkeys(re.findall(_RS, t))),
+    textos = textos_pedidos(texto)
+    return {"motivos": (["texto"] if textos else []) + [m for m, _ in _MOTIVOS if m in posicoes], "textos": textos,
+            "valores": list(dict.fromkeys(re.findall(_RS, t))),
             "datas": list(dict.fromkeys(re.findall(_DATA, t))), "nfs": list(dict.fromkeys(_NF.findall(t))),
             "documentos": list(dict.fromkeys(re.sub(r"\D", "", d) for d in _DOC.findall(texto or ""))),
             "posicoes": posicoes, "termos": termos, "pontos": pontos_de_reclamacao(texto)}
@@ -78,6 +117,9 @@ def motivo_principal(pedido):
     """O que o cliente quer corrigir, em destaque (usuário, 09/10/2026): o assunto que mais aparece nos trechos de
     reclamação; empate (ou nenhum trecho claro) = o 1º que ele cita. -> (motivo, detalhe, outros motivos)"""
     pontos, posicoes = pedido.get("pontos", {}), pedido.get("posicoes", {})
+    if pedido.get("textos"):   # o cliente disse exatamente o que tem de constar: é isso, com as palavras dele
+        outros = [ROTULOS[m] for m in pedido.get("motivos", []) if m in ROTULOS and pontos.get(m)]
+        return "incluir na nota: " + ", ".join(f"“{x}”" for x in pedido["textos"]), "", outros
     citados = sorted((-pontos.get(m, 0), p, m) for m, p in posicoes.items() if m in ROTULOS)
     if pontos:   # com trecho de reclamação, os outros são só os que também foram reclamados
         citados = [c for c in citados if c[0] < 0]
@@ -166,11 +208,17 @@ def na_nf(nf, numero):
     return " · ".join(partes)
 
 
-def comparar(pedido, nf):
-    """O que o cliente escreveu x o que a NF diz -> [frases]. Diferença de CPF/CNPJ começa com ⚠."""
+def comparar(pedido, nf, texto_nf=""):
+    """O que o cliente escreveu x o que a NF diz -> [frases]. Diferença de CPF/CNPJ começa com ⚠. texto_nf: o PDF
+    inteiro, pra procurar o texto que o cliente pediu em qualquer parte da nota (discriminação, observação, tomador)."""
     if not nf:
         return []
     saida = []
+    for pedido_txt in pedido.get("textos", []):
+        onde = onde_aparece(pedido_txt, texto_nf) if texto_nf.strip() else None
+        saida.append(f"conferir à mão se “{pedido_txt}” está na nota (o PDF não tem texto legível)" if onde is None
+                     else f"“{pedido_txt}” não aparece em nenhuma parte da nota" if not onde
+                     else f"“{pedido_txt}” já aparece na nota" + (" (as palavras estão lá, mas não juntas)" if onde == "em partes" else ""))
     motivos = pedido["motivos"]
     if "valor" in motivos and pedido["valores"] and nf.get("valor"):
         citados = [v for v in pedido["valores"] if _num(v) is not None]
@@ -219,12 +267,17 @@ def resumo(pedido, nf, numero, assunto=""):
     return " · ".join(partes)
 
 
-def completo(pedido, nf, numero, arquivo, origem=""):
+def completo(pedido, nf, numero, arquivo, origem="", texto_nf=""):
     """Tudo que a tela mostra: motivo em destaque, o que a NF diz, a comparação e os outros assuntos citados."""
     motivo, detalhe, outros = motivo_principal(pedido)
+    comparacao = comparar(pedido, nf, texto_nf)
+    if pedido.get("textos") and nf:   # o motivo já diz se o texto pedido está ou não na NF
+        falta = any("não aparece" in c for c in comparacao)
+        detalhe = f"não aparece na NF{(' ' + numero) if numero else ''}" if falta else \
+            f"já aparece na NF{(' ' + numero) if numero else ''}" if any("já aparece" in c for c in comparacao) else detalhe
     return {"resumo": resumo(pedido, nf, numero) + origem, "nf": nf, "arquivo": arquivo, "pedido": pedido,
             "motivo": motivo, "detalhe": detalhe, "outros": outros, "na_nf": na_nf(nf, numero) + origem,
-            "comparacao": comparar(pedido, nf)}
+            "comparacao": comparacao}
 
 
 def compacto(analise):
@@ -254,17 +307,18 @@ def analisar(e, texto, itens_dropbox, notas_achadas=(), pdfs_anexos=()):
             nf = dados_do_pdf(conteudo)
             from controle_nf import ler_assunto_nf
             numero = nf.get("numero") or (ler_assunto_nf(os.path.splitext(nome)[0]) or ("",))[0]
-            return completo(pedido, nf, numero, nome, " (NF anexada ao e-mail)")
+            return completo(pedido, nf, numero, nome, " (NF anexada ao e-mail)", conteudo)
     # o nome do PDF anexado ("NF 6524 - CARLA LUIZA ... .pdf") diz o nº e o nome da nota mesmo quando o PDF é imagem
     from controle_nf import ler_assunto_nf
     pelo_anexo = [x for x in (ler_assunto_nf(os.path.splitext(nome)[0]) for nome, _ in pdfs_anexos) if x]
     numeros = [x[0] for x in pelo_anexo] + list(pedido["nfs"]) + [n.get("nf") for n in notas_achadas if n.get("nf")]
     nome_nf = pelo_anexo[0][1] if pelo_anexo else e.get("nome", "")
     item = achar_nf(numeros, nome_nf, e.get("hotel", ""), itens_dropbox) if numeros else None
-    nf, numero = None, (numeros[0] if numeros else "")
+    nf, numero, texto_nf = None, (numeros[0] if numeros else ""), ""
     if item:
         numero = item[3][0]
         from arquivos import so_na_nuvem
         if os.path.exists(item[1]) and not so_na_nuvem(item[1]):   # só na nuvem: não baixa (regra do usuário)
-            nf = dados_do_pdf(ler_pdf(item[1]))
-    return completo(pedido, nf, numero, item[0] if item else "")
+            texto_nf = ler_pdf(item[1])
+            nf = dados_do_pdf(texto_nf)
+    return completo(pedido, nf, numero, item[0] if item else "", texto_nf=texto_nf)

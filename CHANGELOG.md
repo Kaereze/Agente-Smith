@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.5] — 2026-10-20
+
+### Corrigido
+
+- **A verificação da NF entende o texto que o hóspede pede na nota.** "Não consta a identificação “UEM / (nome)”" aparecia
+  como "refazer a nota (o cliente não disse o que mudar)". Agora o texto entre aspas, num trecho que fala de constar,
+  incluir ou identificação, vira o motivo ("incluir na nota: “…”"), e o robô procura esse texto em toda a NF (sem acento,
+  maiúscula ou pontuação): "não aparece em nenhuma parte da nota" ou "já aparece". Conferido no caso real (NF 879 do
+  NOVO CWB, no Dropbox: não aparece). As análises antigas são refeitas na próxima volta. Testes:
+  `testes/test_texto_na_nota.py`.
+
 ## [2026.10.20.4] — 2026-10-20
 
 ### Corrigido
