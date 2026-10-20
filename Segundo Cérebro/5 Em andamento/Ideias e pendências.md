@@ -70,7 +70,8 @@ tags: [cerebro/andamento]
   firewall para a rede da Clara (10.80.x) voltar a responder na hora.
 - [ ] Ficha do pedido: CPF do hóspede vazio aparece como "falta pedir"; decidir se entra no "Pedir o que falta".
 
-## Skills de empresa que ficaram para depois (19/10/2026)
+## Skills de empresa (19/10/2026)
+~~Ficaram para depois~~ → **instaladas em 19/10/2026** (pedido do João: "pode seguir com as próximas skills"). Falta **usar** cada uma no projeto, quando o João pedir:
 - Documentação: documentation-and-adrs, git-workflow-and-versioning, writing-changelogs, incident-runbook-templates, readme-blueprint-generator.
 - Python: python-testing-patterns, python-code-style (ruff), systematic-debugging, python-observability.
 - Dados de hóspedes: gdpr-data-handling (parecida com a LGPD).
