@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.6] — 2026-10-20
+
+### Mudou
+
+- As abas **Página Inicial · Enviar/Receber · Exibir** aparecem só na tela de e-mails. No resumo, na Gerência e nas outras
+  telas elas somem, e a faixa mostra sempre os comandos principais.
+
 ## [2026.10.20.5] — 2026-10-20
 
 ### Corrigido

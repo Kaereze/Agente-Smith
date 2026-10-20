@@ -498,9 +498,8 @@ function desenharFaixaGlobal() {
   if (!el) return;
   document.querySelectorAll("[data-ol-aba]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.olAba === cx.aba)));
   const bt = (attr, ic, txt, cls = "") => `<button type="button" class="${cls}" ${attr}>${SVG(IC[ic])} ${txt}</button>`;
-  el.innerHTML = cx.aba === "enviar" ? bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas as pastas") + bt('data-ol-acao="pendentes"', "env", "Enviar solicitações pendentes")
-    : cx.aba === "exibir" ? bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
-    : bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
+  // as abas Página Inicial/Enviar/Receber/Exibir só aparecem nos e-mails (usuário, 20/10/2026): aqui, sempre os comandos principais
+  el.innerHTML = bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
       bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
 }
