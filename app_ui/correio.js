@@ -72,8 +72,28 @@ function itensDaTela(busca) {
   }
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
   const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false)
-    && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario")));
+    && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario"))
+    && (!cx.filtroL || FILTROS_LISTA[cx.filtroL]?.[1](e)));
   return lista;   // o mais recente primeiro também na Urgência (usuário, 09/10/2026)
+}
+// Filtro da lista (usuário, 20/10/2026: "coloque um filtro aonde eu clico e aparecem os filtros: Pedido de correção, Sem
+// resposta"; o resto ficou a critério do Claude): um por vez, com quantos e-mails cada um tem na caixa aberta
+const FILTROS_LISTA = {
+  correcao: ["Pedido de correção", e => (e.classes || []).includes("corrigir") || /corre/i.test(e.motivo_urgencia || "")],
+  semresp: ["Sem resposta", e => e.pasta !== "enviado" && !e.respondido && !cx.resolvendo[e.id]],
+  anexo: ["Com anexo", e => (e.anexos || []).length > 0],
+  dividida: ["Nota dividida", e => (e.quartos?.[0] || e.quartos || 0) >= 2],
+};
+function filtroDaListaHtml() {
+  const ativo = FILTROS_LISTA[cx.filtroL];
+  const atual = cx.filtroL; cx.filtroL = "";
+  const base = itensDaTela("");
+  cx.filtroL = atual;
+  const funil = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>`;
+  return `<span class="ol-filtro"><button type="button" class="ol-filtro-bt ${ativo ? "on" : ""}" data-ol-filtro-abrir aria-haspopup="menu" aria-expanded="${!!cx.filtroAberto}">
+      ${funil}${ativo ? esc(ativo[0]) : "Filtro"}</button>${ativo ? `<button type="button" class="ol-filtro-x" data-ol-filtro="" aria-label="Limpar o filtro">✕</button>` : ""}
+    ${cx.filtroAberto ? `<div class="ol-filtro-menu" role="menu">${[["", "Todos os e-mails", () => true], ...Object.entries(FILTROS_LISTA).map(([k, [n, f]]) => [k, n, f])]
+      .map(([k, nome, f]) => `<button type="button" role="menuitemradio" aria-checked="${(cx.filtroL || "") === k}" data-ol-filtro="${k}">${esc(nome)}<em>${base.filter(f).length.toLocaleString("pt-BR")}</em></button>`).join("")}</div>` : ""}</span>`;
 }
 
 function desenharCorreio() {
@@ -102,7 +122,7 @@ function desenharCorreio() {
   if ($("cx-lcab")) $("cx-lcab").innerHTML = `<div class="ol-lcab">` + (busca ? `<span class="ol-ord">no Outlook dos 4 PCs</span>` :
     `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos}">Todas</button>` +
     (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
-    `<span class="ol-ord">Por Data ↓</span>`) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b> · ${lista.length.toLocaleString("pt-BR")} itens` +
+    filtroDaListaHtml() + `<span class="ol-ord">Por Data ↓</span>`) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${cx.filtroL ? " · " + esc(FILTROS_LISTA[cx.filtroL][0]) : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
     (naoLidos ? ` · ${naoLidos.toLocaleString("pt-BR")} não lidos` : "") + `</div>`;
   if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span>Itens: ${lista.length.toLocaleString("pt-BR")}</span><span>Não lidos: ${naoLidos.toLocaleString("pt-BR")}</span>`;
   $("v-correio").classList.toggle("sem-pastas", !!cx.semPastas);
@@ -753,9 +773,12 @@ function desenharPastas() {
 }
 try { cx.fechados = JSON.parse(localStorage.getItem("painel.caixasFechadas") || "{}") || {}; } catch (e) {}
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
+  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu],[data-ol-filtro],[data-ol-filtro-abrir]");
+  if (cx.filtroAberto && !ev.target.closest(".ol-filtro")) { cx.filtroAberto = false; desenharCorreio(); }   // clicou fora: fecha o menu
   if (!t) { if (cx.menu && !ev.target.closest(".ol-menu")) { cx.menu = false; desenharLeituraCorreio(); } return; }
   const d = t.dataset;
+  if (d.olFiltroAbrir !== undefined) { cx.filtroAberto = !cx.filtroAberto; return desenharCorreio(); }
+  if (d.olFiltro !== undefined) { cx.filtroL = d.olFiltro; cx.filtroAberto = false; cx.sel = null; return desenharCorreio(); }
   if (d.olAba) { cx.aba = d.olAba; desenharFaixaGlobal(); return desenharFaixa(); }
   if (d.olAcao) {
     if (d.olAcao === "sync") { toast("Relendo as caixas dos 4 PCs…"); $("btn-atualizar")?.click(); carregarCorreio(); }

@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.9] — 2026-10-20
+
+### Adicionado
+
+- **Filtro na lista dos e-mails**: botão "Filtro" ao lado de "Por Data", com Pedido de correção, Sem resposta, Com anexo e
+  Nota dividida, cada um com quantos e-mails tem na caixa aberta. Um por vez; o filtro escolhido aparece no botão e o ✕ limpa.
+
 ## [2026.10.20.8] — 2026-10-20
 
 ### Mudou

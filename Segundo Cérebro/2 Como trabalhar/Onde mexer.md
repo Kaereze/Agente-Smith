@@ -55,6 +55,7 @@ tags: [cerebro/trabalho]
 | **Prévia 5: visual do Outlook escuro** (cores, espaços, ficha em 3 faixas, faixa de comandos) | `index.html`: camada "Prévia 5 no Painel" no fim do `<style>` |
 | **Leitura do e-mail igual ao Outlook** (cabeçalho, de onde veio, anexos em cima, ficha, texto) | `correio.js` → `desenharLeituraCorreio`, `fichaPedidoOl`, `linhaEmail` (urgente, formulário) |
 | **Formulário aberto** (Enviado por · Dados para emissão · tabela na ordem fixa · Enviado em) | `correio.js` → `formularioHtml`, `ORDEM_FORM` (13 campos), `OCULTOS_FORM` |
+| **Filtro da lista dos e-mails** (Pedido de correção, Sem resposta, Com anexo, Nota dividida) | `correio.js` → `FILTROS_LISTA`, `filtroDaListaHtml`, `itensDaTela` (`cx.filtroL`); clique: `data-ol-filtro`, `data-ol-filtro-abrir` |
 | **Pesquisa instantânea** (pedidos na hora + espelho; Outlook ao vivo depois) | `correio.js` → `secoesDaBusca`, `pedidosDaBusca`, `linhaPedidoBusca`, `marcarBusca`; ao vivo: `agendarBusca`/`buscarNoOutlook` |
 | **Envio sem espera** (janela fecha na hora; aviso no canto) | `painel.js` → `enviarNF` (fim), `seguirEnvio`, `verEnvio`, `desenharEnvio`, `fecharEnvio`; status: `/api/envio_nf/status` |
 | **Contagem exata da Caixa de Entrada** (Outlook x espelho, caixa por caixa, a cada volta) | `espelho_emails.py` → `Espelho.volta` (filtro por `LastModificationTime`), `_conferir_contagem` (`contagem`, `contagem_relida` em `estado/espelho_emails.json`); teste `testes/test_contagem_exata.py` |

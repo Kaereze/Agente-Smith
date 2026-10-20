@@ -32,6 +32,7 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 - **Lista** no meio, por dia (Hoje, Ontem…): quem mandou e a hora; o assunto em azul; a prévia.
   - Traço azul = não lido. Linha **avermelhada com bandeira** = urgente. Clipe = tem anexo. Quadradinho azul = formulário.
   - Setas ↑ ↓ andam pela lista e já abrem o e-mail.
+  - **Filtro** (botão ao lado de "Por Data"): Pedido de correção · Sem resposta · Com anexo · Nota dividida, com quantos e-mails cada um tem na caixa aberta. Um por vez; o ✕ limpa.
 - **Leitura** à direita, como o Outlook: assunto; o círculo com as iniciais; quem mandou, Para; os botões Responder, Responder a todos, Encaminhar e ⋯; a data.
   Embaixo: de onde veio (hotel e PC), os **anexos** (clique abre o visualizador), a **ficha do pedido** e o texto.
 - **Ficha do pedido** (3 faixas): título com o hotel, quem cuida, NF e prazo; os 5 dados (**Tomador · CNPJ/CPF · O que pede · Hóspede · CPF do hóspede**: o CPF do hóspede aparece **sempre**, mesmo com a nota no CNPJ); os botões Enviar NF, Pedir o que falta e Marcar tratativa. O que falta aparece em âmbar ("falta pedir").
