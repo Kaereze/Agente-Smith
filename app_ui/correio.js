@@ -356,7 +356,8 @@ function abrirEmail(id) {
   desenharCorreio();
   if (!e) return;
   carregarTexto(e);
-  if (e.pasta !== "enviado" && e.de) carregarHistorico(e.de);
+  const alvoH = alvoHistorico(e);
+  if (alvoH) carregarHistorico(alvoH.de);
   preCarregarAnexos(e);
   if (e.lido === false && !cx.manterNaoLido[e.id]) {   // abriu = lido (pra equipe toda)
     api("/api/correio/evento", { ids: [e.id], acao: "LIDO" });
@@ -669,7 +670,8 @@ function desenharLeituraCorreio() {
   }
   if (document.activeElement && el.contains(document.activeElement) && /INPUT|TEXTAREA|SUMMARY/.test(document.activeElement.tagName)) return;
   const enviado = e.pasta === "enviado", robo = (e.classes || []).includes("formulario");
-  const h = !enviado && e.de ? cx.hist[e.de] : null;
+  const alvoH = alvoHistorico(e), h = alvoH ? cx.hist[alvoH.de] : null;
+  if (alvoH && !cx.hist[alvoH.de]) setTimeout(() => carregarHistorico(alvoH.de), 0);   // e-mail de quem preencheu saiu do texto agora
   const noEspelho = (cx.dados?.emails || []).some(x => x.id === e.id), cinza = !!cx.resolvendo[e.id];
   const nome = enviado ? nomeDaCaixa(String(e.caixa || "").toLowerCase()) : (e.nome || e.de || "");
   const ender = enviado ? e.caixa : e.de;
@@ -702,7 +704,7 @@ function desenharLeituraCorreio() {
     ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
     ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
     <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div>
-    ${h ? historicoHtml(h, e) : ""}</div>`;
+    ${h ? historicoHtml(h, e, alvoH) : ""}</div>`;
 }
 
 // Verificação da NF (Etapa 2): 1 motivo principal em destaque, o que a NF diz, a comparação e o resto que ele citou
@@ -724,10 +726,38 @@ function avisoNfJaEnviada(h) {
     <div class="dica">Conferido pelo robô no Outlook e no PDF da nota. Veja se o hóspede pede outra nota antes de reenviar.</div></div>`;
 }
 
-function historicoHtml(h, atual) {
+// Histórico do hóspede (usuário, 20/10/2026): no formulário o remetente é o Emissor Automático (o mesmo de todos os
+// hotéis), então o histórico vai pelo e-mail de quem preencheu e, quando dá, só desta hospedagem: mesmo hotel, desde
+// DIAS_ANTES_CHECKIN dias antes do check-in. Sem check-in: tudo do hóspede. Sem o e-mail de quem preencheu: sem histórico.
+const DIAS_ANTES_CHECKIN = 30;
+function alvoHistorico(e) {
+  if (!e || e.pasta === "enviado") return null;
+  if (!(e.classes || []).includes("formulario")) return e.de ? { de: e.de } : null;
+  const ped = pedidoDoEmail(e), f = ped ? null : formDoTexto(cx.textos[e.id]?.texto);
+  const de = String(ped?.email || f?.email || "").trim().toLowerCase();
+  if (!de.includes("@")) return null;
+  const ci = ((ped || f)?.campos || []).find(([k]) => /check.?in/i.test(String(k)))?.[1] || "";
+  const m = String(ci).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return { de };
+  const d = new Date(+m[3], +m[2] - 1, +m[1] - DIAS_ANTES_CHECKIN);
+  const desde = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { de, desde, caixa: String(e.caixa || "").toLowerCase(), hotel: e.hotel || "" };
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.("[data-hist-tudo]");
+  if (!b) return;
+  const id = b.dataset.histTudo;
+  (cx.histTudo ||= {})[id] = !cx.histTudo[id];
+  desenharLeituraCorreio();
+});
+function historicoHtml(h, atual, alvo = {}) {
   if (h.carregando) return "";
-  const forms = (h.conv?.linha_do_tempo || []).filter(x => x.tipo === "formulario");
-  const itens = h.resultados.filter(x => x.id !== atual.id);
+  const soEsta = !!alvo.desde && !cx.histTudo?.[atual.id];
+  const todosForms = (h.conv?.linha_do_tempo || []).filter(x => x.tipo === "formulario");
+  const todos = h.resultados.filter(x => x.id !== atual.id);
+  const forms = todosForms.filter(f => !soEsta || (String(f.quando || "") >= alvo.desde && (!alvo.hotel || f.hotel === alvo.hotel)));
+  const itens = todos.filter(x => !soEsta || (String(x.quando || "") >= alvo.desde && (!alvo.caixa || String(x.caixa || "").toLowerCase() === alvo.caixa)));
+  const alterna = alvo.desde ? ` <button type="button" class="link" data-hist-tudo="${esc(atual.id)}">${soEsta ? `ver tudo do hóspede (${todos.length + todosForms.length})` : "só esta hospedagem"}</button>` : "";
   const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok && s.erro !== "sem rede agora (usa a cópia)").map(([pc]) => h.agentes[pc] || pc);
   const linhas = [...itens.map(x => ({ q: x.quando, html: linhaHist(x) })),
     ...forms.map(f => ({ q: f.quando, html: `<div class="cx-h form"><span class="cx-h-tipo">Formulário</span><span class="cx-h-data">${dataBr(f.quando)}</span>
@@ -735,9 +765,9 @@ function historicoHtml(h, atual) {
       <button class="link" data-ver-pedido="${esc(f.chave)}">abrir pedido</button></div>` }))]
     .sort((a, b) => String(b.q).localeCompare(String(a.q)));
   const outros = h.conv?.enderecos || [];
-  return `<section class="cx-hist"><div class="cx-hist-t">Histórico deste hóspede no Outlook <span>${linhas.length}</span></div>
+  return `<section class="cx-hist"><div class="cx-hist-t">${soEsta ? "Histórico deste hóspede nesta hospedagem" : "Histórico deste hóspede no Outlook"} <span>${linhas.length}</span>${alterna}</div>
     ${outros.length ? `<p class="dica">Mesmo hóspede (mesmo CPF/CNPJ) também usa: ${esc(outros.join(", "))}</p>` : ""}
-    ${linhas.map(l => l.html).join("") || (h.parcial ? "" : `<p class="dica">Nenhum outro e-mail deste endereço no Outlook dos PCs ligados.</p>`)}
+    ${linhas.map(l => l.html).join("") || (h.parcial ? "" : `<p class="dica">${soEsta ? "Nenhum outro e-mail desta hospedagem no Outlook dos PCs ligados." : "Nenhum outro e-mail deste endereço no Outlook dos PCs ligados."}</p>`)}
     ${h.parcial ? `<div class="cx-h-nota">Completando com o Outlook dos 4 PCs (e-mails antigos, outras pastas)…</div>` : ""}
     ${sem.length ? `<p class="dica">Sem resposta de: ${esc(sem.join(", "))} (desligado).</p>` : ""}</section>`;
 }

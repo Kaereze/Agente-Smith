@@ -53,6 +53,9 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
    campos"; campo vazio não aparece. O **botão de copiar** (fim da linha) copia o valor como o hóspede escreveu, para
    colar na emissão.
 3. Rodapé: **Aceitou os termos** e **Enviado em**.
+4. **Histórico deste hóspede nesta hospedagem** (embaixo): os e-mails trocados com quem preencheu o formulário (e os outros
+   e-mails dele com o mesmo CPF/CNPJ), só do mesmo hotel e a partir de 30 dias antes do check-in. "ver tudo do hóspede"
+   mostra o histórico inteiro dele. Sem o check-in no formulário: aparece tudo do hóspede.
 Os dois formulários (antigo e novo) caem nos mesmos quadros. Se o pedido não está na lista do Painel (ex.: já respondido
 há dias), os campos saem do próprio texto do e-mail do Emissor Automático.
 A etiqueta azul "Nota dividida" aparece embaixo do remetente quando a nota é dividida.

@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.17] — 2026-10-20
+
+### Corrigido
+
+- **Histórico dentro do formulário**: mostrava os e-mails do Emissor Automático de todos os hotéis (ex.: 119
+  "Solicitação NF"), porque procurava pelo remetente. Agora vai pelo e-mail de quem preencheu (e os outros dele com o
+  mesmo CPF/CNPJ) e mostra só esta hospedagem (mesmo hotel, desde 30 dias antes do check-in), com o botão "ver tudo do
+  hóspede". Sem check-in: tudo do hóspede. Sem o e-mail de quem preencheu: sem histórico. E-mails do próprio hóspede:
+  como antes.
+
 ## [2026.10.20.16] — 2026-10-20
 
 ### Mudou
