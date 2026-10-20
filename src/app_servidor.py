@@ -35,6 +35,7 @@ import busca_outlook
 import canceladas
 import correio
 import hospedes
+import indice_emails
 import cota_google
 import envio_nf
 import espelho_emails
@@ -418,6 +419,30 @@ class Estado:
             return (PASTA_ESTADO / "ultima_copia.txt").read_text(encoding="utf-8").strip()[:19]
         except OSError:
             return ""
+
+    def iniciar_indice(self):
+        """Índice local dos e-mails deste PC (pesquisa instantânea, 20/10/2026): monta aos poucos numa linha de fundo."""
+        try:
+            self.indice = indice_emails.Indice()
+        except Exception as e:
+            logger.warning(f"⚠️ Índice de e-mails não abriu ({e}) — a pesquisa continua direto no Outlook")
+            return
+        self.montador = indice_emails.Montador(self.indice)
+
+        def rodar():
+            import pythoncom
+            pythoncom.CoInitialize()
+            while True:
+                pausa = 120
+                try:
+                    if outlook_vivo.pode_usar():   # nunca cria um Outlook escondido; o guardião do conferente abre
+                        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+                        pausa = self.montador.passo(ns, self._caixas_de_hotel())
+                except Exception as e:
+                    logger.debug(f"índice de e-mails: {e}")
+                    pausa = 60
+                time.sleep(pausa)
+        threading.Thread(target=rodar, daemon=True, name="indice_emails").start()
 
     def vigiar_caixa_de_saida(self):
         """A cada 2 min conta os e-mails parados há mais de 10 min na Caixa de Saída do Outlook deste PC (só lê)."""
@@ -816,6 +841,11 @@ class Estado:
 
     # --- chamadas que chegam dos outros PCs (rede_local) ---
     def rede_buscar(self, corpo):
+        indice = getattr(self, "indice", None)
+        if indice is not None and not corpo.get("vivo") and indice.total():
+            r = indice.buscar(corpo.get("q", ""), limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
+            return {"resultados": [{**x, "pc": socket.gethostname()} for x in r], "completo": self.montador.pronto,
+                    "fonte": "indice", "pc": socket.gethostname()}
         import pythoncom
         pythoncom.CoInitialize()
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
@@ -907,8 +937,9 @@ class Estado:
         texto, citado = textos.get(id_email, ("", ""))
         return {"texto": texto or e.get("previa", ""), "citado": citado, "pc": pc}
 
-    def buscar_outlook(self, termo):
-        """Pergunta aos Outlooks dos PCs ligados (este incluído) ao mesmo tempo. -> resultados + quem respondeu."""
+    def buscar_outlook(self, termo, vivo=False):
+        """Pergunta aos PCs ligados (este incluído) ao mesmo tempo. Cada um responde pelo índice local (milissegundos);
+        vivo=True (botão "Procurar também no Outlook"): direto no Outlook de cada um, como antes de 20/10/2026."""
         termo = busca_outlook.limpar_termo(termo)
         if len(termo) < 3:
             return {"resultados": [], "pcs": {}, "termo": termo}
@@ -916,10 +947,11 @@ class Estado:
         enderecos = self._enderecos_rede()
         import threading as _t
         local = {}
-        fio = _t.Thread(target=lambda: local.update(r=self._buscar_local(termo)))
+        fio = _t.Thread(target=lambda: local.update(r=self._buscar_local(termo, vivo)))
         fio.start()
         if enderecos and self.segredo:
-            respostas = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", {"q": termo}, tempo=8)
+            respostas = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", {"q": termo, "vivo": vivo},
+                                                     tempo=8 if vivo else 4)
             self._anotar_rede(respostas)
         fio.join(busca_outlook.TEMPO_MAXIMO + 3)
         respostas[socket.gethostname()] = local.get("r", {"erro": "o Outlook deste PC não respondeu a tempo"})
@@ -930,14 +962,15 @@ class Estado:
                                       else "sem endereço de rede (atualize o Painel dele)"}
         resultados = [r for resp in respostas.values() for r in resp.get("resultados", [])]
         resultados.sort(key=lambda r: r["quando"], reverse=True)
-        situacao = {pc: ({"ok": True, "achados": len(r.get("resultados", [])), "completo": r.get("completo", True)}
+        situacao = {pc: ({"ok": True, "achados": len(r.get("resultados", [])), "completo": r.get("completo", True),
+                          "fonte": r.get("fonte", "outlook")}
                          if "erro" not in r else {"ok": False, "erro": r["erro"]}) for pc, r in respostas.items()}
-        return {"resultados": resultados, "pcs": situacao, "termo": termo,
+        return {"resultados": resultados, "pcs": situacao, "termo": termo, "vivo": bool(vivo),
                 "agentes": {p["pc"]: p["agente"] for p in pcs.values()}}
 
-    def _buscar_local(self, termo):
+    def _buscar_local(self, termo, vivo=False):
         try:
-            return self.rede_buscar({"q": termo})
+            return self.rede_buscar({"q": termo, "vivo": vivo})
         except Exception as e:
             return {"erro": f"Outlook deste PC: {e}"}
 
@@ -1543,7 +1576,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if url.path == "/api/correio/anexo":
                     return self._json(estado.anexo_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""), q.get("nome", "")))
                 if url.path == "/api/correio/buscar":
-                    return self._json(estado.buscar_outlook(q.get("q", "")))
+                    return self._json(estado.buscar_outlook(q.get("q", ""), q.get("vivo", "") == "1"))
                 if url.path == "/api/email/opcoes":
                     return self._json(estado.opcoes_email(q.get("id", "")))
                 if url.path == "/api/email/novo":
@@ -1730,6 +1763,7 @@ def main():
     threading.Thread(target=laco, daemon=True).start()
     if not modo_demo and not so_ver:
         estado.vigiar_caixa_de_saida()
+        estado.iniciar_indice()
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
     if not sem_janela:
         abrir_janela()

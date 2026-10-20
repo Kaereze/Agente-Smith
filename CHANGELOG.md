@@ -9,6 +9,21 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.13] — 2026-10-20
+
+### Adicionado
+
+- **Pesquisa instantânea pelo índice local de e-mails.** Cada PC monta, aos poucos e só lendo o Outlook, um índice dos
+  últimos 12 meses das caixas dos hotéis (Entrada, Enviados, Excluídos) em `estado/indice_emails.sqlite`, fora do git e
+  do Google. A pesquisa dos 4 PCs responde pelo índice em milissegundos (medido no PC do João: 11 a 36 ms; antes, 11 a
+  13 s direto no Outlook). Sem acento e com palavra pela metade. O botão "Procurar também direto no Outlook" faz a
+  pesquisa ao vivo, como antes.
+
+### Mudou
+
+- A regra de 08/10/2026 "pesquisa sempre ao vivo no Outlook" virou "pesquisa pelo índice, Outlook ao vivo no botão"
+  (aprovado pelo João em 20/10/2026).
+
 ## [2026.10.20.12] — 2026-10-20
 
 ### Mudou

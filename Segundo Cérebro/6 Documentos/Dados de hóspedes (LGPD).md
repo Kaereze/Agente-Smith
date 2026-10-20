@@ -24,6 +24,7 @@ CNPJ e nome de **empresa** não são dado pessoal (a LGPD protege pessoa física
 | Central, `Correio_<PC>` / `CorreioTexto_<PC>` | Espelho da caixa de entrada (remetente, assunto, texto) | Reescritas a cada volta, janela de 14 dias | Equipe |
 | Central, `Envios_NF` / `Envios_NF_Anexos` / `Eventos_Correio` | Fila de envio, anexos, lido/excluído | 3 dias (`faxina.py`) | Equipe + robô |
 | Outlook de cada PC | E-mails dos hóspedes e as NFs enviadas | Regra do Outlook de cada PC | Dono do PC |
+| `estado/indice_emails.sqlite` (cada PC, desde 20/10/2026) | Índice para pesquisa: remetente, para, assunto, data, nome dos anexos e o texto (até 1.500 letras do que o hóspede escreveu) das caixas dos hotéis daquele PC | 12 meses (faxina diária em `indice_emails.Indice.faxina`); o que sai do Outlook sai do índice em até 30 min | Só o PC (fora do git e do Google) |
 | `estado/backup_central_*.json` (PC do João) | Cópia da Central para recuperar erro | 24 h (144 cópias, `sincronizar._limpar_backups_antigos`) | Só o PC |
 | `estado/backup_tratamento_*.json` (PC do João) | Cópia do Tratamento antes da faxina | Últimos dias (`faxina._backup`) | Só o PC |
 | `logs/solicitacoes_nf.log` | Avisos do robô (às vezes hotel e e-mail) | 5 arquivos de 5 MB, giram sozinhos | Só o PC |

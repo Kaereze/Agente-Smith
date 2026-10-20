@@ -54,8 +54,12 @@ A etiqueta azul "Nota dividida" aparece embaixo do remetente quando a nota é di
 
 ## Pesquisa (instantânea)
 Digite 3 letras de um nome, CPF/CNPJ, e-mail, hotel ou número de NF.
-- **Na hora:** os **pedidos do formulário** (selo verde "na hora", com o tempo) e os e-mails que o Painel já tem dos 4 PCs.
-- **Depois (alguns segundos):** o Outlook de cada PC completa com o que é antigo, enviado ou excluído (selo "Outlook dos 4 PCs").
+- **Na hora:** os **pedidos do formulário** (selo verde "na hora", com o tempo) e os **e-mails dos 4 PCs pelo índice**
+  (selo "índice · 0,03 s"): 12 meses de Caixa de Entrada, Itens Enviados e Itens Excluídos das caixas dos hotéis.
+  Acha sem acento e com palavra pela metade ("conceicao" acha "Conceição", "Pereg" acha "Perego"), CPF com ou sem pontos.
+- **Procurar também direto no Outlook** (botão embaixo do título "E-mails"): pesquisa ao vivo no Outlook de cada PC,
+  como antes (alguns segundos). Use quando o e-mail é de mais de 12 meses ou acabou de chegar e não apareceu.
+- Selo "montando": o índice de algum PC ainda está sendo montado (do mais novo pro mais velho; o 1º leva poucos minutos).
 - Clicar num pedido abre a **ficha** em Notas fiscais; clicar num e-mail abre a leitura.
 - PC desligado: os e-mails dele que já estavam no espelho continuam aparecendo.
 

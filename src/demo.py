@@ -339,7 +339,7 @@ def preparar(estado, backend):
     estado._rede = lambda *a: None
     estado._avisar_urgencias = lambda: None
 
-    def buscar(termo):
+    def buscar(termo, vivo=False):
         from busca_outlook import limpar_termo
         t = limpar_termo(termo).lower()
         if len(t) < 3:
@@ -350,8 +350,11 @@ def preparar(estado, backend):
         achados.sort(key=lambda x: x["quando"], reverse=True)
         pcs = {pc: ({"ok": True, "achados": sum(1 for a in achados if a["pc"] == pc), "completo": True}
                     if ag != DESLIGADO else {"ok": False, "erro": "desligado"}) for ag, pc in PCS.items()}
+        for s in pcs.values():
+            if s.get("ok") and not vivo:
+                s["fonte"] = "indice"
         return {"resultados": [a for a in achados if a["pc"] != PCS[DESLIGADO]][:200], "pcs": pcs, "termo": termo,
-                "agentes": {pc: ag for ag, pc in PCS.items()}}
+                "vivo": vivo, "agentes": {pc: ag for ag, pc in PCS.items()}}
     estado.buscar_outlook = buscar
 
     def texto(id_email="", pc="", entry=""):

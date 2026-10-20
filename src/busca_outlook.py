@@ -36,8 +36,8 @@ def filtros(termo):
     return f"@SQL={indice}", f"@SQL={sem_indice}"
 
 
-def resumo_do_item(item, pasta, caixa, hotel, pc):
-    corpo = str(item.Body or "")
+def resumo_do_item(item, pasta, caixa, hotel, pc, corpo=None):
+    corpo = str(item.Body or "") if corpo is None else corpo
     proprio = ee.dividir_historico(corpo)[0]
     if pasta == "enviado":
         de, nome, para = caixa, "", ", ".join(sorted(ee.enderecos(item)))

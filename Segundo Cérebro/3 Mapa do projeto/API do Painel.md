@@ -15,7 +15,7 @@ Tudo em `src/app_servidor.py` → `criar_handler`. `POST` exige o cabeçalho `X-
 | `/api/painel`, `/api/hotel` | Visão geral, hotel |
 | `/api/emails`, `/api/correio` | Listas de e-mails |
 | `/api/correio/conversa`, `/api/correio/texto` | Conversa e texto de um e-mail |
-| `/api/correio/buscar` | Busca ao vivo no Outlook |
+| `/api/correio/buscar` | Pesquisa nos 4 PCs pelo índice local (`?q=`); `&vivo=1` = direto no Outlook de cada PC |
 | `/api/email/opcoes` | Opções de resposta |
 | `/api/envio`, `/api/envio_nf/opcoes`, `/api/envio_nf/status` | Envio de pendentes / NF |
 | `/api/relatorio_semana?tipo=dia|semana&deslocamento=N` | Relatório (−1 = automático) |

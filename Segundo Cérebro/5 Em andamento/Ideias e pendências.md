@@ -84,4 +84,9 @@ tags: [cerebro/andamento]
 - **Skills de animação/interface** (20/10/2026): no Painel, só com pedido do João. O [[Padrão de design]] fixo continua valendo (ele pediu "padrão fixo que não mude"); animação nova passa por prévia e aprovação antes.
 - **Engeniumm + Project.spec.md + Dominiumm (orquestradas pelo Magister)**: não achadas (find-skills e internet, 20/10/2026). Falta o link de onde o João viu.
 - ~~Prévia 5 → Painel~~ → **feito em 20/10/2026** (ver [[Guia do Painel Fiscal]]).
-- **Pesquisa e envio instantâneos** (20/10/2026): **parte feita** (pedidos e espelho na hora; janela de envio fecha na hora). Falta o OK do João para o resto: Muda a regra de 08/10 (busca sempre ao vivo no Outlook): índice local no PC dono (estado/), memória do Painel para pedidos; envio direto pela rede com a fila como plano B.
+- **Velocidade (OK do João em 20/10/2026, aos poucos)**, medido às 15:30:
+  1. ✅ **Pesquisa pelo índice local** (2026.10.20.13): 11-13 s → 11-36 ms.
+  2. **Envio direto pela rede** ao PC dono (hoje pela fila da Central: até 60 s com a janela dele fechada + 15 s), fila como plano B.
+  3. **E-mail novo mais rápido** no Painel (hoje: vigia 20 s + conferência + espelho na planilha + Painel relê a cada 15/60 s). Ideia: o PC dono avisa os outros pela rede na hora.
+  4. **Painel mais leve**: a janela baixa `/api/estado` (1,8 MB) e `/api/correio` (1 MB) a cada 15 s mesmo sem mudança → mandar só quando mudou. E commit só de documentação não deveria reiniciar os 4 PCs (aconteceu às 15:20).
+  5. **Ponte Graft/MCP**: o Claude consultar o Painel direto (ex.: "quantos pedidos atrasados?").

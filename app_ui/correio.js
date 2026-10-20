@@ -169,14 +169,22 @@ function linhaPedidoBusca(s, busca) {
 function secoesDaBusca(busca) {
   const t0 = performance.now(), peds = pedidosDaBusca(busca);
   const s = Math.max(0.01, (performance.now() - t0) / 1000).toFixed(2).replace(".", ",");
-  const vivo = cx.buscando === busca ? `<span class="ch esp">Outlook dos 4 PCs: procurando…</span>`
-    : cx.live?.termo === busca ? `<span class="ch viv">Outlook dos 4 PCs</span>` : `<span class="ch mem">já no Painel</span>`;
+  const r = cx.live?.termo === busca ? cx.live : null;
+  const doIndice = r && !r.vivo && Object.values(r.pcs || {}).some(p => p.fonte === "indice");
+  const montando = r && Object.values(r.pcs || {}).some(p => p.ok && p.fonte === "indice" && p.completo === false);
+  const seg = r?.segundos != null ? ` · ${r.segundos.toFixed(2).replace(".", ",")} s` : "";
+  const vivo = cx.buscando === busca ? `<span class="ch esp">procurando nos 4 PCs…</span>`
+    : r ? `<span class="ch viv" title="${r.vivo ? "Procurado direto no Outlook de cada PC" : "Procurado no índice de e-mails de cada PC (12 meses)"}">${r.vivo ? "Outlook ao vivo" : doIndice ? "índice" : "Outlook"}${seg}</span>`
+      + (montando ? ` <span class="ch mem" title="O índice de algum PC ainda está sendo montado (do mais novo pro mais velho)">montando</span>` : "")
+    : `<span class="ch mem">já no Painel</span>`;
+  const botao = r && !r.vivo && cx.buscando !== busca
+    ? `<div class="cx-vivo-l"><button type="button" class="cx-vivo" data-busca-vivo title="Procura direto no Outlook de cada PC (demora alguns segundos)">Procurar também direto no Outlook</button></div>` : "";
   return (peds.length ? `<div class="cx-sec">Pedidos do formulário <span class="ch mem">${s} s · na hora</span></div>` + peds.map(p => linhaPedidoBusca(p, busca)).join("") : "")
-    + `<div class="cx-sec">E-mails ${vivo}</div>`;
+    + `<div class="cx-sec">E-mails ${vivo}</div>` + botao;
 }
 function statusBusca(busca) {
   if (!busca) return "";
-  if (cx.buscando === busca) return " · procurando no Outlook dos PCs…";
+  if (cx.buscando === busca) return " · procurando nos PCs…";
   const r = cx.live;
   if (!r || r.termo !== busca) return "";
   const falhou = Object.entries(r.pcs || {}).filter(([pc, s]) => !s.ok && pcOnline(pc)).map(([pc]) => r.agentes?.[pc] || pc);
@@ -302,18 +310,26 @@ function agendarBusca() {
   const busca = $("busca").value.trim();
   cx.sel = null;   // pesquisa nova: fecha o e-mail que estava aberto
   if (busca.length < 3) { cx.live = null; cx.buscando = ""; return desenharCorreio(); }
-  cx.timerBusca = setTimeout(() => buscarNoOutlook(busca), 650);
+  cx.timerBusca = setTimeout(() => buscarNoOutlook(busca), 250);   // índice local: responde na hora (20/10/2026)
   desenharCorreio();
 }
-async function buscarNoOutlook(busca) {
+async function buscarNoOutlook(busca, vivo = false) {
   cx.buscando = busca; desenharCorreio();
-  const r = await api("/api/correio/buscar?q=" + encodeURIComponent(busca));
+  const t0 = performance.now();
+  const r = await api("/api/correio/buscar?q=" + encodeURIComponent(busca) + (vivo ? "&vivo=1" : ""));
+  r.segundos = (performance.now() - t0) / 1000;
   if ($("busca").value.trim() !== busca) return;   // já digitaram outra coisa
   cx.buscando = "";
   if (r.erro) { toast(r.erro, true); cx.live = null; } else cx.live = r;
   desenharCorreio();
-  $("anuncio").textContent = r.resultados ? `${r.resultados.length} e-mails achados no Outlook` : "";
+  $("anuncio").textContent = r.resultados ? `${r.resultados.length} e-mails achados` : "";
 }
+// Índice local (20/10/2026): a pesquisa responde pelo índice de cada PC; o botão procura direto no Outlook, como antes
+document.addEventListener("click", ev => {
+  if (!ev.target.closest?.("[data-busca-vivo]")) return;
+  const busca = $("busca").value.trim();
+  if (busca.length >= 3) buscarNoOutlook(busca, true);
+});
 
 // ---------- leitura: o e-mail aberto, como no Outlook ----------
 function itemSelecionado() {

@@ -51,5 +51,7 @@ tags: [cerebro/historico]
 | 20/10/2026 | **Caixa de Entrada contada exatamente**: a cada volta (2 min) o robô confere o total de cada caixa no Outlook com o espelho e relê a caixa que não bater | João: "precisam ser contabilizados exatamente o que tiver na caixa de entrada de cada email cadastrado" |
 | 20/10/2026 | **Urgência marcada pela equipe fica no Outlook do PC dono** (categoria "Urgente (Painel)" / "Sem urgência (Painel)"), pela mesma fila do Excluir; o evento na Central só faz valer na hora | O evento some na faxina de 3 dias; a categoria não. "Tirar urgência" vence a automática, senão o clique não teria efeito |
 | 20/10/2026 | **E-mail da Ouvidoria = urgente** (remetente ou nome com "ouvidoria") | João: "a tag de urgência pra quando vier os e-mails diretos da ouvidoria" |
+| 20/10/2026 | **Pesquisa pelo índice local de cada PC** (12 meses, `estado/indice_emails.sqlite`), Outlook ao vivo só no botão. Substitui a regra de 08/10 "busca sempre ao vivo" | João aprovou ("Sim, as duas"). Medido: 11 a 13 s ao vivo x 11 a 36 ms no índice. Fica só no PC: nada vai pro Google |
+| 20/10/2026 | **Velocidade aos poucos**: uma melhoria por entrega (índice → envio direto pela rede → e-mail novo mais rápido → Painel mais leve); a Graft só como ponte para o Claude, depois | João: "aos poucos" e "ponte para o Claude" |
 
 Ver: [[O que não mexer]].
