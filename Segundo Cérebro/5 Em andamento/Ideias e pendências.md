@@ -76,4 +76,6 @@ tags: [cerebro/andamento]
 - Python: python-testing-patterns, python-code-style (ruff), systematic-debugging, python-observability.
 - Dados de hóspedes: gdpr-data-handling (parecida com a LGPD).
 - Revisão de segurança completa do Painel e da rede 8766 com a skill security-and-hardening (já instalada).
-- **Decisões de LGPD esperando o João** (19/10/2026): histórico do git com dados reais, log `saida_console_sincronizar.txt` sem limite, `saida_simulacao/` de 24/09, `backup_cristian_0508`, `Historico_de_Envios.csv` sem limite, limpar o espaço temporário do Claude. Ver [[Dados de hóspedes (LGPD)]].
+- ~~Decisões de LGPD esperando o João~~ → **feitas em 20/10/2026** (recomendação do Claude, ver [[Dados de hóspedes (LGPD)]]).
+- **09/2027**: aparar `logs/Historico_de_Envios.csv` para 12 meses (regra de 20/10/2026; antes disso não há o que tirar).
+- **Log disputado** (achado em 20/10/2026): o robô, o conferente e o Painel escrevem no mesmo `logs/solicitacoes_nf.log`; na hora de girar (5 MB) o Windows não deixa (`PermissionError` WinError 32) e cada linha vira um "Logging error" na saída da tela (14.017 vezes até 20/10). Nada se perde no envio, mas incha a saída e esconde o que importa. Conserto proposto: um arquivo de log por programa.

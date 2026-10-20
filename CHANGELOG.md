@@ -8,6 +8,24 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20] — 2026-10-20
+
+### Mudou
+
+- **A saída da tela da cópia dos hotéis gira em 5 MB.** `Bat/sincronizar_agendado.bat` guarda a atual e mais 2 antigas,
+  como o log do robô. Antes crescia sem limite (30 MB desde 24/09).
+
+### Segurança
+
+- Decisões de LGPD: 2 e-mails simulados de 24/09 com dados reais apagados de `saida_simulacao/`; regra de 12 meses para
+  `logs/Historico_de_Envios.csv`; histórico do git mantido (repositório privado).
+
+### Problemas conhecidos
+
+- **Log disputado.** O robô, o conferente e o Painel escrevem no mesmo `logs/solicitacoes_nf.log`. Quando ele chega a
+  5 MB, o Windows não deixa girar (`PermissionError`, WinError 32) e cada linha vira um "Logging error" na saída da tela
+  (14.017 vezes até 20/10). O envio não é afetado. Conserto proposto: um arquivo de log por programa.
+
 ## [2026.10.19] — 2026-10-19
 
 ### Adicionado

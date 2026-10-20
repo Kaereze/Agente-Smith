@@ -1,7 +1,7 @@
 ---
 tipo: guia
 pasta: "0 Comece aqui"
-atualizado: 2026-10-19
+atualizado: 2026-10-20
 tags: [cerebro/inicio]
 ---
 # Segundo Cérebro — Projeto Notas Fiscais
@@ -16,7 +16,8 @@ tags: [cerebro/inicio]
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (19/10/2026)
+## Onde paramos (20/10/2026)
+- 20/10: decisões de LGPD feitas (recomendação do Claude): saída da cópia gira em 5 MB, simulações velhas apagadas, espaço temporário limpo. Achado: log disputado (14 mil "Logging error"), conserto proposto em [[Ideias e pendências]]. Ver [[2026-10-20]].
 - 19/10: travas de empresa no repositório: testes automáticos no GitHub a cada push, pre-commit que barra credenciais e `estado/`, guarda do git no Claude Code e README novo. Depois: manual [[Se o robô parar]], [[Dados de hóspedes (LGPD)]] (dados reais tirados do repositório; 6 decisões esperam o João), CHANGELOG com versões por data e ruff. Ver [[2026-10-19]].
 - 15/10: robô copia e envia **a cada 10 min**, marca TRUE também na planilha do hotel, **junta as planilhas do formulário
   antigo e do novo** e manda o e-mail **pelo PC dono da caixa do hotel** (nunca mais pela caixa do Ondina). Versão `68b0539`
