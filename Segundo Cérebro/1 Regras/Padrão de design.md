@@ -58,6 +58,6 @@ Ver: [[Decisões]].
 ## Peças únicas (20/10/2026)
 O João: "tudo que for necessário será reutilizado". Uma peça, várias telas; mudou uma vez, muda em todas.
 - **Tabela do formulário** (`formularioHtml`): leitura do e-mail e citação ao responder/encaminhar.
-- **Pílula com menu** (`.ol-filtro`, `.ol-filtro-bt`, `.ol-filtro-menu`): "Rótulo: **valor** ▾" + ✕ quando ativo; menu escuro com contagem à direita. Usada em: Situação (Notas fiscais), PC (Monitoramento) e Filtro da caixa de entrada (este ainda com o funil; o João quer "Filtro: … ▾" e "Hotel: … ▾" no mesmo formato — captura antes).
+- **Filtro** = `app_ui/pecas/filtro.js` (`pecaFiltro({...})` + `registrarFiltro(id, {escolher, redesenhar})`): pílula "Rótulo: **valor** ▾" + ✕ quando ativo; menu escuro com contagem à direita, grupos, separador, bolinha de ligado e busca. Usada em: Filtro da caixa de entrada, Situação e Hotel (Notas fiscais), PC (Monitoramento). `testes/test_pecas.py` barra cópia.
 - **Botões de alternar** (`.seg`, `.seg-rd`): fundo #242424, borda #3a3a3a, cantos 8 px; escolhido #173b63 com texto branco.
 - **Menus das pílulas** (`#pop`): mesmo visual do menu Filtro.

@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.21] — 2026-10-20
+
+### Mudou
+
+- **Peça única do Filtro** (`app_ui/pecas/filtro.js`): o Filtro da caixa de entrada, a Situação e o Hotel de Notas
+  fiscais e o PC do Monitoramento passam a ser o MESMO código (pílula "Rótulo: valor ▾", menu com contagem, ✕ para
+  tirar, busca no Hotel, Esc e clique fora fecham, setas do teclado). Mudou a peça, muda em todas as telas.
+- O Filtro da caixa de entrada virou a pílula **"Filtro: Todos ▾"**.
+
+### Removido
+
+- O menu antigo das pílulas (`#pop`, `pilula`, `desenharPop`) e as três cópias do filtro (caixa, Notas fiscais e
+  Monitoramento). Um teste garante que nenhum arquivo volta a montar o filtro sozinho.
+
 ## [2026.10.20.20] — 2026-10-20
 
 ### Mudou

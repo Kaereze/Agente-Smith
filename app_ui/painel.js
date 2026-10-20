@@ -90,25 +90,14 @@ function desenharLog() {
         <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table></div>
     <p class="dica">Mostra os ${d.eventos.length} registros mais recentes da aba Atividade_Robo da Planilha Central.</p>`;
 }
-// Escolher o PC do log com as mesmas peças do Filtro da caixa de entrada (usuário, 20/10/2026: peças únicas)
+// Escolher o PC do log: a peça única do Filtro (pecas/filtro.js), com a bolinha de ligado/desligado
 function menuPcLog(d, pcsLista) {
   const info = p => d.pcs.find(x => x.pc === p) || {};
-  const nome = p => info(p).agente || p;
-  const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-  return `<span class="ol-filtro at-pc"><button type="button" class="ol-filtro-bt ${at.pc ? "on" : ""}" data-at-pc-abrir aria-haspopup="menu" aria-expanded="${!!at.pcAberto}">PC: <b>${esc(at.pc ? nome(at.pc) : "Todos")}</b>${chev}</button>
-    ${at.pc ? `<button type="button" class="ol-filtro-x" data-at-pc="" aria-label="Tirar o filtro de PC">✕</button>` : ""}
-    ${at.pcAberto ? `<div class="ol-filtro-menu" role="menu" aria-label="PC">${[["", "Todos os PCs"], ...pcsLista.map(p => [p, nome(p)])].map(([v, n]) =>
-      `<button type="button" role="menuitemradio" aria-checked="${at.pc === v}" data-at-pc="${esc(v)}">${v ? `<i class="pc-bol ${info(v).online ? "on" : ""}" aria-hidden="true"></i>` : ""}${esc(n)}<em>${
-        v ? (info(v).online ? esc(v) : "desligado") : d.pcs.filter(x => x.online).length + " ligados"}</em></button>`).join("")}</div>` : ""}</span>`;
+  return pecaFiltro({ id: "log-pc", rotulo: "PC", valor: at.pc || "", nomePadrao: "Todos",
+    opcoes: [{ v: "", nome: "Todos os PCs", n: d.pcs.filter(x => x.online).length + " ligados" },
+             ...pcsLista.map(p => ({ v: p, nome: info(p).agente || p, n: info(p).online ? p : "desligado", bolinha: info(p).online ? "on" : "off" }))] });
 }
-document.addEventListener("click", ev => {
-  const b = ev.target.closest?.("[data-at-pc-abrir],[data-at-pc]");
-  if (!b) { if (at.pcAberto && !ev.target.closest?.(".at-pc")) { at.pcAberto = false; desenharLog(); } return; }
-  if (b.hasAttribute("data-at-pc-abrir")) at.pcAberto = !at.pcAberto;
-  else { at.pc = b.dataset.atPc; at.pcAberto = false; }
-  desenharLog();
-});
-document.addEventListener("keydown", ev => { if (ev.key === "Escape" && at.pcAberto) { at.pcAberto = false; desenharLog(); } });
+registrarFiltro("log-pc", { escolher: v => { at.pc = v; desenharLog(); }, redesenhar: () => desenharLog() });
 
 // "aberto|E-mails|14:32": o Painel está aberto nesse PC agora, nessa tela
 function usoHtml(p) {

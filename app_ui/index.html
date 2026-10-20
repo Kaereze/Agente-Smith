@@ -1845,22 +1845,6 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .cx-ctx button svg{width:15px;height:15px;color:#bdbdbd;flex:none}
 .cx-ctx button.urg svg{color:#e8484f}
 .cx-ctx-n{padding:6px 12px 4px 37px;font-size:11.5px;color:#ff8d95}
-/* Menus das pílulas (Hotel e os outros) iguais ao menu Filtro da lista (usuário, 20/10/2026) */
-body:has(.modo-ol) #pop{width:300px;padding:6px;border:1px solid #4a4a4a!important;border-radius:8px!important;background:#2b2b2b!important;
-  color:#e6e6e6;box-shadow:0 12px 32px rgba(0,0,0,.45)!important;animation:olEntra .16s cubic-bezier(.2,.8,.2,1)}
-body:has(.modo-ol) #pop input{flex:none;margin:4px 4px 6px;height:34px;padding:0 10px;border:1px solid #4a4a4a!important;border-radius:6px!important;
-  background:#1f1f1f!important;color:#f0f0f0!important;font:13px "Segoe UI",system-ui,sans-serif!important;box-shadow:none!important}
-body:has(.modo-ol) #pop input:focus{border-color:#4f9fe8!important;outline:0}
-body:has(.modo-ol) #pop .pop-lista{padding:0;scrollbar-width:thin;scrollbar-color:#4a4a4a transparent}
-body:has(.modo-ol) #pop .pop-grupo{padding:12px 12px 4px!important;color:#a8a8a8!important;font:600 11px "Segoe UI",system-ui,sans-serif!important;letter-spacing:.05em!important}
-body:has(.modo-ol) #pop .pop-grupo:first-child{padding-top:6px!important}
-body:has(.modo-ol) #pop .pop-op{display:flex!important;align-items:center;gap:10px;width:100%;padding:9px 12px!important;border:0!important;border-radius:6px!important;
-  background:none!important;color:#e6e6e6!important;font:400 13px "Segoe UI",system-ui,sans-serif!important;text-align:left;text-transform:none!important}
-body:has(.modo-ol) #pop .pop-op:hover{background:#3a3a3a!important}
-body:has(.modo-ol) #pop .pop-op:focus-visible{outline:0!important;background:#3a3a3a!important;box-shadow:inset 0 0 0 1px #4f9fe8}
-body:has(.modo-ol) #pop .pop-op[aria-selected="true"]{background:#173b63!important;color:#fff!important;font-weight:400!important}
-body:has(.modo-ol) #pop .pop-op .n{margin-left:auto;font:600 12px "Segoe UI",system-ui,sans-serif!important;color:#a8a8a8!important}
-body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important}
 /* Pesquisa pelo índice local (20/10/2026): rótulo curto e o botão "Procurar também direto no Outlook" embaixo */
 .cx-sec .ch{white-space:nowrap}
 .cx-vivo-l{padding:2px 12px 8px}
@@ -1907,6 +1891,16 @@ body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important
 .modo-ol .ol-filtro-bt .chev{width:12px!important;height:12px!important;margin-left:2px}
 .modo-ol .log-filtros{display:flex;align-items:center;gap:10px;margin:10px 0 12px}
 .modo-ol .log-filtros .ol-filtro-menu{left:0;right:auto;min-width:260px}
+/* Peça única do Filtro (pecas/filtro.js, 20/10/2026): busca, grupos e de que lado o menu abre */
+.modo-ol .pf-menu.pf-esq{left:0;right:auto}
+.modo-ol .pf-menu.pf-dir{right:0;left:auto}
+.modo-ol .pf-menu{min-width:250px;max-width:340px}
+.modo-ol .pf-menu .pf-busca{display:block;width:calc(100% - 8px);box-sizing:border-box;margin:2px 4px 6px;height:34px;padding:0 10px;
+  border:1px solid #4a4a4a!important;border-radius:6px!important;background:#1f1f1f!important;color:#f0f0f0!important;font:13px "Segoe UI",system-ui,sans-serif!important;box-shadow:none!important}
+.modo-ol .pf-menu .pf-busca:focus{border-color:#4f9fe8!important;outline:0}
+.modo-ol .pf-menu .pf-lista{max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#4a4a4a transparent}
+.modo-ol .pf-menu .pf-grupo{padding:10px 12px 4px;font:600 11px "Segoe UI",system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#a8a8a8}
+.modo-ol .pf-menu .pf-vazio{padding:10px 12px;color:#a8a8a8;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -2053,11 +2047,10 @@ body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important
     </footer>
   </div>
 </div>
-<!-- lista dos filtros (Hotel, Agente…): fora das telas, senão some na Caixa de entrada (a tela de Notas fica escondida) -->
-<div class="pop oculta" id="pop" role="dialog" aria-label="Escolher filtro"></div>
 <div class="toast" id="toast" role="status"></div>
 <div class="carregando oculta" id="carregando" role="status" aria-live="polite"><i></i><span id="carregando-txt"></span></div>
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
+<script src="/pecas/filtro.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
 const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
@@ -2081,9 +2074,8 @@ const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30"
                      ["0", "Todo o período"]];
 const POR_PAGINA = 100;
 let st = {fila:[], agente:"", status:{}, emails:[], hoteis:[], pcs:[]}, timer = null, intervalo = 15;
-let nfFiltroAberto = false;   // menu do Filtro de Notas fiscais (peça única, 20/10/2026)
 let filtro = "todas", filtroEmail = "todos", origem = "form", hotel = "", agenteF = "", envio = "todos", periodo = "45";
-let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "", ordem = "";   // ordem "": automática
+let pagina = 0, sel = null, emailSel = null, ordem = "";   // ordem "": automática
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
 try { const p = JSON.parse(localStorage.getItem("painel.caixa2") || "{}");
       if (["todas", "urgentes", "falta_dado", "dividida", "doc_diferente", "envio_pendente", "concluida", "minhas"].includes(p.filtro)) filtro = p.filtro;   // filtros v2
@@ -2536,15 +2528,6 @@ const MAIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const ICONE_FILTRO = { hotel: "i-hotel", agente: "i-gente", periodo: "i-cal", envio: "i-mail" };
 const icF = campo => `<svg class="ic"><use href="#${ICONE_FILTRO[campo] || "i-busca"}"/></svg>`;
 const SETA_F = '<svg class="seta-f"><use href="#i-seta"/></svg>';
-function pilula(campo, rotulo, valor, padrao) {
-  if (!valor || valor === padrao) {
-    return campo === "periodo"
-      ? `<span class="fp-on"><button data-pop="periodo">${icF(campo)}<span class="fp-v">${esc(valor)}</span>${SETA_F}</button></span>`
-      : `<button class="fp" data-pop="${campo}">${icF(campo)}${rotulo}${SETA_F}</button>`;
-  }
-  return `<span class="fp-on"><button data-pop="${campo}">${icF(campo)}<span class="fp-k">${rotulo}:</span><span class="fp-v">${esc(valor)}</span>${SETA_F}</button>` +
-    `<button class="fp-x" data-limpa="${campo}" aria-label="Tirar o filtro ${rotulo}">×</button></span>`;
-}
 
 function desenharFiltros(busca, total) {
   desenharAbasNotas();
@@ -2560,94 +2543,40 @@ function desenharFiltros(busca, total) {
     `<button class="aba-o" role="tab" data-aba-o="${o}" aria-selected="${origem === o}">${nome}<span class="cnt">${
       conta("origem|sit", it => it.tipo === o, busca).toLocaleString("pt-BR")}</span></button>`).join("");
   const atual = origem === "form" ? filtro : filtroEmail;
-  // Fila em abas com contador (como Front/Zendesk); as atrasadas ficam num aviso à parte, que é a exceção do dia
-  const aba = ([f, nome, cor, n]) => `<button class="st-tab ${n ? "" : "zero"}" data-st="${f}" aria-pressed="${f === atual}" style="--cor:${cor}">
-      <span class="bolinha" aria-hidden="true"></span>${esc(nome)}<span class="qt">${n.toLocaleString("pt-BR")}</span></button>`;
-  const todas = situacoesDaAba(busca), hist = todas.filter(x => HISTORICO.includes(x[0]));
-  const atras = todas.find(x => x[0] === "atrasadas"), docDif = todas.find(x => x[0] === "doc_diferente");
+  const todas = situacoesDaAba(busca);
   const semEspelho = Object.entries(st.caixa_pcs || {}).filter(([, p]) => !p.espelho).map(([pc, p]) => p.agente || pc);
   const desligados = Object.entries(st.caixa_pcs || {}).filter(([, p]) => p.espelho && !p.online).map(([pc, p]) => `${p.agente || pc} (de ${quando(p.atualizado).slice(-11)})`);
   $("notas-avisos").innerHTML = (semEspelho.length ? `<div class="aviso-linha">${esc(semEspelho.join(", "))} ainda sem a versão nova: as solicitações ${semEspelho.length > 1 ? "deles" : "dele"} aparecem quando o PC atualizar.</div>` : "") +
     (desligados.length ? `<div class="aviso-linha">PC desligado: ${esc(desligados.join(", "))} — mostrando a caixa como estava.</div>` : "");
-  const vermelha = ([f, nome, cor, n]) => aba([f, nome, cor, n]).replace('class="st-tab ', 'class="st-tab vermelha ');
-  // Filtro igual ao da caixa de entrada (usuário, 20/10/2026: um padrão só): os mesmos filtros e contagens, num menu
+  // Situação e Hotel: a peça única do Filtro (pecas/filtro.js), igual à caixa de entrada (usuário, 20/10/2026)
   const porF = Object.fromEntries(todas.map(x => [x[0], x]));
   const TOPO = ["todas", "todos", "minhas"], AGIR = ["urgentes", "atrasadas", "falta_dado", "doc_diferente", "dividida", "envio_pendente"];
   const grupos = [TOPO.filter(f => porF[f]),
     [...AGIR.filter(f => porF[f]), ...todas.map(x => x[0]).filter(f => !TOPO.includes(f) && !AGIR.includes(f) && !HISTORICO.includes(f))],
     HISTORICO.filter(f => porF[f])].filter(g => g.length);
-  const itensMenu = grupos.flatMap((g, i) => i ? ["|", ...g] : g);
-  const semFiltro = ["todas", "todos", "aberto"].includes(atual), nomeAtual = porF[atual]?.[1] || "";
-  const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-  $("status-cards").innerHTML = `<span class="ol-filtro nf-filtro"><button type="button" class="ol-filtro-bt ${semFiltro ? "" : "on"}" data-nf-filtro-abrir
-      aria-haspopup="menu" aria-expanded="${nfFiltroAberto}">Situação: <b>${semFiltro || !nomeAtual ? "Todas" : esc(nomeAtual)}</b>${chev}</button>
-    ${semFiltro ? "" : `<button type="button" class="ol-filtro-x" data-st="${origem === "form" ? "todas" : "todos"}" aria-label="Tirar o filtro">✕</button>`}
-    ${nfFiltroAberto ? `<div class="ol-filtro-menu" role="menu" aria-label="Filtro">${itensMenu.map(f => f === "|" ? "<hr>" : (([ff, nome, , n]) =>
-      `<button type="button" role="menuitemradio" aria-checked="${ff === atual || (semFiltro && ["todas", "todos"].includes(ff))}" data-st="${ff}"
-        class="${["atrasadas", "doc_diferente"].includes(ff) && n ? "r" : ""}">${esc(["todas", "todos"].includes(ff) ? "Todas as solicitações" : nome)}<em>${n.toLocaleString("pt-BR")}</em></button>`)(porF[f])).join("")}</div>` : ""}</span>`;
-  const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
+  const padraoSit = origem === "form" ? "todas" : "todos";
+  $("status-cards").innerHTML = pecaFiltro({ id: "nf-situacao", rotulo: "Situação", valor: atual === "aberto" ? padraoSit : atual, padrao: padraoSit,
+    nomePadrao: "Todas", opcoes: grupos.flatMap((g, gi) => g.map((f, i) => ({ v: f, nome: ["todas", "todos"].includes(f) ? "Todas as solicitações" : porF[f][1],
+      n: porF[f][3], sep: gi > 0 && i === 0, classe: ["atrasadas", "doc_diferente"].includes(f) && porF[f][3] ? "r" : "" }))) });
   const algum = hotel || agenteF;
-  $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) +
+  $("filtros-linha").innerHTML = pecaFiltro({ id: "nf-hotel", rotulo: "Hotel", valor: hotel || "", nomePadrao: "Todos", busca: true,
+      placeholder: "Buscar hotel…", opcoes: opcoesHotelNotas() }) +
     (algum ? `<button class="fp-limpar" data-limpa="tudo">Limpar filtros</button>` : "") +
     (busca ? `<span class="aviso-busca">Buscando em toda a aba: situação e filtros não valem enquanto pesquisa</span>` : "") +
     `<span class="resultado">${total.toLocaleString("pt-BR")} ${total === 1 ? "resultado" : "resultados"}</span>`;
   $("notas-cab").classList.toggle("buscando", !!busca);
-  if (popAberto) desenharPop();
 }
 
-function desenharPop() {
-  const pop = $("pop"), alvo = document.querySelector(`[data-pop="${popAberto}"]`);
-  if (!alvo) { fecharPop(); return; }
-  const r = alvo.getBoundingClientRect();
-  pop.style.left = Math.min(r.left, window.innerWidth - 316) + "px";
-  pop.style.top = (r.bottom + 6) + "px";
-  pop.classList.remove("oculta");
-  const op = (campo, valor, nome, atual, n) => `<button class="pop-op" data-opv="${esc(valor)}" data-campo="${campo}" aria-selected="${atual}">
-    <span>${esc(nome)}</span>${n !== undefined ? `<span class="n">${n.toLocaleString("pt-BR")}</span>` : ""}</button>`;
-  let lista = "";
-  if (popAberto === "hotel") {
-    const n = {}, busca = semAcento(buscaPop);
-    TODOS.forEach(it => { if (passa(it, "hotel", "")) it.hoteis.forEach(h => n[h] = (n[h] || 0) + 1); });
-    const grupos = {};
-    (st.hoteis || []).forEach(h => { if ((!agenteF || h.agente === agenteF) && (!busca || semAcento(h.hotel).includes(busca)))
-      (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
-    lista = (busca ? "" : op("hotel", "", "Todos os hotéis", !hotel)) + Object.entries(grupos).map(([a, hs]) =>
-      `<div class="pop-grupo">${esc(a)}</div>` + hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt"))
-        .map(h => op("hotel", h, h, h === hotel, n[h] || 0)).join("")).join("") || `<div class="pop-grupo">Nenhum hotel com esse nome</div>`;
-  } else if (popAberto === "agente") {
-    const agentes = [...new Set((st.hoteis || []).map(h => h.agente).filter(Boolean))];
-    lista = op("agente", "", "Todos os agentes", !agenteF) +
-      agentes.map(a => op("agente", a, a, a === agenteF, conta("agente", it => agentesDo(it).includes(a), ""))).join("");
-  } else if (popAberto === "periodo") {
-    lista = PERIODOS_NF.map(([v, nome]) => op("periodo", v, nome, v === periodo)).join("");
-  } else if (popAberto === "cx-hotel") {
-    lista = opcoesHotelCorreio(op, buscaPop);
-  } else if (popAberto === "envio") {
-    lista = Object.entries(ENVIO).map(([k, [nome]]) => op("envio", k, nome, k === envio, conta("envio", it => ENVIO[k][1](it.s), ""))).join("");
-  }
-  const comBusca = popAberto === "hotel" || popAberto === "cx-hotel";
-  if (!pop.dataset.campo || pop.dataset.campo !== popAberto) {
-    pop.dataset.campo = popAberto;
-    pop.innerHTML = (comBusca ? `<input id="pop-busca" type="search" placeholder="Buscar hotel…" autocomplete="off">` : "") + `<div class="pop-lista" id="pop-lista"></div>`;
-    if (comBusca) { const i = $("pop-busca"); i.value = buscaPop; i.addEventListener("input", () => { buscaPop = i.value; desenharPop(); }); setTimeout(() => i.focus(), 0); }
-  }
-  $("pop-lista").innerHTML = lista;
-  if (!comBusca && !$("pop").contains(document.activeElement))
-    setTimeout(() => ($("pop").querySelector('.pop-op[aria-selected="true"]') || $("pop").querySelector(".pop-op"))?.focus(), 0);
+function opcoesHotelNotas() {   // Todos + os hotéis de cada agente (do agente escolhido, se tiver), os com mais pedidos primeiro
+  const n = {}, grupos = {};
+  TODOS.forEach(it => { if (passa(it, "hotel", "")) it.hoteis.forEach(h => n[h] = (n[h] || 0) + 1); });
+  (st.hoteis || []).forEach(h => { if (!agenteF || h.agente === agenteF) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
+  return [{ v: "", nome: "Todos os hotéis" }, ...Object.entries(grupos).flatMap(([a, hs]) =>
+    hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt")).map(h => ({ v: h, nome: h, n: n[h] || 0, grupo: a })))];
 }
-$("pop").addEventListener("keydown", e => {
-  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
-  const ops = [...$("pop").querySelectorAll(".pop-op")];
-  if (!ops.length) return;
-  e.preventDefault();
-  const i = ops.indexOf(document.activeElement);
-  const prox = e.key === "Home" ? 0 : e.key === "End" ? ops.length - 1
-    : e.key === "ArrowDown" ? Math.min(ops.length - 1, i + 1) : Math.max(-1, i - 1);
-  if (prox < 0 && $("pop-busca")) $("pop-busca").focus(); else ops[Math.max(0, prox)].focus();
-});
-function fecharPop(volta = false) {
-  const origemFoco = popAberto && document.querySelector(`[data-pop="${popAberto}"]`);
-  if (volta && origemFoco) setTimeout(() => origemFoco.focus(), 0); popAberto = ""; buscaPop = ""; $("pop").classList.add("oculta"); $("pop").dataset.campo = ""; }
+registrarFiltro("nf-situacao", { escolher: v => { if (origem === "form") filtro = v; else filtroEmail = v; ordem = ""; pagina = 0; guardarCaixa(); desenhar(); },
+                                 redesenhar: () => desenhar() });
+registrarFiltro("nf-hotel", { escolher: v => { hotel = v; pagina = 0; guardarCaixa(); desenhar(); }, redesenhar: () => desenhar() });
 
 // Visão geral e outros atalhos abrem a tela de notas já filtrada
 function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = {}) {
@@ -2904,28 +2833,13 @@ async function acao(a, valor){
 }
 
 const irPraCaixa = () => { if (pn.vista !== "fila") trocarVista("fila"); };
-document.addEventListener("keydown", e => { if (e.key === "Escape" && nfFiltroAberto) { nfFiltroAberto = false; desenhar(); } });
 document.addEventListener("click", async e => {
-  if (popAberto && !e.target.closest("#pop,[data-pop]")) fecharPop();
-  if (nfFiltroAberto && !e.target.closest(".nf-filtro")) { nfFiltroAberto = false; desenhar(); }
-  const t = e.target.closest("[data-nf-filtro-abrir],[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],[data-doc-ok],#d-fechar,#d-nf-ok");
+  const t = e.target.closest("[data-ordem],[data-aba-o],[data-st],[data-limpa],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],[data-doc-ok],#d-fechar,#d-nf-ok");
   if (!t) return;
   const d = t.dataset;
   if (d.ordem) { ordem = d.ordem; pagina = 0; return desenhar(); }
   if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
-  if ("nfFiltroAbrir" in d) { nfFiltroAberto = !nfFiltroAberto; return desenhar(); }
-  if (d.st) { nfFiltroAberto = false; if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
-  if (d.pop) { if (popAberto === d.pop) fecharPop(); else { popAberto = d.pop; buscaPop = ""; $("pop").dataset.campo = ""; desenharPop(); } return; }
-  if (d.opv !== undefined && d.campo === "cx-hotel") { cx.hotel = d.opv; cx.sel = null; fecharPop(true); return desenharCorreio(); }
-  if (d.limpa === "cx-hotel") { cx.hotel = ""; return desenharCorreio(); }
-  if (d.opv !== undefined) {
-    const v = d.opv;
-    if (d.campo === "hotel") hotel = v;
-    if (d.campo === "agente") { agenteF = v; hotel = ""; }
-    if (d.campo === "envio") envio = v;
-    if (d.campo === "periodo") { const antes = periodo; periodo = v; if ((antes === "0") !== (v === "0")) carregar(); }
-    fecharPop(true); pagina = 0; guardarCaixa(); return desenhar();
-  }
+  if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
   if (d.limpa) {
     if (d.limpa === "hotel" || d.limpa === "tudo") hotel = "";
     if (d.limpa === "agente" || d.limpa === "tudo") agenteF = "";
@@ -3089,7 +3003,6 @@ document.addEventListener("click", e => {
   if (typeof desenharCorreio === "function") { desenharLateralCorreio(); desenharCorreio(); }
   if (pn.vista === "visao") desenharVisao();
 });
-window.addEventListener("resize", () => { if (popAberto) desenharPop(); });
 
 // Seções da lateral abrem/fecham; o estado fica guardado neste PC
 const GRUPOS_KEY = "painel.secoesFechadas";
@@ -3174,7 +3087,6 @@ document.addEventListener("click", e => { if (!e.target.closest("#op")) menuOper
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   menuOperador(false);
-  if (popAberto) { fecharPop(true); return; }
   if (!document.querySelector(".modal-fundo") && (sel || emailSel) && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { sel = null; emailSel = null; desenhar(); }
 });
 window.__painelOk = true;

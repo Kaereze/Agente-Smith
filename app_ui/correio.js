@@ -84,17 +84,15 @@ const FILTROS_LISTA = {
   anexo: ["Com anexo", e => (e.anexos || []).length > 0],
   dividida: ["Nota dividida", e => (e.quartos?.[0] || e.quartos || 0) >= 2],
 };
-function filtroDaListaHtml() {
-  const ativo = FILTROS_LISTA[cx.filtroL];
+function filtroDaListaHtml() {   // a peça única do Filtro (pecas/filtro.js)
   const atual = cx.filtroL; cx.filtroL = "";
   const base = itensDaTela("");
   cx.filtroL = atual;
-  const funil = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>`;
-  return `<span class="ol-filtro"><button type="button" class="ol-filtro-bt ${ativo ? "on" : ""}" data-ol-filtro-abrir aria-haspopup="menu" aria-expanded="${!!cx.filtroAberto}">
-      ${funil}${ativo ? esc(ativo[0]) : "Filtro"}</button>${ativo ? `<button type="button" class="ol-filtro-x" data-ol-filtro="" aria-label="Limpar o filtro">✕</button>` : ""}
-    ${cx.filtroAberto ? `<div class="ol-filtro-menu" role="menu">${[["", "Todos os e-mails", () => true], ...Object.entries(FILTROS_LISTA).map(([k, [n, f]]) => [k, n, f])]
-      .map(([k, nome, f]) => `<button type="button" role="menuitemradio" aria-checked="${(cx.filtroL || "") === k}" data-ol-filtro="${k}">${esc(nome)}<em>${base.filter(f).length.toLocaleString("pt-BR")}</em></button>`).join("")}</div>` : ""}</span>`;
+  return pecaFiltro({ id: "cx-filtro", rotulo: "Filtro", valor: cx.filtroL || "", padrao: "", nomePadrao: "Todos", alinhar: "direita",
+    opcoes: [{ v: "", nome: "Todos os e-mails", n: base.length },
+             ...Object.entries(FILTROS_LISTA).map(([k, [nome, f]]) => ({ v: k, nome, n: base.filter(f).length }))] });
 }
+registrarFiltro("cx-filtro", { escolher: v => { cx.filtroL = v; cx.sel = null; desenharCorreio(); }, redesenhar: () => desenharCorreio() });
 
 function desenharCorreio() {
   if (!$("v-correio")) return;
@@ -192,10 +190,12 @@ function statusBusca(busca) {
 }
 
 // Filtro de hotel no topo, ao lado da pesquisa (botão com ícone + menu com busca, agrupado por agente)
-function desenharFiltroHotel() {
+function desenharFiltroHotel() {   // a peça única do Filtro (pecas/filtro.js), com busca e os hotéis por agente
   if (pn.vista !== "correio") return;
-  ($("cx-filtro-hotel") || $("topo-filtro")).innerHTML = pilula("cx-hotel", "Hotel", cx.hotel).replace(/#i-busca/, "#i-hotel");
+  ($("cx-filtro-hotel") || $("topo-filtro")).innerHTML = pecaFiltro({ id: "cx-hotel", rotulo: "Hotel", valor: cx.hotel || "", nomePadrao: "Todos",
+    busca: true, placeholder: "Buscar hotel…", opcoes: opcoesHotelCorreio() });
 }
+registrarFiltro("cx-hotel", { escolher: v => { cx.hotel = v; cx.sel = null; desenharCorreio(); }, redesenhar: () => desenharFiltroHotel() });
 function contarHoteisCorreio() {   // quantos e-mails cada hotel tem na caixa aberta (sem o filtro de hotel)
   const hotel = cx.hotel; cx.hotel = "";
   const busca = $("busca").value.trim().length >= 3 ? $("busca").value.trim() : "";
@@ -205,12 +205,11 @@ function contarHoteisCorreio() {   // quantos e-mails cada hotel tem na caixa ab
   lista.forEach(e => (e.hotel || "").split(" / ").forEach(h => h && (n[h] = (n[h] || 0) + 1)));
   return n;
 }
-function opcoesHotelCorreio(op, buscaPop) {
-  const n = contarHoteisCorreio(), busca = semAcento(buscaPop), grupos = {};
-  (st.hoteis || []).forEach(h => { if (!busca || semAcento(h.hotel).includes(busca)) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
-  return (busca ? "" : op("cx-hotel", "", "Todos os hotéis", !cx.hotel)) + Object.entries(grupos).map(([a, hs]) =>
-    `<div class="pop-grupo">${esc(a)}</div>` + hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt"))
-      .map(h => op("cx-hotel", h, h, h === cx.hotel, n[h] || 0)).join("")).join("") || `<div class="pop-grupo">Nenhum hotel com esse nome</div>`;
+function opcoesHotelCorreio() {   // Todos + os hotéis de cada agente, os com mais e-mails primeiro
+  const n = contarHoteisCorreio(), grupos = {};
+  (st.hoteis || []).forEach(h => (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel));
+  return [{ v: "", nome: "Todos os hotéis" }, ...Object.entries(grupos).flatMap(([a, hs]) =>
+    hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt")).map(h => ({ v: h, nome: h, n: n[h] || 0, grupo: a })))];
 }
 
 // Faixa de ações (no lugar dos avisos): quem mandou + etiquetas + os botões grandes; sem e-mail aberto, o resumo da caixa
@@ -905,12 +904,9 @@ function desenharPastas() {
 }
 try { cx.fechados = JSON.parse(localStorage.getItem("painel.caixasFechadas") || "{}") || {}; } catch (e) {}
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu],[data-ol-filtro],[data-ol-filtro-abrir]");
-  if (cx.filtroAberto && !ev.target.closest(".ol-filtro")) { cx.filtroAberto = false; desenharCorreio(); }   // clicou fora: fecha o menu
+  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
   if (!t) { if (cx.menu && !ev.target.closest(".ol-menu")) { cx.menu = false; desenharLeituraCorreio(); } return; }
   const d = t.dataset;
-  if (d.olFiltroAbrir !== undefined) { cx.filtroAberto = !cx.filtroAberto; return desenharCorreio(); }
-  if (d.olFiltro !== undefined) { cx.filtroL = d.olFiltro; cx.filtroAberto = false; cx.sel = null; return desenharCorreio(); }
   if (d.olAba) { cx.aba = d.olAba; desenharFaixaGlobal(); return desenharFaixa(); }
   if (d.olAcao) {
     if (d.olAcao === "sync") { toast("Relendo as caixas dos 4 PCs…"); $("btn-atualizar")?.click(); carregarCorreio(); }

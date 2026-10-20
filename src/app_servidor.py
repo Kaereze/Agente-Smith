@@ -67,7 +67,8 @@ def _marca_pagina():
     """Marca da versão da tela (data do arquivo mais novo em app_ui): mudou = a janela aberta recarrega sozinha
     (13/10/2026: a tela foi atualizada sem reiniciar o Painel e a janela continuava com a página antiga)."""
     try:
-        return str(int(max(p.stat().st_mtime for p in PASTA_UI.iterdir() if p.suffix in (".html", ".js", ".css"))))
+        arquivos = [*PASTA_UI.iterdir(), *(PASTA_UI / "pecas").glob("*")]   # pecas/: peças únicas (20/10/2026)
+        return str(int(max(p.stat().st_mtime for p in arquivos if p.suffix in (".html", ".js", ".css"))))
     except (OSError, ValueError):
         return ""
 
@@ -108,6 +109,8 @@ ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/fontes/fontes.css": ("fontes/fontes.css", "text/css; charset=utf-8"),
 }
 ESTATICOS.update({f"/fontes/{f.name}": (f"fontes/{f.name}", "font/woff2") for f in (PASTA_UI / "fontes").glob("*.woff2")})
+ESTATICOS.update({f"/pecas/{f.name}": (f"pecas/{f.name}", "text/javascript; charset=utf-8" if f.suffix == ".js" else "text/css; charset=utf-8")
+                  for f in (PASTA_UI / "pecas").glob("*") if f.suffix in (".js", ".css")})   # peças únicas (20/10/2026)
 EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"]
 
