@@ -571,17 +571,68 @@ function fichaPedidoOl(e) {
 const OCULTOS_FORM = /^(enviado|carimbo|importante|avalia|preenchimento|ritmo|sugest|sincroniz|endereco de e-?mail|e-?mail$)/i;
 const ORDEM_FORM = [/^termos/, /documento.*tomador/, /nome.*tomador/, /^cep/, /telefone/, /cpf.*titular/, /nome.*titular/,
   /check.?in/, /check.?out/, /informac/, /^nota dividida/, /dividida em|quantas vezes/, /valor.*nota/];
-function formularioHtml(s) {
+// Quadros por grupo (usuário, 20/10/2026): o nome do campo em cima (verde) e o valor embaixo (creme), como a ficha
+// (Tomador da nota · Estadia · Como quer a nota). Clicar no valor copia (CPF/CNPJ, CEP, nome pra emitir a nota).
+const GRUPOS_FORM = [
+  ["Tomador da nota", [[/nome.*tomador/, "Nome"], [/documento.*tomador/, "CPF/CNPJ"], [/^cep/, "CEP"], [/telefone/, "Telefone"]]],
+  ["Estadia", [[/^hotel$/, "Hotel"], [/nome.*titular/, "Titular"], [/cpf.*titular/, "CPF do titular"], [/^datas$/, "Datas"], [/check.?in/, "Check-in"], [/check.?out/, "Check-out"]]],
+  ["Como quer a nota", [[/informac/, "Pedido"], [/^nota dividida/, "Dividida"], [/dividida em|quantas vezes/, "Dividir em"], [/valor.*nota/, "Valor"], [/^enviar para$/, "Enviar para"]]],
+];
+function formularioHtml(s, e = {}) {
   const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  const pos = k => { const i = ORDEM_FORM.findIndex(r => r.test(semAc(k))); return i < 0 ? ORDEM_FORM.length : i; };
-  const linhas = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)))
-    .map((l, i) => [l, i]).sort((a, b) => pos(a[0][0]) - pos(b[0][0]) || a[1] - b[1]).map(x => x[0]);
-  return `<div class="ol-form">${s.email ? `<div class="por">Enviado por: <span class="lnk">${esc(s.email)}</span></div>` : ""}
-    <h3>Dados para emissão de Nota Fiscal:</h3>
-    <table><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>${linhas.map(([k, val]) =>
-      `<tr><td>${esc(k)}</td><td>${esc(val)}</td></tr>`).join("")}</tbody></table>
-    <div class="em"><b>Enviado em:</b> ${esc(s.carimbo || dataBr(s.data))}</div></div>`;
+  const campos = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)));
+  const extras = [["Hotel", s.hotel || e.hotel || ""], ["Enviar para", s.email || ""]].filter(([, v]) => v);
+  const usados = new Set(), termos = campos.find(([k]) => /^termos/.test(semAc(k)));
+  if (termos) usados.add(termos);
+  const ci = campos.find(([k]) => /check.?in/.test(semAc(k))), co = campos.find(([k]) => /check.?out/.test(semAc(k)));
+  if (ci && co) { extras.push(["Datas", `${ci[1]} → ${co[1]}`]); usados.add(ci); usados.add(co); }   // como a ficha
+  const quadro = (rot, val) => `<div class="fq-c${String(val).length > 20 ? " largo" : ""}"><span class="fq-r">${esc(rot)}</span>
+    <button type="button" class="fq-v" data-copiar="${esc(val)}" title="Clique para copiar">${esc(val)}</button></div>`;
+  const grupos = GRUPOS_FORM.map(([titulo, regras]) => {
+    const quadros = regras.map(([re, rot]) => {
+      const c = [...campos, ...extras].find(x => !usados.has(x) && re.test(semAc(x[0])));
+      if (!c) return "";
+      usados.add(c);
+      return quadro(rot, c[1]);
+    }).join("");
+    return quadros ? `<section class="fq-g"><h4>${esc(titulo)}</h4><div class="fq-grade">${quadros}</div></section>` : "";
+  }).join("");
+  const resto = campos.filter(c => !usados.has(c));
+  return `<div class="ol-form fq">${s.email ? `<div class="por">Enviado por: <span class="lnk">${esc(s.email)}</span></div>` : ""}
+    <h3>Dados para emissão de Nota Fiscal</h3>${grupos}
+    ${resto.length ? `<section class="fq-g"><h4>Outros campos</h4><div class="fq-grade">${resto.map(([k, v]) => quadro(k, v)).join("")}</div></section>` : ""}
+    <div class="fq-pe">${termos ? `<span><b>Termos de aceite:</b> ${esc(termos[1])}</span>` : ""}<span><b>Enviado em:</b> ${esc(s.carimbo || dataBr(s.data) || "")}</span></div></div>`;
 }
+// E-mail do Emissor Automático sem o pedido na lista do Painel: os campos saem do próprio texto ("Campo<tab>Valor")
+const ROTULOS_FORM = ["Termos de aceite", "Documento Tomador", "Nome Tomador", "CEP", "Telefone para contato", "CPF do Titular da Reserva",
+  "Nome do Titular da Reserva", "Check-in da Hospedagem", "Check-out da Hospedagem", "Informações necessárias na Nota Fiscal",
+  "Nota Dividida", "Dividida em quantas vezes", "Valor da Nota"];
+function formDoTexto(texto) {
+  const t = String(texto || "").replace(/\r/g, "");
+  if (!/dados para emiss[aã]o de nota fiscal/i.test(t) || !/^\s*campo\s+valor\s*$/im.test(t)) return null;
+  const linhas = t.split("\n"), ini = linhas.findIndex(l => /^\s*campo\s+valor\s*$/i.test(l));
+  const campos = [];
+  for (const l of linhas.slice(ini + 1)) {
+    if (/^\s*enviado em\s*:/i.test(l)) break;
+    if (!l.trim()) continue;
+    let partes = l.split(/\t+| {2,}/).map(x => x.trim()).filter(Boolean);
+    if (partes.length < 2) {
+      const r = ROTULOS_FORM.find(x => l.trim().toLowerCase().startsWith(x.toLowerCase() + " "));
+      partes = r ? [r, l.trim().slice(r.length).trim()] : partes;
+    }
+    if (partes.length >= 2) campos.push([partes[0], partes.slice(1).join(" ")]);
+  }
+  if (!campos.length) return null;
+  const por = t.match(/enviado por\s*:\s*([^\s<]+@[^\s<>]+)/i), em = t.match(/enviado em\s*:\s*(.+)/i);
+  return { campos, email: por ? por[1] : "", carimbo: em ? em[1].replace(/\s*GMT.*$/, "").trim() : "" };
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.(".fq-v[data-copiar]");
+  if (!b) return;
+  const txt = b.dataset.copiar;
+  (navigator.clipboard?.writeText(txt) || Promise.reject()).then(() => toast(`Copiado: ${txt.length > 40 ? txt.slice(0, 40) + "…" : txt}`),
+    () => toast("Não deu pra copiar agora", true));
+});
 function desenharLeituraCorreio() {
   desenharAcoes();
   const el = $("cx-leitura");
@@ -626,7 +677,7 @@ function desenharLeituraCorreio() {
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
     ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
     ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
-    <div class="ol-corpo">${robo && ped ? formularioHtml(ped) : corpoTexto(e.id)}</div>
+    <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div>
     ${h ? historicoHtml(h, e) : ""}</div>`;
 }
 

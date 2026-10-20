@@ -42,14 +42,18 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 - **Ficha do pedido** (3 faixas): título com o hotel, quem cuida, NF e prazo; os 5 dados (**Tomador · CNPJ/CPF · O que pede · Hóspede · CPF do hóspede**: o CPF do hóspede aparece **sempre**, mesmo com a nota no CNPJ); os botões Enviar NF, Pedir o que falta e Marcar tratativa. O que falta aparece em âmbar ("falta pedir").
 - Abriu = lido para a equipe toda. "Não lido/Lido" (Ctrl+U / Ctrl+Q) volta.
 
-## Formulário aberto (igual ao e-mail do Emissor Automático)
+## Formulário aberto (quadros verde/creme, 20/10/2026)
 1. **Enviado por:** o e-mail de quem preencheu.
-2. **Dados para emissão de Nota Fiscal:** a tabela **Campo / Valor** com o cabeçalho dourado, sempre nesta ordem:
-   Termos de aceite · Documento Tomador · Nome Tomador · CEP · Telefone para contato · CPF do Titular da Reserva ·
-   Nome do Titular da Reserva · Check-in · Check-out · Informações necessárias na Nota Fiscal · Nota Dividida ·
-   Dividida em quantas vezes · Valor da Nota Fiscal.
-   Os dois formulários (antigo e novo) caem nesta mesma tabela. Campo fora da lista vai para o fim; campo vazio não aparece.
-3. **Enviado em:** data e hora do formulário.
+2. **Dados para emissão de Nota Fiscal**, em quadros: o nome do campo em cima (verde) e o valor embaixo (creme),
+   em 3 grupos, como a ficha:
+   - **Tomador da nota:** Nome · CPF/CNPJ · CEP · Telefone
+   - **Estadia:** Hotel · Titular · CPF do titular · Datas (check-in → check-out)
+   - **Como quer a nota:** Pedido · Dividida · Dividir em · Valor · Enviar para
+   Campo fora da lista vai para "Outros campos"; campo vazio não aparece. Valor comprido ocupa 2 colunas e quebra a linha.
+   **Clicar no valor copia** (para colar na emissão da nota).
+3. Rodapé: **Termos de aceite** e **Enviado em**.
+Os dois formulários (antigo e novo) caem nos mesmos quadros. Se o pedido não está na lista do Painel (ex.: já respondido
+há dias), os campos saem do próprio texto do e-mail do Emissor Automático.
 A etiqueta azul "Nota dividida" aparece embaixo do remetente quando a nota é dividida.
 
 ## Pesquisa (instantânea)

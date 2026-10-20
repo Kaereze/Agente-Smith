@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.14] — 2026-10-20
+
+### Mudou
+
+- **Formulário do hóspede na caixa de entrada em quadros** verde/creme: o nome do campo em cima (verde) e o valor
+  embaixo (creme), em 3 grupos como a ficha: Tomador da nota (Nome, CPF/CNPJ, CEP, Telefone), Estadia (Hotel, Titular,
+  CPF do titular, Datas) e Como quer a nota (Pedido, Dividida, Enviar para). Clicar no valor copia. Termos de aceite e
+  Enviado em ficam no rodapé.
+
+### Corrigido
+
+- E-mail do Emissor Automático cujo pedido não estava na lista do Painel aparecia como texto corrido ("Campo Valor…"):
+  agora os campos saem do próprio texto do e-mail e entram nos mesmos quadros.
+
 ## [2026.10.20.13] — 2026-10-20
 
 ### Adicionado

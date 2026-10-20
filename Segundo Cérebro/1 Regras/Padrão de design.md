@@ -51,3 +51,6 @@ Ver: [[Decisões]].
 ## Menus que abrem (20/10/2026)
 - Todo menu que abre de um botão segue o **menu Filtro** da lista: fundo #2b2b2b, borda #4a4a4a, cantos 8 px; itens 9×12 px com cantos 6 px; passar o mouse #3a3a3a; escolhido #173b63 com texto branco; número à direita, 12 px, #a8a8a8 (no escolhido #cfe5fb); títulos de grupo 11 px cinza; busca escura (#1f1f1f).
 - Vale para o Filtro, os menus das pílulas (`#pop`: Hotel e os outros) e o botão direito no e-mail.
+
+## Formulário do hóspede (20/10/2026)
+- Quadros por grupo (Tomador da nota · Estadia · Como quer a nota): rótulo em faixa **verde #2f6b4f** (texto #e9f6ee, 12 px 600) e valor em **creme #f6efdc** (texto #2a2418, 14 px 600); cantos 6 px; grade `minmax(160px, 1fr)` com 10 px; valor com mais de 20 letras ocupa 2 colunas; texto sempre quebra (nunca cortado). Pedido do João: "cores verdes e creme em uma tabela quadrada informando 'nome' e o nome do hóspede abaixo".
