@@ -7,11 +7,11 @@ import espelho_emails as ee
 CORPO = """Solicitações de Nota Fiscal
 Operador: notafiscal@redeandradelagoa.com.br · Gerado em 08/10/2026 19:24 · 2 solicitação(ões)
 LAGOA (2 solicitações)
-Solicitação 1 de 2 — Nivaldo Anderson Chaves da Silva
+Solicitação 1 de 2 — Renato Exemplo Moreira da Silva
 ⏳ Aguardando NF [ref NF-0190947310-01]
-Enviado por: anderson.chaves@bunge.com <mailto:anderson.chaves@bunge.com>
+Enviado por: renato.moreira@empresa-exemplo.com.br <mailto:renato.moreira@empresa-exemplo.com.br>
 Documento Tomador
-04341206427
+50854291504
 Enviado em: 08/10/2026 18:56:38
 Solicitação 2 de 2 — Maria Souza
 ⏳ Aguardando NF [ref NF-0190947310-02]
@@ -23,7 +23,7 @@ E-mail gerado automaticamente pelo robô Solicitações NF. Código de envio: NF
 def test_le_as_solicitacoes_do_email_do_robo():
     p = ee.pedidos_do_robo(CORPO)
     assert [(x["nome"], x["email"], x["carimbo"], x["ref"]) for x in p] == [
-        ("Nivaldo Anderson Chaves da Silva", "anderson.chaves@bunge.com", "08/10/2026 18:56:38", "NF-0190947310-01"),
+        ("Renato Exemplo Moreira da Silva", "renato.moreira@empresa-exemplo.com.br", "08/10/2026 18:56:38", "NF-0190947310-01"),
         ("Maria Souza", "maria@x.com", "08/10/2026 19:01", "NF-0190947310-02")]
 
 
@@ -41,8 +41,8 @@ def sol(chave, email, data, carimbo):
 
 
 def test_liga_pelo_email_e_hora_do_formulario():
-    s1 = sol("k1", "anderson.chaves@bunge.com", "2026-10-08", "10/8/2026 18:56:38")   # planilha no formato americano
-    s2 = sol("k2", "anderson.chaves@bunge.com", "2026-09-01", "9/1/2026 10:00:00")    # outro pedido dele: fica de fora
+    s1 = sol("k1", "renato.moreira@empresa-exemplo.com.br", "2026-10-08", "10/8/2026 18:56:38")   # planilha no formato americano
+    s2 = sol("k2", "renato.moreira@empresa-exemplo.com.br", "2026-09-01", "9/1/2026 10:00:00")    # outro pedido dele: fica de fora
     s3 = sol("k3", "maria@x.com", "2026-10-08", "08/10/2026 19:01:40")                 # "Enviado em" sem segundos
     caixas = {"PC1": [{"id": "m1", "caixa": "nf@lagoa", "hotel": "LAGOA", "recebido": "2026-10-08T19:24:00", "lido": False,
                        "pedidos": ee.pedidos_do_robo(CORPO)},
@@ -58,7 +58,7 @@ def test_solicitacao_sem_formulario_aparece_com_aviso():
                        "pedidos": ee.pedidos_do_robo(CORPO)[:1]}]}
     ligados, sem = dados.ligar_caixa([], caixas)
     assert ligados == {} and len(sem) == 1
-    assert sem[0]["sem_formulario"] and sem[0]["nome"] == "Nivaldo Anderson Chaves da Silva" and sem[0]["na_caixa"]["pc"] == "PC1"
+    assert sem[0]["sem_formulario"] and sem[0]["nome"] == "Renato Exemplo Moreira da Silva" and sem[0]["na_caixa"]["pc"] == "PC1"
 
 
 # ---------- Caixa de entrada fiel ao Outlook (11/10/2026) ----------

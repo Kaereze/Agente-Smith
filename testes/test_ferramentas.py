@@ -33,5 +33,17 @@ def test_commit_barra_dado_do_robo_e_credencial():
     assert not any("a" * 30 in a for a in achados)   # o valor nunca aparece
 
 
+def test_commit_barra_cpf_de_hospede_de_verdade(tmp_path):
+    (tmp_path / "backup_central_20261019_120000.json").write_text('{"cpf": "275.314.860-04"}', encoding="utf-8")
+    reais = checar_commit.cpfs_reais(tmp_path)
+    arquivos = {"testes/test_x.py": 'CPF = "27531486004"', "testes/test_y.py": 'CPF = "123.456.789-09"  # exemplo'}
+    achados = checar_commit.problemas(list(arquivos), arquivos.get, reais)
+    assert len(achados) == 1 and achados[0].startswith("testes/test_x.py") and "27531486004" not in achados[0]
+
+
+def test_sem_estado_a_trava_de_cpf_nao_roda(tmp_path):
+    assert checar_commit.cpfs_reais(tmp_path) == set()
+
+
 def test_commit_limpo_passa():
     assert checar_commit.problemas(["README.md", "src/main.py"], lambda rel: "texto comum") == []

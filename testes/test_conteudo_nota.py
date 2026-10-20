@@ -88,24 +88,24 @@ def test_nota_ilegivel_enviada_ao_email_do_pedido_conclui():
 
 
 def test_nome_do_assunto_batendo_conclui_sem_abrir_o_pdf():
-    """Caso real Maria Cleuza (NF 973, Ondina, 03/09/2026): PDF escaneado, OCR leu o CPF torto."""
-    r = _registro(_sol([("CPF Tomador", "17556066568")], nomes=("Maria Cleuza Carvalho da Cruz",)))
-    envio = {**_envio(), "assunto": "NF 973 - MARIA CLEUZA CARVALHO - 66479",
-             "anexos": ["NF 973 - MARIA CLEUZA CARVALHO - 66479.pdf"]}
+    """Caso real, nomes trocados (NF 973, Ondina, 03/09/2026): PDF escaneado, OCR leu o CPF torto."""
+    r = _registro(_sol([("CPF Tomador", "90960557997")], nomes=("Marina Estela Camargo da Cruz",)))
+    envio = {**_envio(), "assunto": "NF 973 - MARINA ESTELA CAMARGO - 66479",
+             "anexos": ["NF 973 - MARINA ESTELA CAMARGO - 66479.pdf"]}
     abriu = []
     assert r.aplicar_envio(envio, ["pdf"], ler_texto=lambda: abriu.append(1) or "lixo") == ("NF-A-01", "nf")
     assert abriu == [] and list(r.solicitacoes["NF-A-01"]["nfs"]) == ["973"]
 
 
 def test_dividida_com_dois_anexos_registra_as_duas_notas():
-    r = _registro(_sol([], nomes=("Maria Cleuza Carvalho da Cruz",)))
+    r = _registro(_sol([], nomes=("Marina Estela Camargo da Cruz",)))
     r.solicitacoes["NF-A-01"]["partes"] = 2
-    envio = {**_envio(), "assunto": "NF 973 - MARIA CLEUZA",
-             "anexos": ["NF 973 - MARIA CLEUZA.pdf", "NF 973 - MARIA CLEUZA.xml", "NF 974 - MARIA CLEUZA.pdf"]}
+    envio = {**_envio(), "assunto": "NF 973 - MARINA ESTELA",
+             "anexos": ["NF 973 - MARINA ESTELA.pdf", "NF 973 - MARINA ESTELA.xml", "NF 974 - MARINA ESTELA.pdf"]}
     r.aplicar_envio(envio, ["pdf", "xml"])
     assert sorted(r.solicitacoes["NF-A-01"]["nfs"]) == ["973", "974"]
     assert situacao(r.solicitacoes["NF-A-01"])[0] == "ok"
-    r2 = _registro(_sol([], nomes=("Maria Cleuza Carvalho da Cruz",)))
+    r2 = _registro(_sol([], nomes=("Marina Estela Camargo da Cruz",)))
     r2.aplicar_envio({**envio, "anexos": ["nota1.pdf", "nota2.pdf"]}, ["pdf"])
     assert sorted(r2.solicitacoes["NF-A-01"]["nfs"]) == ["973", "973 (2º anexo)"]
 
@@ -212,15 +212,15 @@ def test_pediu_so_consumo_e_a_nota_e_de_diaria_e_estacionamento():
 
 
 def test_nf_anexada_com_assunto_fora_do_padrao_so_conclui_se_for_de_quem_pediu():
-    """Caso real (07/10/2026): "ENC: Solicitação NF - Luxor" com "NF 6481 - DANILO COSTA VIEIRA.pdf" é dele;
-    "ENC: Solicitação NF - São Francisco" com "NF 582 - WESLEY KORDIAK.pdf" num pedido da Regiane não é."""
-    r = _registro(_sol([], nomes=("Danilo Costa Vieira",)))
-    envio = {**_envio(), "assunto": "ENC: Solicitação NF - Luxor - Danilo Costa",
-             "anexos": ["NF 6481 - DANILO COSTA VIEIRA - 96187.pdf", "image001.png"]}
+    """Caso real, nomes trocados (07/10/2026): "ENC: Solicitação NF - Luxor" com "NF 6481 - DAVI LACERDA PINTO.pdf" é dele;
+    "ENC: Solicitação NF - São Francisco" com "NF 582 - WAGNER EXEMPLO.pdf" num pedido da Renata não é."""
+    r = _registro(_sol([], nomes=("Davi Lacerda Pinto",)))
+    envio = {**_envio(), "assunto": "ENC: Solicitação NF - Luxor - Davi Lacerda",
+             "anexos": ["NF 6481 - DAVI LACERDA PINTO - 96187.pdf", "image001.png"]}
     assert r.aplicar_envio(envio, ["pdf"]) == ("NF-A-01", "nf")
     assert list(r.solicitacoes["NF-A-01"]["nfs"]) == ["6481"]
-    r2 = _registro(_sol([], nomes=("Regiane Cristina de Oliveira",)))
-    outro = {**_envio(), "assunto": "ENC: Solicitação NF - São Francisco - Regiane",
-             "anexos": ["NF 582 - WESLEY KORDIAK - 59767.pdf"]}
+    r2 = _registro(_sol([], nomes=("Renata Exemplo de Oliveira",)))
+    outro = {**_envio(), "assunto": "ENC: Solicitação NF - São Francisco - Renata",
+             "anexos": ["NF 582 - WAGNER EXEMPLO - 59767.pdf"]}
     assert r2.aplicar_envio(outro, ["pdf"], ler_texto=lambda: "") == ("NF-A-01", "tratativa")
     assert r2.solicitacoes["NF-A-01"]["nfs"] == {}

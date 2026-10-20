@@ -88,7 +88,8 @@ Requisitos: Python 3.14 e as dependências de `requirements.txt` (`pywin32`, `gs
   a rede local.
 - Planilhas dos hotéis e do Mail Analytics são **só leitura**. A única escrita é o TRUE na coluna "Enviado"
   depois de um envio confirmado.
-- Dados de hóspedes (nome, CPF, e-mail) não aparecem em telas de exemplo, testes ou documentação.
+- Dados de hóspedes (nome, CPF, e-mail) não aparecem em telas de exemplo, testes ou documentação. O pre-commit
+  compara os CPFs do commit com os CPFs reais do PC e barra se achar um.
 
 ## Documentação
 
@@ -99,6 +100,8 @@ Tudo fica no **Segundo Cérebro**, o cofre do Obsidian dentro deste repositório
 | Começar (onde paramos, próximos passos) | [`0 Comece aqui/00 Início.md`](Segundo%20C%C3%A9rebro/0%20Comece%20aqui/00%20In%C3%ADcio.md) |
 | Regras e o que não mexer | [`1 Regras/`](Segundo%20C%C3%A9rebro/1%20Regras/) |
 | Visão técnica do robô (fluxo, garantias) | [`6 Documentos/README técnico.md`](Segundo%20C%C3%A9rebro/6%20Documentos/README%20t%C3%A9cnico.md) |
+| **Se o robô parar** (manual de incidentes) | [`6 Documentos/Se o robô parar.md`](Segundo%20C%C3%A9rebro/6%20Documentos/Se%20o%20rob%C3%B4%20parar.md) |
+| Dados de hóspedes (LGPD): onde ficam, por quanto tempo | [`6 Documentos/Dados de hóspedes (LGPD).md`](Segundo%20C%C3%A9rebro/6%20Documentos/Dados%20de%20h%C3%B3spedes%20%28LGPD%29.md) |
 | Instalar um PC, tarefas do Windows, pendências | [`6 Documentos/Instalação e pendências.md`](Segundo%20C%C3%A9rebro/6%20Documentos/Instala%C3%A7%C3%A3o%20e%20pend%C3%AAncias.md) |
 | PC de casa | [`2 Como trabalhar/Painel em casa.md`](Segundo%20C%C3%A9rebro/2%20Como%20trabalhar/Painel%20em%20casa.md) |
 

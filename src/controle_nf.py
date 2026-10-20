@@ -143,8 +143,8 @@ def nome_bate(nome_assunto, nomes_solicitacao):
 
 
 def nome_parecido(nome_assunto, nomes_solicitacao):
-    """Nome do assunto dentro de um nome do pedido, ou 2+ palavras em comum ("MARIA CLEUZA CARVALHO"
-    x "Maria Cleuza Carvalho da Cruz")."""
+    """Nome do assunto dentro de um nome do pedido, ou 2+ palavras em comum ("MARINA ESTELA CAMARGO"
+    x "Marina Estela Camargo da Cruz")."""
     procurados = _tokens(nome_assunto)
     return bool(procurados) and any(procurados <= _tokens(n) or len(procurados & _tokens(n)) >= 2
                                     for n in nomes_solicitacao)
@@ -502,7 +502,7 @@ class Registro:
                           "entry_id": envio["entry_id"]}
         if not eh_nf and por_email:
             # NF anexada num e-mail de assunto fora do padrão ("ENC: Solicitação NF - Luxor" com
-            # "NF 6481 - DANILO COSTA VIEIRA.pdf"). Só conclui se o nome do PDF for de quem pediu ou
+            # "NF 6481 - DAVI LACERDA PINTO.pdf"). Só conclui se o nome do PDF for de quem pediu ou
             # o conteúdo conferir: encaminhamento costuma levar a NF de OUTRA pessoa.
             ref = self._nf_do_anexo(envio, abertas, por_email, ler_texto, registro_envio)
             if ref:

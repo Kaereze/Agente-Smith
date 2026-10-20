@@ -85,41 +85,41 @@ CNPJ/CPF/NIF
 53.440.771/0001-66
 PRESTADOR/FORNECEDOR
 Código IBGE/CEP
-163.440.258-83
+951.378.440-12
 3550308/03295-000
 TOMADOR/ADQUIRENTE
 CNPJ/CPF/NIF
 Nome/Nome Empresarial
-Alexandre Galache
+Augusto Teixeira
 DATA DE CHECK-IN: 19/08/2026
 DATA DE CHECK-OUT: 20/08/2026
 VALOR DA DIÁRIA: R$ 237,40""" + "\n" * 5 + "x" * 200
 
 
 def test_le_o_documento_do_tomador_e_nao_o_do_hotel():
-    assert documento_tomador(DANFSE) == "16344025883"
-    assert documento_tomador("sem rótulo 163.440.258-83") == ""
+    assert documento_tomador(DANFSE) == "95137844012"
+    assert documento_tomador("sem rótulo 951.378.440-12") == ""
 
 
 def test_digito_verificador():
-    assert documento_valido("014.154.664-67") and not documento_valido("014.154.764-67")
+    assert documento_valido("116.437.126-67") and not documento_valido("116.437.226-67")
     assert documento_valido("86.527.934/0001-00") and not documento_valido("86.527.935/0001-00")
     assert not documento_valido("111.111.111-11")
 
 
 def test_nf_com_outro_cpf_valido_vira_alerta():
-    sol = {"documentos": ["06315502598"]}
-    assert documento_diferente(sol, DANFSE).startswith("⚠ CPF/CNPJ da NF (163.440.258-83) diferente do pedido")
-    assert documento_diferente({"documentos": ["16344025883"]}, DANFSE) == ""
+    sol = {"documentos": ["52084748593"]}
+    assert documento_diferente(sol, DANFSE).startswith("⚠ CPF/CNPJ da NF (951.378.440-12) diferente do pedido")
+    assert documento_diferente({"documentos": ["95137844012"]}, DANFSE) == ""
 
 
 def test_formulario_digitado_errado_so_avisa():
-    r = documento_diferente({"documentos": ["16344025884"]}, DANFSE)   # dígito errado no formulário
+    r = documento_diferente({"documentos": ["95137844013"]}, DANFSE)   # dígito errado no formulário
     assert r.startswith("CPF/CNPJ do formulário") and "⚠" not in r
 
 
 def test_conferencia_continua_casando_e_leva_o_alerta():
-    sol = {"documentos": ["06315502598"], "valores": ["237,40"], "datas": ["19/08/2026"], "nomes": ["Alexandre Galache"]}
+    sol = {"documentos": ["52084748593"], "valores": ["237,40"], "datas": ["19/08/2026"], "nomes": ["Augusto Teixeira"]}
     resultado, provas = conferir_conteudo(sol, DANFSE)
     assert resultado == "confere" and "⚠ CPF/CNPJ da NF" in provas
 
@@ -128,9 +128,9 @@ def test_painel_le_o_alerta_e_some_com_esta_certo():
     est = dados.estado_inicial()
     est["nfs"] = ["736"]
     est["obs"] = [{"quando": "", "agente": "robô", "texto": "NF 736 confirmada automaticamente: valor R$ 237,40 confere · "
-                   "⚠ CPF/CNPJ da NF (163.440.258-83) diferente do pedido (063.155.025-98) · achada no Dropbox (João)"}]
+                   "⚠ CPF/CNPJ da NF (951.378.440-12) diferente do pedido (520.847.485-93) · achada no Dropbox (João)"}]
     urgentes, avisos = dados.alertas_documento(est)
-    assert urgentes == [{"nf": "736", "texto": "CPF/CNPJ da NF (163.440.258-83) diferente do pedido (063.155.025-98)"}]
+    assert urgentes == [{"nf": "736", "texto": "CPF/CNPJ da NF (951.378.440-12) diferente do pedido (520.847.485-93)"}]
     est["obs"].append({"quando": "", "agente": "Clara", "texto": "Conferido: CPF/CNPJ da NF 736 está certo"})
     assert dados.alertas_documento(est) == ([], [])
 
@@ -158,8 +158,8 @@ def test_motivo_principal_e_o_primeiro_citado():
 def test_motivo_sem_detalhe_e_comparacao_do_cpf():
     p = analise_nf.pedido_do_cliente("Cancelar NF", "Por favor cancelem a nota.")
     assert analise_nf.motivo_principal(p)[0] == "cancelar a nota"
-    p = analise_nf.pedido_do_cliente("", "O CPF certo é 063.155.025-98")
-    assert analise_nf.comparar(p, {"documento": "16344025883"})[0].startswith("⚠ cliente escreveu 063.155.025-98")
+    p = analise_nf.pedido_do_cliente("", "O CPF certo é 520.847.485-93")
+    assert analise_nf.comparar(p, {"documento": "95137844012"})[0].startswith("⚠ cliente escreveu 520.847.485-93")
 
 
 def test_analise_compacta_vai_e_volta_da_planilha():

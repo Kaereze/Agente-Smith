@@ -47,4 +47,4 @@ tags: [cerebro/inicio]
 > [[Ideias e pendências]] · rascunho do guia de design (`guia-painel-fiscal.html`)
 
 > [!cat-docs] 6 Documentos — guias longos
-> [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
+> **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
