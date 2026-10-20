@@ -52,13 +52,19 @@ tags: [cerebro/trabalho]
 | **Saúde: último e-mail recebido, alarme "nenhum e-mail chega"** | `saude.py` → `ultimo_recebido`, `problemas`; coletado no `app_servidor.vigiar_caixa_de_saida` |
 | **Modo demonstração / modo casa** | `demo.py`; servidor `main()` (`--demo`, `--visualizar`); `sheets.BackendSoLeitura`; `PAINEL_DEMO_EM_CASA.bat` |
 | **Avisos do Windows** | `avisos_windows.py` |
+| **Prévia 5: visual do Outlook escuro** (cores, espaços, ficha em 3 faixas, faixa de comandos) | `index.html`: camada "Prévia 5 no Painel" no fim do `<style>` |
+| **Leitura do e-mail igual ao Outlook** (cabeçalho, de onde veio, anexos em cima, ficha, texto) | `correio.js` → `desenharLeituraCorreio`, `fichaPedidoOl`, `linhaEmail` (urgente, formulário) |
+| **Formulário aberto** (Enviado por · Dados para emissão · tabela na ordem fixa · Enviado em) | `correio.js` → `formularioHtml`, `ORDEM_FORM` (13 campos), `OCULTOS_FORM` |
+| **Pesquisa instantânea** (pedidos na hora + espelho; Outlook ao vivo depois) | `correio.js` → `secoesDaBusca`, `pedidosDaBusca`, `linhaPedidoBusca`, `marcarBusca`; ao vivo: `agendarBusca`/`buscarNoOutlook` |
+| **Envio sem espera** (janela fecha na hora; aviso no canto) | `painel.js` → `enviarNF` (fim), `seguirEnvio`, `verEnvio`, `desenharEnvio`, `fecharEnvio`; status: `/api/envio_nf/status` |
 | **Logs** (um arquivo por programa) | `log_util.py` → `arquivo_do_programa`, `PROGRAMAS` (script de entrada → arquivo); teste `testes/test_log_util.py` |
 | **Configuração** | `config.json` (todos), `config.local.json` (só do PC, papel principal/conferente), `config.py` |
 | **Travas de entrega** (pre-commit, guarda do git, testes no GitHub) | `ferramentas/checar_commit.py` (via `.githooks/pre-commit`), `ferramentas/guarda_git.py` (hook do Claude Code em `NOTAS/.claude/settings.json`), `.github/workflows/testes.yml`; testes em `testes/test_ferramentas.py`; padrão do código `ruff.toml` (+ `requirements-dev.txt`); versões em `CHANGELOG.md` |
 
 ## Armadilhas conhecidas
 - **Nunca** chamar `win32com.client.Dispatch("Outlook.Application")` direto: use `outlook_vivo.aplicativo()` (o Dispatch com o Outlook fechado cria um Outlook **sem janela**, que não baixa e-mail POP3).
-- `index.html` tem várias camadas de CSS com `!important`: regra nova sempre no **fim** do `<style>`.
+- `index.html` tem várias camadas de CSS com `!important`: regra nova sempre no **fim** do `<style>`. Há um `h3{…!important}` antigo: título h3 novo precisa de `!important` também.
+- Nome novo no topo de `correio.js`/`painel.js`/`index.html`: conferir que não existe (o `test_previa5.py` barra).
 - Script de alteração: escrever o `.py` pelo editor (heredoc quebra as barras invertidas do Windows).
 - Capturas de tela: scripts `cdp_*.js` no scratchpad, Edge sem janela, porta 8765; **nunca** abrir e-mail não lido, nunca Enviar/Cadastrar, nunca mexer no Professor.
 - Dois Painéis no mesmo PC disputam o arquivo de log (erro de rotação): normal em teste, não em uso.

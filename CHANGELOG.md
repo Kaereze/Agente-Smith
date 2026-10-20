@@ -9,6 +9,37 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.2] — 2026-10-20
+
+### Mudou
+
+- **O Painel ganha o visual do Outlook escuro (Prévia 5).** Cinzas e azul `#479ef5`, letra Segoe UI, faixa de comandos
+  numa caixa cinza e 10 px entre pastas, lista e leitura, em todas as telas. Aprovado pelo João no quadro de design.
+- **E-mail aberto igual ao Outlook.** Cabeçalho com as iniciais, quem mandou e Para; embaixo, de onde veio (hotel e PC),
+  os anexos em cima do texto, a ficha do pedido e o texto alinhado com o nome. Na lista: assunto e hora em azul, linha
+  urgente avermelhada com bandeira, quadradinho azul no formulário e o nome real de quem mandou.
+- **Ficha do pedido em 3 faixas** (título com prazo · Tomador, CNPJ/CPF, O que pede, Hóspede, CPF do hóspede · botões),
+  com mais espaço entre os dados.
+- **Formulário igual ao e-mail do Emissor Automático.** "Enviado por", "Dados para emissão de Nota Fiscal:", a tabela
+  Campo / Valor de cabeçalho dourado numa ordem fixa de 13 campos (os dois formulários caem nela; campo fora da lista vai
+  para o fim) e "Enviado em".
+
+### Adicionado
+
+- **Pesquisa instantânea.** Os pedidos do formulário aparecem na hora (com o trecho marcado e o tempo), junto com os
+  e-mails que o Painel já tem; o Outlook dos 4 PCs completa depois. Clicar num pedido abre a ficha.
+- **Envio sem espera.** Clicou em Enviar, a janela fecha na hora e um aviso no canto acompanha (entregue · saindo ·
+  conferido em Itens Enviados). Se falhar, o aviso diz o motivo e "Escrever de novo" reabre a mensagem com o texto.
+- `testes/test_previa5.py`: barra nome repetido no topo dos scripts da tela (derruba o arquivo inteiro) e confere as
+  peças da Prévia 5.
+- Cérebro: "Guia do Painel Fiscal" (cada tela, pesquisa, envio, atalhos); Padrão de design, Onde mexer e app_ui
+  atualizados.
+
+### Problemas conhecidos
+
+- O índice local de e-mails em cada PC (pesquisa de e-mails antigos em ~0,2 s) e o envio direto pela rede (sem passar
+  pela fila da Central) esperam o OK do João: mudam a regra de 08/10 ("busca sempre ao vivo no Outlook").
+
 ## [2026.10.20.1] — 2026-10-20
 
 ### Corrigido

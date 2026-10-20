@@ -8,7 +8,9 @@ Tem duas partes:
 - **Robô Solicitações NF**: lê os pedidos de NF que os hóspedes fazem no Google Forms, junta tudo na
   Planilha Central e manda **um e-mail por hotel**, sempre pela caixa do próprio hotel, no PC dono dela.
 - **Painel Fiscal**: o aplicativo de cada agente. Funciona como espelho ao vivo do Outlook dos 4 PCs, com
-  caixa de entrada, itens enviados, notas fiscais, urgências e gerência no mesmo layout.
+  caixa de entrada, itens enviados, notas fiscais, urgências e gerência no mesmo layout. Desde 20/10/2026 tem o visual
+  do Outlook escuro: e-mail e formulário iguais ao Outlook, pesquisa instantânea e envio sem espera
+  ([Guia do Painel Fiscal](Segundo%20C%C3%A9rebro/6%20Documentos/Guia%20do%20Painel%20Fiscal.md)).
 
 ## Como funciona
 
@@ -102,6 +104,7 @@ Tudo fica no **Segundo Cérebro**, o cofre do Obsidian dentro deste repositório
 | Começar (onde paramos, próximos passos) | [`0 Comece aqui/00 Início.md`](Segundo%20C%C3%A9rebro/0%20Comece%20aqui/00%20In%C3%ADcio.md) |
 | Regras e o que não mexer | [`1 Regras/`](Segundo%20C%C3%A9rebro/1%20Regras/) |
 | Visão técnica do robô (fluxo, garantias) | [`6 Documentos/README técnico.md`](Segundo%20C%C3%A9rebro/6%20Documentos/README%20t%C3%A9cnico.md) |
+| **Guia do Painel Fiscal** (cada tela, pesquisa, envio, atalhos) | [`6 Documentos/Guia do Painel Fiscal.md`](Segundo%20C%C3%A9rebro/6%20Documentos/Guia%20do%20Painel%20Fiscal.md) |
 | **Se o robô parar** (manual de incidentes) | [`6 Documentos/Se o robô parar.md`](Segundo%20C%C3%A9rebro/6%20Documentos/Se%20o%20rob%C3%B4%20parar.md) |
 | Dados de hóspedes (LGPD): onde ficam, por quanto tempo | [`6 Documentos/Dados de hóspedes (LGPD).md`](Segundo%20C%C3%A9rebro/6%20Documentos/Dados%20de%20h%C3%B3spedes%20%28LGPD%29.md) |
 | Instalar um PC, tarefas do Windows, pendências | [`6 Documentos/Instalação e pendências.md`](Segundo%20C%C3%A9rebro/6%20Documentos/Instala%C3%A7%C3%A3o%20e%20pend%C3%AAncias.md) |

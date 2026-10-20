@@ -829,11 +829,81 @@ async function enviarNF(contaForcada, jaConferido = false) {
     cc: $("nf-cc").value.trim(), assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
     conta_de: conta || undefined, selo: envNF.selo || undefined });
   if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo || r.erro, r.contas_locais); }
-  $("nf-anel").className = "anel"; $("nf-anel").textContent = ""; $("nf-anel").style.visibility = "visible";
-  $("nf-barra").style.visibility = "visible"; $("nf-barra").classList.remove("fim");
-  $("nf-res").textContent = r.destino === envNF.o.este_pc ? "Enviando por este PC…" : `Pedido entregue ao PC ${r.destino}…`;
-  acompanharNF(r.id);
+  // Envio sem espera (Prévia 5, 20/10/2026: "estamos em ligação com o hóspede"): a janela fecha na hora e o aviso no
+  // canto acompanha (entregue · saindo · conferido). Falhou: o aviso diz o porquê e reabre a mensagem com o texto.
+  const ctx = { chave: envNF.chave, resp: envNF.resp, alvo: envNF.alvo, pc: r.destino === envNF.o.este_pc ? "" : r.destino,
+    rascunho: { para: $("nf-para")?.value || "", cc: $("nf-cc")?.value || "", assunto: $("nf-assunto")?.value || "", msg: $("nf-msg")?.innerHTML || "" } };
+  envNF.fechar();
+  seguirEnvio(r.id, ctx);
 }
+
+const andamento = {};
+function seguirEnvio(id, ctx) {
+  if (!$("envios-andamento")) {
+    const box = document.createElement("div");
+    box.id = "envios-andamento"; box.setAttribute("aria-live", "polite");
+    document.body.appendChild(box);
+  }
+  andamento[id] = { ctx, estado: "entregue" };
+  desenharEnvio(id);
+  verEnvio(id);
+}
+async function verEnvio(id) {
+  const a = andamento[id];
+  if (!a) return;
+  const s = await api(`/api/envio_nf/status?id=${id}`).catch(() => ({ estado: "aguardando" }));
+  if (!andamento[id]) return;
+  a.s = s;
+  if (s.estado === "enviado") {
+    a.estado = "enviado"; a.fim = new Date();
+    const resp = a.ctx.resp;
+    if (resp && !resp.encaminhar && !resp.novo) correioRespondido(resp.id);
+    carregar(); desenharEnvio(id);
+    a.timer = setTimeout(() => fecharEnvio(id), 7000);
+    return;
+  }
+  if (s.estado === "falhou" || s.estado === "sem_resposta") { a.estado = "falhou"; return desenharEnvio(id); }
+  a.estado = s.estado === "enviando" ? "saindo" : "entregue";
+  desenharEnvio(id);
+  a.timer = setTimeout(() => verEnvio(id), 2000);
+}
+function desenharEnvio(id) {
+  const a = andamento[id], box = $("envios-andamento");
+  if (!a || !box) return;
+  let card = box.querySelector(`[data-env="${id}"]`);
+  if (!card) { card = document.createElement("div"); card.className = "env-card"; card.dataset.env = id; card.setAttribute("role", "status"); box.appendChild(card); }
+  const { resp, pc } = a.ctx;
+  const oque = resp?.novo ? "e-mail" : resp?.encaminhar ? "mensagem encaminhada" : resp ? (resp.comNF ? "resposta com a NF" : "resposta") : "NF";
+  const passo = { entregue: 1, saindo: 2, enviado: 4, falhou: 0 }[a.estado];
+  const li = (n, txt) => `<li class="${passo > n ? "f" : passo === n ? "a" : ""}">${txt}</li>`;
+  const hora = a.fim ? a.fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+  card.innerHTML = a.estado === "falhou"
+    ? `<div class="tt"><i class="ruim">!</i>Não deu para enviar a ${esc(oque)}</div><div class="det">${esc(a.s?.detalhe || "o PC dono não respondeu")}</div>
+       <div class="bt"><button type="button" data-env-fechar="${id}">Fechar</button><button type="button" data-env-reabrir="${id}">Escrever de novo</button></div>`
+    : `<div class="tt">${a.estado === "enviado" ? `<i class="feito">✓</i>Enviado às ${hora} · em Itens Enviados` : `<i class="gira"></i>Enviando a ${esc(oque)}…`}
+         <small>${pc ? "PC de " + esc(nomeAgente(pc)) : "este PC"}</small></div>
+       <ol>${li(1, pc ? `Entregue ao PC de ${esc(nomeAgente(pc))}` : "Entregue ao Outlook deste PC")}${li(2, "Saindo pela caixa do hotel")}${li(3, "Conferido em Itens Enviados")}</ol>
+       <div class="barra"><i style="width:${[0, 30, 62, 88, 100][passo]}%"></i></div>`;
+}
+function fecharEnvio(id) {
+  clearTimeout(andamento[id]?.timer);
+  delete andamento[id];
+  document.querySelector(`[data-env="${id}"]`)?.remove();
+}
+document.addEventListener("click", async ev => {
+  const f = ev.target.closest("[data-env-fechar]");
+  if (f) return fecharEnvio(f.dataset.envFechar);
+  const b = ev.target.closest("[data-env-reabrir]");
+  if (!b || !andamento[b.dataset.envReabrir]) return;
+  const { chave, resp, alvo, rascunho } = andamento[b.dataset.envReabrir].ctx;
+  fecharEnvio(b.dataset.envReabrir);
+  if (alvo?.id === "cx-leitura" && resp?.id && cx.sel !== resp.id) { cx.sel = resp.id; desenharCorreio(); }
+  await abrirEnvioNF(chave, resp, alvo && document.body.contains(alvo) ? alvo : null);
+  const por = (i, v) => { const x = $(i); if (x && v) x.value = v; };
+  por("nf-para", rascunho.para); por("nf-cc", rascunho.cc); por("nf-assunto", rascunho.assunto);
+  if ($("nf-msg") && rascunho.msg) $("nf-msg").innerHTML = rascunho.msg;
+  toast("Mensagem reaberta com o texto. Se tinha anexo, anexe de novo.");
+});
 
 async function acompanharNF(id) {
   if (!envNF) return;

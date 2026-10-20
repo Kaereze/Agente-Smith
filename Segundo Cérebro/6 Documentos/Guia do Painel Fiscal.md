@@ -1,0 +1,80 @@
+---
+tipo: documento
+pasta: "6 Documentos"
+pai: "[[00 Início]]"
+prioridade: P2
+tags: [cerebro/documentos, painel, guia]
+---
+# Guia do Painel Fiscal
+
+> Para a equipe (João, Clara, Cristian, Bernardo) e para quem chegar depois.
+> Como cada tela funciona desde a **Prévia 5** (20/10/2026): o visual do Outlook escuro, com espaçamento folgado.
+> Prévia aprovada no quadro de design "Painel Fiscal — Repaginação", página "Prévia 5" (dados inventados).
+
+## O que é
+O Painel é o **espelho do Outlook dos 4 PCs**: mostra os e-mails das caixas dos hotéis e os pedidos do formulário,
+sem guardar histórico próprio. Ele deixa responder, mandar a NF e encaminhar **pela caixa do próprio hotel**, no PC
+dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]], [[Dados de hóspedes (LGPD)]].
+
+## A tela, de cima para baixo
+| Parte | O que é |
+|---|---|
+| Trilho da esquerda | Ícones das telas: E-mails, Notas fiscais, Visão geral, Gerência, Monitoramento (só admin). O traço azul marca onde você está; o número vermelho é o que espera. |
+| Abas do topo | Página Inicial · Enviar/Receber · Exibir, como no Outlook. "Caixa de" filtra por agente. A **pesquisa** fica à direita (atalho Ctrl+E). |
+| Faixa de comandos | A caixa cinza com os botões da tela (Novo e-mail, Responder, Encaminhar, Enviar NF…). Botão apagado = ainda não dá pelo Painel; faça no Outlook. |
+| Barra de baixo | Itens e não lidos; Central sincronizada, robô, PCs no ar, tema, Modo professor e ajuda (tecla ?). |
+| Avisos | A caixinha no canto direito de baixo mostra o que saiu do normal. O que fazer com cada aviso: [[Se o robô parar]]. |
+
+## E-mails (igual ao Outlook)
+- **Pastas** à esquerda: Favoritos (Caixa de Entrada de todas as caixas, Urgência, Formulários do robô, Itens Enviados) e as caixas de cada PC.
+- **Lista** no meio, por dia (Hoje, Ontem…): quem mandou e a hora; o assunto em azul; a prévia.
+  - Traço azul = não lido. Linha **avermelhada com bandeira** = urgente. Clipe = tem anexo. Quadradinho azul = formulário.
+  - Setas ↑ ↓ andam pela lista e já abrem o e-mail.
+- **Leitura** à direita, como o Outlook: assunto; o círculo com as iniciais; quem mandou, Para; os botões Responder, Responder a todos, Encaminhar e ⋯; a data.
+  Embaixo: de onde veio (hotel e PC), os **anexos** (clique abre o visualizador), a **ficha do pedido** e o texto.
+- **Ficha do pedido** (3 faixas): título com o hotel, quem cuida, NF e prazo; os 5 dados (**Tomador · CNPJ/CPF · O que pede · Hóspede · CPF do hóspede**: o CPF do hóspede aparece **sempre**, mesmo com a nota no CNPJ); os botões Enviar NF, Pedir o que falta e Marcar tratativa. O que falta aparece em âmbar ("falta pedir").
+- Abriu = lido para a equipe toda. "Não lido/Lido" (Ctrl+U / Ctrl+Q) volta.
+
+## Formulário aberto (igual ao e-mail do Emissor Automático)
+1. **Enviado por:** o e-mail de quem preencheu.
+2. **Dados para emissão de Nota Fiscal:** a tabela **Campo / Valor** com o cabeçalho dourado, sempre nesta ordem:
+   Termos de aceite · Documento Tomador · Nome Tomador · CEP · Telefone para contato · CPF do Titular da Reserva ·
+   Nome do Titular da Reserva · Check-in · Check-out · Informações necessárias na Nota Fiscal · Nota Dividida ·
+   Dividida em quantas vezes · Valor da Nota Fiscal.
+   Os dois formulários (antigo e novo) caem nesta mesma tabela. Campo fora da lista vai para o fim; campo vazio não aparece.
+3. **Enviado em:** data e hora do formulário.
+A etiqueta azul "Nota dividida" aparece embaixo do remetente quando a nota é dividida.
+
+## Pesquisa (instantânea)
+Digite 3 letras de um nome, CPF/CNPJ, e-mail, hotel ou número de NF.
+- **Na hora:** os **pedidos do formulário** (selo verde "na hora", com o tempo) e os e-mails que o Painel já tem dos 4 PCs.
+- **Depois (alguns segundos):** o Outlook de cada PC completa com o que é antigo, enviado ou excluído (selo "Outlook dos 4 PCs").
+- Clicar num pedido abre a **ficha** em Notas fiscais; clicar num e-mail abre a leitura.
+- PC desligado: os e-mails dele que já estavam no espelho continuam aparecendo.
+
+## Responder e enviar a NF (sem espera)
+1. Responder, Responder com a NF ou Encaminhar abre a mensagem **dentro da leitura**, com o original citado embaixo.
+2. Anexe a NF (arraste ou escolha); o Painel **confere a NF com o pedido** (CPF/CNPJ, valor, nome) e só avisa se algo não bate.
+3. Clicou em **Enviar**: a janela **fecha na hora**. O aviso no canto esquerdo de baixo acompanha:
+   *Entregue ao PC de …* → *Saindo pela caixa do hotel* → *Conferido em Itens Enviados* (✓ com a hora).
+4. Deu errado (ex.: PC dono desligado)? O aviso fica vermelho com o motivo e o botão **Escrever de novo** reabre a
+   mensagem com o texto (o anexo precisa ser escolhido de novo).
+O e-mail sai **sempre da caixa do hotel**, no PC dono dela. Nunca por outra caixa.
+
+## Notas fiscais
+Os pedidos do formulário que estão na Caixa de Entrada dos 4 PCs. Lista em 2 andares (hóspede e hora; hotel, agente e
+prazo; etiquetas) e a ficha sempre à direita. Prazo: 48 h corridas do pedido (verde → âmbar → vermelho).
+
+## Visão geral · Gerência · Monitoramento
+- **Visão geral:** resumo de ontem (ou hoje até agora), o que precisa de atenção e a equipe.
+- **Gerência:** relatório do mês contra o mês anterior, onde os pedidos se perdem e o que melhorar.
+- **Monitoramento** (só o administrador): Máquinas (os 4 PCs, Outlook, conferente, versão) e Log.
+
+## Atalhos
+Ctrl+E pesquisar · ↑ ↓ andar na lista · Enter abrir · Esc fechar · Ctrl+R responder · Ctrl+Shift+R responder com NF ·
+Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido · Ctrl+Q lido · ? ajuda.
+
+## Para quem mexe no código
+Onde fica cada coisa: [[Onde mexer]] (linhas "Prévia 5"). Regras de visual: [[Padrão de design]].
+
+Voltar: [[00 Início]]

@@ -45,5 +45,8 @@ tags: [cerebro/historico]
 | 19/10/2026 | **Versão = data da entrega** (`AAAA.MM.DD`), com etiqueta no git e o CHANGELOG.md na raiz | O commit sozinho não diz o que mudou; o Painel continua mostrando o commit |
 | 19/10/2026 | **Ruff só com regras de erro real** (E9, F); formatação não imposta | Reformatar mexeria em todo arquivo que roda nos 4 PCs (P1) |
 | 19/10/2026 | **Teste, exemplo e design só com dado inventado**; trava de CPF real no commit | 4 testes tinham dados reais de hóspedes (P0) |
+| 20/10/2026 | **Prévia 5 no Painel**: visual do Outlook escuro em todas as telas, e-mail e formulário idênticos ao Outlook (tabela Campo/Valor dourada na ordem fixa dos 13 campos), ficha em 3 faixas, espaçamento folgado | João: "use exatamente esse design dentro do painel fiscal… deixe o espaçamento correto" |
+| 20/10/2026 | **Envio sem espera**: clicou em Enviar, a janela fecha e um aviso acompanha; falhou, reabre com o texto | "estamos em ligação com o hóspede": não pode ficar esperando |
+| 20/10/2026 | **Pesquisa: pedidos e espelho na hora**, Outlook ao vivo completa depois. O índice local em cada PC e o envio direto pela rede **esperam o OK do João** (mudam a regra de 08/10) | Rapidez sem pesar o Painel nem mudar regra sem pedido |
 
 Ver: [[O que não mexer]].

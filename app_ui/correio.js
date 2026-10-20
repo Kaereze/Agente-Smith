@@ -118,13 +118,42 @@ function desenharCorreio() {
   const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
   const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
     : cx.caixa === "enviados" ? "Nada enviado nas últimas 24 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : "";
-  $("cx-lista").innerHTML = html || (vazio ? `<div class="vazio">${vazio}</div>`
+  const corpo = html || (vazio ? `<div class="vazio">${vazio}</div>`
     : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Caixa de Entrada vazia${quem}.`));
+  $("cx-lista").innerHTML = busca ? secoesDaBusca(busca) + corpo : corpo;
   if (idFoco) $("cx-lista").querySelector(`.cx-l[data-id="${CSS.escape(idFoco)}"]`)?.focus();
   desenharLeituraCorreio();
   if (!busca) preCarregar(lista);
 }
 
+// Pesquisa instantânea (Prévia 5, 20/10/2026: "estamos em ligação com o hóspede"): os pedidos do formulário (já no
+// Painel) e os e-mails do espelho aparecem na hora; o Outlook dos 4 PCs completa depois (antigos, enviados, excluídos)
+function pedidosDaBusca(busca) {
+  const termos = semAcento(busca).split(/\s+/).filter(Boolean);
+  return (st.fila || []).filter(s => {
+    const t = semAcento([s.nome, s.email, s.hotel, s.dono, (s.nfs || []).join(" "), ...(s.campos || []).map(c => c[1])].join(" \n "));
+    return termos.every(p => t.includes(p) || (soDigitos(p).length >= 3 && soDigitos(t).includes(soDigitos(p))));
+  }).sort((a, b) => String(b.data).localeCompare(String(a.data))).slice(0, 12);
+}
+const marcarBusca = (texto, busca) => {
+  const t = String(texto || ""), alvo = semAcento(String(busca).split(/\s+/)[0] || ""), i = alvo ? semAcento(t).indexOf(alvo) : -1;
+  return i < 0 ? esc(t) : esc(t.slice(0, i)) + "<mark>" + esc(t.slice(i, i + alvo.length)) + "</mark>" + esc(t.slice(i + alvo.length));
+};
+function linhaPedidoBusca(s, busca) {
+  const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
+  return `<div class="cx-l ped" role="option" tabindex="0" data-abrir-ficha="${esc(s.chave)}" title="Abrir a ficha do pedido">
+    <span class="it-de">${marcarBusca(s.nome, busca)}</span><span class="it-ic"><i class="pin" aria-label="pedido do formulário"></i></span>
+    <span class="it-as">${esc(s.hotel)} · ${esc(NOMES[s.situacao] || s.situacao || "")}</span><time>${esc(dataBr(s.data))}</time>
+    <span class="it-pv">${esc([doc && "CPF/CNPJ " + doc, s.email, s.nfs?.length ? "NF " + s.nfs.join(", ") : ""].filter(Boolean).join(" · "))}</span></div>`;
+}
+function secoesDaBusca(busca) {
+  const t0 = performance.now(), peds = pedidosDaBusca(busca);
+  const s = Math.max(0.01, (performance.now() - t0) / 1000).toFixed(2).replace(".", ",");
+  const vivo = cx.buscando === busca ? `<span class="ch esp">Outlook dos 4 PCs: procurando…</span>`
+    : cx.live?.termo === busca ? `<span class="ch viv">Outlook dos 4 PCs</span>` : `<span class="ch mem">já no Painel</span>`;
+  return (peds.length ? `<div class="cx-sec">Pedidos do formulário <span class="ch mem">${s} s · na hora</span></div>` + peds.map(p => linhaPedidoBusca(p, busca)).join("") : "")
+    + `<div class="cx-sec">E-mails ${vivo}</div>`;
+}
 function statusBusca(busca) {
   if (!busca) return "";
   if (cx.buscando === busca) return " · procurando no Outlook dos PCs…";
@@ -198,14 +227,15 @@ function desenharAcoes() {
 function linhaEmail(e) {   // igual à prévia aprovada (15/10/2026): quem, assunto, hora, prévia e etiquetas
   const enviado = e.pasta === "enviado";
   const cinza = !!cx.resolvendo[e.id], sel = cx.sel === e.id, naoLido = !enviado && e.lido === false && !cinza;
-  const quem = enviado ? "Para: " + (e.para || "") : (e.classes?.includes("formulario") ? "Formulário · robô" :
-    e.nome || e.de || (e.classes?.includes("aviso") ? "Aviso do Outlook" : "(sem remetente)"));
+  const form = !!e.classes?.includes("formulario"), urg = e.urgente && !cinza;
+  // como o Outlook mostra (Prévia 5, 20/10/2026): o nome de quem mandou, também no e-mail do formulário
+  const quem = enviado ? "Para: " + (e.para || "") : e.nome || e.de || (e.classes?.includes("aviso") ? "Aviso do Outlook" : "(sem remetente)");
   const situacao = cinza || e.respondido ? "respondido · " : e.pasta === "excluido" ? "excluído · " : "";
   const previa = situacao + (e.hotel ? e.hotel + " · " : "") + (e.previa || "");
   const clip = (e.anexos || []).length ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="tem anexo"><path d="M21 11l-9 9a6 6 0 01-8-8l9-9a4 4 0 016 6l-9 9a2 2 0 01-3-3l8-8"/></svg>` : "";
-  return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""}" role="option" tabindex="0"
+  return `<div class="cx-l ${naoLido ? "nao-lido" : ""} ${sel ? "sel" : ""} ${cinza ? "cinza" : ""} ${urg ? "urgente" : ""}" role="option" tabindex="0"
       aria-selected="${sel}" data-id="${esc(e.id)}" title="${e.urgente ? esc(e.motivo_urgencia || "Urgente") : ""}">
-    <span class="it-de">${esc(quem)}</span><span class="it-ic">${e.urgente && !cinza ? `<span class="urg" aria-label="urgente"></span>` : ""}${clip}</span>
+    <span class="it-de">${esc(quem)}</span><span class="it-ic">${clip}${urg ? `<svg class="band" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-label="urgente"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>` : ""}${form ? `<i class="pin" aria-label="formulário"></i>` : ""}</span>
     <span class="it-as">${esc(e.assunto || "(sem assunto)")}</span><time>${horaCurta(e.quando)}</time>
     <span class="it-pv">${esc(previa)}</span>${tagsEmail(e, cinza)}${naoLido ? `<span class="so-leitor">não lido</span>` : ""}</div>`;
 }
@@ -501,15 +531,21 @@ function fichaPedidoOl(e) {
       <button type="button" data-abrir-ficha="${esc(s.chave)}">Marcar tratativa</button></div></section>`;
 }
 // Formulário aberto como o e-mail que chega no Outlook: o hotel, a solicitação e a tabela Campo / Valor, linha a linha
-const OCULTOS_FORM = /^(enviado|carimbo|termos|importante|avalia|preenchimento|ritmo|sugest|sincroniz)/i;
+// Igual ao e-mail do Emissor Automático (Prévia 5, 20/10/2026): "Enviado por", "Dados para emissão de Nota Fiscal:", a
+// tabela Campo / Valor numa ordem fixa (os dois formulários caem nela; campo fora da lista vai para o fim) e "Enviado em"
+const OCULTOS_FORM = /^(enviado|carimbo|importante|avalia|preenchimento|ritmo|sugest|sincroniz|endereco de e-?mail|e-?mail$)/i;
+const ORDEM_FORM = [/^termos/, /documento.*tomador/, /nome.*tomador/, /^cep/, /telefone/, /cpf.*titular/, /nome.*titular/,
+  /check.?in/, /check.?out/, /informac/, /^nota dividida/, /dividida em|quantas vezes/, /valor.*nota/];
 function formularioHtml(s) {
-  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const linhas = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)));
-  const nome = campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/) || s.nome || "";
-  return `<div class="ol-form"><div class="ol-hot">${esc(s.hotel)} <span style="font-weight:400;opacity:.85">(formulário de ${esc(dataBr(s.data))})</span></div>
-    <div class="ol-sol">Solicitação — ${esc(nome)}</div>
-    <table><tr><th>Campo</th><th>Valor</th></tr>${[["E-mail do hóspede", s.email], ...linhas].map(([k, val]) =>
-      `<tr><td>${esc(k)}</td><td>${esc(val)}</td></tr>`).join("")}</table></div>`;
+  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const pos = k => { const i = ORDEM_FORM.findIndex(r => r.test(semAc(k))); return i < 0 ? ORDEM_FORM.length : i; };
+  const linhas = (s.campos || []).filter(([k, val]) => String(val || "").trim() && !OCULTOS_FORM.test(semAc(k)))
+    .map((l, i) => [l, i]).sort((a, b) => pos(a[0][0]) - pos(b[0][0]) || a[1] - b[1]).map(x => x[0]);
+  return `<div class="ol-form">${s.email ? `<div class="por">Enviado por: <span class="lnk">${esc(s.email)}</span></div>` : ""}
+    <h3>Dados para emissão de Nota Fiscal:</h3>
+    <table><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>${linhas.map(([k, val]) =>
+      `<tr><td>${esc(k)}</td><td>${esc(val)}</td></tr>`).join("")}</tbody></table>
+    <div class="em"><b>Enviado em:</b> ${esc(s.carimbo || dataBr(s.data))}</div></div>`;
 }
 function desenharLeituraCorreio() {
   desenharAcoes();
@@ -525,7 +561,7 @@ function desenharLeituraCorreio() {
   const enviado = e.pasta === "enviado", robo = (e.classes || []).includes("formulario");
   const h = !enviado && e.de ? cx.hist[e.de] : null;
   const noEspelho = (cx.dados?.emails || []).some(x => x.id === e.id), cinza = !!cx.resolvendo[e.id];
-  const nome = enviado ? nomeDaCaixa(String(e.caixa || "").toLowerCase()) : robo ? "Robô do formulário" : (e.nome || e.de || "");
+  const nome = enviado ? nomeDaCaixa(String(e.caixa || "").toLowerCase()) : (e.nome || e.de || "");
   const ender = enviado ? e.caixa : e.de;
   const para = enviado ? e.para : (e.caixa || e.para || "");
   const onde = [e.hotel, e.pc ? "PC de " + nomeAgente(e.pc) + (pcOnline(e.pc) ? "" : " (desligado)") : ""].filter(Boolean).join(" · ");
@@ -536,19 +572,27 @@ function desenharLeituraCorreio() {
         <button type="button" data-cx-faixa="lido">${e.lido === false ? "Marcar como lido" : "Marcar como não lido"}</button>
         <button type="button" class="perigo" data-cx-faixa="exc">Excluir</button></div>` : ""}`
     : `<span class="ol-sit">${cinza ? "Respondido · sai da caixa quando o Outlook do PC dono confirmar" : enviado ? "E-mail enviado · só leitura" : (PASTAS[e.pasta] || "") + " no Outlook · só leitura"}</span>`;
-  el.innerHTML = `<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
-      <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome).slice(0, 1))}</span>
-        <div class="ol-q"><b>${esc(nome)} ${ender ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span>Para <i>${esc(para)}</i>${onde ? " · " + esc(onde) : ""}</span>
+  // como o Outlook (Prévia 5, 20/10/2026): cabeçalho, de onde veio, anexos, a ficha e o texto alinhado com o nome
+  const ped = pedidoDoEmail(e), dividida = (e.quartos?.[0] || e.quartos || 0) >= 2 || !!(ped && (ped.dividida || ped.partes > 1));
+  const anexos = anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" });
+  const entra = cx.animou !== e.id ? " ol-entra" : "";
+  cx.animou = e.id;
+  el.innerHTML = `<div class="ol-leitura${entra}"><div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+      <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome))}</span>
+        <div class="ol-q"><b>${esc(nome)} ${ender && ender !== nome ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span><span class="rot-para">Para</span><i>${esc(para)}</i></span>
           ${(e.classes || []).filter(c => CLASSES[c]).length ? `<span>${e.classes.map(etiqueta).join(" ")}</span>` : ""}</div>
         <div class="ol-acoes">${botoes}<time>${esc(dataLonga(e.quando))}</time>
-          <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div></div>
+          <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div>
+      ${dividida ? `<span class="ol-etq">Nota dividida</span>` : ""}</div>
+    ${onde ? `<p class="ol-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>${esc(onde)}</p>` : ""}
+    ${anexos ? `<div class="ol-anexos">${anexos}</div>` : ""}
     ${enviado ? "" : fichaPedidoOl(e)}
     ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
     ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
     ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
-    <div class="ol-corpo">${robo && pedidoDoEmail(e) ? formularioHtml(pedidoDoEmail(e)) : corpoTexto(e.id)}${anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" })}</div>
-    ${h ? historicoHtml(h, e) : ""}`;
+    <div class="ol-corpo">${robo && ped ? formularioHtml(ped) : corpoTexto(e.id)}</div>
+    ${h ? historicoHtml(h, e) : ""}</div>`;
 }
 
 // Verificação da NF (Etapa 2): 1 motivo principal em destaque, o que a NF diz, a comparação e o resto que ele citou
@@ -761,7 +805,7 @@ document.addEventListener("click", e => {
   if (!t) return;
   const d = t.dataset;
   if (d.caixa) { abrirCaixa(d.caixa); return; }   // o trocarVista do data-vista desenha
-  if (t.classList.contains("cx-l")) return abrirEmail(d.id);
+  if (t.classList.contains("cx-l")) return d.abrirFicha ? undefined : abrirEmail(d.id);   // linha de pedido: o ouvinte de data-abrir-ficha abre a ficha
   if (d.cxHist) {
     cx.hist.aberto = cx.hist.aberto === d.cxHist ? null : d.cxHist;
     const x = Object.values(cx.hist).flatMap(h => h?.resultados || []).find(r => r.id === d.cxHist);
@@ -812,7 +856,7 @@ document.addEventListener("keydown", e => {
     e.preventDefault();
     const todas = [...document.querySelectorAll("#cx-lista .cx-l")], i = todas.indexOf(l);
     const prox = todas[Math.max(0, Math.min(todas.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
-    prox?.focus(); if (prox) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
+    prox?.focus(); if (prox?.dataset.id) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
   }
   if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { cx.sel = null; desenharCorreio(); }
 });

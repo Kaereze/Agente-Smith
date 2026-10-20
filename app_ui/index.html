@@ -1381,18 +1381,18 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .visor-pdf{width:100%;height:100%;border:0;background:#fff}
 /* E-mails EXATAMENTE como a prévia aprovada (usuário, 15/10/2026): só ícones à esquerda, abas e pesquisa no alto,
    faixa de comandos, pastas por PC, lista por dia, leitura à direita, Ficha do pedido creme; cores verde vivo e creme */
-.app.modo-ol{--chao:#0d2116;--folha:#0f2618;--folha-2:#122a1c;--linha:#21402c;--linha-forte:#2c5138;--tinta:#f1f5ee;--tinta-2:#c3d2c4;
-  --tinta-3:#93aa97;--verde:#3da755;--verde-forte:#7fd492;--verde-suave:#18402a;--verde-texto:#7fd492;--sobre-verde:#06220f;
-  --mata:#091a10;--mata-2:#122a1c;--mata-tinta:#f1f5ee;--mata-suave:#93aa97;--creme:#2b2716;--creme-tinta:#efe0b8;--nav-ativo:#f3e9cf;
-  --atencao:#e2b64c;--atencao-fundo:#33290f;--erro:#f08a7e;--erro-fundo:#3a1d19;--ok:#7fd492;--ok-fundo:#18402a;--sombra:none;
-  color-scheme:dark;background:#0d2116;color:var(--tinta)}
+.app.modo-ol{--chao:#1f1f1f;--folha:#1f1f1f;--folha-2:#2b2b2b;--linha:#333333;--linha-forte:#4a4a4a;--tinta:#f0f0f0;--tinta-2:#d0d0d0;
+  --tinta-3:#a8a8a8;--verde:#479ef5;--verde-forte:#6cb8f6;--verde-suave:#18402a;--verde-texto:#6cb8f6;--sobre-verde:#ffffff;
+  --mata:#1b1b1b;--mata-2:#2b2b2b;--mata-tinta:#f0f0f0;--mata-suave:#a8a8a8;--creme:#383838;--creme-tinta:#e6e6e6;--nav-ativo:#ffffff;
+  --atencao:#e2b64c;--atencao-fundo:#33290f;--erro:#f08a7e;--erro-fundo:#3a1d19;--ok:#6cb8f6;--ok-fundo:#18402a;--sombra:none;
+  color-scheme:dark;background:#1f1f1f;color:var(--tinta)}
 .app.modo-ol.menu-fechado{grid-template-columns:52px minmax(0,1fr)!important}
-.modo-ol .lateral{background:#091a10;border-right:1px solid #21402c}
+.modo-ol .lateral{background:#1b1b1b;border-right:1px solid #333333}
 .modo-ol .lateral .marca{padding:12px 0 10px}
-.modo-ol .lateral .selo{width:30px;height:30px;border-radius:7px;background:#3da755;color:#06220f;font-size:12px;font-weight:700}
-.modo-ol .lateral .ln{color:#93aa97!important;border-radius:8px;margin:2px 7px;padding:9px 0!important;background:none}
-.modo-ol .lateral .ln:hover{background:#122a1c;color:#f1f5ee!important}
-.modo-ol .lateral .ln[aria-current="true"]{background:#2b2716!important;color:#f3e9cf!important;box-shadow:inset 2px 0 0 #f3e9cf}
+.modo-ol .lateral .selo{width:30px;height:30px;border-radius:7px;background:#479ef5;color:#ffffff;font-size:12px;font-weight:700}
+.modo-ol .lateral .ln{color:#a8a8a8!important;border-radius:8px;margin:2px 7px;padding:9px 0!important;background:none}
+.modo-ol .lateral .ln:hover{background:#2b2b2b;color:#f0f0f0!important}
+.modo-ol .lateral .ln[aria-current="true"]{background:#383838!important;color:#ffffff!important;box-shadow:inset 2px 0 0 #ffffff}
 .modo-ol .lateral .ln .ic{width:18px!important;height:18px!important}
 .modo-ol.menu-fechado .lateral .ln .n:not(:empty):not(.em-teste){display:block!important;position:absolute;top:2px;right:2px;min-width:16px;
   height:15px;padding:0 3px;box-sizing:border-box;border-radius:8px;background:#b2382e!important;color:#fff!important;font:600 10px/15px var(--f-dado);text-align:center;border:0}
@@ -1400,125 +1400,125 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .modo-ol .lateral .nav-grupo + .nav-grupo,.modo-ol .lateral .principal + .nav-grupo{border-top:0!important;margin-top:0!important;padding-top:0!important}
 .modo-ol .recolher-menu{display:none}
 .modo-ol .lateral .rodape{padding:8px 6px}
-.modo-ol #btn-enviar{background:none;border:0;color:#93aa97}
+.modo-ol #btn-enviar{background:none;border:0;color:#a8a8a8}
 .modo-ol .op-btn .av{width:28px;height:28px}
 /* topo: abas, "Caixa de" e a pesquisa, como a faixa do Outlook */
 .ol-abas{display:none}
-.modo-ol .topo{background:#0b1d13;border-bottom:0;padding:6px 14px 0;min-height:0;gap:10px}
+.modo-ol .topo{background:#1f1f1f;border-bottom:0;padding:6px 14px 0;min-height:0;gap:10px}
 .modo-ol .trilha-nav{display:none}
 .modo-ol .ol-abas{display:flex;align-items:flex-end;gap:2px}
-.modo-ol .ol-abas button{border:0;background:none;padding:6px 10px 7px;font:inherit;font-size:13px;color:#c3d2c4;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
-.modo-ol .ol-abas button[aria-pressed="true"]{color:#f1f5ee;font-weight:600;border-color:#3da755}
-.modo-ol .seletor-caixa .sc-botao{height:30px;border:1px solid #4a4227;background:#2b2716;color:#efe0b8;border-radius:6px;font-size:12.5px}
-.modo-ol .seletor-caixa .sc-botao b{color:#f1f5ee}
-.modo-ol .topo .busca{margin-left:auto;width:min(440px,40%);height:30px;border:1px solid #2c5138;border-radius:6px;background:#122a1c;color:#93aa97}
-.modo-ol .topo .busca input{color:#f1f5ee;font-size:12.5px}
-.modo-ol .topo .busca input::placeholder{color:#93aa97}
+.modo-ol .ol-abas button{border:0;background:none;padding:6px 10px 7px;font:inherit;font-size:13px;color:#d0d0d0;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
+.modo-ol .ol-abas button[aria-pressed="true"]{color:#f0f0f0;font-weight:600;border-color:#479ef5}
+.modo-ol .seletor-caixa .sc-botao{height:30px;border:1px solid #6b6b6b;background:#383838;color:#e6e6e6;border-radius:6px;font-size:12.5px}
+.modo-ol .seletor-caixa .sc-botao b{color:#f0f0f0}
+.modo-ol .topo .busca{margin-left:auto;width:min(440px,40%);height:30px;border:1px solid #4a4a4a;border-radius:6px;background:#2b2b2b;color:#a8a8a8}
+.modo-ol .topo .busca input{color:#f0f0f0;font-size:12.5px}
+.modo-ol .topo .busca input::placeholder{color:#a8a8a8}
 .modo-ol .topo-filtro{display:none}
-.modo-ol .rodape-status{background:#091a10;border-top:1px solid #21402c}
+.modo-ol .rodape-status{background:#1b1b1b;border-top:1px solid #333333}
 .ol-contagem{display:none}
-.modo-ol .ol-contagem{display:inline-flex;gap:18px;font-size:12px;color:#93aa97}
+.modo-ol .ol-contagem{display:inline-flex;gap:18px;font-size:12px;color:#a8a8a8}
 /* a tela: faixa de comandos + 3 painéis de ponta a ponta */
-#v-correio.ol{display:grid;grid-template-rows:auto minmax(0,1fr);background:#0d2116}
+#v-correio.ol{display:grid;grid-template-rows:auto minmax(0,1fr);background:#1f1f1f}
 #v-correio.ol .cx-cab{display:none}
-#v-correio.ol .cx-faixa{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px 14px 8px;background:#0b1d13;border-bottom:1px solid #21402c}
+#v-correio.ol .cx-faixa{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px 14px 8px;background:#1f1f1f;border-bottom:1px solid #333333}
 #v-correio.ol .cx-faixa button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px;border:0;border-radius:6px;background:none;
-  color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:none;margin:0}
-#v-correio.ol .cx-faixa button:hover:not(:disabled){background:#173222;color:#f1f5ee}
+  color:#d0d0d0;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:none;margin:0}
+#v-correio.ol .cx-faixa button:hover:not(:disabled){background:#3a3a3a;color:#f0f0f0}
 #v-correio.ol .cx-faixa button:disabled{opacity:.45;cursor:default}
-#v-correio.ol .cx-faixa button.p{background:#3da755;color:#06220f;font-weight:600}
-#v-correio.ol .cx-faixa button.p:hover{background:#4cba64;color:#06220f}
+#v-correio.ol .cx-faixa button.p{background:#479ef5;color:#ffffff;font-weight:600}
+#v-correio.ol .cx-faixa button.p:hover{background:#5aa9f6;color:#ffffff}
 #v-correio.ol .cx-faixa svg{width:16px;height:16px;flex:none}
-#v-correio.ol .cx-faixa .sep{width:1px;height:20px;background:#2c5138;margin:0 6px}
+#v-correio.ol .cx-faixa .sep{width:1px;height:20px;background:#4a4a4a;margin:0 6px}
 #v-correio.ol .cx-faixa .dir{margin-left:auto;display:flex;gap:2px}
 #v-correio.ol #cx-mesa{display:grid;grid-template-columns:262px 372px minmax(0,1fr);gap:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;
-  background:#0d2116;min-height:0;overflow:hidden}
+  background:#1f1f1f;min-height:0;overflow:hidden}
 #v-correio.ol.sem-pastas #cx-mesa{grid-template-columns:372px minmax(0,1fr)}
 #v-correio.ol.sem-pastas .cx-pastas{display:none}
-#v-correio.ol .cx-quadro{display:flex;flex-direction:column;border:0;border-right:1px solid #21402c;border-radius:0;box-shadow:none;background:#0d2116;min-height:0}
+#v-correio.ol .cx-quadro{display:flex;flex-direction:column;border:0;border-right:1px solid #333333;border-radius:0;box-shadow:none;background:#1f1f1f;min-height:0}
 #v-correio.ol #cx-lista{flex:1;min-height:0;overflow-y:auto}
-#v-correio.ol .cx-direita{display:flex;flex-direction:column;min-width:0;min-height:0;margin:0;gap:0;background:#0f2618}
+#v-correio.ol .cx-direita{display:flex;flex-direction:column;min-width:0;min-height:0;margin:0;gap:0;background:#1f1f1f}
 #v-correio.ol #cx-acoes{display:none}
-#v-correio.ol #cx-leitura{flex:1;border:0;border-radius:0;box-shadow:none;background:#0f2618;overflow-y:auto;display:block;padding:0}
+#v-correio.ol #cx-leitura{flex:1;border:0;border-radius:0;box-shadow:none;background:#1f1f1f;overflow-y:auto;display:block;padding:0}
 /* pastas */
-#v-correio.ol .cx-pastas{overflow-y:auto;padding:8px 0;background:#0c1f14;border-right:1px solid #21402c;min-height:0}
-.ol-gr{display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px 2px 12px;border:0;background:none;color:#f1f5ee;font:600 12.5px var(--f-texto,inherit);cursor:pointer;text-align:left}
-.ol-gr .chev,.ol-cx .chev{display:inline-block;width:12px;color:#93aa97;font-size:10px;transition:transform .15s;flex:none}
+#v-correio.ol .cx-pastas{overflow-y:auto;padding:8px 0;background:#1f1f1f;border-right:1px solid #333333;min-height:0}
+.ol-gr{display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px 2px 12px;border:0;background:none;color:#f0f0f0;font:600 12.5px var(--f-texto,inherit);cursor:pointer;text-align:left}
+.ol-gr .chev,.ol-cx .chev{display:inline-block;width:12px;color:#a8a8a8;font-size:10px;transition:transform .15s;flex:none}
 .ol-gr[aria-expanded="false"] .chev,.ol-cx[aria-expanded="false"] .chev{transform:rotate(-90deg)}
-.ol-fav{display:flex;align-items:center;gap:8px;width:100%;padding:5px 10px 5px 28px;border:0;background:none;color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;text-align:left}
-.ol-fav svg{width:14px;height:14px;color:#93aa97;flex:none}
-.ol-fav em,.ol-cx em,.ol-sub em,.ol-mais-cx em{margin-left:auto;font-style:normal;font-weight:600;font-size:12px;color:#7fd492}
+.ol-fav{display:flex;align-items:center;gap:8px;width:100%;padding:5px 10px 5px 28px;border:0;background:none;color:#d0d0d0;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.ol-fav svg{width:14px;height:14px;color:#a8a8a8;flex:none}
+.ol-fav em,.ol-cx em,.ol-sub em,.ol-mais-cx em{margin-left:auto;font-style:normal;font-weight:600;font-size:12px;color:#6cb8f6}
 .ol-fav em.r{color:#f08a7e}
-.ol-fav:hover,.ol-cx:hover,.ol-sub:hover,.ol-mais-cx:hover{background:#122a1c}
-.ol-fav.on,.ol-sub.on{background:#2b2716;color:#f3e9cf;font-weight:600;box-shadow:inset 3px 0 0 #f3e9cf}
-.ol-hr{border:0;border-top:1px solid #21402c;margin:8px 12px}
-.ol-pc{padding:8px 10px 2px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#93aa97;cursor:pointer;display:flex;gap:6px;align-items:baseline}
-.ol-pc span{letter-spacing:0;text-transform:none;font-family:var(--f-dado,monospace);font-size:10.5px;color:#6f8a75}
-.ol-cx{display:flex;align-items:center;gap:8px;width:100%;padding:5px 10px 5px 20px;border:0;background:none;color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.ol-fav:hover,.ol-cx:hover,.ol-sub:hover,.ol-mais-cx:hover{background:#2b2b2b}
+.ol-fav.on,.ol-sub.on{background:#383838;color:#ffffff;font-weight:600;box-shadow:inset 3px 0 0 #ffffff}
+.ol-hr{border:0;border-top:1px solid #333333;margin:8px 12px}
+.ol-pc{padding:8px 10px 2px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#a8a8a8;cursor:pointer;display:flex;gap:6px;align-items:baseline}
+.ol-pc span{letter-spacing:0;text-transform:none;font-family:var(--f-dado,monospace);font-size:10.5px;color:#8a8a8a}
+.ol-cx{display:flex;align-items:center;gap:8px;width:100%;padding:5px 10px 5px 20px;border:0;background:none;color:#d0d0d0;font:inherit;font-size:13px;cursor:pointer;text-align:left}
 .ol-cx .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ol-cx .nm small{display:block;font-size:10.5px;color:#6f8a75;font-family:var(--f-dado,monospace);overflow:hidden;text-overflow:ellipsis}
-.ol-cx.tem .nm b{color:#f1f5ee}
+.ol-cx .nm small{display:block;font-size:10.5px;color:#8a8a8a;font-family:var(--f-dado,monospace);overflow:hidden;text-overflow:ellipsis}
+.ol-cx.tem .nm b{color:#f0f0f0}
 .ol-cx .nm b{font-weight:500}
-.ol-sub{display:flex;align-items:center;width:100%;padding:4px 10px 4px 46px;border:0;background:none;color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;text-align:left}
-.ol-mais-cx{display:flex;align-items:center;gap:6px;width:100%;padding:5px 10px 5px 20px;border:0;background:none;color:#c3d2c4;font:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left}
-.ol-mais-cx.fechado{color:#c3d2c4}
+.ol-sub{display:flex;align-items:center;width:100%;padding:4px 10px 4px 46px;border:0;background:none;color:#d0d0d0;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.ol-mais-cx{display:flex;align-items:center;gap:6px;width:100%;padding:5px 10px 5px 20px;border:0;background:none;color:#d0d0d0;font:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left}
+.ol-mais-cx.fechado{color:#d0d0d0}
 /* lista */
-.ol-lcab{display:flex;align-items:center;gap:4px;padding:8px 14px 6px;border-bottom:1px solid #21402c}
-.ol-lcab button{border:0;background:none;padding:5px 8px;font:inherit;font-size:13px;color:#c3d2c4;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
-.ol-lcab button[aria-pressed="true"]{color:#7fd492;font-weight:600;border-color:#3da755}
-.ol-lcab .ol-ord{margin-left:auto;font-size:12px;color:#93aa97;text-transform:none;letter-spacing:0;font-weight:400}
-.ol-ltit{padding:8px 14px 4px;font-size:12px;color:#93aa97}
-.ol-ltit b{color:#f1f5ee;font-weight:600}
+.ol-lcab{display:flex;align-items:center;gap:4px;padding:8px 14px 6px;border-bottom:1px solid #333333}
+.ol-lcab button{border:0;background:none;padding:5px 8px;font:inherit;font-size:13px;color:#d0d0d0;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
+.ol-lcab button[aria-pressed="true"]{color:#6cb8f6;font-weight:600;border-color:#479ef5}
+.ol-lcab .ol-ord{margin-left:auto;font-size:12px;color:#a8a8a8;text-transform:none;letter-spacing:0;font-weight:400}
+.ol-ltit{padding:8px 14px 4px;font-size:12px;color:#a8a8a8}
+.ol-ltit b{color:#f0f0f0;font-weight:600}
 #v-correio.ol .cx-grupo{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:6px;padding:6px 14px!important;font:600 12px var(--f-texto,inherit)!important;
-  letter-spacing:0!important;text-transform:none!important;color:#c3d2c4!important;background:#10261a!important;border-top:1px solid #21402c;border-bottom:1px solid #21402c}
-#v-correio.ol .cx-l{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;padding:8px 14px 8px 17px;border-bottom:1px solid #18341f;
+  letter-spacing:0!important;text-transform:none!important;color:#d0d0d0!important;background:#2b2b2b!important;border-top:1px solid #333333;border-bottom:1px solid #333333}
+#v-correio.ol .cx-l{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;padding:8px 14px 8px 17px;border-bottom:1px solid #2a2a2a;
   background:none;position:relative;cursor:pointer;min-height:0!important}
-#v-correio.ol .cx-l:hover{background:#122a1c}
-#v-correio.ol .cx-l.nao-lido::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#3da755}
-#v-correio.ol .cx-l.sel{background:#2b2716;outline:1px solid #4a4227;outline-offset:-1px}
-#v-correio.ol .cx-l.sel::before{background:#3da755}
+#v-correio.ol .cx-l:hover{background:#2b2b2b}
+#v-correio.ol .cx-l.nao-lido::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#479ef5}
+#v-correio.ol .cx-l.sel{background:#383838;outline:1px solid #6b6b6b;outline-offset:-1px}
+#v-correio.ol .cx-l.sel::before{background:#479ef5}
 #v-correio.ol .cx-l.cinza{opacity:.55;filter:grayscale(1)}
-.it-de{font-size:13.5px;color:#f1f5ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it-de{font-size:13.5px;color:#f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cx-l.nao-lido .it-de{font-weight:700}
-.it-ic{display:flex;align-items:center;gap:6px;color:#93aa97;justify-self:end}
+.it-ic{display:flex;align-items:center;gap:6px;color:#a8a8a8;justify-self:end}
 .it-ic svg{width:13px;height:13px}
 .it-ic .urg{width:8px;height:8px;border-radius:50%;background:#f08a7e}
-.it-as{font-size:12.5px;color:#c3d2c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cx-l.nao-lido .it-as{color:#7fd492;font-weight:600}
-.cx-l time{font-size:12px;color:#93aa97;text-align:right;white-space:nowrap}
-.cx-l.nao-lido time{color:#7fd492;font-weight:600}
-.it-pv{grid-column:1/-1;font-size:12px;color:#93aa97;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it-as{font-size:12.5px;color:#d0d0d0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-l.nao-lido .it-as{color:#6cb8f6;font-weight:600}
+.cx-l time{font-size:12px;color:#a8a8a8;text-align:right;white-space:nowrap}
+.cx-l.nao-lido time{color:#6cb8f6;font-weight:600}
+.it-pv{grid-column:1/-1;font-size:12px;color:#a8a8a8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .it-tg{grid-column:1/-1;display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}
 #v-correio.ol .tg{font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;border:1px solid}
 #v-correio.ol .tg.t-urg{color:#f08a7e;background:#3a1d19;border-color:#5a2a25}
-#v-correio.ol .tg.t-div{color:#efe0b8;background:#2b2716;border-color:#4a4227}
+#v-correio.ol .tg.t-div{color:#e6e6e6;background:#383838;border-color:#6b6b6b}
 #v-correio.ol .tg.t-falta{color:#e2b64c;background:#33290f;border-color:#5c4a1d}
-#v-correio.ol .tg.t-form{color:#7fd492;background:#18402a;border-color:#2d5c3c}
+#v-correio.ol .tg.t-form{color:#6cb8f6;background:#18402a;border-color:#2d5c3c}
 /* leitura */
 .ol-cab{padding:14px 22px 10px}
-.ol-cab h1{margin:0 0 12px;font-size:19px;font-weight:600;letter-spacing:-.01em;color:#f1f5ee}
+.ol-cab h1{margin:0 0 12px;font-size:19px;font-weight:600;letter-spacing:-.01em;color:#f0f0f0}
 .ol-rem{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:2px 12px;align-items:start}
-.ol-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#5b4a8a;color:#fff;font-weight:600;font-size:15px}
-.ol-av.robo{background:#2f6b54}
+.ol-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#7a55b4;color:#fff;font-weight:600;font-size:15px}
+.ol-av.robo{background:#b146c2}
 .ol-q{min-width:0}
-.ol-q b{display:block;font-size:14px;font-weight:600;color:#f1f5ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ol-q b small{font-weight:400;font-size:12.5px;color:#93aa97}
-.ol-q span{display:block;font-size:12.5px;color:#93aa97;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ol-q span i{font-style:normal;color:#c3d2c4}
+.ol-q b{display:block;font-size:14px;font-weight:600;color:#f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ol-q b small{font-weight:400;font-size:12.5px;color:#a8a8a8}
+.ol-q span{display:block;font-size:12.5px;color:#a8a8a8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ol-q span i{font-style:normal;color:#d0d0d0}
 .ol-acoes{display:flex;flex-direction:column;align-items:flex-end;gap:8px;position:relative}
-.ol-bts{display:flex;border:1px solid #2c5138;border-radius:6px;overflow:hidden}
-.ol-bts button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-right:1px solid #2c5138;border-radius:0;
-  background:#122a1c;color:#f1f5ee;font:inherit;font-size:13px;cursor:pointer;margin:0}
+.ol-bts{display:flex;border:1px solid #4a4a4a;border-radius:6px;overflow:hidden}
+.ol-bts button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-right:1px solid #4a4a4a;border-radius:0;
+  background:#2b2b2b;color:#f0f0f0;font:inherit;font-size:13px;cursor:pointer;margin:0}
 .ol-bts button:last-child{border-right:0}
-.ol-bts button:hover{background:#173222}
+.ol-bts button:hover{background:#3a3a3a}
 .ol-bts svg{width:14px;height:14px}
-.ol-acoes time{font-size:12px;color:#93aa97}
-.ol-acoes .ol-sit{font-size:12px;color:#93aa97}
-.ol-menu{position:absolute;top:34px;right:0;z-index:5;min-width:200px;background:#122a1c;border:1px solid #2c5138;border-radius:8px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.ol-menu button{display:block;width:100%;text-align:left;border:0;background:none;color:#f1f5ee;font:inherit;font-size:13px;padding:7px 10px;border-radius:5px;cursor:pointer}
-.ol-menu button:hover{background:#173222}
+.ol-acoes time{font-size:12px;color:#a8a8a8}
+.ol-acoes .ol-sit{font-size:12px;color:#a8a8a8}
+.ol-menu{position:absolute;top:34px;right:0;z-index:5;min-width:200px;background:#2b2b2b;border:1px solid #4a4a4a;border-radius:8px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.ol-menu button{display:block;width:100%;text-align:left;border:0;background:none;color:#f0f0f0;font:inherit;font-size:13px;padding:7px 10px;border-radius:5px;cursor:pointer}
+.ol-menu button:hover{background:#3a3a3a}
 .ol-menu button.perigo{color:#f08a7e}
-.ol-ficha{margin:12px 22px 0;border:1px solid #e2d3a8;border-radius:10px;background:#f3e9cf;color:#2a2210}
+.ol-ficha{margin:12px 22px 0;border:1px solid #e2d3a8;border-radius:10px;background:#ffffff;color:#2a2210}
 .ol-ficha .ft{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #e2d3a8;font-size:12.5px;flex-wrap:wrap}
 .ol-ficha .ft b{font-weight:600}
 .ol-ficha .prz{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:#8a5a00;font-weight:600}
@@ -1534,48 +1534,48 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .ol-ficha .fb{display:flex;gap:8px;padding:8px 14px;border-top:1px solid #e2d3a8;flex-wrap:wrap}
 .ol-ficha .fb button{height:28px;padding:0 12px;border-radius:6px;border:1px solid #cdbb88;background:#fbf5e4;color:#2a2210;font:inherit;font-size:13px;font-weight:500;cursor:pointer;margin:0}
 .ol-ficha .fb button.p{background:#1f6b33;border-color:#1f6b33;color:#fff}
-.ol-corpo{padding:16px 22px;line-height:1.55;color:#c3d2c4;font-size:13.5px}
-.ol-corpo .cx-texto{color:#c3d2c4;font-size:13.5px;max-width:78ch}
+.ol-corpo{padding:16px 22px;line-height:1.55;color:#d0d0d0;font-size:13.5px}
+.ol-corpo .cx-texto{color:#d0d0d0;font-size:13.5px;max-width:78ch}
 #v-correio.ol .cx-verifica,#v-correio.ol .cx-aviso-nf{margin:12px 22px 0}
 #v-correio.ol .cx-anexos{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-#v-correio.ol .cx-anexo{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border:1px solid #2c5138;border-radius:8px;background:#122a1c;
-  color:#f1f5ee;font:inherit;font-size:12.5px;cursor:pointer;min-width:200px;text-align:left}
-#v-correio.ol .cx-anexo b{width:38px;height:38px;border-radius:6px;display:grid;place-items:center;background:#24402f;color:#7fd492;font-size:10.5px}
+#v-correio.ol .cx-anexo{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border:1px solid #4a4a4a;border-radius:8px;background:#2b2b2b;
+  color:#f0f0f0;font:inherit;font-size:12.5px;cursor:pointer;min-width:200px;text-align:left}
+#v-correio.ol .cx-anexo b{width:38px;height:38px;border-radius:6px;display:grid;place-items:center;background:#3a3a3a;color:#6cb8f6;font-size:10.5px}
 #v-correio.ol .cx-hist{margin:4px 22px 22px}
-.ol-vazio{height:100%;display:grid;place-items:center;align-content:center;gap:10px;text-align:center;color:#93aa97;padding:40px}
+.ol-vazio{height:100%;display:grid;place-items:center;align-content:center;gap:10px;text-align:center;color:#a8a8a8;padding:40px}
 .ol-vazio svg{width:46px;height:46px;opacity:.5}
-.ol-vazio b{font-size:15px;color:#c3d2c4}
+.ol-vazio b{font-size:15px;color:#d0d0d0}
 @media (max-width:1180px){#v-correio.ol #cx-mesa{grid-template-columns:340px minmax(0,1fr)} #v-correio.ol .cx-pastas{display:none}}
 @media (max-width:800px){#v-correio.ol #cx-mesa{grid-template-columns:1fr;grid-template-rows:minmax(0,45%) minmax(0,1fr)}
-  #v-correio.ol .cx-quadro{border-right:0;border-bottom:1px solid #21402c}}
+  #v-correio.ol .cx-quadro{border-right:0;border-bottom:1px solid #333333}}
 /* Todas as páginas no layout do Outlook (usuário, 15/10/2026 à noite): mesma faixa no topo, cores e fonte */
 .app.modo-ol{--f-titulo:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif}
 .modo-ol .topo{flex-wrap:wrap}
 .modo-ol .palco:has(> .vista:not(.oculta) .com-leitura) > .topo{display:flex!important}
 .ol-faixa-g{display:none}
 .modo-ol:not(.vista-correio) .ol-faixa-g{display:flex;align-items:center;gap:2px;flex-wrap:wrap;flex-basis:100%;margin:0 -14px;padding:6px 14px 8px;
-  border-bottom:1px solid #21402c}
+  border-bottom:1px solid #333333}
 .modo-ol .ol-faixa-g button{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px;border:0;border-radius:6px;background:none;
-  color:#c3d2c4;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:none;margin:0}
-.modo-ol .ol-faixa-g button:hover{background:#173222;color:#f1f5ee}
-.modo-ol .ol-faixa-g button.p{background:#3da755;color:#06220f;font-weight:600}
+  color:#d0d0d0;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;box-shadow:none;margin:0}
+.modo-ol .ol-faixa-g button:hover{background:#3a3a3a;color:#f0f0f0}
+.modo-ol .ol-faixa-g button.p{background:#479ef5;color:#ffffff;font-weight:600}
 .modo-ol .ol-faixa-g svg{width:16px;height:16px;flex:none}
-.modo-ol .ol-faixa-g .sep{width:1px;height:20px;background:#2c5138;margin:0 6px}
+.modo-ol .ol-faixa-g .sep{width:1px;height:20px;background:#4a4a4a;margin:0 6px}
 .modo-ol:not(.vista-correio) .ol-contagem{display:none}
-.modo-ol .vista{background:#0d2116}
+.modo-ol .vista{background:#1f1f1f}
 /* formulário aberto: Campo / Valor separados, como o e-mail que chega no Outlook */
 .ol-form{margin-top:4px;max-width:900px}
-.ol-form .ol-hot{margin:0 0 8px;padding:6px 12px;background:#2f8f6a;color:#fff;font-weight:600;border-radius:4px}
-.ol-form .ol-sol{color:#5fc27a;font-weight:600;margin:6px 0 8px}
-.ol-form table{width:100%;border-collapse:collapse;font-size:13px;border:1px solid #2c5138}
-.ol-form th{background:#2f8f6a;color:#fff;text-align:left;padding:7px 12px;font-weight:600}
-.ol-form td{padding:7px 12px;border-bottom:1px solid #2c5138;color:#f1f5ee;vertical-align:top;overflow-wrap:anywhere}
-.ol-form td + td{border-left:1px solid #2c5138}
-.ol-form tr:nth-child(even) td{background:#13301f}
-.ol-form td:first-child{font-weight:600;color:#c3d2c4;width:38%}
+.ol-form .ol-hot{margin:0 0 8px;padding:6px 12px;background:#a8895c;color:#fff;font-weight:600;border-radius:4px}
+.ol-form .ol-sol{color:#6cb8f6;font-weight:600;margin:6px 0 8px}
+.ol-form table{width:100%;border-collapse:collapse;font-size:13px;border:1px solid #4a4a4a}
+.ol-form th{background:#a8895c;color:#fff;text-align:left;padding:7px 12px;font-weight:600}
+.ol-form td{padding:7px 12px;border-bottom:1px solid #4a4a4a;color:#f0f0f0;vertical-align:top;overflow-wrap:anywhere}
+.ol-form td + td{border-left:1px solid #4a4a4a}
+.ol-form tr:nth-child(even) td{background:#262626}
+.ol-form td:first-child{font-weight:600;color:#d0d0d0;width:38%}
 .ol-ficha .fg{grid-template-columns:repeat(5,minmax(0,1fr))}
 .ol-ficha .ft .div{padding:1px 7px;border-radius:4px;background:#e9dcb6;color:#5c4720;font-size:11.5px;font-weight:600}
-.cx-h-nota{font-size:12px;color:#93aa97;padding:6px 0}
+.cx-h-nota{font-size:12px;color:#a8a8a8;padding:6px 0}
 /* Tipografia única, igual à caixa de entrada aprovada (usuário, 17/10/2026: "verifica o espaçamento das letras"):
    texto sem espaçamento; títulos -0,01em; rótulos pequenos em maiúsculas 11px com 0,05em; números na fonte do texto,
    alinhados (a fonte "de máquina" fica só no e-mail das caixas e no nome dos PCs) */
@@ -1591,20 +1591,191 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
    agente e prazo; etiquetas) e a ficha sempre à direita */
 .modo-ol #mesa .nf-cab,.modo-ol #linhas-cab:has(.nf-cab){display:none!important}
 .modo-ol #mesa .nf-l.col{grid-template-columns:minmax(0,1fr) auto auto!important;grid-template-areas:"nome nome hora" "hotel op prazo" "sit sit sit";
-  gap:2px 10px!important;padding:8px 14px 8px 17px!important;align-items:baseline;border-bottom:1px solid #18341f}
-.modo-ol #mesa .nf-l.col:hover{background:#122a1c}
-.modo-ol #mesa .nf-l.col.sel{background:#2b2716;outline:1px solid #4a4227;outline-offset:-1px}
-.modo-ol #mesa .nf-l.col .c-nome{grid-area:nome;font-size:13.5px;color:#f1f5ee}
-.modo-ol #mesa .nf-l.col .c-hora{grid-area:hora;font-size:12px;color:#93aa97}
-.modo-ol #mesa .nf-l.col.nao-lido .c-hora{color:#7fd492;font-weight:600}
-.modo-ol #mesa .nf-l.col .c-hotel{grid-area:hotel;font-size:12.5px;color:#c3d2c4}
-.modo-ol #mesa .nf-l.col .c-op{grid-area:op;font-size:12px;color:#93aa97}
+  gap:2px 10px!important;padding:8px 14px 8px 17px!important;align-items:baseline;border-bottom:1px solid #2a2a2a}
+.modo-ol #mesa .nf-l.col:hover{background:#2b2b2b}
+.modo-ol #mesa .nf-l.col.sel{background:#383838;outline:1px solid #6b6b6b;outline-offset:-1px}
+.modo-ol #mesa .nf-l.col .c-nome{grid-area:nome;font-size:13.5px;color:#f0f0f0}
+.modo-ol #mesa .nf-l.col .c-hora{grid-area:hora;font-size:12px;color:#a8a8a8}
+.modo-ol #mesa .nf-l.col.nao-lido .c-hora{color:#6cb8f6;font-weight:600}
+.modo-ol #mesa .nf-l.col .c-hotel{grid-area:hotel;font-size:12.5px;color:#d0d0d0}
+.modo-ol #mesa .nf-l.col .c-op{grid-area:op;font-size:12px;color:#a8a8a8}
 .modo-ol #mesa .nf-l.col .c-prazo{grid-area:prazo;justify-self:end;font-size:12px}
 .modo-ol #mesa .nf-l.col .c-sit{grid-area:sit;white-space:normal;display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
 .modo-ol #mesa .nf-l.col .c-sit:empty{display:none}
 .modo-ol #mesa .nf-l.col .c-op,.modo-ol #mesa .nf-l.col .c-prazo{display:block!important}
 /* Urgência fica nos Favoritos da caixa de entrada: sai da barra da esquerda (usuário, 17/10/2026) */
 .modo-ol .lateral .ln[data-caixa="urgencia"]{display:none!important}
+/* ===== Prévia 5 no Painel (aprovada em 20/10/2026: "use exatamente esse design"): Outlook escuro, espaçamento folgado =====
+   Cores do Outlook escuro (cinzas + azul #479ef5), fonte do Outlook, faixa de comandos em caixa, ficha em 3 faixas,
+   formulário com a tabela Campo / Valor de cabeçalho dourado (igual ao e-mail do Emissor Automático). Prévia no quadro
+   "Painel Fiscal — Repaginação", página "Prévia 5". Animações respeitam "reduzir movimento" do Windows. */
+.app.modo-ol{--chao:#1f1f1f;--folha:#242424;--folha-2:#2b2b2b;--linha:#333333;--linha-forte:#4a4a4a;--verde-suave:#173b63;--verde-texto:#6cb8f6;
+  --f-texto:"Segoe UI",system-ui,-apple-system,sans-serif;--f-titulo:"Segoe UI",system-ui,sans-serif;--f-dado:"Segoe UI",system-ui,sans-serif;
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:#1f1f1f}
+.modo-ol .ol-pc span,.modo-ol .ol-cx .nm small{font-family:"Segoe UI",system-ui,sans-serif!important}
+/* trilho da esquerda: ícones claros, o ativo com o traço azul (como o Outlook) */
+.modo-ol .lateral{background:#1b1b1b;border-right:1px solid #2b2b2b}
+.modo-ol .lateral .selo{width:26px;height:26px;border-radius:5px;background:#0f6cbd;color:#fff;font-size:11px}
+.modo-ol .lateral .ln{color:#c8c8c8!important}
+.modo-ol .lateral .ln:hover{background:#2d2d2d!important;color:#fff!important}
+.modo-ol .lateral .ln[aria-current="true"]{background:none!important;color:#fff!important;box-shadow:inset 3px 0 0 #479ef5}
+.modo-ol.menu-fechado .lateral .ln .n:not(:empty):not(.em-teste){background:#c4314b!important}
+/* topo: abas e pesquisa */
+.modo-ol .topo{background:#1f1f1f;padding:6px 14px 0}
+.modo-ol .ol-abas button{color:#e0e0e0;padding:6px 10px 8px}
+.modo-ol .ol-abas button[aria-pressed="true"]{color:#fff;border-color:#479ef5}
+.modo-ol .topo .busca{border:1px solid #5a5a5a;border-radius:4px;background:#2b2b2b;color:#bdbdbd;transition:border-color .15s,box-shadow .15s}
+.modo-ol .topo .busca:focus-within{border-color:#479ef5;box-shadow:0 0 0 3px rgba(71,158,245,.15)}
+.modo-ol .seletor-caixa .sc-botao{border:1px solid #5a5a5a;background:#2b2b2b;color:#e6e6e6;border-radius:4px}
+/* faixa de comandos: uma caixa cinza arredondada, como a do Outlook */
+#v-correio.ol .cx-faixa,.modo-ol:not(.vista-correio) .ol-faixa-g{margin:6px 10px 10px;padding:4px 8px;border-radius:6px;background:#292929;border-bottom:0;gap:4px}
+.modo-ol:not(.vista-correio) .ol-faixa-g{margin:6px 0 10px;flex-basis:100%}
+#v-correio.ol .cx-faixa button,.modo-ol .ol-faixa-g button{color:#e6e6e6;border-radius:4px;padding:0 10px}
+#v-correio.ol .cx-faixa button:hover:not(:disabled),.modo-ol .ol-faixa-g button:hover{background:#3a3a3a;color:#fff}
+#v-correio.ol .cx-faixa button svg,.modo-ol .ol-faixa-g button svg{color:#bdbdbd}
+#v-correio.ol .cx-faixa button.p,.modo-ol .ol-faixa-g button.p{background:none;color:#e6e6e6;font-weight:400}
+#v-correio.ol .cx-faixa button.p svg,.modo-ol .ol-faixa-g button.p svg{color:#479ef5}
+#v-correio.ol .cx-faixa button.p:hover,.modo-ol .ol-faixa-g button.p:hover{background:#3a3a3a;color:#fff}
+#v-correio.ol .cx-faixa .sep,.modo-ol .ol-faixa-g .sep{background:#444;height:22px;margin:0 4px}
+/* os três painéis: pastas | lista | leitura, com 10 px entre eles */
+#v-correio.ol{background:#1f1f1f}
+#v-correio.ol #cx-mesa{grid-template-columns:286px 320px minmax(0,1fr);gap:10px;margin:0 10px 8px;background:#1f1f1f}
+#v-correio.ol.sem-pastas #cx-mesa{grid-template-columns:340px minmax(0,1fr)}
+#v-correio.ol .cx-pastas,#v-correio.ol .cx-quadro,#v-correio.ol .cx-direita,#v-correio.ol #cx-leitura{background:#1f1f1f;border:0;border-radius:6px}
+#v-correio.ol .cx-pastas{padding:6px 0}
+/* pastas */
+.modo-ol .ol-gr{padding:10px 12px 5px;font-size:14px;font-weight:400;color:#e6e6e6}
+.modo-ol .ol-fav,.modo-ol .ol-cx,.modo-ol .ol-sub,.modo-ol .ol-mais-cx{margin:0 6px;width:calc(100% - 12px);border-radius:4px;color:#e0e0e0;transition:background .12s}
+.modo-ol .ol-fav,.modo-ol .ol-cx,.modo-ol .ol-mais-cx{padding:7px 12px 7px 22px}
+.modo-ol .ol-sub{padding:7px 12px 7px 40px}
+.modo-ol .ol-fav:hover,.modo-ol .ol-cx:hover,.modo-ol .ol-sub:hover,.modo-ol .ol-mais-cx:hover{background:#2d2d2d}
+.modo-ol .ol-fav.on,.modo-ol .ol-sub.on{background:#383838;color:#fff;font-weight:600;box-shadow:none}
+.modo-ol .ol-fav em,.modo-ol .ol-cx em,.modo-ol .ol-sub em,.modo-ol .ol-mais-cx em{color:#6cb8f6}
+.modo-ol .ol-hr{border-top-color:#333;margin:10px 12px}
+.modo-ol .ol-pc{padding:12px 12px 4px}
+/* lista: 2 andares como o Outlook (quem e quando; assunto em azul; prévia) */
+.modo-ol .ol-lcab{padding:10px 14px 8px;border-bottom:0}
+.modo-ol .ol-lcab button{font-size:14px;color:#e0e0e0;padding:4px 6px}
+.modo-ol .ol-lcab button[aria-pressed="true"]{color:#6cb8f6;border-color:#479ef5;font-weight:400}
+.modo-ol .ol-ltit{padding:2px 14px 8px}
+#v-correio.ol .cx-grupo{padding:7px 14px!important;color:#e6e6e6!important;background:#2b2b2b!important;border:0}
+#v-correio.ol .cx-l{gap:3px 10px;padding:11px 14px 11px 16px;border:1px solid transparent;border-bottom-color:#2a2a2a;transition:background .12s}
+#v-correio.ol .cx-l:hover{background:#2a2a2a}
+#v-correio.ol .cx-l.sel{background:#3a3a3a;outline:0;border-color:#6b6b6b}
+#v-correio.ol .cx-l.nao-lido::before,#v-correio.ol .cx-l.sel::before{background:#479ef5}
+#v-correio.ol .cx-l.urgente{background:#3a2326}
+#v-correio.ol .cx-l.urgente.sel{background:#4a2c30}
+.modo-ol .it-de,.modo-ol .cx-l.nao-lido .it-de{font-size:14px;color:#f0f0f0;font-weight:400}
+.modo-ol .it-as,.modo-ol .cx-l time{color:#6cb8f6;font-weight:400}
+.modo-ol .cx-l.nao-lido .it-as,.modo-ol .cx-l.nao-lido time{color:#6cb8f6;font-weight:400}
+.modo-ol .cx-l.urgente :is(.it-de,.it-as,time){color:#ff8d95}
+.modo-ol .it-pv{color:#c4c4c4}
+.modo-ol .it-ic .pin{display:inline-block;width:6px;height:14px;border-radius:1px;background:#479ef5}
+.modo-ol .it-ic .band{color:#e8484f}
+/* pesquisa instantânea: pedidos (na hora) + e-mails; o Outlook ao vivo completa depois */
+.modo-ol .cx-sec{display:flex;align-items:center;gap:10px;padding:14px 14px 8px;font-size:12px;font-weight:600;color:#e6e6e6}
+.modo-ol .cx-sec .ch{margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid}
+.modo-ol .cx-sec .ch.mem{color:#7fd492;border-color:#2d5c3c;background:#16301f}
+.modo-ol .cx-sec .ch.viv{color:#9ccbf7;border-color:#2a4f78;background:#172b42}
+.modo-ol .cx-sec .ch.esp{color:#f0c46a;border-color:#5c4a1d;background:#33290f}
+#v-correio.ol .cx-l.ped .it-as{color:#7fd492}
+.modo-ol .cx-l mark{background:#5a4a12;color:#ffe08a;border-radius:2px;padding:0 1px}
+/* leitura: o e-mail aberto como no Outlook */
+.modo-ol .ol-cab{padding:20px 28px 10px}
+.modo-ol .ol-cab h1{margin:0 0 16px;font-size:19px;font-weight:400;color:#f2f2f2;letter-spacing:0!important}
+.modo-ol .ol-rem{grid-template-columns:44px minmax(0,1fr) auto;gap:0 14px}
+.modo-ol .ol-av{width:44px;height:44px;font-size:16px;background:#7a55b4}
+.modo-ol .ol-av.robo{background:#b146c2}
+.modo-ol .ol-q{padding-top:2px}
+.modo-ol .ol-q b{font-size:14px;font-weight:400;color:#e8e8e8}
+.modo-ol .ol-q b small{font-size:14px;color:#e8e8e8}
+.modo-ol .ol-q span{margin-top:5px;font-size:12px;color:#d0d0d0}
+.modo-ol .ol-q span i{color:#d0d0d0}
+.modo-ol .ol-q .rot-para{display:inline;color:#9a9a9a;margin-right:6px}
+.modo-ol .ol-acoes{gap:12px}
+.modo-ol .ol-bts{border:1px solid #5a5a5a;border-radius:4px}
+.modo-ol .ol-bts button{background:#2b2b2b;color:#e6e6e6;border-right-color:#5a5a5a;font-size:12.5px}
+.modo-ol .ol-bts button:hover{background:#3a3a3a}
+.modo-ol .ol-bts button svg{color:#c06bd8}
+.modo-ol .ol-bts button[data-cx-faixa="enc"] svg{color:#479ef5}
+.modo-ol .ol-acoes time,.modo-ol .ol-acoes .ol-sit{font-size:12px;color:#d0d0d0}
+.modo-ol .ol-menu{background:#2b2b2b;border-color:#4a4a4a}
+.modo-ol .ol-menu button:hover{background:#3a3a3a}
+.modo-ol .ol-etq{display:inline-flex;align-items:center;margin:12px 0 0 58px;padding:1px 6px 1px 8px;font-size:11.5px;color:#e6e6e6;background:#173b63;border-left:3px solid #479ef5}
+.modo-ol .ol-info{display:flex;align-items:center;gap:6px;margin:10px 28px 0 86px;font-size:11.5px;color:#d0d0d0}
+.modo-ol .ol-info svg{width:13px;height:13px;color:#479ef5;flex:none}
+.modo-ol .ol-anexos{margin:14px 28px 0 86px}
+.modo-ol .ol-anexos .cx-anexos{margin-top:0!important}
+#v-correio.ol .cx-anexo{min-width:210px;padding:5px 10px 5px 5px;border:1px solid #5a5a5a;border-radius:4px;background:none;color:#e6e6e6;transition:background .12s}
+#v-correio.ol .cx-anexo:hover{background:#2b2b2b}
+#v-correio.ol .cx-anexo b{width:30px;height:30px;border-radius:2px;background:#e9e9e9;color:#555;font-size:9px}
+/* ficha do pedido: 3 faixas (título · os 5 dados · botões), verde escuro; o CPF do hóspede sempre */
+.modo-ol .ol-ficha{margin:18px 28px 0 86px;border:1px solid #3d4a3f;border-radius:6px;background:#1d2620;color:#eef3ef;overflow:hidden}
+.modo-ol .ol-ficha .ft{gap:10px;padding:8px 16px;background:#24362a;border-bottom:1px solid #2f3d33;font-size:12.5px;color:#cfe3d4}
+.modo-ol .ol-ficha .ft b{color:#9fd4ad;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.modo-ol .ol-ficha .ft .div{background:#2f3d33;color:#cfe3d4}
+.modo-ol .ol-ficha .prz{color:#f0c46a}
+.modo-ol .ol-ficha .prz.vencido{color:#ff8d95}
+.modo-ol .ol-ficha .prz i{background:#2f3d33}
+.modo-ol .ol-ficha .prz i b{background:#d9a53a}
+.modo-ol .ol-ficha .fg div{padding:12px 16px;border-right:1px solid #2f3d33}
+.modo-ol .ol-ficha .fg small{margin-bottom:4px;color:#8fa596!important}
+.modo-ol .ol-ficha .fg span{font-size:13px;font-weight:400;color:#eef3ef}
+.modo-ol .ol-ficha .fg span.falta{color:#f0b85a}
+.modo-ol .ol-ficha .fb{gap:8px;padding:10px 16px;border-top:1px solid #2f3d33}
+.modo-ol .ol-ficha .fb button{height:30px;padding:0 14px;border-radius:3px;border:1px solid #4d6a55;background:#24362a;color:#e8f3eb;transition:background .12s}
+.modo-ol .ol-ficha .fb button:hover{background:#2e4636}
+.modo-ol .ol-ficha .fb button.p{background:#3da755;border-color:#3da755;color:#06220f;font-weight:600}
+.modo-ol .ol-ficha .fb button.p:hover{background:#4cba64}
+/* o texto do e-mail alinhado com o nome de quem mandou */
+.modo-ol .ol-corpo{padding:24px 32px 28px 86px;line-height:1.6;color:#f0f0f0;font-size:14.5px}
+.modo-ol .ol-corpo .cx-texto{color:#f0f0f0;font-size:14.5px;max-width:78ch}
+#v-correio.ol .cx-verifica,#v-correio.ol .cx-aviso-nf{margin:18px 28px 0 86px}
+#v-correio.ol .cx-hist{margin:8px 28px 28px 86px}
+/* formulário: igual ao e-mail do Emissor Automático (Enviado por · Dados para emissão · tabela · Enviado em) */
+.modo-ol .ol-form{max-width:1010px;margin:0}
+.modo-ol .ol-form .por{font-size:14.5px;font-weight:700}
+.modo-ol .ol-form .por .lnk{font-weight:400;color:#6cb8f6}
+#v-correio.ol .ol-form h3,.modo-ol .ol-form h3{margin:24px 0 16px;font:700 17px/1.3 "Segoe UI",system-ui,sans-serif!important;color:#f2f2f2;letter-spacing:0}
+.modo-ol .ol-form table{border:0;font-family:Arial,Helvetica,sans-serif;font-size:15px}
+.modo-ol .ol-form th{background:#a8895c;color:#1d1d1d;border:1px solid #6b5a3c;padding:11px 14px;font-weight:700}
+.modo-ol .ol-form td{background:#262626!important;color:#f2f2f2;border:1px solid #4a4a4a;padding:11px 14px}
+.modo-ol .ol-form td:first-child{font-weight:700;color:#f2f2f2;width:46%}
+.modo-ol .ol-form tbody tr:hover td{background:#2f2f2f!important}
+.modo-ol .ol-form .em{margin-top:24px;font-size:14.5px}
+.modo-ol .ol-form .em b{font-weight:700}
+/* entrar suave (abrir e-mail, linhas da lista, cartões) */
+.modo-ol .ol-entra{animation:olEntra .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes olEntra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* envio sem espera: a janela fecha na hora; este aviso no canto acompanha (entregue · saindo · conferido) */
+#envios-andamento{position:fixed;left:72px;bottom:36px;z-index:60;display:flex;flex-direction:column;gap:10px;width:380px;max-width:calc(100vw - 96px)}
+.env-card{border:1px solid #4a4a4a;border-radius:8px;background:#2b2b2b;color:#f0f0f0;box-shadow:0 12px 32px rgba(0,0,0,.45);overflow:hidden;animation:olSobe .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes olSobe{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.env-card .tt{display:flex;align-items:center;gap:10px;padding:12px 14px 6px;font-weight:600;font-size:13.5px}
+.env-card .tt i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;flex:none}
+.env-card .tt i.gira{border:2px solid #479ef5;border-right-color:transparent;animation:olGira .8s linear infinite}
+.env-card .tt i.feito{background:#3da755;color:#06220f}
+.env-card .tt i.ruim{background:#e8484f;color:#fff}
+@keyframes olGira{to{transform:rotate(360deg)}}
+.env-card .tt small{margin-left:auto;font-weight:400;color:#a8a8a8;font-size:12px}
+.env-card ol{list-style:none;margin:0;padding:4px 14px 12px 46px;display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.env-card li{color:#8a8a8a}
+.env-card li.f{color:#bfe6c8}
+.env-card li.a{color:#f0f0f0}
+.env-card .det{padding:0 14px 10px 46px;font-size:12.5px;color:#ffb3b8}
+.env-card .bt{display:flex;justify-content:flex-end;gap:8px;padding:0 14px 12px}
+.env-card .bt button{height:28px;padding:0 12px;border:1px solid #5a5a5a;border-radius:4px;background:#333;color:#f0f0f0;font-size:12.5px}
+.env-card .barra{height:3px;background:#383838}
+.env-card .barra i{display:block;height:100%;background:#479ef5;transition:width .5s ease}
+/* barra de status */
+.modo-ol .rodape-status{background:#1b1b1b;border-top:1px solid #2b2b2b}
+/* outras telas: fundo, cartões e respiro da Prévia 5 */
+.modo-ol .vista{background:#1f1f1f}
+.modo-ol #mesa .nf-l.col{gap:6px 14px!important;padding:14px 18px 14px 20px!important;border-bottom:1px solid #2a2a2a}
+.modo-ol #mesa .nf-l.col:hover{background:#2a2a2a}
+.modo-ol #mesa .nf-l.col.sel{background:#353535;outline:0;box-shadow:inset 3px 0 0 #479ef5}
+.modo-ol #mesa .nf-l.col .c-nome{font-size:14px;color:#f2f2f2}
+@media (prefers-reduced-motion: reduce){.modo-ol *,#envios-andamento *{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>

@@ -8,11 +8,31 @@ tags: [cerebro/regras]
 
 **Objetivo (12/10/2026):** o Painel vai ser apresentado a uma empresa grande. Ter **um padrão fixo** em todas as telas (mesma letra, tamanho, aba, card, seleção, tabela, cor), bonito e simples, com animação discreta, tabelas, gráficos e porcentagens, fácil para quem não é de TI, e **rápido**, porque a equipe usa o tempo todo, em ligação e por e-mail.
 
-## Já decidido
+## Valendo desde 20/10/2026: Prévia 5 (Outlook escuro)
+> Aprovada pelo João ("Design ficou perfeito!" e "use exatamente esse design dentro do painel fiscal"). Prévia no quadro
+> "Painel Fiscal — Repaginação", página "Prévia 5". Guia de uso: [[Guia do Painel Fiscal]].
+
+| Item | Valor |
+|---|---|
+| Fundo · painéis · cartões | `#1f1f1f` · `#1f1f1f` (cantos 6 px, 10 px entre eles) · `#242424` com borda `#333` |
+| Faixa de comandos | caixa `#292929`, cantos 6 px; botão passa a `#3a3a3a` ao passar o mouse |
+| Texto | `#f0f0f0` · secundário `#d0d0d0` · apagado `#a8a8a8` |
+| Destaque (selecionado, não lido, abas) | azul `#479ef5`; assunto e hora na lista `#6cb8f6`; selecionado `#3a3a3a` com borda `#6b6b6b` |
+| Urgente | linha `#3a2326`, texto `#ff8d95`, bandeira `#e8484f` |
+| Ficha do pedido | verde escuro `#1d2620`, título `#24362a`, botão principal verde `#3da755` |
+| Tabela do formulário | cabeçalho dourado `#a8895c` (texto `#1d1d1d`), linhas `#262626`, bordas `#4a4a4a`, Arial 15 px |
+| Letra | Segoe UI (a do Outlook), números alinhados; rótulos pequenos 11 px em maiúsculas com 0,05em |
+| Espaços | leitura 20/28 px; texto do e-mail alinhado com o nome (86 px da borda); linha da lista 11 px; ficha 12/16 px |
+| Animação | entrar suave (0,24 s) ao abrir e-mail; aviso de envio sobe do canto; nada anima com "reduzir movimento" do Windows |
+
+- **Exceções vindas do Outlook** (o João pediu idêntico): círculo com as iniciais de quem mandou e o roxo dos ícones de Responder.
+- Código: camada "Prévia 5 no Painel" no fim do `<style>` do `app_ui/index.html` (vence as camadas antigas).
+
+## ~~Já decidido~~ (antes de 20/10/2026; trocado pela Prévia 5 acima)
 - Paleta fiscal: grafite/cinzas + **um verde** (ação principal e selecionado); vermelho/âmbar/verde-claro **só para situação**.
 - Verde no fundo + **creme** (cabeçalho de tabela, faixa do dia, selecionado).
 - Letras: IBM Plex Sans (texto) e IBM Plex Mono (números). Cantos de 6 px.
-- Sem cor por operador, sem emojis, sem bolinhas com inicial, sem roxo/laranja/rosa.
+- Sem cor por operador, sem emojis, ~~sem bolinhas com inicial, sem roxo~~ (20/10: só onde copia o Outlook), sem laranja/rosa.
 - Cada tela: título + resumo de 1 linha → abas → filtros → conteúdo.
 - Agentes em abas sublinhadas (nome + número); detalhes só ao clicar no agente.
 - Avisos do sistema em 1 linha com "+N avisos".

@@ -44,6 +44,11 @@ Paleta fiscal sóbria; depois "coloca um pouco de verde no fundo e o creme… n�
 
 Também: ficha-resumo liberada ("não ficar rolando e caçando informação"); **Segundo Cérebro** criado; **modo casa** (dados reais só para ver); o João passa a mexer **em dois PCs**.
 
+### 20/10/2026 · O Painel vira o Outlook escuro (Prévia 5)
+> "Use exatamente esse design dentro do painel fiscal… Isso é algo empresarial então vamos levar a sério."
+
+E-mail e formulário idênticos ao Outlook, pesquisa instantânea e envio sem espera. No mesmo dia: travas de empresa (testes no GitHub, pre-commit, LGPD, CHANGELOG, ruff, log por programa). Guia: [[Guia do Painel Fiscal]].
+
 ### 13/10/2026 · Segundo Cérebro "de verdade"
 > "Faça um segundo cérebro de verdade, onde você conseguirá saber exatamente em que mexer… e vai utilizar menos tokens."
 
