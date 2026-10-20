@@ -79,7 +79,8 @@ function desenharLog() {
           : "todos os PCs no ar"}</span></div>
     </div>
     <div class="abas-log" role="tablist">${ABAS_LOG.map(([v, n]) => `<button class="aba ${at.aba === v ? "sel" : ""}" role="tab" aria-selected="${at.aba === v}" data-at-aba="${v}">${n}</button>`).join("")}
-      ${menuPcLog(d, pcsLista)}</div>
+</div>
+    <div class="log-filtros">${menuPcLog(d, pcsLista)}</div>
     <div class="tabela-wrap"><table class="ativ-tab"><thead><tr><th>Quando</th><th>O quê</th><th>Máquina</th><th>Hotel / pedido</th><th>Detalhe</th></tr></thead>
       <tbody>${evs.slice(0, 300).map(e => `<tr>
         <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
@@ -93,8 +94,8 @@ function desenharLog() {
 function menuPcLog(d, pcsLista) {
   const info = p => d.pcs.find(x => x.pc === p) || {};
   const nome = p => info(p).agente || p;
-  const ic = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>';
-  return `<span class="ol-filtro at-pc"><button type="button" class="ol-filtro-bt ${at.pc ? "on" : ""}" data-at-pc-abrir aria-haspopup="menu" aria-expanded="${!!at.pcAberto}">${ic}PC: ${esc(at.pc ? nome(at.pc) : "Todos")}</button>
+  const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  return `<span class="ol-filtro at-pc"><button type="button" class="ol-filtro-bt ${at.pc ? "on" : ""}" data-at-pc-abrir aria-haspopup="menu" aria-expanded="${!!at.pcAberto}">PC: <b>${esc(at.pc ? nome(at.pc) : "Todos")}</b>${chev}</button>
     ${at.pc ? `<button type="button" class="ol-filtro-x" data-at-pc="" aria-label="Tirar o filtro de PC">✕</button>` : ""}
     ${at.pcAberto ? `<div class="ol-filtro-menu" role="menu" aria-label="PC">${[["", "Todos os PCs"], ...pcsLista.map(p => [p, nome(p)])].map(([v, n]) =>
       `<button type="button" role="menuitemradio" aria-checked="${at.pc === v}" data-at-pc="${esc(v)}">${v ? `<i class="pc-bol ${info(v).online ? "on" : ""}" aria-hidden="true"></i>` : ""}${esc(n)}<em>${

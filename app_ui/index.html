@@ -1897,6 +1897,16 @@ body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important
 .modo-ol :is(.seg,.seg-rd) button:hover{background:#2d2d2d!important}
 .modo-ol :is(.seg,.seg-rd) button:is(.sel,[aria-pressed="true"]){background:#173b63!important;color:#fff!important;font-weight:600!important}
 .modo-ol :is(.seg,.seg-rd) button:disabled{opacity:.4;cursor:default}
+/* Notas fiscais: o Filtro abre pra direita (fica no começo da linha) */
+.modo-ol .nf-filtro .ol-filtro-menu{left:0;right:auto;min-width:260px}
+.modo-ol .ol-filtro-menu hr{border:0;border-top:1px solid #3a3a3a;margin:6px 4px}
+.modo-ol .ol-filtro-menu button.r{color:#ff9aa1!important}
+.modo-ol .ol-filtro-menu button.r[aria-checked="true"]{color:#fff!important}
+/* Pílula com menu (usuário, 20/10/2026: "PC: Todos ▾", "Situação: Todas ▾"): a mesma peça nas duas telas */
+.modo-ol .ol-filtro-bt b{font-weight:600;color:#fff}
+.modo-ol .ol-filtro-bt .chev{width:12px!important;height:12px!important;margin-left:2px}
+.modo-ol .log-filtros{display:flex;align-items:center;gap:10px;margin:10px 0 12px}
+.modo-ol .log-filtros .ol-filtro-menu{left:0;right:auto;min-width:260px}
 </style>
 </head>
 <body>
@@ -2014,7 +2024,7 @@ body:has(.modo-ol) #pop .pop-op[aria-selected="true"] .n{color:#cfe5fb!important
         <div class="abas-op" role="tablist" aria-label="Operador" id="op-cartoes-notas"></div>
         <div class="det-op" id="det-op-notas" aria-live="polite"></div>
         <div class="linha-filtros" role="toolbar" aria-label="Filtros">
-          <span class="rot-barra">Situação</span><div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
+          <div class="status-cards" id="status-cards" role="group" aria-label="Situação"></div>
           <div class="fim filtros-linha" id="filtros-linha"></div>
         </div>
       </div>
@@ -2071,6 +2081,7 @@ const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30"
                      ["0", "Todo o período"]];
 const POR_PAGINA = 100;
 let st = {fila:[], agente:"", status:{}, emails:[], hoteis:[], pcs:[]}, timer = null, intervalo = 15;
+let nfFiltroAberto = false;   // menu do Filtro de Notas fiscais (peça única, 20/10/2026)
 let filtro = "todas", filtroEmail = "todos", origem = "form", hotel = "", agenteF = "", envio = "todos", periodo = "45";
 let pagina = 0, sel = null, emailSel = null, popAberto = "", buscaPop = "", ordem = "";   // ordem "": automática
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
@@ -2559,9 +2570,21 @@ function desenharFiltros(busca, total) {
   $("notas-avisos").innerHTML = (semEspelho.length ? `<div class="aviso-linha">${esc(semEspelho.join(", "))} ainda sem a versão nova: as solicitações ${semEspelho.length > 1 ? "deles" : "dele"} aparecem quando o PC atualizar.</div>` : "") +
     (desligados.length ? `<div class="aviso-linha">PC desligado: ${esc(desligados.join(", "))} — mostrando a caixa como estava.</div>` : "");
   const vermelha = ([f, nome, cor, n]) => aba([f, nome, cor, n]).replace('class="st-tab ', 'class="st-tab vermelha ');
-  $("status-cards").innerHTML = `<div class="st-tabs">${todas.filter(x => !HISTORICO.includes(x[0]) && !["atrasadas", "doc_diferente"].includes(x[0])).map(aba).join("")}
-      ${atras && atras[3] ? vermelha(atras) : ""}${docDif && docDif[3] ? vermelha(docDif) : ""}
-      ${hist.length ? `<span class="st-sep"></span>${hist.map(aba).join("")}` : ""}</div>`;
+  // Filtro igual ao da caixa de entrada (usuário, 20/10/2026: um padrão só): os mesmos filtros e contagens, num menu
+  const porF = Object.fromEntries(todas.map(x => [x[0], x]));
+  const TOPO = ["todas", "todos", "minhas"], AGIR = ["urgentes", "atrasadas", "falta_dado", "doc_diferente", "dividida", "envio_pendente"];
+  const grupos = [TOPO.filter(f => porF[f]),
+    [...AGIR.filter(f => porF[f]), ...todas.map(x => x[0]).filter(f => !TOPO.includes(f) && !AGIR.includes(f) && !HISTORICO.includes(f))],
+    HISTORICO.filter(f => porF[f])].filter(g => g.length);
+  const itensMenu = grupos.flatMap((g, i) => i ? ["|", ...g] : g);
+  const semFiltro = ["todas", "todos", "aberto"].includes(atual), nomeAtual = porF[atual]?.[1] || "";
+  const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  $("status-cards").innerHTML = `<span class="ol-filtro nf-filtro"><button type="button" class="ol-filtro-bt ${semFiltro ? "" : "on"}" data-nf-filtro-abrir
+      aria-haspopup="menu" aria-expanded="${nfFiltroAberto}">Situação: <b>${semFiltro || !nomeAtual ? "Todas" : esc(nomeAtual)}</b>${chev}</button>
+    ${semFiltro ? "" : `<button type="button" class="ol-filtro-x" data-st="${origem === "form" ? "todas" : "todos"}" aria-label="Tirar o filtro">✕</button>`}
+    ${nfFiltroAberto ? `<div class="ol-filtro-menu" role="menu" aria-label="Filtro">${itensMenu.map(f => f === "|" ? "<hr>" : (([ff, nome, , n]) =>
+      `<button type="button" role="menuitemradio" aria-checked="${ff === atual || (semFiltro && ["todas", "todos"].includes(ff))}" data-st="${ff}"
+        class="${["atrasadas", "doc_diferente"].includes(ff) && n ? "r" : ""}">${esc(["todas", "todos"].includes(ff) ? "Todas as solicitações" : nome)}<em>${n.toLocaleString("pt-BR")}</em></button>`)(porF[f])).join("")}</div>` : ""}</span>`;
   const nomePeriodo = (PERIODOS_NF.find(p => p[0] === periodo) || PERIODOS_NF[3])[1];
   const algum = hotel || agenteF;
   $("filtros-linha").innerHTML = pilula("hotel", "Hotel", hotel) +
@@ -2881,14 +2904,17 @@ async function acao(a, valor){
 }
 
 const irPraCaixa = () => { if (pn.vista !== "fila") trocarVista("fila"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && nfFiltroAberto) { nfFiltroAberto = false; desenhar(); } });
 document.addEventListener("click", async e => {
   if (popAberto && !e.target.closest("#pop,[data-pop]")) fecharPop();
-  const t = e.target.closest("[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],[data-doc-ok],#d-fechar,#d-nf-ok");
+  if (nfFiltroAberto && !e.target.closest(".nf-filtro")) { nfFiltroAberto = false; desenhar(); }
+  const t = e.target.closest("[data-nf-filtro-abrir],[data-ordem],[data-aba-o],[data-st],[data-pop],[data-limpa],[data-opv],[data-pag],[data-k],[data-em],[data-a],[data-txt],[data-desfaz],[data-copiar],[data-resp],[data-resp-nf],[data-ver-pedido],[data-doc-ok],#d-fechar,#d-nf-ok");
   if (!t) return;
   const d = t.dataset;
   if (d.ordem) { ordem = d.ordem; pagina = 0; return desenhar(); }
   if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
-  if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
+  if ("nfFiltroAbrir" in d) { nfFiltroAberto = !nfFiltroAberto; return desenhar(); }
+  if (d.st) { nfFiltroAberto = false; if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
   if (d.pop) { if (popAberto === d.pop) fecharPop(); else { popAberto = d.pop; buscaPop = ""; $("pop").dataset.campo = ""; desenharPop(); } return; }
   if (d.opv !== undefined && d.campo === "cx-hotel") { cx.hotel = d.opv; cx.sel = null; fecharPop(true); return desenharCorreio(); }
   if (d.limpa === "cx-hotel") { cx.hotel = ""; return desenharCorreio(); }

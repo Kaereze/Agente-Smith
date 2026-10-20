@@ -85,6 +85,9 @@ O e-mail sai **sempre da caixa do hotel**, no PC dono dela. Nunca por outra caix
 ## Notas fiscais
 Os pedidos do formulário que estão na Caixa de Entrada dos 4 PCs. Lista em 2 andares (hóspede e hora; hotel, agente e
 prazo; etiquetas) e a ficha sempre à direita. Prazo: 48 h corridas do pedido (verde → âmbar → vermelho).
+- **Situação: Todas ▾** (em cima da lista): Todas as solicitações · Minhas · Urgentes · Atrasadas · Falta dado ·
+  CPF/CNPJ diferente · Nota dividida · Envio pendente · NF emitida, cada uma com a contagem. Um por vez; o ✕ tira.
+  Do lado, o **Hotel ▾**.
 
 ## Visão geral · Gerência · Monitoramento
 - **Visão geral:** resumo de ontem (ou hoje até agora), o que precisa de atenção e a equipe.
