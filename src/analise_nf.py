@@ -246,6 +246,7 @@ def resumo(pedido, nf, numero, assunto=""):
     motivos = pedido["motivos"]
     pede = [m for m in motivos if m not in ("cancelar", "reemitir")]
     acao = "cancelar e refazer" if "cancelar" in motivos else "corrigir/reemitir"
+    pede = ["texto na nota: " + ", ".join(f"“{x}”" for x in pedido.get("textos", [])) if m == "texto" else m for m in pede]
     partes = [f"Pede para {acao} a NF{(' ' + numero) if numero else ''}" + (f" ({', '.join(pede)})" if pede else "")]
     if not nf:
         partes.append("NF não achada no Dropbox — conferir à mão")

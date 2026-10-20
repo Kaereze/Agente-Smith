@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.7] — 2026-10-20
+
+### Corrigido
+
+- O resumo de uma linha da verificação da NF mostrava "(texto)"; agora mostra "(texto na nota: “…”)".
+
 ## [2026.10.20.6] — 2026-10-20
 
 ### Mudou

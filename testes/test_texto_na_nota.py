@@ -25,6 +25,7 @@ def test_procura_na_nota_inteira_e_diz_que_nao_aparece():
     r = a.completo(p, a.dados_do_pdf(NF_SEM), "879", "NF 879.pdf", texto_nf=NF_SEM)
     assert r["detalhe"] == "não aparece na NF 879"
     assert "“UEM / Marina Exemplo Costa” não aparece em nenhuma parte da nota" in r["comparacao"]
+    assert "(texto na nota: “UEM / Marina Exemplo Costa”)" in r["resumo"] and "(texto)" not in r["resumo"]
 
 
 def test_ja_aparece_mesmo_com_pontuacao_e_maiuscula_diferentes():
