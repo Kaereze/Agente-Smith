@@ -521,6 +521,7 @@ class Espelho:
         enviados = {e: q for e, q in self.estado.get("enviados", {}).items() if q >= limite.isoformat()}
         vouchers = dict(self.estado.get("vouchers", {}))   # {id: [quartos, nomes]} — PDF lido uma vez só
         pastas_entrada = {}   # caixa -> EntryID da Caixa de Entrada (pra saber se o e-mail foi excluído/movido)
+        pastas_obj = {}       # caixa -> a pasta Caixa de Entrada (pra contar no fim da volta)
         for conta in namespace.Accounts:
             caixa = str(conta.SmtpAddress or "").strip().lower()
             if caixa not in caixas:
@@ -529,11 +530,13 @@ class Espelho:
                 loja = conta.DeliveryStore
                 pasta_entrada = loja.GetDefaultFolder(6)
                 pastas_entrada[caixa] = pasta_entrada.EntryID
+                pastas_obj[caixa] = pasta_entrada
                 if completa:   # a caixa inteira; Enviados desde o e-mail mais antigo dela (pra saber o que já foi respondido)
                     recebidos = pasta_entrada.Items
                     inicio_saidos = max(limite, min(inicio, self._mais_antigo(pasta_entrada) - datetime.timedelta(days=1)))
-                else:
-                    recebidos = pasta_entrada.Items.Restrict(f"[ReceivedTime] >= '{inicio:%d/%m/%Y %H:%M}'")
+                else:   # pela hora em que CAIU no Outlook (ou foi mexido), não pela do servidor: POP3 baixa 10-20 min
+                    # depois e o e-mail movido de volta pra Caixa de Entrada tem data antiga (20/10/2026: 9 de 55 ficavam de fora)
+                    recebidos = pasta_entrada.Items.Restrict(f"[LastModificationTime] >= '{inicio:%d/%m/%Y %H:%M}'")
                     inicio_saidos = inicio
                 saidos = loja.GetDefaultFolder(5).Items.Restrict(f"[SentOn] >= '{inicio_saidos:%d/%m/%Y %H:%M}'")
             except Exception as e:
@@ -551,6 +554,7 @@ class Espelho:
                     logger.debug(f"e-mail ilegível em {caixa}: {e}")
         if not completa:
             self._tirar_excluidos(namespace, pastas_entrada)
+        self._conferir_contagem(pastas_obj, caixas, rede, antigo, vouchers)
         self.pedidos_caixa = self._pedidos_na_caixa(namespace, caixas)
         nf_marcadas = self._marcar_nf_emitida(namespace)
         enviados_dt = {e: datetime.datetime.fromisoformat(q) for e, q in enviados.items()}
@@ -572,7 +576,8 @@ class Espelho:
                        "publicado_textos": self.estado.get("publicado_textos", ""),
                        "nf_marcadas": {i: v for i, v in nf_marcadas.items() if i in self.itens},
                        "pedidos_caixa": self.pedidos_caixa, "lido_desde": lido_desde, "caixas": sorted(caixas),
-                       "publicado_pedidos": self.estado.get("publicado_pedidos", "")}
+                       "publicado_pedidos": self.estado.get("publicado_pedidos", ""),
+                       "contagem": self.contagem, "contagem_relida": self.contagem_relida}
         salvar_json(CAMINHO_ESTADO, self.estado, indent=None)
         self.publicar(enviados_dt)
         return len(self.itens)
@@ -613,7 +618,7 @@ class Espelho:
             return
         de = remetente(item)
         corpo = str(item.Body or "")
-        recebido = _data(item.ReceivedTime)
+        recebido = _data(item.ReceivedTime) or _data(getattr(item, "CreationTime", None))   # sem data do servidor: conta igual
         if not recebido:
             return
         if e_do_robo(de, corpo, rede, antigo):   # solicitação do formulário: também em Notas fiscais (CaixaPedidos_<PC>)
@@ -744,6 +749,40 @@ class Espelho:
                     e["lido_outlook"] = not bool(getattr(item, "UnRead", True))
             except Exception:
                 del self.itens[i]
+
+    def _conferir_contagem(self, pastas, caixas, rede, antigo, vouchers):
+        """Total da Caixa de Entrada no Outlook x espelho, caixa por caixa, a cada volta (usuário, 20/10/2026: "precisam
+        ser contabilizados exatamente o que tiver na caixa de entrada de cada email cadastrado"). Diferente: relê só
+        aquela caixa inteira; entra o que faltava e sai o que não está mais lá. Se mesmo assim não bater (item que o
+        Outlook não deixa ler), avisa no log e só relê de novo quando o total do Outlook mudar."""
+        self.contagem, relida = {}, dict(self.estado.get("contagem_relida", {}))
+        for caixa, pasta in pastas.items():
+            try:
+                total = pasta.Items.Count
+            except Exception as e:
+                logger.debug(f"contagem de {caixa}: {e}")
+                continue
+            no_espelho = sum(1 for e in self.itens.values() if e["pasta"] == ENTRADA and e["caixa"] == caixa)
+            if total != no_espelho and relida.get(caixa) != total:
+                presentes = set()
+                for item in pasta.Items:
+                    try:
+                        presentes.add(id_do_email(item.EntryID))
+                        self._recebido(item, caixa, caixas, rede, antigo, vouchers)
+                    except Exception as e:
+                        logger.debug(f"e-mail ilegível em {caixa}: {e}")
+                for i, e in list(self.itens.items()):
+                    if e["pasta"] == ENTRADA and e["caixa"] == caixa and i not in presentes:
+                        del self.itens[i]
+                antes, no_espelho = no_espelho, sum(1 for e in self.itens.values() if e["pasta"] == ENTRADA and e["caixa"] == caixa)
+                (logger.info if no_espelho == total else logger.warning)(
+                    f"🔁 Caixa de Entrada de {caixa}: Outlook {total} x espelho {antes} — relida inteira, agora {no_espelho}")
+                if no_espelho == total:
+                    relida.pop(caixa, None)
+                else:
+                    relida[caixa] = total
+            self.contagem[caixa] = [total, no_espelho]
+        self.contagem_relida = {c: n for c, n in relida.items() if c in pastas}
 
     @staticmethod
     def _mais_antigo(pasta):

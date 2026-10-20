@@ -57,6 +57,7 @@ tags: [cerebro/trabalho]
 | **Formulário aberto** (Enviado por · Dados para emissão · tabela na ordem fixa · Enviado em) | `correio.js` → `formularioHtml`, `ORDEM_FORM` (13 campos), `OCULTOS_FORM` |
 | **Pesquisa instantânea** (pedidos na hora + espelho; Outlook ao vivo depois) | `correio.js` → `secoesDaBusca`, `pedidosDaBusca`, `linhaPedidoBusca`, `marcarBusca`; ao vivo: `agendarBusca`/`buscarNoOutlook` |
 | **Envio sem espera** (janela fecha na hora; aviso no canto) | `painel.js` → `enviarNF` (fim), `seguirEnvio`, `verEnvio`, `desenharEnvio`, `fecharEnvio`; status: `/api/envio_nf/status` |
+| **Contagem exata da Caixa de Entrada** (Outlook x espelho, caixa por caixa, a cada volta) | `espelho_emails.py` → `Espelho.volta` (filtro por `LastModificationTime`), `_conferir_contagem` (`contagem`, `contagem_relida` em `estado/espelho_emails.json`); teste `testes/test_contagem_exata.py` |
 | **Logs** (um arquivo por programa) | `log_util.py` → `arquivo_do_programa`, `PROGRAMAS` (script de entrada → arquivo); teste `testes/test_log_util.py` |
 | **Configuração** | `config.json` (todos), `config.local.json` (só do PC, papel principal/conferente), `config.py` |
 | **Travas de entrega** (pre-commit, guarda do git, testes no GitHub) | `ferramentas/checar_commit.py` (via `.githooks/pre-commit`), `ferramentas/guarda_git.py` (hook do Claude Code em `NOTAS/.claude/settings.json`), `.github/workflows/testes.yml`; testes em `testes/test_ferramentas.py`; padrão do código `ruff.toml` (+ `requirements-dev.txt`); versões em `CHANGELOG.md` |

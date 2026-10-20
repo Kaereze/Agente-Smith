@@ -48,5 +48,6 @@ tags: [cerebro/historico]
 | 20/10/2026 | **Prévia 5 no Painel**: visual do Outlook escuro em todas as telas, e-mail e formulário idênticos ao Outlook (tabela Campo/Valor dourada na ordem fixa dos 13 campos), ficha em 3 faixas, espaçamento folgado | João: "use exatamente esse design dentro do painel fiscal… deixe o espaçamento correto" |
 | 20/10/2026 | **Envio sem espera**: clicou em Enviar, a janela fecha e um aviso acompanha; falhou, reabre com o texto | "estamos em ligação com o hóspede": não pode ficar esperando |
 | 20/10/2026 | **Pesquisa: pedidos e espelho na hora**, Outlook ao vivo completa depois. O índice local em cada PC e o envio direto pela rede **esperam o OK do João** (mudam a regra de 08/10) | Rapidez sem pesar o Painel nem mudar regra sem pedido |
+| 20/10/2026 | **Caixa de Entrada contada exatamente**: a cada volta (2 min) o robô confere o total de cada caixa no Outlook com o espelho e relê a caixa que não bater | João: "precisam ser contabilizados exatamente o que tiver na caixa de entrada de cada email cadastrado" |
 
 Ver: [[O que não mexer]].

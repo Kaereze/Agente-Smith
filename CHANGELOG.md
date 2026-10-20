@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.20.4] — 2026-10-20
+
+### Corrigido
+
+- **O Painel mostra exatamente o que está na Caixa de Entrada de cada caixa.** No PC do João, 9 de 55 e-mails ficavam de
+  fora (7 caixas). As caixas são POP3: o e-mail cai no Outlook 10 a 20 minutos depois da hora do servidor, e a volta do
+  espelho (a cada 2 min) olhava só 10 minutos para trás pela hora do servidor. Agora a volta procura pela hora em que o
+  e-mail caiu ou mudou no Outlook (pega também o e-mail movido de volta) e, no fim de cada volta, confere o total de cada
+  caixa no Outlook com o espelho; se não bater, relê aquela caixa inteira. E-mail sem data do servidor conta pela data
+  de criação. Testes: `testes/test_contagem_exata.py`.
+
 ## [2026.10.20.3] — 2026-10-20
 
 ### Mudou
