@@ -11,6 +11,8 @@ Painel, então roda FORA dele: pela tarefa SolicitacoesNF_Reiniciar do Agendador
 11/10/2026: lançado de dentro do Painel (que roda numa tarefa agendada) o PowerShell solto não subia — os 3 PCs
 baixaram o código novo e ficaram com o velho na memória, e o log dizia "reiniciando" sem conferir. Agora o pedido
 vai pro Agendador, o script registra começo e fim em logs/atualizacao.log e o Painel avisa se não reiniciou.
+
+21/10/2026: atualização só de documentação (cofre, README, CHANGELOG) baixa sem reiniciar — o código é o mesmo.
 """
 import subprocess
 import sys
@@ -25,6 +27,7 @@ SCRIPT_REINICIO = PASTA / "Automacoes" / "reiniciar_servicos.ps1"
 _SAIR_DO_JOB = 0x01000000   # CREATE_BREAKAWAY_FROM_JOB: a tarefa agendada não leva o script junto ao cair
 _SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 TAREFA_REINICIO = "SolicitacoesNF_Reiniciar"
+PASTA_COFRE = "Segundo Cérebro/"
 
 
 def pedir_reinicio():
@@ -100,6 +103,11 @@ def motivo_para_nao(s):
     return ""
 
 
+def so_documentos(arquivos):
+    """Só mudou nota do cofre ou .md (nada que o robô ou o Painel carreguem)? Lista vazia = não (na dúvida, reinicia)."""
+    return bool(arquivos) and all(a.startswith(PASTA_COFRE) or a.lower().endswith(".md") for a in arquivos)
+
+
 def precisa_reiniciar(s, rodando, na_pasta):
     """Código novo já na pasta, mas o Painel roda o velho (14/10/2026: no PC do João o commit nasce aqui, então o
     "atualizar" não baixava nada e não reiniciava). -> True quando só falta reiniciar."""
@@ -117,7 +125,8 @@ def so_reiniciar():
 
 
 def atualizar():
-    """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu)"""
+    """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu, reiniciou)
+    Só documentação: baixa exatamente os commits conferidos e não reinicia (reiniciou=False)."""
     antes = versao()
     try:
         # fetch + merge só pra frente, em vez de "git pull": o pull lê o FETCH_HEAD, que no PC do Bernardo saiu com a
@@ -125,10 +134,20 @@ def atualizar():
         # multiple branches" (13/10/2026). O merge pela origin/<ramo> não depende do FETCH_HEAD.
         ramo = _git("rev-parse", "--abbrev-ref", "HEAD")
         _git("fetch", "--quiet", "origin", timeout=300)
-        _git("merge", "--ff-only", f"origin/{ramo}", timeout=300)
+        alvo = _git("rev-parse", f"origin/{ramo}")
+        try:
+            arquivos = _git("-c", "core.quotepath=false", "diff", "--name-only", "HEAD", alvo).splitlines()
+        except Exception:
+            arquivos = []   # não deu pra ver o que mudou: atualiza como sempre (com reinício)
+        so_docs = bool(alvo) and so_documentos([a.strip() for a in arquivos if a.strip()])
+        # só documentação: o merge vai até o commit conferido (um fetch no meio não traz código sem reiniciar)
+        _git("merge", "--ff-only", alvo if so_docs else f"origin/{ramo}", timeout=300)
     except Exception as e:
         logger.warning(f"⚠️ git pull falhou: {e}")
-        return False, f"git pull falhou: {e}"
+        return False, f"git pull falhou: {e}", False
+    if so_docs:
+        logger.info(f"📄 Atualizado de {antes} para {versao()} — só documentação ({len(arquivos)} arquivo(s)), sem reiniciar.")
+        return True, f"atualizado de {antes} para {versao()}; só documentação, sem reiniciar", False
     python = PASTA / ".venv" / "Scripts" / "python.exe"
     try:
         subprocess.run([str(python), "-m", "pip", "install", "-q", "--disable-pip-version-check", "-r",
@@ -143,7 +162,7 @@ def atualizar():
         como = _reinicio_solto()
     # não diz "reiniciado": quem confirma é o script (logs/atualizacao.log) e o Painel novo ao subir
     logger.info(f"🔄 Atualizado de {antes} para {versao()} — {como} (confirmação em logs/atualizacao.log).")
-    return True, f"atualizado de {antes} para {versao()}; {como}"
+    return True, f"atualizado de {antes} para {versao()}; {como}", True
 
 
 if __name__ == "__main__":

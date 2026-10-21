@@ -28,7 +28,7 @@ def _ler(planilha):
 
 
 def _servico(planilha, cfg, pc, contas, enviados, relogio, registradas=None, falhar=False):
-    def enviar(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo=""):
+    def enviar(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", **extra):
         if falhar:
             raise RuntimeError("Outlook fechado")
         enviados.append((pc, conta_de, para, assunto, b"".join(open(a, "rb").read() for a in anexos)))
@@ -271,3 +271,243 @@ def test_pelo_nome_nao_liga_nota_de_outra_estada(monkeypatch):
     assert [n["nf"] for n in e.notas_do_email(sem_numero, {})] == ["900"]   # sem nº: o nome continua valendo
     mesma = {**pedido, "assunto": "Solicitação de Nota Fiscal Estada: 30001", "texto": "Estada: 30001"}
     assert [n["nf"] for n in e.notas_do_email(mesma, {})] == ["900"]
+
+
+# ---------- envio direto pela rede (usuário, 21/10/2026: "toma mt cuidado com e-mail duplicado") ----------
+def _par(planilha, cfg, enviados, rel, registradas=None, lento=0.0):
+    """PC do João pede; o PC do Cristian tem a caixa do hotel. A "rede" liga o aviso de um ao outro."""
+    _prep(planilha)
+    pc_a = _servico(planilha, cfg, "PC-JOAO", ["nf@ondina.com"], enviados, rel)
+    pc_b = _servico(planilha, cfg, "PC-CRISTIAN", [CAIXA], enviados, rel, registradas)
+    if lento:
+        enviar_b = pc_b.enviar
+        pc_b.enviar = lambda *a, **k: (time.sleep(lento), enviar_b(*a, **k))
+    pc_b.tick(_ler(planilha), "Cristian")
+    pc_a.tick(_ler(planilha), "João")
+    pc_a.avisar_dono = lambda pc, corpo: pc_b.receber_pela_rede(corpo)
+    return pc_a, pc_b
+
+
+def _pedir(pc_a, assunto="NF 1212 - FH"):
+    return pc_a.pedir(SOL, "hospede@x.com", assunto, CAIXA, [{"tipo": "arquivo", "nome": "NF 1212 - FH.pdf",
+                                                             "conteudo": b"%PDF teste"}], "João")
+
+
+def test_envio_direto_pela_rede_sai_na_hora_e_uma_vez(cfg, planilha):
+    rel, enviados, registradas = Relogio(), [], []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel, registradas)
+    r = _pedir(pc_a)
+    assert r["ok"] and r["destino"] == "PC-CRISTIAN"
+    assert _esperar(pc_a, r["id"])["estado"] == "enviado"   # quem pediu já sabe, sem esperar a fila
+    assert enviados == [("PC-CRISTIAN", CAIXA, "hospede@x.com", "NF 1212 - FH", b"%PDF teste")]
+    assert registradas == [(["1212"], "João")]
+    eventos = [l[2] for l in planilha.aba(en.ABA_FILA)[1:] if l[1] == r["id"]]
+    assert eventos == ["PEDIDO", "ASSUMIDO", "ENVIADO"]
+    for _ in range(3):                                       # a fila passa de novo pelo pedido: não reenvia
+        pc_b.tick(_ler(planilha), "Cristian")
+    assert len(enviados) == 1 and len(registradas) == 1
+
+
+def test_rede_e_fila_ao_mesmo_tempo_nunca_duplicam(cfg, planilha):
+    import threading
+    for rodada in range(25):   # _par recria as abas: cada rodada começa do zero
+        rel, enviados = Relogio(), []
+        pc_a, pc_b = _par(planilha, cfg, enviados, rel, lento=0.02)
+        avisar = pc_a.avisar_dono
+        pc_a.avisar_dono = None                              # o aviso sai junto com a leitura da fila, à mão
+        r = _pedir(pc_a, f"NF {1000 + rodada} - FH")
+        lidas = _ler(planilha)
+        t1 = threading.Thread(target=lambda: avisar("PC-CRISTIAN", {"id": r["id"]}))
+        t2 = threading.Thread(target=lambda: pc_b.tick(lidas, "Cristian"))
+        for t in ((t1, t2) if rodada % 2 else (t2, t1)):
+            t.start()
+        t1.join(); t2.join()
+        pc_b.tick(_ler(planilha), "Cristian")
+        meus = [x for x in enviados if x[3] == f"NF {1000 + rodada} - FH"]
+        assert len(meus) == 1, (rodada, enviados)
+
+
+def test_rede_fora_a_fila_resolve_como_antes(cfg, planilha):
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    def sem_rede(pc, corpo):
+        raise TimeoutError("não respondeu pela rede (timeout)")
+    pc_a.avisar_dono = sem_rede
+    r = _pedir(pc_a)
+    time.sleep(0.1)
+    assert not enviados and r["id"] not in pc_a.locais
+    pc_b.tick(_ler(planilha), "Cristian")                   # a fila de sempre
+    assert len(enviados) == 1
+    pc_b.tick(_ler(planilha), "Cristian")
+    assert len(enviados) == 1
+
+
+def test_rede_cai_depois_de_enviar_nao_reenvia(cfg, planilha):
+    """O PC dono enviou, mas a resposta se perdeu na rede: quem pediu não faz nada e a fila mostra ENVIADO."""
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    def envia_e_perde_resposta(pc, corpo):
+        pc_b.receber_pela_rede(corpo)
+        raise TimeoutError("não respondeu pela rede (timeout)")
+    pc_a.avisar_dono = envia_e_perde_resposta
+    r = _pedir(pc_a)
+    time.sleep(0.1)
+    assert len(enviados) == 1
+    for _ in range(3):
+        pc_b.tick(_ler(planilha), "Cristian")
+        pc_a.tick(_ler(planilha), "João")
+    assert len(enviados) == 1
+    assert pc_a.situacao(r["id"], en.dobrar_fila(_ler(planilha)[en.ABA_FILA]))["estado"] == "enviado"
+
+
+def test_aviso_repetido_e_dono_reiniciado_nao_reenviam(cfg, planilha):
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    r = _pedir(pc_a)
+    _esperar(pc_a, r["id"])
+    assert pc_b.receber_pela_rede({"id": r["id"]})["estado"] == "enviado"   # aviso repetido
+    novo_b = _servico(planilha, cfg, "PC-CRISTIAN", [CAIXA], enviados, rel)   # Painel do Cristian reiniciou
+    assert novo_b.receber_pela_rede({"id": r["id"]})["estado"] == "enviado"
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert len(enviados) == 1
+
+
+def test_dono_reiniciado_no_meio_do_envio_nao_reenvia(cfg, planilha):
+    """ASSUMIDO gravado e o Painel caiu antes do ENVIADO: nem a fila nem o aviso pela rede mandam de novo."""
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    pc_a.avisar_dono = None
+    r = _pedir(pc_a)
+    planilha.anexar_linhas(CENTRAL, en.ABA_FILA, [en.evento(rel(), r["id"], en.ASSUMIDO, "PC-CRISTIAN", "João")])
+    novo_b = _servico(planilha, cfg, "PC-CRISTIAN", [CAIXA], enviados, rel)
+    assert novo_b.receber_pela_rede({"id": r["id"]})["estado"] == "enviando"
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert not enviados
+
+
+def test_aviso_so_vale_para_pedido_da_fila_deste_pc_e_desta_caixa(cfg, planilha):
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    assert pc_b.receber_pela_rede({"id": "ENV-NAOEXISTE"})["estado"] == "recusado"    # não está na fila
+    assert pc_b.receber_pela_rede({"id": "qualquer"})["estado"] == "recusado"
+    pc_c = _servico(planilha, cfg, "PC-CLARA", ["nf@outro.com"], enviados, rel)
+    pc_c.tick(_ler(planilha), "Clara")
+    pc_a.tick(_ler(planilha), "João")
+    pc_a.avisar_dono = None
+    r = pc_a.pedir(SOL, "hospede@x.com", "NF 5 - FH", "nf@outro.com", [{"tipo": "dropbox", "rel": "a.pdf"}], "João")
+    assert r["destino"] == "PC-CLARA"
+    assert pc_b.receber_pela_rede({"id": r["id"]})["estado"] == "recusado"   # pedido de outro PC: o Cristian não manda
+    assert not enviados
+
+
+def test_conteudo_do_email_vem_da_fila_e_nao_da_rede(cfg, planilha):
+    rel, enviados = Relogio(), []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    pc_a.avisar_dono = None
+    r = _pedir(pc_a)
+    falso = {"id": r["id"], "pedido": {"para": "golpe@x.com", "assunto": "outro", "conta_de": CAIXA, "pc_destino": "PC-CRISTIAN"}}
+    assert pc_b.receber_pela_rede(falso)["estado"] == "enviado"
+    assert enviados == [("PC-CRISTIAN", CAIXA, "hospede@x.com", "NF 1212 - FH", b"%PDF teste")]
+
+
+# ---------- envio interrompido por reinício (achado da simulação, 21/10/2026) ----------
+def _interrompido(planilha, cfg, rel, enviados, registradas, achado, marca_id=True):
+    """Pedido ASSUMIDO pelo Cristian e o Painel dele caiu antes do ENVIADO. achado: o que Itens Enviados responde."""
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel, registradas)
+    pc_a.avisar_dono = None
+    r = _pedir(pc_a)
+    planilha.anexar_linhas(CENTRAL, en.ABA_FILA, [en.evento(rel(), r["id"], en.ASSUMIDO, "PC-CRISTIAN", "João",
+                                                            {"marca_id": True} if marca_id else None)])
+    novo_b = _servico(planilha, cfg, "PC-CRISTIAN", [CAIXA], enviados, rel, registradas)
+    perguntas = []
+    novo_b.conferir_envio = lambda conta, id_envio, desde: (perguntas.append((conta, id_envio, desde)),
+                                                            {"completo": True, **achado})[1]
+    return r, novo_b, perguntas
+
+
+def _eventos_de(planilha, id_envio):
+    return [l[2] for l in planilha.aba(en.ABA_FILA)[1:] if l[1] == id_envio]
+
+
+def test_envio_interrompido_que_saiu_vira_enviado_sem_reenviar(cfg, planilha):
+    rel, enviados, registradas = Relogio(), [], []
+    r, novo_b, perguntas = _interrompido(planilha, cfg, rel, enviados, registradas, {"enviados": True, "saida": False})
+    assumido = rel()
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert not perguntas                                     # antes de 2 min: ainda pode estar enviando
+    rel.t += datetime.timedelta(minutes=3)
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert perguntas == [(CAIXA, r["id"], assumido)]         # procura a partir da hora em que foi assumido
+    assert not enviados                                      # não manda de novo
+    assert _eventos_de(planilha, r["id"]) == ["PEDIDO", "ASSUMIDO", "ENVIADO"] and registradas == [(["1212"], "João")]
+    novo_b.reconferidos.clear()
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert len(registradas) == 1 and not enviados and len(perguntas) == 1
+
+
+def test_envio_interrompido_que_nao_saiu_vira_falhou_pedindo_para_conferir(cfg, planilha):
+    rel, enviados, registradas = Relogio(), [], []
+    r, novo_b, perguntas = _interrompido(planilha, cfg, rel, enviados, registradas, {"enviados": False, "saida": False})
+    rel.t += datetime.timedelta(minutes=3)
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert len(perguntas) == 1 and "FALHOU" not in _eventos_de(planilha, r["id"])   # 3 min: ainda espera
+    rel.t += datetime.timedelta(minutes=3)
+    novo_b.reconferidos.clear()
+    novo_b.tick(_ler(planilha), "Cristian")
+    falhou = [l for l in planilha.aba(en.ABA_FILA)[1:] if l[1] == r["id"] and l[2] == "FALHOU"]
+    assert len(falhou) == 1 and "confira" in falhou[0][5] and not enviados and not registradas
+    novo_b.reconferidos.clear()
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert _eventos_de(planilha, r["id"]).count("FALHOU") == 1
+
+
+def test_envio_interrompido_na_caixa_de_saida_sem_outlook_ou_leitura_incompleta_espera(cfg, planilha):
+    for achado in ({"enviados": False, "saida": True}, {"enviados": False, "saida": False, "completo": False}, None):
+        rel, enviados, registradas = Relogio(), [], []
+        r, novo_b, perguntas = _interrompido(planilha, cfg, rel, enviados, registradas, achado or {})
+        if achado is None:
+            def sem_outlook(conta, id_envio, desde):
+                raise RuntimeError("Outlook fechado")
+            novo_b.conferir_envio = sem_outlook
+        for _ in range(3):
+            rel.t += datetime.timedelta(minutes=10)
+            novo_b.reconferidos.clear()
+            novo_b.tick(_ler(planilha), "Cristian")
+        assert _eventos_de(planilha, r["id"]) == ["PEDIDO", "ASSUMIDO"] and not enviados and not registradas, achado
+
+
+def test_envio_assumido_pela_versao_antiga_nunca_vira_falhou(cfg, planilha):
+    """Sem "marca_id" no ASSUMIDO o e-mail não leva o id: não achar não quer dizer que não saiu. Fica como estava."""
+    rel, enviados, registradas = Relogio(), [], []
+    r, novo_b, perguntas = _interrompido(planilha, cfg, rel, enviados, registradas, {"enviados": False, "saida": False},
+                                         marca_id=False)
+    rel.t += datetime.timedelta(hours=2)
+    novo_b.tick(_ler(planilha), "Cristian")
+    assert not perguntas and _eventos_de(planilha, r["id"]) == ["PEDIDO", "ASSUMIDO"] and not enviados
+
+
+def test_envio_em_andamento_neste_painel_nao_e_conferido(cfg, planilha):
+    """O próprio Painel ainda está enviando (Outlook lento): a conferência não mexe nele."""
+    rel, enviados, registradas = Relogio(), [], []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel, registradas)
+    pc_a.avisar_dono = None
+    r = _pedir(pc_a)
+    planilha.anexar_linhas(CENTRAL, en.ABA_FILA, [en.evento(rel(), r["id"], en.ASSUMIDO, "PC-CRISTIAN", "João",
+                                                            {"marca_id": True})])
+    pc_b.locais[r["id"]] = {"estado": "enviando"}
+    pc_b.conferir_envio = lambda *a: (_ for _ in ()).throw(AssertionError("não devia conferir"))
+    rel.t += datetime.timedelta(minutes=10)
+    pc_b.tick(_ler(planilha), "Cristian")
+    assert _eventos_de(planilha, r["id"]) == ["PEDIDO", "ASSUMIDO"]
+
+
+def test_marca_invisivel_leva_o_id_do_envio_e_o_assumido_avisa(cfg, planilha):
+    rel, enviados = Relogio(), []
+    vistos = []
+    pc_a, pc_b = _par(planilha, cfg, enviados, rel)
+    enviar_b = pc_b.enviar
+    pc_b.enviar = lambda *a, **k: (vistos.append(k.get("id_envio")), enviar_b(*a, **k))
+    r = _pedir(pc_a)
+    _esperar(pc_a, r["id"])
+    assert vistos == [r["id"]]
+    assert en.dobrar_fila(planilha.aba(en.ABA_FILA))[r["id"]]["marca_id"] is True

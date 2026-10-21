@@ -12,10 +12,11 @@ const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["
 const PASTAS = { entrada: "Recebido", enviado: "Enviado", excluido: "Excluído" };
 const RESOLVENDO_MS = 4 * 60 * 1000;   // cinza até o espelho do PC dono confirmar (até ~2 min) e a linha sumir
 
-async function carregarCorreio() {
+async function carregarCorreio(soSeMudou = false) {   // soSeMudou: volta automática, igual = não redesenha (velocidade 3)
   try {
     const j = await api("/api/correio");
     if (!j.emails) return;
+    if (soSeMudou && j.__igual) return;
     cx.dados = j;
     const agora = Date.now();
     for (const [k, t] of Object.entries(cx.resolvendo)) if (agora - t > RESOLVENDO_MS) delete cx.resolvendo[k];

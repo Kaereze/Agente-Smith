@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -386,7 +387,7 @@ def garantir_categorias(namespace):
 NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
 ESPELHO_EMAILS_SEGUNDOS = 2 * 60   # aba E-mails do Painel: pendentes das caixas deste PC
 CONFIRMAR_NFS_SEGUNDOS = 2 * 60   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
-VIGIA_SEGUNDOS = 20               # vigia_outlook: só olha; e-mail novo antecipa a conferência e o espelho
+VIGIA_SEGUNDOS = 10               # vigia_outlook: só olha; e-mail novo antecipa a conferência e o espelho (era 20 s)
 MIN_ENTRE_CONFERENCIAS = 30       # conferência completa leva ~15 s: no máximo uma a cada 30 s por PC
 _ja_olhados = set()
 
@@ -627,6 +628,29 @@ def atender_pedido(backend, cfg):
     return True
 
 
+def avisar_paineis(cfg, o_que):
+    """Gravou e-mail/NF novo na Central: avisa o Painel deste PC (ele repassa aos outros) pra reler agora, sem esperar
+    a volta de 15 s (21/10/2026). Em segundo plano e sem erro: se não chegar, a tela pega na volta normal."""
+    def avisar():
+        try:
+            import rede_local
+            from config import caminho_chave_google
+            segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
+            if segredo:
+                rede_local.perguntar(segredo, f"127.0.0.1:{rede_local.PORTA}", "novidade", {"o_que": o_que}, tempo=5)
+        except Exception as e:
+            logger.debug(f"aviso de novidade ao Painel: {e}")
+    t = threading.Thread(target=avisar, daemon=True)
+    t.start()
+    return t
+
+
+def _publicado(espelho):
+    """O que o espelho já gravou na Central (muda = e-mail novo, respondido, lido... na aba do PC)."""
+    estado = getattr(espelho, "estado", None) or {}
+    return tuple(estado.get(k, "") for k in ("publicado", "publicado_textos", "publicado_pedidos"))
+
+
 def main():
     uma_vez = "--uma-vez" in sys.argv
     try:
@@ -733,7 +757,10 @@ def main():
                 if dropbox_antes is not None and marca != dropbox_antes:
                     envio_nf.listar_notas_dropbox(cfg, forcar=True)
                     logger.info("🧾 NF nova no Dropbox — conferindo os e-mails dos hóspedes agora")
-                    proximo_espelho = min(proximo_espelho, max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS))
+                    quando = max(agora, ultima_completa + MIN_ENTRE_CONFERENCIAS)
+                    proximo_espelho = min(proximo_espelho, quando)
+                    if e_principal(cfg):   # só o principal lê o Dropbox na confirmação: "NF emitida" já, não em 2 min
+                        proxima_confirmacao = min(proxima_confirmacao, quando)
                 dropbox_antes = marca
                 if any(novos.values()):
                     logger.info(f"👁️ Outlook: {novos['enviado']} enviado(s), {novos['recebido']} recebido(s) novo(s)"
@@ -760,7 +787,8 @@ def main():
                 # Cada PC confere o próprio Outlook; o Dropbox é compartilhado, então só o principal lê.
                 try:
                     import confirmar_nfs
-                    confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg))
+                    if confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg)):
+                        avisar_paineis(cfg, "nf")   # NF registrada na Tratamento: as telas releem já
                 except Exception as e:
                     logger.warning(f"⚠️ Confirmação de NFs falhou ({e}) — tento de novo em 10 min.")
                 proxima_confirmacao = time.monotonic() + CONFIRMAR_NFS_SEGUNDOS
@@ -771,7 +799,10 @@ def main():
                     import espelho_emails
                     if espelho is None:
                         espelho = espelho_emails.Espelho(BackendGoogle(caminho_chave_google(cfg)), cfg)
+                    antes = _publicado(espelho)
                     espelho.volta(namespace)
+                    if _publicado(espelho) != antes:
+                        avisar_paineis(cfg, "emails")   # a aba de e-mails deste PC mudou: as telas releem já
                 except Exception as e:
                     logger.warning(f"⚠️ Espelho de e-mails falhou ({e}) — tento de novo em 2 min.")
                     espelho = None

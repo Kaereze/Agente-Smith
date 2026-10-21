@@ -52,7 +52,8 @@ def test_encaminhar_usa_o_email_original(cfg, planilha, tmp_path, monkeypatch):
         import time
         time.sleep(0.02)
     assert feitos == [("enviar", "PC-BERNARDO", CAIXA, "recepcao@hotel.com", "ENC: Nota", "Vejam, por favor",
-                       {"agente": "Bernardo", "selo": "", "encaminhar_de": "ENTRY-OUTLOOK-1"})]   # não vira "NF enviada"
+                       {"agente": "Bernardo", "selo": "", "encaminhar_de": "ENTRY-OUTLOOK-1",
+                        "id_envio": r["id"]})]   # não vira "NF enviada"; o id vai na marca invisível
 
 
 def test_pc_dono_desligado_o_pedido_espera_e_sai_quando_ele_liga(cfg, planilha, tmp_path, monkeypatch):

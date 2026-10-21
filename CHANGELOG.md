@@ -9,6 +9,31 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.6] — 2026-10-21
+
+### Mudou
+
+- **Envio direto pela rede** (pedido do João: "deixar tudo mais rápido… toma mt cuidado com e-mail duplicado"):
+  Responder, Enviar NF, Encaminhar, Excluir e Urgência por caixa de outro PC gravam o pedido na fila `Envios_NF` como
+  sempre e avisam o PC dono pela rede do escritório; ele relê o pedido **na fila** e envia pelo mesmo caminho (trava +
+  "assumido" antes de enviar). Sai em ~1 a 3 s em vez de 15 s a ~1 min. Rede fora = a fila resolve, como antes.
+- **E-mail novo e NF na hora:** o robô olha o Outlook a cada 10 s (eram 20) e, quando grava e-mail ou NF na Central,
+  avisa o Painel do PC, que repassa aos outros: todos releem na hora (no máximo 1 vez a cada 12 s, pela cota do Google).
+  NF nova no Dropbox: o Painel olha a pasta a cada 10 s e o robô do principal confere na hora (era a cada 2 min).
+- **Tela só com o que mudou:** a tela pergunta a cada 3 s se há novidade (`/api/versao`); na volta automática, dado
+  igual = o Painel responde só "igual" (~1 KB em vez de ~3,4 MB) e a tela não redesenha. Ação do usuário redesenha
+  sempre; tudo é redesenhado 1 vez por minuto.
+- **Atualização só de documentação** (notas do cofre, `.md`) baixa sem reiniciar o robô e o Painel.
+
+### Corrigido
+
+- **Envio interrompido por reinício:** o Painel que reiniciava entre o envio e o "enviado" deixava o pedido
+  "enviando" para sempre e a NF sem registro. Agora o e-mail leva o nº do envio na marca invisível do Painel e o PC dono
+  confere em Itens Enviados: achou = enviado e NF registrada; não achou (nem na Caixa de Saída) em 5 min = "não saiu,
+  confira antes de mandar de novo". Nunca reenvia sozinho.
+- **Dois Painéis no mesmo PC:** abertos quase juntos, subiam os dois (o Windows deixa abrir a mesma porta) e podiam
+  pegar o mesmo pedido da fila. Agora há trava de um Painel por PC, igual à do robô.
+
 ## [2026.10.21.5] — 2026-10-21
 
 ### Mudou

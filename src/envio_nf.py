@@ -7,6 +7,10 @@ PCs_Painel quais caixas tem, pra quem pede saber se existe um PC ligado capaz de
 Envios_NF é append-only, como a aba Tratamento: PEDIDO, ASSUMIDO, ENVIADO, FALHOU. Anexo vindo do
 Dropbox viaja como caminho relativo (cada PC lê do seu Dropbox); arquivo do computador viaja em partes
 na aba Envios_NF_Anexos e é apagado depois do envio.
+
+Envio direto pela rede (usuário, 21/10/2026): depois de gravar o PEDIDO, quem pede avisa o PC dono pela rede do
+escritório e ele envia na hora, em vez de esperar a próxima leitura da fila (15 s a 1 min). O PC dono relê o pedido
+na fila e envia pelo mesmo caminho dela; a rede só adianta a vez. Sem rede até ele, nada muda: a fila resolve.
 """
 import base64
 import datetime
@@ -14,6 +18,7 @@ import json
 import os
 import re
 import tempfile
+import threading
 import uuid
 from pathlib import Path
 
@@ -42,6 +47,10 @@ MAX_ANEXO_BYTES = 8 * 1024 * 1024
 PC_ONLINE_SEGUNDOS = 180
 SEM_RESPOSTA_SEGUNDOS = 90
 FILA_ESPERA_HORAS = 24           # PC dono desligado: o pedido espera ele ligar por até 24 h; depois expira
+TEMPO_AVISO_DONO = 45            # envio direto: o PC dono envia e responde (Outlook + 2 gravações na planilha)
+RECONFERIR_ENVIO_APOS = 120      # e-mail do Painel ASSUMIDO aqui sem ENVIADO há mais que isso: o Painel caiu no meio
+FALHOU_SEM_ACHAR_APOS = 300      # ... e não está em Itens Enviados nem na Caixa de Saída depois disso: FALHOU (confira)
+MAX_ITENS_CONFERIDOS = 3000      # Itens Enviados é lido do mais novo até a hora do envio; isto é só o teto
 EXCLUIR, ENCAMINHAR = "excluir", "encaminhar"   # ações no Outlook do PC dono (além de enviar/responder)
 URGENCIA = "urgencia"   # botão direito no Painel: categoria "Urgente (Painel)" / "Sem urgência (Painel)" no e-mail
 DISPID_SEND_USING_ACCOUNT = 64209
@@ -534,11 +543,13 @@ def dobrar_fila(linhas):
         except ValueError:
             dados = {}
         e = envios.setdefault(id_envio, {"pedido": None, "pedido_em": "", "quem": "", "assumido_por": "",
+                                         "assumido_em": "", "marca_id": False,
                                          "resultado": None, "detalhe": "", "pc": "", "confirmado": False})
         if ev == PEDIDO and e["pedido"] is None:
             e.update(pedido=dados, pedido_em=quando, quem=quem)
         elif ev == ASSUMIDO and not e["assumido_por"]:
             e["assumido_por"] = pc          # o primeiro gravado vence, como no Assumir da fila
+            e["assumido_em"], e["marca_id"] = quando, bool(dados.get("marca_id"))
         elif ev in (ENVIADO, FALHOU) and e["resultado"] is None:
             e.update(resultado=ev, detalhe=dados.get("detalhe", ""), pc=pc,
                      confirmado=ev == ENVIADO and bool(dados.get("confirmado", True)))
@@ -611,7 +622,7 @@ def tirar_assinatura_automatica(html):
 
 
 def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a="",
-                        encaminhar_de=""):
+                        encaminhar_de="", id_envio=""):
     """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
     a assinatura da caixa no Outlook), imagens embutidas, e os anexos. responder_a / encaminhar_de: EntryID do
     e-mail original (resposta ou encaminhamento de verdade, com o original embaixo). Levanta erro legível."""
@@ -670,7 +681,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     mail._oleobj_.Invoke(*(DISPID_SEND_USING_ACCOUNT, 0, 8, 0, conta))
     try:   # marca invisível: o espelho mostra "pelo Painel" nos Itens enviados
         import espelho_emails
-        mail.PropertyAccessor.SetProperty(espelho_emails.MARCA_PAINEL, f"{agente}|{agora().isoformat(timespec='seconds')}")
+        marca = f"{agente}|{agora().isoformat(timespec='seconds')}" + (f"|{id_envio}" if id_envio else "")
+        mail.PropertyAccessor.SetProperty(espelho_emails.MARCA_PAINEL, marca)   # o id: achar o e-mail depois de um reinício
     except Exception:
         logger.debug("marca do Painel no e-mail", exc_info=True)
     mail.Send()
@@ -678,6 +690,54 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
         ns.SendAndReceive(False)
     except Exception:
         pass
+
+
+def conferir_envio_painel(conta_de, id_envio, desde):
+    """O e-mail do Painel com esse id (na marca invisível) está em Itens Enviados / na Caixa de Saída da caixa? Procura
+    na caixa do hotel e na padrão deste Outlook (a cópia do enviado pode ficar em qualquer uma). Itens Enviados é lido do
+    mais novo para o mais velho até 1 h antes de `desde`. -> {"enviados", "saida", "completo"}; completo = leu tudo o
+    que precisava (sem isso, "não achei" não quer dizer que não saiu)."""
+    import pythoncom
+    import envio_pc_dono
+    import espelho_emails
+    pythoncom.CoInitialize()
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+    conta = next((c for c in ns.Accounts if str(c.SmtpAddress or "").strip().lower() == str(conta_de).lower()), None)
+    if conta is None:
+        raise RuntimeError(f"a caixa {conta_de} não está no Outlook deste PC")
+    fim, limite = f"|{id_envio}", desde - datetime.timedelta(hours=1)
+    completo = True
+
+    def tem(tipo):
+        nonlocal completo
+        for pasta in envio_pc_dono._pastas(ns, conta, tipo):
+            try:
+                itens = pasta.Items
+                if tipo == envio_pc_dono.PASTA_ENVIADOS:
+                    itens.Sort("[SentOn]", True)
+            except Exception:
+                completo = False
+                continue
+            for i, item in enumerate(itens):
+                if i >= MAX_ITENS_CONFERIDOS:
+                    completo = False
+                    break
+                try:
+                    if str(item.PropertyAccessor.GetProperty(espelho_emails.MARCA_PAINEL) or "").endswith(fim):
+                        return True
+                except Exception:
+                    pass
+                if tipo == envio_pc_dono.PASTA_ENVIADOS:
+                    try:
+                        enviado = espelho_emails._data(item.SentOn)
+                    except Exception:
+                        enviado = None
+                    if enviado and enviado < limite:
+                        break
+        return False
+    enviados = tem(envio_pc_dono.PASTA_ENVIADOS)
+    saida = tem(envio_pc_dono.PASTA_CAIXA_SAIDA)
+    return {"enviados": enviados, "saida": saida, "completo": completo}
 
 
 def excluir_no_outlook(entry_id):
@@ -763,6 +823,9 @@ def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
 
 class ServicoEnvio:
     """Roda dentro do Painel de cada PC (thread do laço de atualização)."""
+    avisar_dono = None                         # o Painel liga: (pc, corpo) -> resposta do PC dono pela rede
+    conferir_envio = None                      # os testes trocam: (conta, id, desde) -> {"enviados", "saida", "completo"}
+    reconferir_apos, falhou_apos = RECONFERIR_ENVIO_APOS, FALHOU_SEM_ACHAR_APOS
 
     def __init__(self, backend, cfg, pc, ao_registrar_nf, enviar=None, ler_contas=None, relogio=agora):
         self.backend, self.cfg, self.pc = backend, cfg, pc
@@ -780,7 +843,6 @@ class ServicoEnvio:
         self.locais = {}                               # id -> resultado de envios feitos aqui (resposta imediata)
         self.caixas_de_hotel = lambda: {}              # o Painel troca: {caixa: hotel} do cadastro (e-mail do robô)
         self.reconferidos = {}                         # id -> quando conferiu de novo um e-mail do robô sem confirmação
-        import threading
         self.lock = threading.Lock()
 
     # chamado a cada volta do laço do Painel, com as abas já lidas no batch da Central
@@ -863,11 +925,49 @@ class ServicoEnvio:
         pedido["pc_destino"] = destino
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
-            import threading
             self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
                                    "assumido_por": "", "resultado": None, "detalhe": "", "pc": ""}
             threading.Thread(target=self._executar, args=(id_envio, self.fila[id_envio]), daemon=True).start()
+        elif self.avisar_dono:   # o PEDIDO já está gravado: o aviso pela rede só adianta a vez do PC dono
+            threading.Thread(target=self._acordar_dono, args=(destino, id_envio), daemon=True).start()
         return {"ok": True, "id": id_envio, "destino": destino, "aviso": motivo}
+
+    def _acordar_dono(self, destino, id_envio):
+        """Envio direto: avisa o PC dono pela rede. Erro ou demora = ele pega na próxima leitura da fila, como antes;
+        daqui nunca sai e-mail, nem se tenta de novo (quem envia é só o PC dono)."""
+        try:
+            r = self.avisar_dono(destino, {"id": id_envio}) or {}
+        except Exception as e:
+            logger.info(f"ℹ️ {id_envio}: a rede não chegou no PC {destino} ({str(e)[:80]}) — segue pela fila")
+            return
+        if r.get("estado") in ("enviado", "falhou"):   # resposta na hora pra tela de quem pediu
+            with self.lock:
+                self.locais.setdefault(id_envio, {"estado": r["estado"], "detalhe": r.get("detalhe", ""),
+                                                  "pc": r.get("pc") or destino})
+
+    def receber_pela_rede(self, corpo):
+        """O PC que pediu avisou pela rede (envio direto, 21/10/2026). Vale o que está gravado na fila, não o que veio
+        pela rede: relê a Envios_NF e só envia pedido deste PC que ninguém assumiu, pelo mesmo _executar da fila (trava
+        + ASSUMIDO antes de enviar + self.locais). Chegar pela rede e pela fila nunca manda duas vezes."""
+        id_envio = str((corpo or {}).get("id") or "")
+        if not id_envio.startswith("ENV-"):
+            return {"ok": False, "estado": "recusado", "detalhe": "pedido sem id"}
+        if id_envio in self.locais:
+            return {"ok": True, **self.locais[id_envio], "pc": self.pc}
+        linhas = self.backend.ler_abas(self.central, [ABA_FILA])[0].get(ABA_FILA, [[]])
+        e = dobrar_fila(linhas).get(id_envio)
+        if not e or not e["pedido"]:
+            return {"ok": False, "estado": "recusado", "detalhe": "o pedido não está na fila Envios_NF"}
+        p = e["pedido"]
+        if e["resultado"] or e["assumido_por"]:   # a fila já andou com ele (inclusive antes de um reinício)
+            return {"ok": True, **self.situacao(id_envio, {id_envio: e}), "pc": self.pc}
+        if p.get("pc_destino") != self.pc or p.get("acao") == ACAO_FORMULARIO:
+            return {"ok": False, "estado": "recusado", "detalhe": "não é pedido para este PC"}
+        self._ler_contas(datetime.timedelta(minutes=10))
+        if str(p.get("conta_de") or "").lower() not in {str(c).lower() for c in self.contas}:
+            return {"ok": False, "estado": "recusado", "detalhe": "a caixa do hotel não está no Outlook deste PC"}
+        self._executar(id_envio, e)
+        return {"ok": True, **self.locais.get(id_envio, {"estado": "enviando"}), "pc": self.pc}
 
     def executar_pendentes(self):
         for id_envio, e in list(self.fila.items()):
@@ -887,8 +987,10 @@ class ServicoEnvio:
                 continue
             if e["assumido_por"] and e["assumido_por"] != self.pc:
                 continue
-            if e["assumido_por"] == self.pc:
-                continue   # já assumido por este PC numa volta anterior: não reenvia
+            if e["assumido_por"] == self.pc:   # já assumido aqui numa volta anterior: não reenvia
+                if e.get("marca_id") and p.get("acao", "") in ("", ENCAMINHAR):
+                    self._reconferir_envio(id_envio, e)   # o Painel caiu no meio? confere em Itens Enviados
+                continue
             try:
                 velho = self.relogio() - datetime.datetime.fromisoformat(e["pedido_em"]) > \
                     datetime.timedelta(hours=FILA_ESPERA_HORAS)
@@ -907,7 +1009,8 @@ class ServicoEnvio:
                 return
             self.locais[id_envio] = {"estado": "enviando"}
         p = e["pedido"]
-        self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ASSUMIDO, self.pc, e["quem"])])
+        self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ASSUMIDO, self.pc, e["quem"],
+                                                                 {"marca_id": True})])   # o e-mail leva o id: dá pra achar
         na_planilha = any(a["tipo"] == "planilha" for a in p["anexos"])
         resultado = {}
         try:
@@ -941,7 +1044,7 @@ class ServicoEnvio:
                     if acao == ENCAMINHAR and not entry:
                         raise RuntimeError("o e-mail a encaminhar não está mais no espelho deste PC")
                 self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
-                            agente=self.agente, selo=p.get("selo", ""), **extra)
+                            agente=self.agente, selo=p.get("selo", ""), id_envio=id_envio, **extra)
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")
@@ -1002,6 +1105,48 @@ class ServicoEnvio:
                 self.fila.get(id_envio, {})["confirmado"] = True
         except Exception as e:
             logger.warning(f"⚠️ Não consegui conferir o e-mail do robô {p.get('codigo')} ({e})")
+
+    def _reconferir_envio(self, id_envio, e):
+        """E-mail do Painel ASSUMIDO aqui que nunca terminou: o Painel reiniciou entre o envio e o ENVIADO (21/10/2026, a
+        simulação do envio direto achou a janela). Procura pela marca invisível com o id: achou = ENVIADO e a NF
+        registrada, como num envio normal; nem em Itens Enviados nem na Caixa de Saída 5 min depois de assumido =
+        FALHOU pedindo para conferir. Outlook fora, Caixa de Saída ou leitura incompleta = espera. Nunca envia de novo."""
+        import time as _time
+        if _time.monotonic() - self.reconferidos.get(id_envio, -1e9) < RECONFERIR_SEGUNDOS:
+            return
+        try:
+            assumido = datetime.datetime.fromisoformat(e.get("assumido_em") or e["pedido_em"])
+        except ValueError:
+            return
+        idade = (self.relogio() - assumido).total_seconds()
+        if idade < self.reconferir_apos:
+            return
+        self.reconferidos[id_envio] = _time.monotonic()
+        p = e["pedido"]
+        try:
+            r = (self.conferir_envio or conferir_envio_painel)(p["conta_de"], id_envio, assumido)
+        except Exception as erro:
+            logger.warning(f"⚠️ Não consegui conferir o envio interrompido {id_envio} ({erro})")
+            return
+        if r.get("enviados"):
+            self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, ENVIADO, self.pc, e["quem"],
+                                       {"confirmado": True, "detalhe": "achado em Itens Enviados depois de um reinício"})])
+            self.locais[id_envio] = {"estado": "enviado", "pc": self.pc}
+            logger.info(f"📧 {id_envio}: \"{p['assunto']}\" já tinha saído (achado em Itens Enviados depois de um reinício)")
+            try:
+                if p.get("acao") != ENCAMINHAR:
+                    self.ao_registrar_nf(p, e["quem"])
+            except Exception:
+                logger.exception("NF enviada, mas não consegui registrar na aba Tratamento")
+            if any(a["tipo"] == "planilha" for a in p["anexos"]):
+                self._apagar_anexos(id_envio)
+        elif not r.get("saida") and r.get("completo") and idade >= self.falhou_apos:
+            detalhe = ("não saiu: o Painel reiniciou no meio do envio e o e-mail não está em Itens Enviados nem na Caixa"
+                       " de Saída — confira lá antes de mandar de novo")
+            self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, FALHOU, self.pc, e["quem"],
+                                                                     {"detalhe": detalhe})])
+            self.locais[id_envio] = {"estado": "falhou", "detalhe": detalhe, "pc": self.pc}
+            logger.warning(f"⚠️ {id_envio}: {detalhe}")
 
     def _apagar_anexos(self, id_envio):
         from sheets import nome_intervalo

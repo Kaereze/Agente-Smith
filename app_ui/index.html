@@ -2179,14 +2179,30 @@ function carregando(path, liga, erro) {
   if (erro) { b.classList.add("erro"); $("carregando-txt").textContent = "Não deu certo: " + erro; b._h = setTimeout(() => b.classList.add("oculta"), 6000); return; }
   if (!emAndamento) b._h = setTimeout(() => b.classList.add("oculta"), 250);
 }
+// Velocidade 3 (21/10/2026): o que esta tela já tem destas rotas. Igual = o Painel responde só {__igual} (mais a hora
+// da leitura e os PCs) e aqui devolvemos a cópia guardada (lida de novo, igual a uma resposta nova) com essas partes
+// novas por cima, marcada com j.__igual (não entra no {...j}).
+const COMPARADAS = ["/api/estado", "/api/emails", "/api/correio"], GUARDADAS = {}, REDESENHO_MS = 60000;
 async function api(path, corpo){
   carregando(path, true);
+  const base = path.split("?")[0], guardada = !corpo && COMPARADAS.includes(base) ? GUARDADAS[base] : null;
+  const headers = {"X-Token":TOKEN,"Content-Type":"application/json"};
+  if (guardada && guardada.path === path && Date.now() - guardada.em < REDESENHO_MS) headers["X-Versao"] = guardada.v;
   let r;
   try {
-    r = await fetch(path, {method: corpo ? "POST" : "GET", headers:{"X-Token":TOKEN,"Content-Type":"application/json"},
-                           body: corpo ? JSON.stringify(corpo) : undefined});
+    r = await fetch(path, {method: corpo ? "POST" : "GET", headers, body: corpo ? JSON.stringify(corpo) : undefined});
   } catch (e) { carregando(path, false, "o Painel deste PC não respondeu"); throw e; }
-  const j = await r.json().catch(() => ({ok:false, motivo:"resposta inválida"}));
+  const texto = await r.text().catch(() => "");
+  let j;
+  try { j = JSON.parse(texto); } catch (e) { j = {ok:false, motivo:"resposta inválida"}; }
+  if (j && j.__igual === true) {
+    if (!headers["X-Versao"]) { carregando(path, false); return api(path, corpo); }   // nunca acontece; por garantia
+    const junto = {...j}; delete junto.__igual;
+    j = Object.assign(JSON.parse(guardada.texto), junto);
+    Object.defineProperty(j, "__igual", {value: true, enumerable: false});
+  } else if (r.ok && r.headers.get("X-Versao")) {
+    GUARDADAS[base] = {path, v: r.headers.get("X-Versao"), texto, em: Date.now()};
+  }
   if (!r.ok && j.ok === undefined) j.ok = false;
   carregando(path, false, j.ok === false ? (j.motivo || j.erro) : j.erro);
   return j;
@@ -2242,7 +2258,11 @@ function desenharPcsCabecalho(pcs) {
     `<span class="n ${alertas ? "al" : ""}">${alertas ? alertas + (alertas === 1 ? " alerta" : " alertas") : on.length + " no ar"}</span>`;
 }
 
-async function carregar(){
+// soSeMudou (velocidade 3): volta automática — pedidos e e-mails iguais aos que a tela já tem = não redesenha.
+// Quem chama depois de uma ação (marcar, excluir...) usa carregar() e a tela redesenha sempre, como antes.
+let emCarga = 0;
+async function carregar(soSeMudou = false) { emCarga++; try { return await carregarJa(soSeMudou); } finally { emCarga--; } }
+async function carregarJa(soSeMudou){
   try {
     // dias: o dobro da janela da Visão geral (o resumo compara com o período anterior inteiro)
     const dias = periodo === "0" ? 0 : Math.max(typeof pn !== "undefined" && pn.vista === "gerencia" ? 75 : 45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
@@ -2252,6 +2272,16 @@ async function carregar(){
     // tela nova no disco (atualização sem reinício): recarrega, mas nunca com uma mensagem sendo escrita
     if (j.pagina && j.pagina !== PAGINA && !document.querySelector(".modal-fundo") && !(typeof envNF !== "undefined" && envNF)) {
       location.reload(); return;
+    }
+    let em = null;
+    if (soSeMudou && j.__igual) {   // pedidos iguais: e os e-mails? iguais também = a tela fica como está
+      try { em = await api("/api/emails"); } catch (e) { em = {}; }
+      if (em.__igual) {   // só o cabeçalho muda: hora da leitura e PCs no ar
+        st = {...st, atualizado_em: j.atualizado_em, pcs: j.pcs || st.pcs};
+        if (!j.erro) $("sync-txt").textContent = "Central sincronizada " + quando(j.atualizado_em).slice(-5);
+        desenharPcsCabecalho(st.pcs);
+        carregarCorreio(true); avisoParado(); clearTimeout(timer); timer = setTimeout(() => carregar(true), intervalo * 1000); return;
+      }
     }
     const roboAntes = JSON.stringify(st.status || {});
     st = {...st, ...j}; intervalo = j.atualizar_segundos || 15;
@@ -2279,17 +2309,31 @@ async function carregar(){
     desenharSaude(j.saude || []);
     // pedidos aparecem já; os e-mails (outra rota) entram em seguida, sem segurar a tela
     montarTodos();
-    try { const em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}
+    try { if (!em) em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}
     montarTodos();
-    carregarCorreio();
+    carregarCorreio(soSeMudou);
     if (pn.vista === "visao") desenharVisao();
     if (pn.vista === "gerencia") desenharGerencia();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
   avisoParado();
-  clearTimeout(timer); timer = setTimeout(carregar, intervalo * 1000);
+  clearTimeout(timer); timer = setTimeout(() => carregar(true), intervalo * 1000);
 }
+
+// Tela que se atualiza sozinha (velocidade 3, 21/10/2026): a cada 3 s pergunta ao Painel deste PC se tem dado novo
+// (leitura da Central, NF do Dropbox, envio que terminou). Só relê quando tem; a volta de 15 s continua de garantia.
+let marcaTela = null;
+setInterval(async () => {
+  if (document.visibilityState !== "visible" || emCarga) return;
+  try {
+    const r = await fetch("/api/versao", {headers: {"X-Token": TOKEN}});
+    const j = await r.json();
+    if (!j.v) return;
+    if (marcaTela !== null && j.v !== marcaTela) { clearTimeout(timer); carregar(true); }
+    marcaTela = j.v;
+  } catch (e) { /* a volta de 15 s cobre */ }
+}, 3000);
 
 // Tela que não trava (usuário, 21/10/2026, desenho Pr6): 1 min sem resposta do servidor com a tela à vista acende a faixa
 // laranja; F5 recarrega (a janela do app desliga as teclas do navegador; Ctrl+R continua sendo Responder, correio.js);

@@ -8,6 +8,7 @@ janela abre já carregada. O último estado também vai pro disco (painel_cache.
 sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 """
 import datetime
+import hashlib
 import json
 import os
 import pickle
@@ -99,6 +100,10 @@ ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
 NOTAS_EMAILS_SEGUNDOS = 120   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
+VOLATEIS_TELA = {"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
+VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
+ACORDAR_MIN_SEGUNDOS = 12     # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
+DROPBOX_OLHAR_SEGUNDOS = 10   # pasta de notas do Dropbox: mudou = NF nova, refaz a lista e as NFs dos e-mails já
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
 HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
@@ -158,6 +163,7 @@ class Estado:
     def __init__(self, backend, cfg, relogio=time.monotonic, servico_envio=None):
         self.backend, self.cfg, self.relogio = backend, cfg, relogio
         self.envio_nf = servico_envio or envio_nf.ServicoEnvio(backend, cfg, socket.gethostname(), self.registrar_nf_enviada)
+        self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
@@ -183,6 +189,9 @@ class Estado:
         self.abas_emails, self.emails = [], []
         self.avisos = avisos_windows.Avisos()
         self.notas_emails, self.notas_emails_em = {}, -1e9   # {id do e-mail: [NF do Dropbox]} — calculado em segundo plano
+        self.acordar = threading.Event()   # o robô gravou novidade na Central: o laço relê sem esperar os 15 s
+        self.versao_tela = 0               # muda quando a tela tem o que buscar (a tela pergunta a cada 3 s)
+        self.marca_dropbox, self.dropbox_olhado = None, -1e9
         self.trat_linhas, self.trat_lido_em, self.hoteis_lidos_em = None, -1e9, -1e9
         self.eventos_linhas, self.eventos_pendentes = [], []   # lido/não lido: gravados juntos, 1 escrita por volta
         self.eventos_correio, self.enviados_correio, self.convs = {}, [], []
@@ -595,7 +604,10 @@ class Estado:
                             "motivo": motivo, "atras": s["atras"]}
         if atualizador.pode_atualizar(s):
             quem = "automática" if automatica else f"pedida por {pedido_por}"
-            ok, texto = atualizador.atualizar()
+            na_pasta_antes = envio_nf.versao_do_codigo()
+            ok, texto, reiniciou = atualizador.atualizar()
+            if ok and not reiniciou:   # só documentação: o código que roda é o mesmo da versão nova
+                self._adotar_versao_sem_reiniciar(na_pasta_antes)
             atividade.registrar(self.backend, self.central, [atividade.linha(
                 atividade.ATUALIZADO if ok else atividade.FALHA,
                 detalhe=f"atualização {quem} ({s['atras']} commit(s) novo(s)): {texto}", agente=nome_do_agente())])
@@ -608,6 +620,19 @@ class Estado:
                 atividade.ATUALIZADO, detalhe=f"atualização pedida por {pedido_por}: {texto}", agente=nome_do_agente())])
             return texto
         return motivo
+
+    def _adotar_versao_sem_reiniciar(self, na_pasta_antes):
+        """Atualização só de documentação (21/10/2026): passa a valer a versão nova sem reiniciar, pra a faixa de saúde
+        e o _conferir_reinicio não pedirem reinício. Só se este Painel já rodava o código da pasta: com um reinício
+        pendente de antes (código novo baixado e não reiniciado), fica como está e o _conferir_reinicio cuida."""
+        nova = envio_nf.versao_do_codigo()
+        if not nova or not na_pasta_antes or not self.versao or not na_pasta_antes.startswith(self.versao[:7]):
+            return
+        self.versao = nova
+        try:
+            CAMINHO_VERSAO.write_text(nova, encoding="utf-8")
+        except OSError:
+            logger.debug("versao_rodando.txt", exc_info=True)
 
     def _executar_comando(self, id_c, comando, por):
         try:
@@ -899,6 +924,64 @@ class Estado:
 
     def rede_ping(self, _corpo):
         return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
+
+    def marca_tela(self):
+        """Muda quando a tela tem dado novo pra buscar (velocidade 3, 21/10/2026): leitura da Central, NF do Dropbox ou
+        envio que terminou. A tela pergunta isto a cada 3 s e só relê quando muda."""
+        envio = getattr(self, "envio_nf", None)
+        locais = list(getattr(envio, "locais", {}).values())
+        feitos = sum(1 for v in locais if (v or {}).get("estado") in ("enviado", "falhou"))
+        return f"{getattr(self, 'versao_tela', 0)}.{len(locais)}.{feitos}"
+
+    def rede_novidade(self, corpo):
+        """O robô deste PC (ou o Painel de outro PC, repassando) gravou e-mail/NF novo na Central (21/10/2026): o laço
+        relê já. Do robô daqui: repassa aos outros PCs uma vez (o repassado não é repassado de novo)."""
+        acordar = self.__dict__.setdefault("acordar", threading.Event())
+        acordar.set()
+        if not (corpo or {}).get("repassado"):
+            threading.Thread(target=self._repassar_novidade, args=(dict(corpo or {}),), daemon=True).start()
+        return {"ok": True}
+
+    def _repassar_novidade(self, corpo):
+        enderecos = self._enderecos_rede()
+        if not enderecos or not getattr(self, "segredo", None):
+            return
+        self._anotar_rede(rede_local.perguntar_a_todos(self.segredo, enderecos, "novidade",
+                                                       {"o_que": str(corpo.get("o_que", ""))[:20], "repassado": True},
+                                                       tempo=5))
+
+    def olhar_dropbox(self):
+        """Pasta de notas do Dropbox mudou (NF nova)? Refaz a lista e as NFs dos e-mails na hora (21/10/2026; antes a
+        lista valia 5 min e as NFs dos e-mails 2 min). -> True quando mudou."""
+        if time.monotonic() - self.dropbox_olhado < DROPBOX_OLHAR_SEGUNDOS:
+            return False
+        self.dropbox_olhado = time.monotonic()
+        marca = envio_nf.marca_das_pastas(self.cfg)
+        antes, self.marca_dropbox = self.marca_dropbox, marca
+        if antes is None or marca == antes:
+            return False
+        envio_nf.listar_notas_dropbox(self.cfg, forcar=True)
+        self.atualizar_notas_emails(forcar=True)
+        self.versao_tela += 1
+        logger.info("🧾 NF nova no Dropbox — NFs dos e-mails refeitas")
+        return True
+
+    def rede_envio_nf(self, corpo):
+        """Envio direto (21/10/2026): outro PC gravou um pedido para a caixa que está aqui e avisa na hora."""
+        return self.envio_nf.receber_pela_rede(corpo)
+
+    def _avisar_dono_envio(self, pc, corpo):
+        """Avisa o PC dono pela rede. Sem caminho até ele (outra faixa de rede, firewall, desligado) = erro, e o pedido
+        segue pela fila Envios_NF como sempre."""
+        endereco = self._enderecos_rede().get(pc)
+        if not endereco or not getattr(self, "segredo", None):
+            raise RuntimeError("sem caminho direto até ele")
+        r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "envio_nf", corpo,
+                                         tempo=envio_nf.TEMPO_AVISO_DONO).get(pc, {})
+        self._anotar_rede({pc: r})
+        if "erro" in r:
+            raise RuntimeError(r["erro"])
+        return r
 
     # --- o que a tela pede ---
     def texto_email(self, id_email="", pc="", entry=""):
@@ -1487,11 +1570,19 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
         def log_message(self, *_):
             pass
 
-        def _json(self, corpo, codigo=200):
+        def _json(self, corpo, codigo=200, comparar=False):
             dados_ = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
+            versao = ""
+            if comparar and codigo == 200:   # velocidade 3: a tela já tem isso = não manda de novo
+                versao = assinatura_tela(corpo)
+                if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto
+                    junto = {k: corpo[k] for k in VOLATEIS_JUNTO if isinstance(corpo, dict) and k in corpo}
+                    dados_ = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str).encode("utf-8")
             self.send_response(codigo)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
+            if versao:
+                self.send_header("X-Versao", versao)
             self.send_header("Content-Length", str(len(dados_)))
             self.end_headers()
             self.wfile.write(dados_)
@@ -1534,6 +1625,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self.wfile.write(corpo)
             if not self._autorizado():
                 return self._json({"erro": "não autorizado"}, 403)
+            if url.path == "/api/versao":
+                return self._json({"v": estado.marca_tela()})
             if url.path == "/api/estado":
                 dias = int(parse_qs(url.query).get("dias", ["45"])[0] or 0)
                 estado.vista_atual = parse_qs(url.query).get("vista", [""])[0]
@@ -1546,7 +1639,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
                     "admin": nome_do_agente() in (estado.cfg.get("painel", {}).get("admins") or ["João"]) or bool(getattr(estado, "so_ver", False)),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
-                })
+                }, comparar=True)
             if url.path == "/api/envio":
                 def ler_status():
                     aba = cfg["aba_status"]
@@ -1577,9 +1670,9 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if url.path == "/api/atividade":
                     return self._json(estado.atividade_resumo())
                 if url.path == "/api/emails":
-                    return self._json({"emails": estado.lista_emails(), "este_pc": pc})
+                    return self._json({"emails": estado.lista_emails(), "este_pc": pc}, comparar=True)
                 if url.path == "/api/correio":
-                    return self._json(estado.lista_correio())
+                    return self._json(estado.lista_correio(), comparar=True)
                 if url.path == "/api/correio/conversa":
                     return self._json(estado.conversa(q.get("de", "")))
                 if url.path == "/api/correio/texto":
@@ -1699,18 +1792,70 @@ def abrir_janela():
                       "--no-first-run", "--no-default-browser-check"])
 
 
+def assinatura_tela(corpo):
+    """Hash do que a tela mostra, sem o que muda sozinho a cada volta (VOLATEIS_TELA). Velocidade 3, 21/10/2026."""
+    def limpar(x):
+        if isinstance(x, dict):
+            return {k: limpar(v) for k, v in x.items() if k not in VOLATEIS_TELA}
+        if isinstance(x, list):
+            return [limpar(v) for v in x]
+        return x
+    return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16]
+
+
+def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):
+    """Espera a próxima leitura da Central: 15 s com a janela aberta, 1 min fechada. Novidade do robô (21/10/2026)
+    adianta, com a janela aberta e pelo menos ACORDAR_MIN_SEGUNDOS depois da última leitura. Enquanto espera, olha a
+    pasta de notas do Dropbox a cada 10 s. -> "tempo" | "novidade" """
+    inicio = relogio()
+    while True:
+        aberta = relogio() - ultimo_uso[0] < JANELA_ABERTA_SEGUNDOS
+        passou = relogio() - inicio
+        if passou >= (em_uso if aberta else em_fundo):
+            return "tempo"
+        if aberta and estado.acordar.is_set() and passou >= ACORDAR_MIN_SEGUNDOS:
+            return "novidade"
+        try:
+            estado.olhar_dropbox()
+        except Exception:
+            logger.debug("olhar o Dropbox", exc_info=True)
+        dormir(1)
+
+
 def porta_livre():
     with socket.socket() as s:
         return s.connect_ex(("127.0.0.1", PORTA)) != 0
 
 
+def travar_instancia_unica():
+    """Um servidor do Painel por PC (21/10/2026). Só olhar a porta deixava brecha: dois abertos quase juntos passavam os
+    dois e, no Windows, os dois conseguem abrir a mesma porta. Dois Painéis vivos leem a mesma fila Envios_NF e podiam
+    mandar o mesmo e-mail duas vezes. Mesma trava do robô e da janela.
+    -> arquivo travado (manter aberto enquanto o processo vive) | None se já há outro."""
+    import msvcrt
+    os.makedirs(PASTA_ESTADO, exist_ok=True)
+    arquivo = open(PASTA_ESTADO / "_painel.lock", "a+b")
+    try:
+        msvcrt.locking(arquivo.fileno(), msvcrt.LK_NBLCK, 1)
+        return arquivo
+    except OSError:
+        arquivo.close()
+        return None
+
+
+_TRAVA = None   # fica aberta enquanto o Painel vive
+
+
 def main():
+    global _TRAVA
     sem_janela = "--sem-janela" in sys.argv
-    if sem_janela:   # religado logo após matar o anterior: a porta pode levar uns segundos pra soltar
-        limite = time.monotonic() + 10
-        while not porta_livre() and time.monotonic() < limite:
-            time.sleep(0.5)
-    if not porta_livre():
+    limite = time.monotonic() + (10 if sem_janela else 0)   # religado logo após matar o anterior: porta e trava levam
+    while True:                                              # uns segundos pra soltar
+        _TRAVA = travar_instancia_unica() if porta_livre() else None
+        if _TRAVA or time.monotonic() >= limite:
+            break
+        time.sleep(0.5)
+    if not _TRAVA:
         if not sem_janela:
             abrir_janela()
         return 0
@@ -1746,6 +1891,8 @@ def main():
         estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
                                                                   "anexo": estado.rede_anexo, "ping": estado.rede_ping,
                                                                   "enviar": estado.rede_enviar,
+                                                                  "envio_nf": estado.rede_envio_nf,
+                                                                  "novidade": estado.rede_novidade,
                                                                   "conferir_envio": estado.rede_conferir_envio}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
@@ -1759,17 +1906,14 @@ def main():
     def laco():
         """Fica rodando enquanto o PC estiver ligado. Janela aberta: relê rápido; fechada: devagar (cota da API)."""
         while True:
+            estado.acordar.clear()   # novidade que chegar durante a leitura vale para a próxima volta
             estado.atualizar()
             estado.atualizar_notas_emails()
             estado.atualizar_fi()
             estado.atualizar_canceladas()
             estado.salvar_cache()
-            inicio = time.monotonic()
-            while True:
-                aberta = time.monotonic() - ultimo_uso[0] < JANELA_ABERTA_SEGUNDOS
-                if time.monotonic() - inicio >= (em_uso if aberta else em_fundo):
-                    break
-                time.sleep(1)
+            estado.versao_tela += 1
+            esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)
 
     threading.Thread(target=laco, daemon=True).start()
     if not modo_demo and not so_ver:
