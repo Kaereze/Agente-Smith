@@ -84,6 +84,19 @@ tags: [cerebro/andamento]
 - **Skills de animação/interface** (20/10/2026): no Painel, só com pedido do João. O [[Padrão de design]] fixo continua valendo (ele pediu "padrão fixo que não mude"); animação nova passa por prévia e aprovação antes.
 - **Engeniumm + Project.spec.md + Dominiumm (orquestradas pelo Magister)**: não achadas (find-skills e internet, 20/10/2026). Falta o link de onde o João viu.
 - ~~Prévia 5 → Painel~~ → **feito em 20/10/2026** (ver [[Guia do Painel Fiscal]]).
+- **Fila de design/ajustes (21/10/2026, escolha do João):** 1) desenhado no quadro, esperando OK: resumo fixo do hóspede, aviso de duplicidade, etiquetas únicas; 2) na fila: modo professor discreto, faixa de comandos limpa, velocidade (envio direto pela rede, e-mail novo mais rápido, janela mais leve, commit de documentação sem reiniciar os PCs).
+
+- **Visão empresarial do Painel (PARA DEPOIS dos ajustes de design; o João: "não esquece")** (20/10/2026): ferramenta
+  da empresa até o fim de 2026, por etapas; Supabase no futuro (não agora); usuários gerente × operador; "cara do
+  Outlook"; peças únicas (`app_ui/pecas/`); instalar todas as skills úteis. Busca no find-skills já feita (20/10),
+  candidatas mais fortes: `supabase/agent-skills` (supabase-postgres-best-practices 453 mil, supabase 335 mil),
+  `mattpocock/skills` (domain-modeling 855 mil, codebase-design 830 mil, improve-codebase-architecture 1,1 mi,
+  wayfinder 699 mil, obsidian-vault 195 mil), `kepano/obsidian-skills` (markdown, cli, bases), `wshobson/agents`
+  (sql-optimization-patterns, kpi-dashboard-design, data-storytelling, auth-implementation-patterns,
+  python-performance-optimization, async-python-patterns, e2e-testing-patterns), `vercel-labs/agent-skills@web-design-guidelines`,
+  `pbakaus/impeccable` (extract, critique), `github/awesome-copilot` (prd, sql-code-review), `wondelai/skills`
+  (clean-architecture, domain-driven-design, ux-heuristics). Antes de instalar: conferir cada uma (scripts, rede).
+
 - **Velocidade (OK do João em 20/10/2026, aos poucos)**, medido às 15:30:
   1. ✅ **Pesquisa pelo índice local** (2026.10.20.13): 11-13 s → 11-36 ms.
   2. **Envio direto pela rede** ao PC dono (hoje pela fila da Central: até 60 s com a janela dele fechada + 15 s), fila como plano B.

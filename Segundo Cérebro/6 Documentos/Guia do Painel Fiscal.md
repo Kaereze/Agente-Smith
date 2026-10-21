@@ -42,6 +42,13 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 - **Ficha do pedido** (3 faixas): título com o hotel, quem cuida, NF e prazo; os 5 dados (**Tomador · CNPJ/CPF · O que pede · Hóspede · CPF do hóspede**: o CPF do hóspede aparece **sempre**, mesmo com a nota no CNPJ); os botões Enviar NF, Pedir o que falta e Marcar tratativa. O que falta aparece em âmbar ("falta pedir").
 - Abriu = lido para a equipe toda. "Não lido/Lido" (Ctrl+U / Ctrl+Q) volta.
 
+## Etiquetas (iguais em todas as telas, 21/10/2026)
+- **Situação do pedido** (uma por vez, pílula cheia): **Sem NF** · **Falta dado** (mostra o que falta) · **NF pronta,
+  falta enviar** (a nota existe e não saiu) · **NF enviada** (com o número) · **Correção**.
+- **Alertas** (somam, com contorno): **Urgente** (prazo, dias sem resposta, Ouvidoria, marcado à mão) · **Pediu de novo /
+  Possível repetido** · **Nota dividida** · **CPF/CNPJ diferente** · **Diz que não recebeu**.
+- Responder o hóspede não muda a situação: só vira "NF enviada" quando a nota sai.
+
 ## Formulário aberto (tabela verde e creme em grupos, 20/10/2026)
 1. **Enviado por:** o e-mail de quem preencheu.
 2. **Dados para emissão de Nota Fiscal:** a tabela **Campo / Valor** como chega no e-mail (cabeçalho verde, linhas creme),

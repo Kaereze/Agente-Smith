@@ -161,7 +161,7 @@ function linhaPedidoBusca(s, busca) {
   const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
   return `<div class="cx-l ped" role="option" tabindex="0" data-abrir-ficha="${esc(s.chave)}" title="Abrir a ficha do pedido">
     <span class="it-de">${marcarBusca(s.nome, busca)}</span><span class="it-ic"><i class="pin" aria-label="pedido do formulário"></i></span>
-    <span class="it-as">${esc(s.hotel)} · ${esc(NOMES[s.situacao] || s.situacao || "")}</span><time>${esc(dataBr(s.data))}</time>
+    <span class="it-as">${esc(s.hotel)} · ${esc(nomeSituacao(s))}</span><time>${esc(dataBr(s.data))}</time>
     <span class="it-pv">${esc([doc && "CPF/CNPJ " + doc, s.email, s.nfs?.length ? "NF " + s.nfs.join(", ") : ""].filter(Boolean).join(" · "))}</span></div>`;
 }
 function secoesDaBusca(busca) {
@@ -270,16 +270,10 @@ function linhaEmail(e) {   // igual à prévia aprovada (15/10/2026): quem, assu
 function pedidoDoEmail(e) {
   return e.solicitacao && typeof acharPedido === "function" ? acharPedido(e.solicitacao.chave) : null;
 }
-function tagsEmail(e, cinza) {
-  if ((e.pasta && e.pasta !== "entrada") || cinza || e.respondido) return "";
-  const s = pedidoDoEmail(e), falta = s && typeof faltaDados === "function" ? faltaDados(s) : [];
-  const urg = e.urgente ? (/dias sem resposta/.test(e.motivo_urgencia || "") ? e.motivo_urgencia.replace(/^(\d+) dias sem resposta$/, "Sem resposta há $1 dias")
-    : /corre/i.test(e.motivo_urgencia || "") ? "Pedido de correção" : "Urgente") : "";
-  const tags = (urg ? `<span class="tg t-urg">${esc(urg)}</span>` : "") +
-    (falta.length ? `<span class="tg t-falta">Falta: ${esc(falta[0])}${falta.length > 1 ? ` +${falta.length - 1}` : ""}</span>` : "") +
-    ((e.quartos?.[0] || e.quartos || 0) >= 2 ? `<span class="tg t-div">Nota dividida</span>` : "");
+function tagsEmail(e, cinza) {   // a peça única das etiquetas (pecas/etiqueta.js); respondido não muda a situação (21/10/2026)
+  if ((e.pasta && e.pasta !== "entrada") || cinza) return "";
   const form = (e.classes || []).includes("formulario") ? `<span class="tg t-form">Formulário</span>` : "";
-  return tags || form ? `<div class="it-tg">${tags}${form}</div>` : "";
+  return `<div class="it-tg">${etiquetasDoEmail(e)}${form}</div>`;
 }
 // Faixa do pedido ligado ao e-mail, acima dele (prévia v2): prazo, o que falta, quem cuida, abrir a ficha
 function faixaPedido(e) {
@@ -771,7 +765,7 @@ function historicoHtml(h, atual, alvo = {}) {
   const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok && s.erro !== "sem rede agora (usa a cópia)").map(([pc]) => h.agentes[pc] || pc);
   const linhas = [...itens.map(x => ({ q: x.quando, html: linhaHist(x) })),
     ...forms.map(f => ({ q: f.quando, html: `<div class="cx-h form"><span class="cx-h-tipo">Formulário</span><span class="cx-h-data">${dataBr(f.quando)}</span>
-      <span class="cx-h-ass">${esc(f.hotel)} · ${NOMES[f.situacao] || f.situacao}${f.nfs.length ? " · NF " + esc(f.nfs.join(", ")) : ""}</span>
+      <span class="cx-h-ass">${esc(f.hotel)} · ${esc(nomeSituacao(f))}</span>
       <button class="link" data-ver-pedido="${esc(f.chave)}">abrir pedido</button></div>` }))]
     .sort((a, b) => String(b.q).localeCompare(String(a.q)));
   const outros = h.conv?.enderecos || [];

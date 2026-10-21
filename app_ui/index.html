@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/icone.png">
 <script>try { const t = localStorage.getItem("painel.tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="stylesheet" href="/fontes/fontes.css">
+<link rel="stylesheet" href="/pecas/etiqueta.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
    Cores só por token: o tema claro/escuro segue o Windows. */
@@ -2051,6 +2052,7 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 <div class="carregando oculta" id="carregando" role="status" aria-live="polite"><i></i><span id="carregando-txt"></span></div>
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
 <script src="/pecas/filtro.js"></script>
+<script src="/pecas/etiqueta.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
 const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
@@ -2067,7 +2069,7 @@ const SITUACOES = [["aberto", "Em aberto"], ["na_fila"], ["em_tratamento"], ["tr
 // cartões de filtro e os demais filtros em pílulas com menu
 const ORIGENS = [["form", "Na Caixa de Entrada"]];   // espelho do Outlook (usuário, 11/10/2026); e-mails têm a seção própria
 const SIT_EMAIL = [["todos", "Todos", "var(--linha-forte)"], ["sem_nf", "Sem NF", "var(--roxo)"],
-                   ["com_nf", "Envio pendente", "var(--atencao)"], ["falta_nota", "Diz que falta nota", "var(--erro)"],
+                   ["com_nf", "NF pronta, falta enviar", "var(--atencao)"], ["falta_nota", "Diz que não recebeu", "var(--erro)"],
                    ["dividida", "Nota dividida", "var(--info)"]];
 const ENVIO = {todos: ["Todos", () => true], sim: ["Enviado", s => s.enviado], nao: ["Não enviado", s => !s.enviado]};
 const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30", "Últimos 30 dias"], ["45", "Últimos 45 dias"],
@@ -2266,6 +2268,7 @@ function passaSit(it, f) {
   if (f === "urgentes") return !!motivoUrgente(s);
   if (f === "falta_dado") return faltaDados(s).length > 0;
   if (f === "dividida") return !!s.dividida;
+  if (f === "concluida") return s.situacao === "concluida" && !s.envio_pendente;   // "NF enviada": só a que saiu (21/10/2026)
   return s.situacao === f;
 }
 // O que é preciso pra emitir (usuário, 14/10/2026): nome + CPF/CNPJ (acham a reserva) + o que entra na nota
@@ -2291,13 +2294,7 @@ function motivoUrgente(s) {
   const i = prazoInfo(s.prazo);
   return !i ? "" : i.resta <= 0 ? "Prazo vencido" : i.resta <= 6 ? "Vence em " + i.tempo : "";
 }
-function tagsPedido(s) {
-  const falta = faltaDados(s), urg = motivoUrgente(s);
-  return (urg ? `<span class="tg t-urg">${esc(urg)}</span>` : "") +
-    (falta.length ? `<span class="tg t-falta" title="Falta para emitir: ${esc(falta.join(", "))}">Falta: ${esc(falta[0])}${falta.length > 1 ? ` +${falta.length - 1}` : ""}</span>` : "") +
-    (s.dividida ? `<span class="tg t-div">Nota dividida</span>` : "") +
-    (s.nfs?.length ? `<span class="tg t-nf">NF ${esc(s.nfs.join(", "))}</span>` : "");
-}
+function tagsPedido(s) { return etiquetasDoPedido(s); }   // a peça única das etiquetas (pecas/etiqueta.js)
 function faltaBanner(s) {
   const falta = faltaDados(s);
   if (!falta.length) return "";
@@ -2519,7 +2516,7 @@ function situacoesDaAba(busca) {
   // repaginação v2 (usuário, 14/10/2026): todo e-mail já é pedido de NF; os filtros são só o que ajuda a agir
   const base = [["todas", "Todos", "var(--verde)"], ["urgentes", "Urgentes", "var(--erro)"], ["falta_dado", "Falta dado", "var(--atencao)"],
     ["dividida", "Nota dividida", "var(--info)"], ["doc_diferente", "CPF/CNPJ diferente", "var(--erro)"],
-    ["envio_pendente", "Envio pendente", "var(--atencao)"], ["concluida", "NF emitida", COR_SIT.concluida], ["minhas", "Minhas", "var(--roxo)"]];
+    ["envio_pendente", "NF pronta, falta enviar", "var(--atencao)"], ["concluida", "NF enviada", COR_SIT.concluida], ["minhas", "Minhas", "var(--roxo)"]];
   return base.map(([f, nome, cor]) => [f, nome, cor, conta("sit", it => passaSit(it, f), busca)])
     .filter(([f, , , n]) => n || f === filtro || f === "todas");   // o que é zero some (usuário, 09/10/2026)
 }
@@ -2589,7 +2586,7 @@ function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = 
 const visaoMista = () => origem === "email" ? filtroEmail === "todos"
   : ["aberto", "todas", "minhas", "envio_pendente", "atrasadas", "doc_diferente"].includes(filtro);
 function colunaSituacao(s) {
-  if (visaoMista()) return `<span><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}</span>${marcaEnvio(s)}</span>`;
+  if (visaoMista()) return `<span>${pecaSituacao(situacaoDoPedido(s), { texto: nomeSituacao(s) })}</span>`;
   return `<span class="resp ${s.dono ? "" : "livre"}">${s.dono ? "Com " + esc(s.dono) : "Livre"}${marcaEnvio(s)}</span>`;
 }
 function linhaHtml(it) {
@@ -2609,12 +2606,12 @@ function linhaHtml(it) {
   }
   const m = it.m;
   return `<div class="linha ${emailSel === m.id ? "sel" : ""}" role="option" tabindex="0" data-em="${esc(m.id)}">
-    <span class="quem-linha"><b>${esc(m.nome || m.de)}${tagFalta(m.falta_nota)}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
+    <span class="quem-linha"><b>${esc(m.nome || m.de)}${m.falta_nota ? pecaAlerta("nao_recebeu", { titulo: m.falta_nota }) : ""}${tagQuartos(m)}${m.anexos.length ? `<span class="tag">${m.anexos.length} anexo${m.anexos.length > 1 ? "s" : ""}</span>` : ""}${m.solicitacao ? '<span class="tag nf-ok">tem pedido</span>' : ""}</b>
       <small>${esc(m.assunto || "(sem assunto)")}</small></span>
     ${esperaHtml(it)}<span class="col-hotel">${esc(m.hotel)}<small>${m.pc_online ? "PC de " + esc(m.agente_pc || m.pc) : '<span class="erro-txt">PC desligado</span>'}</small></span>
     <span class="hora col-chegou">${chegou(it.quando)}</span>
-    <span>${m.notas?.length ? `<span class="pilula p-concluida" title="${esc(m.notas.map(n => n.nome).join(" · "))}">NF ${esc(m.notas.map(n => n.nf).join(", "))} emitida</span><span class="envio pend">envio pendente</span>`
-      : `<span class="pilula p-sem_resposta">Sem resposta</span>`}</span></div>`;
+    <span>${m.notas?.length ? pecaSituacao("pronta", { texto: "NF pronta, falta enviar · " + m.notas.map(n => n.nf).join(", "), titulo: m.notas.map(n => n.nome).join(" · ") })
+      : pecaSituacao("sem_nf")}</span></div>`;
 }
 
 function desenhar(){
@@ -2682,7 +2679,7 @@ function desenharDetalhe() {
       <div class="remet"><div class="avatar">${esc((s.nome || "?").trim().charAt(0).toUpperCase())}</div><b>Solicitação pelo formulário · ${esc(s.hotel)}</b>
         <span class="quando">${esc(s.carimbo)}<br><span class="dado">linha ${s.linha}</span></span>
         <span class="de">&lt;${esc(s.email)}&gt;</span></div>
-      <div class="etiquetas"><span class="pilula p-${s.situacao}">${NOMES[s.situacao]}${s.nfs.length ? " · NF " + esc(s.nfs.join(", ")) : ""}</span>
+      <div class="etiquetas">${etiquetasDoPedido(s)}
         ${s.prazo ? prazoHtml(s.prazo) : ""}
         ${s.dono ? `<span class="etq">Com ${esc(s.dono)} desde ${quando(s.dono_desde)}</span>` : ""}
         ${s.dividida ? tagDivisao(s) : tagNotaUnica(s)}
@@ -2724,7 +2721,7 @@ function fichaResumoHtml(s) {
   const val = (v, dado) => v ? `<dd class="${dado ? "dado" : ""}">${esc(v)}</dd>` : `<dd class="falta">falta pedir</dd>`;
   const opc = (v, dado) => v ? `<dd class="${dado ? "dado" : ""}">${esc(v)}</dd>` : `<dd class="vazio-fr">—</dd>`;
   const hist = (s.historico || []).slice(-3).reverse();
-  const sit = `${NOMES[s.situacao] || s.situacao}${s.nfs?.length ? " · NF " + s.nfs.join(", ") : ""}`;
+  const sit = nomeSituacao(s);
   return `<section class="ficha-resumo" aria-label="Resumo do pedido">
     <div class="fr-grade">
       <div class="fr-bloco"><h4>Tomador da nota</h4><dl>
@@ -2752,7 +2749,7 @@ document.addEventListener("click", e => {
 // Etapa 2: CPF/CNPJ da NF diferente do pedido, pedido repetido e os outros pedidos do mesmo hóspede (e-mail ou CPF/CNPJ)
 const linhaPedido = o => `<div class="outro-ped" data-k="${esc(o.chave)}" role="button" tabindex="0"><span class="dado">${dataBr(o.data)} ${esc(horaDoCarimbo(o.carimbo))}</span>
   <span>${esc(o.hotel)} · ${esc(o.nome)}${o.email ? ` <span class="dado">&lt;${esc(o.email)}&gt;</span>` : ""}</span>
-  <span style="color:${COR_SIT[o.situacao] || "inherit"}">${NOMES[o.situacao] || o.situacao}${o.nfs?.length ? " · NF " + esc(o.nfs.join(", ")) : ""}</span></div>`;
+  <span>${pecaSituacao(situacaoDoPedido(o), { texto: nomeSituacao(o) })}</span></div>`;
 function caixaEmDia(texto) {
   return `<div class="vazio feliz"><b>Nada pendente</b><span>${esc(texto)}</span></div>`;
 }

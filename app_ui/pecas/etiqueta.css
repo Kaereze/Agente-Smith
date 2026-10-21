@@ -1,0 +1,15 @@
+/* Peça única: etiquetas (usuário, 21/10/2026). Situação = pílula cheia; alerta = contorno. Cor + ícone + palavra. */
+.peca-etq{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:10px;font:600 11.5px/1 "Segoe UI",system-ui,sans-serif;white-space:nowrap;vertical-align:middle;box-sizing:border-box}
+.peca-etq svg{width:11px;height:11px;flex:none}
+.peca-etq + .peca-etq{margin-left:4px}
+.peca-etq.s-semnf{background:#16324d;color:#8cc8fa}
+.peca-etq.s-falta{background:#3d3212;color:#f2c76b}
+.peca-etq.s-pronta{background:#2c2347;color:#c3a6f5}
+.peca-etq.s-enviada{background:#173b2a;color:#8fd19e}
+.peca-etq.s-corr{background:#5a2a31;color:#ffc2c7}
+.peca-etq.al{background:none;border:1px solid}
+.peca-etq.a-urg{border-color:#e8484f;color:#ff8d95}
+.peca-etq.a-dup{border-color:#f0a04b;color:#f6b26b}
+.peca-etq.a-div{border-color:#4f9fe8;color:#9fd0fa}
+.peca-etq.a-doc{border-color:#e8484f;color:#ff8d95;border-style:dashed}
+.peca-etq.a-nrec{border-color:#f0a04b;color:#f6b26b;border-style:dashed}

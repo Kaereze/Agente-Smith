@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21] — 2026-10-21
+
+### Mudou
+
+- **Etiquetas e situações únicas** (peça `app_ui/pecas/etiqueta.js` + `etiqueta.css`, desenho aprovado pelo João):
+  5 situações, uma por pedido (Sem NF · Falta dado · NF pronta, falta enviar · NF enviada · Correção), e 5 alertas que
+  somam (Urgente · Possível repetido/Pediu de novo · Nota dividida · CPF/CNPJ diferente · Diz que não recebeu), com cor,
+  ícone e palavra iguais na caixa de entrada, em Notas fiscais, na ficha, no histórico e na pesquisa. As regras (qual
+  situação e quais alertas) ficam na peça, então todas as telas decidem do mesmo jeito.
+- Responder o hóspede não vira mais "NF enviada": só a nota que saiu. A que existe e não saiu é "NF pronta, falta enviar".
+- Filtro Situação: "NF emitida" → "NF enviada" (só as que saíram), "Envio pendente" → "NF pronta, falta enviar",
+  "Diz que falta nota" → "Diz que não recebeu".
+
 ## [2026.10.20.21] — 2026-10-20
 
 ### Mudou
