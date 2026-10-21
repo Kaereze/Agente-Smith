@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.2] — 2026-10-21
+
+### Adicionado
+
+- **Aviso de pedido repetido no e-mail** (escolha do João: "1 · Mostrar no e-mail"): quando o pedido do e-mail foi
+  juntado pelo robô a outro da mesma estadia (mesmo hotel, CPF/CNPJ, datas e valor), uma faixa laranja embaixo do
+  resumo fixo avisa "Este hóspede já pediu nota desta estadia", com a data e a situação do outro. Botões **Abrir o outro
+  pedido** e **Comparar** (os dois lado a lado; o que difere em âmbar). Só tela: nada é gravado e a junção automática
+  continua igual.
+
 ## [2026.10.21.1] — 2026-10-21
 
 ### Mudou

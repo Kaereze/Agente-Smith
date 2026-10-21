@@ -48,6 +48,13 @@ dono dela. Regras de fundo: [[Painel em casa]] (PC de casa), [[O que não mexer]
 - Linha **Quer**: "Nota no nome de … · CNPJ/CPF", o que entra na nota e hotel + datas (com as diárias). O que falta aparece em âmbar.
 - **Ver ficha completa** abre a tabela verde/creme do pedido logo abaixo; o Painel lembra se você deixou aberta.
 
+## Pedido repetido (aviso no e-mail, 21/10/2026)
+- Quando o hóspede manda o formulário de novo (mesmo hotel, CPF/CNPJ, datas e valor), o robô já junta os dois e conta
+  como **um pedido só**. Ao abrir o e-mail de um deles, aparece uma **faixa laranja** embaixo do resumo:
+  "Este hóspede já pediu nota desta estadia · 2x", com a data e a situação do outro pedido.
+- **Abrir o outro pedido** leva ao outro em Notas fiscais. **Comparar** mostra os dois lado a lado; o que é diferente fica em âmbar.
+- É só aviso: nada é gravado. Trate pelo pedido principal.
+
 ## Etiquetas (iguais em todas as telas, 21/10/2026)
 - **Situação do pedido** (uma por vez, pílula cheia): **Sem NF** · **Falta dado** (mostra o que falta) · **NF pronta,
   falta enviar** (a nota existe e não saiu) · **NF enviada** (com o número) · **Correção**.

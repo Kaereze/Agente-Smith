@@ -22,6 +22,8 @@ tags: [cerebro/andamento]
 - [ ] **CRICIÚMA**: auditoria da cópia mostra 1 solicitação de 29/09 (TRUE no hotel, pendente na Central) — o robô poderia reenviar; revisar
 
 ## Esperando decisão do João
+- [ ] **Aviso de pedido repetido no e-mail** (21/10): pronto na cópia, capturas Pr3a/Pr3b no quadro → levar como 2026.10.21.2?
+- [ ] **Janela que não trava** (21/10, depois da tela verde): desenho Pr6 no quadro (recarrega ao abrir se a tela estiver parada; aviso "Sem dados há 1 min"; F5/Ctrl+R)
 - [x] **Dia do administrador** (concluído 13/10 ~09:00) (firewall 8766 nos **4** PCs, inclusive o do João, + tirar o bloqueio do `pythonw.exe`): um comando por PC — passo a passo em [[Dia do administrador]]
 - [ ] **Chave do Google de casa** (só leitura): passo a passo em [[Painel em casa]]
 - [ ] **Cadastro**: planilhas CAMPO GRANDE, IDEAL, PALACE; caixas Itapoá (Clara), Pousada Jeri (João), Campo Grande e Ideal (Bernardo), Palace (Cristian) — "depois"

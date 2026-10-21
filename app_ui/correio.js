@@ -589,6 +589,45 @@ document.addEventListener("click", ev => {
   try { localStorage.setItem("painel.fichaAberta", cx.fichaAberta ? "1" : ""); } catch (e) { /* sem armazenamento: só nesta janela */ }
   desenharLeituraCorreio();
 });
+// Pedido repetido no e-mail (usuário, 21/10/2026: "1 · Mostrar no e-mail", desenho Pr3): o robô já junta os formulários
+// iguais (mesmo hotel, CPF/CNPJ, datas e valor; hospedes.marcar); aqui só aparece o aviso e a comparação. Nada é gravado.
+function outroDoRepetido(s) {   // o pedido "irmão": o principal (se este é o repetido) ou o 1º repetido (se este é o principal)
+  if (!s) return null;
+  if (s.repetido_de) return acharPedido(s.repetido_de) || null;
+  return s.repetidos?.length ? (acharPedido(s.repetidos[0].chave) || s.repetidos[0]) : null;
+}
+function linhasComparacao(a, b) {   // [rótulo, este, o outro, diferente?]
+  const c = (s, ...r) => campoDoPedido(s, ...r) || "";
+  const datas = s => [c(s, /check.?in/), c(s, /check.?out/)].filter(Boolean).join(" → ");
+  const situ = s => nomeSituacao(s);
+  const doc = s => { const v = c(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/); return v ? valorDoForm("CPF/CNPJ", v)[0] : ""; };
+  const linhas = [["Quem", s => c(s, /nome.*titular/, /nome do hospede/) || s.nome || ""], ["CPF/CNPJ", doc],
+    ["Nota em", s => c(s, /nome.*tomador/, /razao social/)], ["Hotel", s => s.hotel || ""], ["Datas", datas], ["O que pede", s => c(s, /informac/, /o que.*nota/)],
+    ["Pedido em", s => String(s.data || "").slice(0, 10).split("-").reverse().join("/")], ["Situação", situ]];
+  return linhas.map(([rot, f]) => { const x = f(a), y = f(b); return [rot, x, y, !["Pedido em", "Situação"].includes(rot) && x !== y]; });
+}
+function avisoRepetidoHtml(e) {
+  const s = pedidoDoEmail(e), outro = outroDoRepetido(s);
+  if (!s || !outro) return "";
+  const vezes = (s.repetido_de ? (outro.repetidos?.length || 1) : s.repetidos.length) + 1;
+  const quando = String(outro.data || "").slice(0, 10).split("-").reverse().join("/");
+  const comparar = cx.compararRep === e.id;
+  return `<section class="ol-repetido" role="status" aria-label="Pedido repetido">
+    <div class="rp1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>
+      <div><b>Este hóspede já pediu nota desta estadia · ${vezes}x</b>
+        <p>Mesmo hotel, CPF/CNPJ e datas: ${s.repetido_de ? "o pedido principal" : "outro formulário"} de ${esc(quando || "outra data")} · ${esc(outro.hotel || "")} · ${esc(nomeSituacao(outro))}. O robô conta como um pedido só: trate pelo principal.</p></div></div>
+    <div class="rp-bts"><button type="button" class="p" data-ver-pedido="${esc(outro.chave)}">Abrir o outro pedido</button>
+      <button type="button" data-repetido-comparar="${esc(e.id)}" aria-expanded="${comparar}">${comparar ? "Fechar comparação" : "Comparar"}</button></div>
+    ${comparar ? `<div class="rp-cmp" role="table"><span class="h"></span><span class="h">Este pedido</span><span class="h">O outro</span>${linhasComparacao(s, outro).map(([r, x, y, d]) =>
+      `<span class="k">${esc(r)}</span><span class="${d ? "dif" : ""}">${esc(x || "—")}</span><span class="${d ? "dif" : ""}">${esc(y || "—")}</span>`).join("")}</div>
+      <p class="rp-nota">O que é diferente fica em âmbar.</p>` : ""}</section>`;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest?.("[data-repetido-comparar]");
+  if (!b) return;
+  cx.compararRep = cx.compararRep === b.dataset.repetidoComparar ? "" : b.dataset.repetidoComparar;
+  desenharLeituraCorreio();
+});
 // Formulário aberto como o e-mail que chega no Outlook: o hotel, a solicitação e a tabela Campo / Valor, linha a linha
 // Igual ao e-mail do Emissor Automático (Prévia 5, 20/10/2026): "Enviado por", "Dados para emissão de Nota Fiscal:", a
 // tabela Campo / Valor numa ordem fixa (os dois formulários caem nela; campo fora da lista vai para o fim) e "Enviado em"
@@ -712,7 +751,7 @@ function desenharLeituraCorreio() {
   const anexos = anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" });
   const entra = cx.animou !== e.id ? " ol-entra" : "";
   cx.animou = e.id;
-  el.innerHTML = `<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e)}<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+  el.innerHTML = `<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e) + avisoRepetidoHtml(e)}<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
       <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome))}</span>
         <div class="ol-q"><b>${esc(nome)} ${ender && ender !== nome ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span><span class="rot-para">Para</span><i>${esc(para)}</i></span>
           ${(e.classes || []).filter(c => CLASSES[c]).length ? `<span>${e.classes.map(etiqueta).join(" ")}</span>` : ""}</div>

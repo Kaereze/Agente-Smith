@@ -8,7 +8,7 @@ HTML = (UI / "index.html").read_text(encoding="utf-8")
 
 
 def test_a_faixa_entra_no_topo_e_a_ficha_antiga_sai():
-    assert '<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e)}<div class="ol-cab">' in JS
+    assert '<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e) + avisoRepetidoHtml(e)}<div class="ol-cab">' in JS
     assert "fichaPedidoOl" not in JS   # a ficha de 3 faixas saiu (os dados estão na faixa e na ficha completa)
     assert "Prazo de resposta:" not in JS   # o prazo agora fica na faixa
 
