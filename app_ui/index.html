@@ -1943,6 +1943,21 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 .ol-repetido .rp-cmp .k{color:#a8a8a8}
 .ol-repetido .rp-cmp .dif{background:#3a2a14;color:#ffd7a0;font-weight:600}
 .ol-repetido .rp-nota{margin:0 0 0 32px;font-size:12px;color:#c9b38f}
+/* Tela que não trava (21/10/2026, desenho Pr6): faixa "sem dados" e "Recarregando o Painel…" */
+.aviso-parado{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;
+  max-width:min(680px,calc(100vw - 32px));padding:9px 12px;border:1px solid #f0a04b;border-radius:8px;background:#3a2a14;color:#f0dcc0;
+  font:13px/1.4 "Segoe UI",system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.aviso-parado svg{width:18px;height:18px;color:#f6b26b;flex:none}
+.aviso-parado b{color:#ffd7a0}
+.aviso-parado button{margin-left:6px;height:28px;padding:0 12px;border:1px solid #f0a04b;border-radius:6px;background:#f0a04b;color:#2a1a00;
+  font:600 12.5px "Segoe UI",system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.tela-parada{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#0f2e2a;color:#f6efdc;font-family:"Segoe UI",system-ui,sans-serif}
+.tela-parada > div{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;padding:0 16px;text-align:center}
+.tela-parada .roda{width:28px;height:28px;border-radius:50%;border:3px solid #2b5a4c;border-top-color:#8fd19e;animation:girar 1s linear infinite}
+.tela-parada b{font-size:16px}
+.tela-parada p{margin:0;color:#a9c9bd;font-size:13px;line-height:1.5}
+.tela-parada button{height:32px;padding:0 14px;border:1px solid #2e7d57;border-radius:6px;background:#2e7d57;color:#fff;font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.tela-parada .roda{animation:none}}
 </style>
 </head>
 <body>
@@ -2091,6 +2106,8 @@ button.cx-anexo[disabled]{cursor:default;opacity:.7}
 </div>
 <div class="toast" id="toast" role="status"></div>
 <div class="carregando oculta" id="carregando" role="status" aria-live="polite"><i></i><span id="carregando-txt"></span></div>
+<div class="aviso-parado oculta" id="aviso-parado" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>
+  <span><b>Sem dados do servidor <span id="aviso-parado-txt">há 1 min</span>.</b> Tentando de novo a cada 15 s.</span><button type="button" id="aviso-parado-bt">Recarregar agora</button></div>
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
 <script src="/pecas/filtro.js"></script>
 <script src="/pecas/etiqueta.js"></script>
@@ -2223,6 +2240,7 @@ async function carregar(){
     // dias: o dobro da janela da Visão geral (o resumo compara com o período anterior inteiro)
     const dias = periodo === "0" ? 0 : Math.max(typeof pn !== "undefined" && pn.vista === "gerencia" ? 75 : 45, 2 * (typeof pn !== "undefined" ? pn.janela : 30));
     const j = await api("/api/estado?dias=" + dias + "&vista=" + (typeof pn !== "undefined" ? pn.vista : ""));   // período menor é filtrado aqui
+    ultimoOk = Date.now();
     if (j.erro === "não autorizado") { location.reload(); return; }   // servidor reiniciado (atualização): pega a sessão nova
     // tela nova no disco (atualização sem reinício): recarrega, mas nunca com uma mensagem sendo escrita
     if (j.pagina && j.pagina !== PAGINA && !document.querySelector(".modal-fundo") && !(typeof envNF !== "undefined" && envNF)) {
@@ -2262,8 +2280,33 @@ async function carregar(){
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
+  avisoParado();
   clearTimeout(timer); timer = setTimeout(carregar, intervalo * 1000);
 }
+
+// Tela que não trava (usuário, 21/10/2026, desenho Pr6): 1 min sem resposta do servidor com a tela à vista acende a faixa
+// laranja; F5 recarrega (a janela do app desliga as teclas do navegador; Ctrl+R continua sendo Responder, correio.js);
+// a janela (app_janela) pergunta se a tela
+// está viva por window.__painelVivo.
+let ultimoOk = Date.now(), f5Pedido = 0;
+window.__painelVivo = () => Date.now() - ultimoOk;
+function avisoParado() {
+  const parado = Date.now() - ultimoOk > 60000 && document.visibilityState === "visible";
+  if (parado) $("aviso-parado-txt").textContent = `há ${Math.max(1, Math.round((Date.now() - ultimoOk) / 60000))} min`;
+  $("aviso-parado").classList.toggle("oculta", !parado);
+}
+function recarregarTela() {   // com mensagem sendo escrita, pede o 2º aperto (não perde o texto sem querer)
+  const escrevendo = document.querySelector(".modal-fundo") || (typeof envNF !== "undefined" && envNF);
+  if (escrevendo && Date.now() - f5Pedido > 3000) { f5Pedido = Date.now(); toast("Tem mensagem sendo escrita. Aperte F5 de novo para recarregar mesmo assim.", true); return; }
+  location.reload();
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "F5" && !e.ctrlKey && !e.altKey && !e.shiftKey) { e.preventDefault(); recarregarTela(); }
+});
+$("aviso-parado-bt").addEventListener("click", recarregarTela);
+document.addEventListener("visibilitychange", () => {   // janela mostrada de novo: dados na hora, sem esperar os 15 s
+  if (document.visibilityState === "visible" && Date.now() - ultimoOk > 20000) { clearTimeout(timer); carregar(); }
+});
 
 function montarTodos() {
     AG = {}; (st.hoteis || []).forEach(h => AG[h.hotel] = h.agente);
@@ -3133,13 +3176,28 @@ window.__painelOk = true;
 <script src="/correio.js"></script>
 <script src="/painel.js"></script>
 <script>
-// se a página veio pela metade (lida enquanto a atualização regravava o arquivo), recarrega sozinha: até 3 vezes seguidas
+// Página que veio pela metade (arquivo recusado pelo servidor ocupado, ou lido enquanto a atualização regravava): mostra
+// "Recarregando o Painel…" e tenta de novo, cada vez esperando um pouco mais, sem desistir (usuário, 21/10/2026: antes
+// parava na 3ª tentativa e ficava a tela verde sem função). window.__telaInteira: a janela (app_janela) confere isto.
 (function () {
   let n = 0; try { n = +sessionStorage.getItem("painel.recargas") || 0; } catch (e) {}
-  const ok = window.__painelOk && typeof carregar === "function" && typeof desenharCorreio === "function" && typeof abrirEnvio === "function";
-  if (!ok) { if (n < 3) { try { sessionStorage.setItem("painel.recargas", n + 1); } catch (e) {} setTimeout(() => location.reload(), 1500); } return; }
-  try { sessionStorage.removeItem("painel.recargas"); } catch (e) {}
-  carregar();
+  const ok = !!window.__painelOk && [typeof carregar, typeof desenharCorreio, typeof abrirEnvio, typeof desenharLog,
+    typeof pecaFiltro, typeof etiquetasDoEmail, typeof coresDoTema].every(x => x === "function");
+  window.__telaInteira = ok;
+  if (ok) { try { sessionStorage.removeItem("painel.recargas"); } catch (e) {} carregar(); return; }
+  try { sessionStorage.setItem("painel.recargas", n + 1); } catch (e) {}
+  let falta = [1.5, 3, 5, 10][n] || 15;
+  const div = document.createElement("div");
+  div.className = "tela-parada"; div.setAttribute("role", "alert");
+  div.innerHTML = `<div><div class="roda" aria-hidden="true"></div><b>Recarregando o Painel…</b>
+    <p>A tela não veio inteira (o Painel deste PC estava ocupado). Tentando de novo em <span id="tp-seg">${Math.ceil(falta)}</span> s${n >= 3 ? ` · tentativa ${n + 1}` : ""}.</p>
+    <button type="button" id="tp-agora">Tentar agora</button></div>`;
+  document.body.appendChild(div);
+  document.getElementById("tp-agora").onclick = () => location.reload();
+  const relogio = setInterval(() => {
+    falta -= 0.5; document.getElementById("tp-seg").textContent = Math.max(0, Math.ceil(falta));
+    if (falta <= 0) { clearInterval(relogio); location.reload(); }
+  }, 500);
 })();
 </script>
 </body>

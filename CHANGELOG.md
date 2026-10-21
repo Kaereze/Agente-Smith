@@ -9,6 +9,25 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.3] — 2026-10-21
+
+### Corrigido
+
+- **Tela verde sem função** (PC do João, depois da atualização das 09:46): o servidor do Painel aceitava só 5 conexões
+  na fila (padrão do Python). Ocupado, logo depois de reiniciar, ele fazia o Windows recusar parte dos arquivos da tela
+  (medido: 20 pedidos juntos, 44 de 100 recusados). A página abria pela metade, tentava 3 vezes e desistia em silêncio.
+  Agora a fila é de 128 (`ServidorPainel`).
+- A página que vem pela metade mostra **"Recarregando o Painel…"** com "Tentar agora" e tenta de novo, cada vez
+  esperando um pouco mais, **sem desistir**.
+
+### Adicionado
+
+- Faixa laranja **"Sem dados do servidor há 1 min · Recarregar agora"** (some sozinha quando os dados voltam).
+- **F5** recarrega a tela dentro da janela do app; com mensagem sendo escrita, pede o 2º aperto. Ctrl+R continua sendo
+  Responder.
+- A **janela** (`app_janela`) confere se a tela está viva ao abrir pelo atalho e a cada 30 s; parada (ou página de erro)
+  → recarrega sozinha quando o servidor estiver no ar. Anota em `logs/janela.log`. Vale quando a janela reabrir.
+
 ## [2026.10.21.2] — 2026-10-21
 
 ### Adicionado

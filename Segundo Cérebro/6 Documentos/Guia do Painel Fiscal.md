@@ -116,7 +116,13 @@ prazo; etiquetas) e a ficha sempre à direita. Prazo: 48 h corridas do pedido (v
 
 ## Atalhos
 Ctrl+E pesquisar · ↑ ↓ andar na lista · Enter abrir · Esc fechar · Ctrl+R responder · Ctrl+Shift+R responder com NF ·
-Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido · Ctrl+Q lido · Shift+F10 menu do e-mail (= botão direito) · ? ajuda.
+Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido · Ctrl+Q lido · Shift+F10 menu do e-mail (= botão direito) · F5 recarregar a tela · ? ajuda.
+
+## Se a tela travar (21/10/2026)
+- **"Recarregando o Painel…"**: a tela não veio inteira (o Painel do PC estava ocupado). Ela tenta de novo sozinha; "Tentar agora" adianta.
+- **Faixa laranja "Sem dados do servidor há 1 min"**: o Painel deste PC parou de responder. Ela some quando voltar; "Recarregar agora" recarrega só a tela.
+- **F5** recarrega a tela a qualquer momento. Com uma mensagem sendo escrita, aperte F5 duas vezes (para não perder o texto sem querer).
+- A janela também confere sozinha (ao abrir pelo atalho e a cada 30 s) e recarrega a tela parada. Fica anotado em `logs/janela.log`.
 
 ## Para quem mexe no código
 Onde fica cada coisa: [[Onde mexer]] (linhas "Prévia 5"). Regras de visual: [[Padrão de design]].

@@ -54,5 +54,6 @@ tags: [cerebro/historico]
 | 20/10/2026 | **Pesquisa pelo índice local de cada PC** (12 meses, `estado/indice_emails.sqlite`), Outlook ao vivo só no botão. Substitui a regra de 08/10 "busca sempre ao vivo" | João aprovou ("Sim, as duas"). Medido: 11 a 13 s ao vivo x 11 a 36 ms no índice. Fica só no PC: nada vai pro Google |
 | 20/10/2026 | **Velocidade aos poucos**: uma melhoria por entrega (índice → envio direto pela rede → e-mail novo mais rápido → Painel mais leve); a Graft só como ponte para o Claude, depois | João: "aos poucos" e "ponte para o Claude" |
 | 20/10/2026 | **Design primeiro, mudança só com confirmação**: todo pedido vira design no quadro (ou captura da demonstração) e só vai pro Painel/GitHub/PCs depois do João confirmar, mesmo quando ele diz "faz" | João: "nunca altera nada sem antes minha confirmação… me confirma pra ver se eu realmente quero fazer" |
+| 21/10/2026 | **Tela que não trava**: fila do servidor de 128 conexões; página pela metade tenta de novo sem desistir; faixa "Sem dados há 1 min"; F5 recarrega (Ctrl+R fica Responder); a janela confere a tela ao abrir e a cada 30 s | Tela verde no PC do João depois da atualização; medido 44 de 100 pedidos recusados com a fila de 5. João: "pode fazer as 3" e "pode levar" |
 
 Ver: [[O que não mexer]].

@@ -9,6 +9,8 @@ Abrir rápido (usuário, 11/10/2026): o X só ESCONDE a janela; clicar no atalho
 Desligar/reiniciar o Windows fecha normal. Fechar de vez: "Fechar o Painel" no menu do operador (canto de baixo).
 Liga junto com o Windows, escondido (atalho na pasta Inicializar do usuário, sem administrador): o 1º clique do dia
 já mostra o Painel carregado.
+Tela que não trava (usuário, 21/10/2026): ao abrir pelo atalho e a cada 30 s a janela pergunta se a tela está viva;
+parada (tela verde depois de um reinício, por exemplo) -> recarrega sozinha. Fica anotado em logs/janela.log.
 """
 import ctypes
 import os
@@ -20,7 +22,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import PASTA_ESTADO, PASTA_PROJETO
+from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO
 
 PORTA = 8765
 TITULO = "Painel Notas Fiscais"
@@ -28,12 +30,73 @@ ICONE = PASTA_PROJETO / "app_ui" / "icone.ico"
 APP_ID = "RedeAndrade.PainelNotasFiscais"   # agrupa na barra de tarefas como app próprio, não como Python
 EVENTO_MOSTRAR = "Local\\RedeAndrade.PainelNotasFiscais.Mostrar"   # o atalho clicado de novo pede pra mostrar
 ESTADO = {"sair": False, "janela": None}
+VIGIAR_SEGUNDOS = 30          # de quanto em quanto a janela confere se a tela está viva
+RESPOSTA_SEGUNDOS = 3         # tela que não responde nesse tempo conta como parada
+PERGUNTAS_PRESAS_MAX = 20     # perguntas sem resposta acumuladas: para de perguntar (não enche de linhas presas)
 
 
 def servidor_no_ar():
     with socket.socket() as s:
         s.settimeout(0.5)
         return s.connect_ex(("127.0.0.1", PORTA)) == 0
+
+
+def anotar(msg):
+    try:
+        with open(PASTA_LOGS / "janela.log", "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%d/%m/%Y %H:%M:%S')} {msg}\n")
+    except OSError:
+        pass   # sem log, a janela segue igual
+
+
+def tela_viva():
+    """True: a tela abriu inteira e responde. False: abriu pela metade, é página de erro ou não respondeu em 3 s."""
+    janela, resp = ESTADO["janela"], {}
+    if not janela or ESTADO.get("presas", 0) >= PERGUNTAS_PRESAS_MAX:
+        return True   # sem como perguntar: não mexe
+
+    def perguntar():
+        try:
+            resp["v"] = janela.evaluate_js("window.__telaInteira === true && typeof window.__painelVivo === 'function'")
+        except Exception:
+            resp["v"] = False   # página de erro (sem o pywebview) ou JavaScript quebrado
+    t = threading.Thread(target=perguntar, daemon=True)
+    t.start()
+    t.join(RESPOSTA_SEGUNDOS)
+    if t.is_alive():
+        ESTADO["presas"] = ESTADO.get("presas", 0) + 1
+    return resp.get("v") is True
+
+
+def recarregar_tela(motivo):
+    if not ESTADO["janela"] or not servidor_no_ar():
+        return False   # servidor reiniciando: espera ele voltar (recarregar agora daria página de erro)
+    try:
+        ESTADO["janela"].load_url(f"http://127.0.0.1:{PORTA}/")
+    except Exception as e:
+        anotar(f"não consegui recarregar a tela ({motivo}): {e}")
+        return False
+    anotar(f"tela recarregada pela janela: {motivo}")
+    return True
+
+
+def conferir_ao_mostrar():
+    """Clicou no atalho: tela parada recarrega na hora (3 perguntas, 2 s entre elas, para não pegar uma que está abrindo)."""
+    for _ in range(3):
+        if tela_viva():
+            return
+        time.sleep(2)
+    recarregar_tela("estava parada ao abrir")
+
+
+def vigiar_tela():
+    """A cada 30 s: tela que não responde (ou abriu pela metade) duas vezes seguidas é recarregada."""
+    falhas = 0
+    while not ESTADO["sair"]:
+        time.sleep(VIGIAR_SEGUNDOS)
+        falhas = 0 if tela_viva() else falhas + 1
+        if falhas >= 2 and recarregar_tela("não respondeu duas vezes seguidas"):
+            falhas = 0
 
 
 def garantir_servidor(timeout=30):
@@ -139,6 +202,7 @@ def esperar_pedido_de_mostrar():
                     win32gui.SetForegroundWindow(hwnd)
             except Exception:
                 pass
+            threading.Thread(target=conferir_ao_mostrar, daemon=True).start()
 
 
 def garantir_inicio_com_windows():
@@ -186,6 +250,7 @@ def main():
                                              min_size=(1000, 640), background_color="#0f2e2a", text_select=True,
                                              js_api=Api(), hidden="--escondida" in sys.argv)
     threading.Thread(target=esperar_pedido_de_mostrar, daemon=True).start()
+    threading.Thread(target=vigiar_tela, daemon=True).start()
     webview.start(aplicar_icone, gui="edgechromium", private_mode=False,
                   storage_path=str(PASTA_ESTADO / "app_webview"))
     return 0

@@ -73,6 +73,12 @@ def _marca_pagina():
         return ""
 
 
+class ServidorPainel(ThreadingHTTPServer):
+    """Fila de conexões maior (21/10/2026): com a fila padrão (5), o servidor ocupado (logo depois de reiniciar) fazia o
+    Windows recusar parte dos arquivos da tela, a página abria pela metade e ficava a "tela verde" sem função."""
+    request_queue_size = 128
+
+
 def _pagina_inteira(tentativas=6):
     """index.html lido inteiro: durante uma atualização o arquivo pode estar sendo regravado (lido pela metade = página quebrada)."""
     html = ""
@@ -1744,7 +1750,7 @@ def main():
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
     estado.uso_ref = ultimo_uso
-    servidor = ThreadingHTTPServer(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))
+    servidor = ServidorPainel(("127.0.0.1", PORTA), criar_handler(estado, cfg, token, ultimo_uso))
     app = cfg.get("app", {})
     em_uso, em_fundo = int(app.get("atualizar_segundos", 15)), int(app.get("atualizar_segundos_fundo", 60))
     if so_ver:   # a cota do Google é dos 4 PCs do trabalho: em casa relê bem mais devagar

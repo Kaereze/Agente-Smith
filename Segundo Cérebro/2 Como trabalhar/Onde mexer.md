@@ -55,6 +55,7 @@ tags: [cerebro/trabalho]
 | **Faxina da Central** | `faxina.py` |
 | **Cota do Google** | `cota_google.py`, `rede_util.py` (retry) |
 | **Janela, X que esconde, abrir com o Windows** | `app_janela.py` |
+| **Tela que não trava** (fila do servidor, "Recarregando o Painel…", faixa "Sem dados", F5, janela que confere) | servidor: `app_servidor.ServidorPainel` (fila 128); página: guarda no fim do `index.html` (`window.__telaInteira`, sem limite de tentativas), `avisoParado`/`recarregarTela`/`window.__painelVivo` depois de `carregar`; janela: `app_janela.tela_viva`, `conferir_ao_mostrar`, `vigiar_tela` (log em `logs/janela.log`) |
 | **Outlook: guardião (abrir com janela), porta única do COM** | `outlook_vivo.py` → `estado`, `garantir`, `aplicativo`, `iniciar_guardiao` (ligado no `conferente.main`); estado no Painel via `rede_pcs.outlook_aberto` |
 | **Saúde: último e-mail recebido, alarme "nenhum e-mail chega"** | `saude.py` → `ultimo_recebido`, `problemas`; coletado no `app_servidor.vigiar_caixa_de_saida` |
 | **Modo demonstração / modo casa** | `demo.py`; servidor `main()` (`--demo`, `--visualizar`); `sheets.BackendSoLeitura`; `PAINEL_DEMO_EM_CASA.bat` |
