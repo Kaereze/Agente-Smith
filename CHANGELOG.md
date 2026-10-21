@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.1] — 2026-10-21
+
+### Mudou
+
+- **Resumo fixo do hóspede** (desenho aprovado pelo João): uma faixa parada no topo do e-mail aberto com quem é, as
+  etiquetas, o prazo, o que ele quer ("Nota no nome de… · CNPJ", o que entra na nota, hotel e datas com as diárias; o
+  que falta em âmbar) e os botões Pedir o que falta · Marcar tratativa · Enviar NF. "Ver ficha completa" abre a tabela
+  verde/creme do pedido (o Painel lembra aberta/fechada). A ficha de 3 faixas saiu do meio do e-mail.
+
 ## [2026.10.21] — 2026-10-21
 
 ### Mudou

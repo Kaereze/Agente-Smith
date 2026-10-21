@@ -547,29 +547,48 @@ function desenharFaixaGlobal() {
 const hotelDaCaixa = c => (st.hoteis || []).filter(h => h.email === c).map(h => h.hotel).join(" / ");
 const nomeDaCaixa = c => hotelDaCaixa(c) || String(c).split("@")[1]?.replace(/^(redeandrade|hotel)/, "").replace(/(hotel)?\.com(\.br)?$/, "").toUpperCase() || c;
 // Ficha do pedido (creme), no topo do e-mail como na prévia: tomador, documento, o que pede, nota, prazo e os 3 botões
-function fichaPedidoOl(e) {
-  const s = pedidoDoEmail(e);
-  if (!s) return e.solicitacao ? `<section class="ol-ficha"><div class="ft"><b>Ficha do pedido</b> · ${esc(e.solicitacao.hotel || "")} · formulário de
-    ${esc(String(e.solicitacao.data || "").split("-").reverse().join("/"))} · pedido antigo, fora da lista de Notas fiscais</div></section>` : "";
-  const tom = campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/);
-  const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/);
-  const pede = campoDoPedido(s, /informac/, /o que.*nota/, /itens/);
-  // hóspede e o CPF dele SEMPRE, mesmo com a nota no CNPJ (usuário, 15/10/2026: "nunca esquece isso")
-  const hosp = campoDoPedido(s, /nome.*titular/, /nome do hospede/, /^hospede/) || (soDigitos(doc).length === 11 ? tom : "");
-  const cpfH = campoDoPedido(s, /cpf.*titular/, /documento do hospede/, /cpf.*hospede/) || (soDigitos(doc).length === 11 ? doc : "");
-  const v = x => x ? `<span>${esc(x)}</span>` : `<span class="falta">falta pedir</span>`;
-  const i = prazoInfo(s.prazo);
-  const barra = i ? Math.max(4, Math.min(100, Math.round(100 * i.resta / (s.prazo.horas || 48)))) : 0;
-  const div = s.dividida || s.partes > 1 ? `<span class="div">nota dividida em ${Math.max(s.partes || 2, 2)}</span>` : "";
-  return `<section class="ol-ficha" aria-label="Ficha do pedido"><div class="ft"><b>Ficha do pedido</b> · ${esc(s.hotel)}${s.dono ? " · com " + esc(s.dono) : ""} ${div}
-      ${s.nfs?.length ? `<span class="div">NF ${esc(s.nfs.join(", "))}</span>` : ""}
-      ${i ? `<span class="prz ${i.nivel}">prazo: ${esc(i.texto)} <i><b style="width:${barra}%"></b></i></span>` : ""}</div>
-    <div class="fg"><div><small>Tomador</small>${v(tom)}</div><div><small>CNPJ / CPF</small>${v(doc)}</div>
-      <div><small>O que pede</small>${v(pede)}</div><div><small>Hóspede</small>${v(hosp)}</div><div><small>CPF do hóspede</small>${v(cpfH)}</div></div>
-    <div class="fb"><button type="button" class="p" data-cx-faixa="nf">Enviar NF</button>
-      ${faltaDados(s).length ? `<button type="button" data-pedir-dados="${esc(s.chave)}">Pedir o que falta</button>` : ""}
-      <button type="button" data-abrir-ficha="${esc(s.chave)}">Marcar tratativa</button></div></section>`;
+// Resumo fixo do hóspede (usuário, 21/10/2026: desenho Pr1/Pr2 do quadro): a faixa parada no topo do e-mail com quem
+// é, as etiquetas, o prazo, o que ele quer e os botões. "Ver ficha completa" abre a tabela do pedido (peça formularioHtml).
+function dadosDoResumo(e) {
+  const ped = pedidoDoEmail(e), d = ped || dadosDoFormulario(e);
+  if (!d) return { ped: null, dados: null };
+  const c = (...r) => campoDoPedido(d, ...r);
+  return { ped, dados: d, tom: c(/nome.*tomador/, /razao social/, /^nome( completo)?$/),
+           doc: c(/documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/), pede: c(/informac/, /o que.*nota/, /itens/),
+           tit: c(/nome.*titular/, /nome do hospede/, /^hospede/), ci: c(/check.?in/), co: c(/check.?out/) };
 }
+function resumoFixoHtml(e) {
+  if (e.pasta === "enviado") return "";
+  const r = dadosDoResumo(e), ehForm = (e.classes || []).includes("formulario");
+  const nome = r.tit || (soDigitos(r.doc || "").length === 11 ? r.tom : "") || (ehForm ? r.tom || "Hóspede do formulário" : e.nome || e.de || "");
+  const prazo = prazoInfo(r.ped?.prazo || e.prazo);
+  const [docF, docT] = r.doc ? valorDoForm("CPF/CNPJ", r.doc) : ["", ""];
+  const [datas, diarias] = r.ci && r.co ? valorDoForm("Datas", `${r.ci} → ${r.co}`) : ["", ""];
+  const falta = r.ped && typeof faltaDados === "function" ? faltaDados(r.ped) : [];
+  const chip = (html, cls = "") => `<span class="rf-chip ${cls}">${html}</span>`;
+  const quem = [r.tom, docF ? `${docT || "documento"} ${docF}` : ""].filter(Boolean).join(" · ");
+  const lugar = [e.hotel || r.ped?.hotel || "", datas ? `<b>${esc(datas)}</b>${diarias ? " · " + esc(diarias) : ""}` : ""].filter(Boolean);
+  const chips = r.dados ? (quem ? chip(`Nota no nome de <b>${esc(quem)}</b>`) : chip("Falta: nome e CPF/CNPJ", "falta"))
+      + (r.pede ? chip(`<b>${esc(r.pede)}</b>`) : chip("Falta: o que entra na nota", "falta"))
+      + (lugar.length ? chip(lugar.map((x, i) => i ? x : esc(x)).join(" · ")) : "")
+    : chip("Sem formulário: os dados estão no texto do e-mail", "neutro");
+  const podeAbrir = !!r.dados && !ehForm, aberta = podeAbrir && !!cx.fichaAberta;
+  return `<section class="ol-resumo" aria-label="Resumo do hóspede">
+    <div class="rf1"><span class="rf-av" aria-hidden="true">${esc(iniciais(nome))}</span><b class="rf-nome">${esc(nome)}</b>
+      <span class="rf-etq">${etiquetasDoEmail(e)}</span>${prazo ? `<span class="rf-prazo ${prazo.nivel}">prazo: ${esc(prazo.texto)}</span>` : ""}
+      <span class="rf-bts">${falta.length ? `<button type="button" data-pedir-dados="${esc(r.ped.chave)}">Pedir o que falta</button>` : ""}${
+        r.ped ? `<button type="button" data-abrir-ficha="${esc(r.ped.chave)}">Marcar tratativa</button>` : ""}<button type="button" class="p" data-cx-faixa="nf">Enviar NF</button></span></div>
+    <div class="rf2"><span class="rf-rot">Quer</span>${chips}${podeAbrir
+      ? `<button type="button" class="rf-ficha" data-resumo-ficha aria-expanded="${aberta}">${aberta ? "Fechar ficha ▴" : "Ver ficha completa ▾"}</button>` : ""}</div>
+    ${aberta ? `<div class="rf-tab">${formularioHtml(r.dados, e)}</div>` : ""}</section>`;
+}
+try { cx.fichaAberta = localStorage.getItem("painel.fichaAberta") === "1"; } catch (e) { cx.fichaAberta = false; }
+document.addEventListener("click", ev => {
+  if (!ev.target.closest?.("[data-resumo-ficha]")) return;
+  cx.fichaAberta = !cx.fichaAberta;
+  try { localStorage.setItem("painel.fichaAberta", cx.fichaAberta ? "1" : ""); } catch (e) { /* sem armazenamento: só nesta janela */ }
+  desenharLeituraCorreio();
+});
 // Formulário aberto como o e-mail que chega no Outlook: o hotel, a solicitação e a tabela Campo / Valor, linha a linha
 // Igual ao e-mail do Emissor Automático (Prévia 5, 20/10/2026): "Enviado por", "Dados para emissão de Nota Fiscal:", a
 // tabela Campo / Valor numa ordem fixa (os dois formulários caem nela; campo fora da lista vai para o fim) e "Enviado em"
@@ -693,20 +712,18 @@ function desenharLeituraCorreio() {
   const anexos = anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" });
   const entra = cx.animou !== e.id ? " ol-entra" : "";
   cx.animou = e.id;
-  el.innerHTML = `<div class="ol-leitura${entra}"><div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+  el.innerHTML = `<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e)}<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
       <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome))}</span>
         <div class="ol-q"><b>${esc(nome)} ${ender && ender !== nome ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span><span class="rot-para">Para</span><i>${esc(para)}</i></span>
           ${(e.classes || []).filter(c => CLASSES[c]).length ? `<span>${e.classes.map(etiqueta).join(" ")}</span>` : ""}</div>
         <div class="ol-acoes">${botoes}<time>${esc(dataLonga(e.quando))}</time>
           <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div>
-      ${dividida ? `<span class="ol-etq">Nota dividida</span>` : ""}</div>
+      </div>
     ${onde ? `<p class="ol-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>${esc(onde)}</p>` : ""}
     ${anexos ? `<div class="ol-anexos">${anexos}</div>` : ""}
-    ${enviado ? "" : fichaPedidoOl(e)}
     ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
     ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
-    ${!pedidoDoEmail(e) && e.pasta === "entrada" && e.prazo ? `<div class="ol-corpo" style="padding-bottom:0"><span class="dica">Prazo de resposta: ${prazoHtml(e.prazo)}</span></div>` : ""}
     <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div>
     ${h ? historicoHtml(h, e, alvoH) : ""}</div>`;
 }
