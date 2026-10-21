@@ -251,3 +251,23 @@ def test_email_sem_formulario_acha_a_nf_pelo_numero_da_estada_e_nome_com_erro(mo
               "texto": "Nome do hóspede: FRANCISCO XAVIER PEREIRA\nCPF: 111.222.333-44"}
     assert e.notas_do_email(xavier, {}) == []   # outro Francisco Pereira: não é a nota dele
     assert e.palavra_parecida("coernelio", "cornelio") and not e.palavra_parecida("ana", "ama")
+
+
+def test_pelo_nome_nao_liga_nota_de_outra_estada(monkeypatch):
+    """Usuário, 21/10/2026: a NF de uma estada caiu em pedidos de outras estadas do mesmo nome. Dados inventados."""
+    import envio_nf as e
+    salvo = 1792900000   # 18/10/2026
+    itens = [("NF 900 - MARCOS SILVA EXEMPLO - 30001.pdf", r"C:\dropbox\NF 900 - MARCOS SILVA EXEMPLO - 30001.pdf", salvo,
+              ("900", "MARCOS SILVA EXEMPLO"))]
+    monkeypatch.setattr(e, "listar_notas_dropbox", lambda cfg: itens)
+    monkeypatch.setattr(e, "raiz_dropbox", lambda cfg: None)
+    monkeypatch.setattr(e, "_LISTAGEM", {"em": object(), "chave": None, "itens": itens})
+    monkeypatch.setattr(e, "_INDICE_NOTAS", {"em": None, "por_reserva": {}, "por_palavra": {}})
+    monkeypatch.setattr(e, "_confere_no_pdf", lambda *a: "nome no PDF")   # o PDF confere o nome
+    pedido = {"assunto": "Solicitação de Nota Fiscal Estada: 30005", "recebido": "2026-10-20T09:22:00", "nome": "Marcos Exemplo",
+              "texto": "Solicito nota fiscal com o CNPJ abaixo referente a:\nEstada: 30005\nCNPJ: 12.345.678/0001-95"}
+    assert e.notas_do_email(pedido, {}) == []   # a NF 900 é da estada 30001
+    sem_numero = {**pedido, "assunto": "Solicitação de Nota Fiscal", "texto": "Solicito a nota da minha hospedagem."}
+    assert [n["nf"] for n in e.notas_do_email(sem_numero, {})] == ["900"]   # sem nº: o nome continua valendo
+    mesma = {**pedido, "assunto": "Solicitação de Nota Fiscal Estada: 30001", "texto": "Estada: 30001"}
+    assert [n["nf"] for n in e.notas_do_email(mesma, {})] == ["900"]

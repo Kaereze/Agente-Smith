@@ -682,23 +682,36 @@ class Espelho:
 
     def _marcar_nf_emitida(self, namespace):
         """A NF do hóspede apareceu no Dropbox: etiqueta "🧾 NF emitida" no e-mail dele, no Outlook deste PC
-        (pela reserva ou pelo nome, conferido no PDF). Cada e-mail é conferido de novo só quando a pasta muda."""
+        (pela reserva ou pelo nome, conferido no PDF). Cada e-mail é conferido de novo só quando a pasta muda.
+        A etiqueta já posta também é reconferida (usuário, 21/10/2026): a que não passa mais na regra sai do e-mail."""
         marcadas = dict(self.estado.get("nf_marcadas", {}))
         try:
             import envio_nf
             from controle_nf import CATEGORIA_NF_EMITIDA
             envio_nf.listar_notas_dropbox(self.cfg)
             listagem = str(envio_nf._LISTAGEM.get("em"))
+            nfs_na_lista = {str(n[3][0]) for n in envio_nf.listar_notas_dropbox(self.cfg)}
         except Exception as erro:
             logger.debug(f"Dropbox indisponível pra etiqueta de NF: {erro}")
             return marcadas
         checadas = getattr(self, "_checadas", {})
         for i, e in self.itens.items():
-            if e["pasta"] != ENTRADA or i in marcadas or checadas.get(i) == listagem:
+            if e["pasta"] != ENTRADA or checadas.get(i) == listagem:
                 continue
             checadas[i] = listagem
             try:
                 notas = envio_nf.notas_do_email({**e, "recebido": e["quando"]}, self.cfg)
+                if i in marcadas:
+                    # só tira se as NFs marcadas ainda estão na lista (Dropbox lido pela metade não tira etiqueta certa)
+                    if not notas and set(marcadas[i]) <= nfs_na_lista:
+                        item = namespace.GetItemFromID(e["entry_id"])
+                        atuais = [c.strip() for c in re.split(r"[;,]", item.Categories or "") if c.strip()]
+                        if CATEGORIA_NF_EMITIDA in atuais:
+                            item.Categories = ", ".join(c for c in atuais if c != CATEGORIA_NF_EMITIDA)
+                            item.Save()
+                        logger.info(f"🧾 Etiqueta NF emitida tirada do e-mail de {e.get('nome') or e['de']} ({e['hotel']}): "
+                                    f"a NF {', '.join(marcadas.pop(i))} não confere com a estada do pedido")
+                    continue
                 if not notas:
                     continue
                 item = namespace.GetItemFromID(e["entry_id"])

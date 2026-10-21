@@ -46,6 +46,7 @@ tags: [cerebro/trabalho]
 | **Envio das solicitações por e-mail** | `main.py` → `executar`; corpo do e-mail em `montar_email.py`; envio COM em `outlook.py`; diário em `diario_envios.py` · caixa de outro PC: `envio_pc_dono.py` → `OutlookComPcDono` (rede: `enviar_aqui`/`conferir_aqui`, ações `/rede/enviar` e `/rede/conferir_envio` em `app_servidor`; plano B: `FilaCentral` + `envio_nf.ServicoEnvio` com `ACAO_FORMULARIO`) |
 | **Conferente** (lê Outlook, acha NF no Dropbox, etiquetas) | `conferente.py` → `uma_volta`, `varrer_dropbox`, `varrer_enviados`, `marcar_notas_divididas` |
 | **Espelho do Outlook de cada PC** (Correio_, CaixaPedidos_, CorreioTexto_) | `espelho_emails.py` → `Espelho`, `pedidos_do_robo`, `classificar`, `resolver` |
+| **Etiqueta "🧾 NF emitida"** no e-mail do hóspede (põe e tira) | `espelho_emails._marcar_nf_emitida` (reconfere a já posta; tira a que não passa, só com a NF ainda na lista); qual NF é do e-mail: `envio_nf.notas_do_email` (1: nº da estada + nome; 2: nome inteiro + PDF, e se o e-mail diz a estada o arquivo tem que ser dela), `_reservas_do_arquivo` |
 | **Reconhecer a NF que saiu / confirmar NFs** | `controle_nf.py`, `confirmar_nfs.py` |
 | **Urgência (NF errada, cancelar)** | `analise_nf.py` |
 | **Prazo por tipo de pedido** | `prazos.py` |

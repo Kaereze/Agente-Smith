@@ -254,3 +254,35 @@ def test_nf_no_dropbox_vira_etiqueta_no_email_do_hospede(tmp_path, monkeypatch):
     assert ana.Categories == f"Nota dividida, {CATEGORIA_NF_EMITIDA}" and len(salvos) == 1   # a etiqueta que já tinha fica
     esp.volta(ol)
     assert len(salvos) == 1   # não marca de novo
+
+
+def test_etiqueta_nf_emitida_errada_sai_do_email(tmp_path, monkeypatch):
+    """Usuário, 21/10/2026: "o robô tira sozinho" a etiqueta que não passa mais na regra. Dados inventados."""
+    import envio_nf
+    from controle_nf import CATEGORIA_NF_EMITIDA
+    monkeypatch.setattr(ee, "CAMINHO_ESTADO", tmp_path / "espelho.json")
+    cfg = {"planilha_central_id": "C", "aba_cadastro_hoteis": "Cadastro_Hoteis"}
+    central, ol = Central(), OutlookFalso("nf@luxor.com")
+    marcos = Item("E1", "marcos@exemplo.com", "Solicitação de Nota Fiscal Estada: 30005", "Estada: 30005", D(2026, 10, 8, 8, 0), nome="Marcos")
+    marcos.Categories, salvos = "Nota dividida", []
+    marcos.Save = lambda: salvos.append(marcos.Categories)
+    ol.receber(marcos)
+    lista = [("NF 900 - MARCOS SILVA EXEMPLO - 30001.pdf", r"C:\dropbox\x.pdf", 0, ("900", "MARCOS SILVA EXEMPLO"))]
+    monkeypatch.setattr(envio_nf, "listar_notas_dropbox", lambda cfg, forcar=False: lista)
+    monkeypatch.setattr(envio_nf, "notas_do_email", lambda e, cfg: [{"nf": "900"}])   # a regra antiga ligava
+    esp = ee.Espelho(central, cfg, relogio=lambda: D(2026, 10, 8, 9, 0))
+    esp.volta(ol)
+    assert marcos.Categories == f"Nota dividida, {CATEGORIA_NF_EMITIDA}"
+    # Dropbox lido pela metade (a NF 900 sumiu da lista): não tira
+    monkeypatch.setattr(envio_nf, "notas_do_email", lambda e, cfg: [])   # a regra nova não liga
+    monkeypatch.setattr(envio_nf, "listar_notas_dropbox", lambda cfg, forcar=False: [])
+    monkeypatch.setitem(envio_nf._LISTAGEM, "em", object())
+    esp.volta(ol)
+    assert CATEGORIA_NF_EMITIDA in marcos.Categories
+    # pasta mudou e a NF 900 está na lista, mas não confere: sai a etiqueta (a outra fica) e não volta
+    monkeypatch.setattr(envio_nf, "listar_notas_dropbox", lambda cfg, forcar=False: lista)
+    monkeypatch.setitem(envio_nf._LISTAGEM, "em", object())
+    esp.volta(ol)
+    assert marcos.Categories == "Nota dividida" and esp.estado["nf_marcadas"] == {}
+    esp.volta(ol)
+    assert marcos.Categories == "Nota dividida"

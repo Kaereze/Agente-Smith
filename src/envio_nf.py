@@ -339,15 +339,19 @@ _INDICE_NOTAS = {"em": None, "por_reserva": {}, "por_palavra": {}}
 JANELA_NOTA_EMAIL_DIAS = (-3, 30)
 
 
+def _reservas_do_arquivo(nome_arquivo):
+    """"NF 590 - COERNELIO NOGUEIRA - 62222.pdf": os nºs da estada ficam depois do nome."""
+    resto = " ".join(os.path.splitext(nome_arquivo)[0].split(" - ")[2:])
+    return set(re.findall(r"\d{4,10}", resto))
+
+
 def _indice_notas(cfg):
     itens = listar_notas_dropbox(cfg)
     if _INDICE_NOTAS["em"] is not _LISTAGEM["em"] or not _INDICE_NOTAS["por_palavra"]:
         por_reserva, por_palavra = {}, {}
         for item in itens:
             nome_nf = item[3][1]
-            # "NF 590 - COERNELIO NOGUEIRA - 62222.pdf": o nº da estada fica depois do nome
-            resto = " ".join(os.path.splitext(item[0])[0].split(" - ")[2:])
-            for r in set(re.findall(r"\d{4,10}", resto)):
+            for r in _reservas_do_arquivo(item[0]):
                 por_reserva.setdefault(r, []).append(item)
             for p in _palavras(nome_nf):
                 por_palavra.setdefault(p, []).append(item)
@@ -399,10 +403,13 @@ def _confere_no_pdf(caminho, mtime, documentos, nomes):
 def notas_do_email(e, cfg):
     """NFs do Dropbox emitidas pra este e-mail -> [{nome, nf, rel, prova, modificado, forte}].
     1) nº da estada/reserva (assunto ou texto) igual ao do arquivo E uma palavra do nome parecida;
-    2) sem nº: nome do hóspede (2+ palavras iguais) e nota salva de 3 dias antes a 30 depois do e-mail."""
+    2) sem nº: nome do hóspede (2+ palavras iguais) e nota salva de 3 dias antes a 30 depois do e-mail. Se o e-mail diz
+       a estada, o arquivo tem que ser dela (ou não ter nº) — usuário, 21/10/2026: a NF 1286 da estada 21653 caiu em
+       pedidos das 21656/21657 do mesmo nome."""
     idx = _indice_notas(cfg)
     texto = f"{e.get('assunto', '')}\n{e.get('texto', '')}"
-    reservas = set(_ROTULO_RESERVA.findall(texto)) | set(re.findall(r"\b\d{4,10}\b", e.get("assunto", "")))
+    rotuladas = set(_ROTULO_RESERVA.findall(texto))   # "Estada: 21657" (nº solto no assunto pode ser outra coisa)
+    reservas = rotuladas | set(re.findall(r"\b\d{4,10}\b", e.get("assunto", "")))
     palavras = set().union(set(), *(_palavras(n) for n in nomes_do_email(e)))
     achadas = {}
     for r in reservas:
@@ -426,6 +433,9 @@ def notas_do_email(e, cfg):
                 for item in idx["por_palavra"].get(p, []):
                     vistos[item[1]] = item
         for caminho, item in vistos.items():
+            numeros = _reservas_do_arquivo(item[0])
+            if rotuladas and numeros and not numeros & rotuladas:
+                continue   # o e-mail diz a estada e este arquivo é de outra
             t = _palavras(item[3][1])
             atraso = (datetime.date.fromtimestamp(item[2]) - recebido).days if recebido else 0
             if not (len(t) >= 2 and any(n <= t for n in nomes)

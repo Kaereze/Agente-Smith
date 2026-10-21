@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.4] — 2026-10-21
+
+### Corrigido
+
+- **Etiqueta "🧾 NF emitida" no e-mail errado** (caso do João: 3 pedidos de estadas novas ganharam a etiqueta da NF de
+  outra estada do mesmo nome, salva 2 dias antes). A busca pelo nome, feita para e-mail sem nº de estada, rodava sempre
+  que a busca pelo nº falhava. Agora, se o e-mail diz a estada ("Estada: 12345"), o arquivo tem que ser dela (ou não ter
+  nº). O robô também reconfere as etiquetas que já pôs e tira as que não passam mais (só se a NF ainda está na lista do
+  Dropbox, para um Dropbox lido pela metade não tirar etiqueta certa).
+
 ## [2026.10.21.3] — 2026-10-21
 
 ### Corrigido
