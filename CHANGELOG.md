@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.21.5] — 2026-10-21
+
+### Mudou
+
+- **Janelas que abrem por cima no cinza, com animação nova** (desenho aprovado pelo João): Novo e-mail, Responder,
+  Enviar NF, Encaminhar, Excluir, Ajuda, Enviar pendentes, o anexo e o aviso de baixo ficavam fora da área do modo cinza
+  e usavam o verde antigo. Agora são uma peça única (`app_ui/pecas/janela.css` + `janela.js`): abrem subindo e crescendo
+  de leve em 0,24 s e fecham em 0,15 s (com "menos movimento" no Windows, só esmaecem). "Recarregando o Painel…" no
+  cinza, com o círculo azul.
+- **Sem o verde antigo de tema:** a tela já abre no cinza (antes aparecia por um instante a tela antiga verde ao abrir ou
+  recarregar); quadro "NF já enviada" e seleções em azul-escuro; borda da pesquisa, bolinha do operador, barra de
+  rolagem e fundo da janela do app em cinza. Cores de situação e a tabela verde/creme ficam.
+
 ## [2026.10.21.4] — 2026-10-21
 
 ### Corrigido

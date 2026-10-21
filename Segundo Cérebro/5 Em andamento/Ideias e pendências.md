@@ -24,7 +24,11 @@ tags: [cerebro/andamento]
 ## Esperando decisão do João
 - [x] **Aviso de pedido repetido no e-mail** (21/10): levado em 2026.10.21.2
 - [x] **Tela que não trava** (21/10, depois da tela verde): levado em 2026.10.21.3 (fila 128, sem desistir, faixa, F5, janela que confere)
-- [ ] **Reabrir a janela nos PCs dos colegas** para valer a parte da janela (ou esperar o próximo liga/desliga do PC)
+- [ ] **Reabrir a janela** para valer a vigia da tela (2026.10.21.3): no PC do João quando ele puder (estava usando o Painel às 11:01; não reabri para não atrapalhar); nos colegas no próximo liga/desliga do PC
+- [x] **"NF emitida" respeita o nº da estada** (21/10): levado em 2026.10.21.4; as 3 etiquetas erradas saíram às 11:03
+- [x] **Janelas por cima no cinza + animação nova** e **outros verdes** (21/10, João: "pode fazer tudo"): levado em 2026.10.21.5
+- [ ] **Resumo do e-mail em cinza + azul** (chips "Quer", botão Enviar NF, "Ver ficha completa"): prévia pronta (quadro, seção 7) → esperando OK
+- [ ] **Emitir as NFs das estadas 21656 e 21657** (Rondonópolis, pedidos de 21/10 09:20–09:22): não há nota no Dropbox
 - [x] **Dia do administrador** (concluído 13/10 ~09:00) (firewall 8766 nos **4** PCs, inclusive o do João, + tirar o bloqueio do `pythonw.exe`): um comando por PC — passo a passo em [[Dia do administrador]]
 - [ ] **Chave do Google de casa** (só leitura): passo a passo em [[Painel em casa]]
 - [ ] **Cadastro**: planilhas CAMPO GRANDE, IDEAL, PALACE; caixas Itapoá (Clara), Pousada Jeri (João), Campo Grande e Ideal (Bernardo), Palace (Cristian) — "depois"

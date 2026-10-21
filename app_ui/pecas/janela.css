@@ -1,0 +1,28 @@
+/* Peça única: janela que abre por cima (usuário, 21/10/2026, desenho Pr7). As janelas ficam no body, fora do
+   .app.modo-ol, e pegavam o verde antigo: aqui ganham o cinza do modo Outlook e a animação nova. Abre 0,24 s (sobe 12 px,
+   96% -> 100%), fecha 0,15 s (pecas/janela.js), fundo 0,18 s; com "menos movimento" no Windows, só esmaece.
+   Todas usam: Novo e-mail, Responder, Enviar NF, Encaminhar, Excluir, Ajuda, Enviar pendentes, anexo e os avisos de baixo. */
+.modal-fundo,.janela-saindo,.visor-fundo,body > .toast,body > .carregando{
+  --chao:#1f1f1f;--folha:#262626;--folha-2:#2e2e2e;--linha:#3a3a3a;--linha-forte:#4a4a4a;--tinta:#f0f0f0;--tinta-2:#d0d0d0;--tinta-3:#a8a8a8;
+  --verde:#479ef5;--verde-forte:#6cb8f6;--verde-suave:#1d3550;--verde-texto:#6cb8f6;--sobre-verde:#ffffff;
+  --mata:#2b2b2b;--mata-2:#333333;--mata-tinta:#f0f0f0;--mata-suave:#a8a8a8;--creme:#383838;--creme-tinta:#e6e6e6;--creme-forte:#479ef5;
+  --atencao:#e2b64c;--atencao-fundo:#33290f;--erro:#f08a7e;--erro-fundo:#3a1d19;--ok:#6cb8f6;--ok-fundo:#1d3550;color-scheme:dark}
+.modal-fundo,.janela-saindo{background:rgba(0,0,0,.5)}
+.modal-fundo{animation:janelaFundo .18s ease-out both}
+.modal-fundo > *{animation:janelaEntra .24s cubic-bezier(.16,1,.3,1) both;transform-origin:50% 40%}
+.janela-saindo{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;pointer-events:none;
+  animation:janelaFundoSai .15s ease-in both}
+.janela-saindo > *{animation:janelaSai .15s ease-in both}
+:is(.modal-fundo,.janela-saindo) .modal{border-radius:8px;border:1px solid #3a3a3a;box-shadow:0 18px 48px rgba(0,0,0,.55);color:var(--tinta)}
+:is(.modal-fundo,.janela-saindo) .compor-topo{border-bottom:1px solid #3a3a3a}
+.visor-fundo:not(.oculta){animation:janelaFundo .18s ease-out both}
+body > .toast{border:1px solid #4a4a4a;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.45);animation:janelaAviso .22s cubic-bezier(.16,1,.3,1) both}
+@keyframes janelaFundo{from{opacity:0}to{opacity:1}}
+@keyframes janelaFundoSai{to{opacity:0}}
+@keyframes janelaEntra{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes janelaSai{to{opacity:0;transform:translateY(6px) scale(.98)}}
+@keyframes janelaAviso{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion: reduce){
+  .modal-fundo > *,body > .toast{animation:janelaFundo .12s ease-out both}
+  .janela-saindo > *{animation:janelaFundoSai .12s ease-in both}
+}

@@ -247,7 +247,7 @@ def main():
     except Exception:
         pass   # versão do pywebview diferente: o X fecha como antes
     ESTADO["janela"] = webview.create_window(TITULO, f"http://127.0.0.1:{PORTA}/", width=1440, height=900,
-                                             min_size=(1000, 640), background_color="#0f2e2a", text_select=True,
+                                             min_size=(1000, 640), background_color="#1f1f1f", text_select=True,
                                              js_api=Api(), hidden="--escondida" in sys.argv)
     threading.Thread(target=esperar_pedido_de_mostrar, daemon=True).start()
     threading.Thread(target=vigiar_tela, daemon=True).start()
