@@ -870,7 +870,7 @@ async function verEnvio(id) {
     const resp = a.ctx.resp;
     if (resp && !resp.encaminhar && !resp.novo) correioRespondido(resp.id);
     carregar(); desenharEnvio(id);
-    a.timer = setTimeout(() => fecharEnvio(id), 7000);
+    a.timer = setTimeout(() => fecharEnvio(id), 3500);   // a pílula some sozinha
     return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") { a.estado = "falhou"; return desenharEnvio(id); }
@@ -879,22 +879,38 @@ async function verEnvio(id) {
   a.timer = setTimeout(() => verEnvio(id), 2000);
 }
 function desenharEnvio(id) {
+  // Aviso em pílula (22/10/2026, desenho "Aviso de envio", Opção B): uma linha só. Erro não some: vira pílula vermelha
+  // e, clicando em "Ver", abre o cartão completo (motivo + Escrever de novo).
   const a = andamento[id], box = $("envios-andamento");
   if (!a || !box) return;
+  const falhou = a.estado === "falhou", cartao = falhou && a.aberto;
   let card = box.querySelector(`[data-env="${id}"]`);
-  if (!card) { card = document.createElement("div"); card.className = "env-card"; card.dataset.env = id; card.setAttribute("role", "status"); box.appendChild(card); }
+  if (card && card.dataset.forma !== (cartao ? "cartao" : "pilula")) { card.remove(); card = null; }
+  if (!card) {
+    card = document.createElement("div"); card.dataset.env = id; card.dataset.forma = cartao ? "cartao" : "pilula";
+    card.setAttribute("role", "status"); box.appendChild(card);
+  }
   const { resp, pc } = a.ctx;
-  const oque = resp?.novo ? "e-mail" : resp?.encaminhar ? "mensagem encaminhada" : resp ? (resp.comNF ? "resposta com a NF" : "resposta") : "NF";
-  const passo = { entregue: 1, saindo: 2, enviado: 4, falhou: 0 }[a.estado];
-  const li = (n, txt) => `<li class="${passo > n ? "f" : passo === n ? "a" : ""}">${txt}</li>`;
+  const oque = resp?.novo ? "e-mail" : resp?.encaminhar ? "mensagem" : resp ? (resp.comNF ? "resposta com a NF" : "resposta") : "NF";
   const hora = a.fim ? a.fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
-  card.innerHTML = a.estado === "falhou"
-    ? `<div class="tt"><i class="ruim">!</i>Não deu para enviar a ${esc(oque)}</div><div class="det">${esc(a.s?.detalhe || "o PC dono não respondeu")}</div>
-       <div class="bt"><button type="button" data-env-fechar="${id}">Fechar</button><button type="button" data-env-reabrir="${id}">Escrever de novo</button></div>`
-    : `<div class="tt">${a.estado === "enviado" ? `<i class="feito">✓</i>Enviado às ${hora} · em Itens Enviados` : `<i class="gira"></i>Enviando a ${esc(oque)}…`}
-         <small>${pc ? "PC de " + esc(nomeAgente(pc)) : "este PC"}</small></div>
-       <ol>${li(1, pc ? `Entregue ao PC de ${esc(nomeAgente(pc))}` : "Entregue ao Outlook deste PC")}${li(2, "Saindo pela caixa do hotel")}${li(3, "Conferido em Itens Enviados")}</ol>
-       <div class="barra"><i style="width:${[0, 30, 62, 88, 100][passo]}%"></i></div>`;
+  const onde = pc ? `<small>· PC de ${esc(nomeAgente(pc))}</small>` : "";
+  let html;
+  if (cartao) {
+    card.className = "env-card";
+    html = `<div class="tt"><i class="ruim">!</i>Não deu para enviar a ${esc(oque)}</div><div class="det">${esc(a.s?.detalhe || "o PC dono não respondeu")}</div>
+       <div class="bt"><button type="button" data-env-fechar="${id}">Fechar</button><button type="button" data-env-reabrir="${id}">Escrever de novo</button></div>`;
+  } else if (falhou) {
+    card.className = "env-pilula erro"; card.removeAttribute("title");
+    html = `<button type="button" data-env-ver="${id}" aria-label="Não enviou a ${esc(oque)}. Ver o motivo"><i class="env-ex">!</i>Não enviou <u>Ver</u></button>`;
+  } else if (a.estado === "enviado") {
+    card.className = "env-pilula sai"; card.title = "Conferido em Itens Enviados";
+    html = `<i class="env-ok">✓</i>Enviado ${hora}`;
+  } else {
+    card.className = "env-pilula";
+    card.title = (pc ? `Entregue ao PC de ${nomeAgente(pc)}` : "Entregue ao Outlook deste PC") + " → saindo pela caixa do hotel → conferido em Itens Enviados";
+    html = `<i class="env-gira"></i>Enviando ${esc(oque)} ${onde}`;
+  }
+  if (card._html !== html) { card.innerHTML = html; card._html = html; }   // não refaz igual: o círculo não reinicia a cada 2 s
 }
 function fecharEnvio(id) {
   clearTimeout(andamento[id]?.timer);
@@ -902,6 +918,8 @@ function fecharEnvio(id) {
   document.querySelector(`[data-env="${id}"]`)?.remove();
 }
 document.addEventListener("click", async ev => {
+  const ver = ev.target.closest("[data-env-ver]");
+  if (ver && andamento[ver.dataset.envVer]) { andamento[ver.dataset.envVer].aberto = true; return desenharEnvio(ver.dataset.envVer); }
   const f = ev.target.closest("[data-env-fechar]");
   if (f) return fecharEnvio(f.dataset.envFechar);
   const b = ev.target.closest("[data-env-reabrir]");
