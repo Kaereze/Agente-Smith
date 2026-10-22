@@ -205,7 +205,7 @@ function desenharGerencia() {
   el.innerHTML = `<div class="cartao ger-v2" id="ger-relatorio">${REL.html || `<div class="vazio">Carregando o relatório…</div>`}</div>
     <div class="cartao"><h3>Equipe agora</h3><div class="sub">O que cada um tem pra fazer neste momento e o que saiu hoje</div>
       <div class="tabela-wrap"><table class="ger-tab"><thead><tr><th>Agente</th><th>PC</th><th class="num">NFs pra emitir</th><th class="num">E-mails na entrada</th>
-        <th class="num">Urgência</th><th class="num">Enviados 24 h</th><th>Painel</th></tr></thead><tbody>
+        <th class="num">Urgência</th><th class="num">Enviados 72 h</th><th>Painel</th></tr></thead><tbody>
         ${Object.entries(porAgente).map(([a, x]) => `<tr><td><b>${esc(a)}</b></td><td>${x.p.online ? '<span class="dot on"></span> no ar' : '<span class="dot"></span> desligado'}</td>
           <td class="num">${n(x.notas)}</td><td class="num">${n(x.entrada)}</td><td class="num">${x.urg ? `<span class="ruim-txt">${n(x.urg)}</span>` : "0"}</td>
           <td class="num">${n(x.env)}</td><td>${String(x.p.uso || "").startsWith("aberto") ? "aberto · " + esc(String(x.p.uso).split("|")[1] || "") : "fechado"}</td></tr>`).join("")}
@@ -236,7 +236,7 @@ function faixaAgora(sol, mails, enviados) {
       sub: `<b>${n(mails.filter(e => e.lido === false).length)}</b> não lidos` },
     { ir: "correio:urgencia", rot: "Urgentes", v: mails.filter(e => e.urgente).length, cor: COR_VIZ.sem_nf,
       sub: "correção de NF ou +7 dias sem resposta" },
-    { ir: "correio:enviados", rot: "Enviados · 24 h", v: enviados.length, cor: COR_VIZ.emitida,
+    { ir: "correio:enviados", rot: "Enviados · 72 h", v: enviados.length, cor: COR_VIZ.emitida,
       sub: "o que saiu das caixas dos hotéis" },
   ];
   return `<div class="faixa-resumo" role="group" aria-label="Agora, no Outlook dos 4 PCs">${itens.map(i => `
@@ -367,7 +367,7 @@ function desenharVisao() {
   };
   const tabOp = `<div class="tabela-wrap"><table class="ger-tab tab-op"><thead><tr><th>Operador</th><th class="num">Solicitações</th>
       <th class="num">Sem NF</th><th class="num">Atrasadas</th><th class="num">E-mails</th><th class="num">Não lidos</th><th class="num">Urgentes</th>
-      <th class="num">Enviados 24 h</th></tr></thead><tbody>${[...agentesEquipe(), "todos"].map(v => {
+      <th class="num">Enviados 72 h</th></tr></thead><tbody>${[...agentesEquipe(), "todos"].map(v => {
         const c = linhaOp(v);
         return `<tr data-escopo="${esc(v)}" class="${escopoAtual() === v ? "sel" : ""}"><td>${v === "todos" ? "Total" : esc(v)}</td>${c.map((x, k) =>
           `<td class="num">${(k === 2 || k === 5) && x ? `<span class="ruim-txt">${n(x)}</span>` : n(x)}</td>`).join("")}</tr>`; }).join("")}</tbody></table></div>`;

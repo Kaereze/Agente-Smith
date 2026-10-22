@@ -107,10 +107,10 @@ function desenharCorreio() {
   $("cx-dica").textContent = busca ? "Resultado direto do Outlook dos 4 PCs: inclui respondidos, enviados e excluídos, de qualquer data. Clique pra ler."
     : { entrada: "Igual à Caixa de Entrada do Outlook dos 4 PCs: tudo o que está lá, respondido ou não. Cada linha: quem mandou e a hora; embaixo, o assunto e o hotel. Negrito = não lido · ponto vermelho = urgente · \"respondido\" = já teve resposta. Clique pra ler (as setas ↑ ↓ andam pela lista).",
         urgencia: "O que precisa de atenção agora: pedido de correção/cancelamento de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta. A caixa vermelha mostra o que o robô achou na NF.",
-        enviados: "O que saiu das caixas dos hotéis nas últimas 24 h (pelo Outlook ou pelo Painel)." }[cx.caixa];
+        enviados: "O que saiu das caixas dos hotéis nas últimas 72 h (pelo Outlook ou pelo Painel). Mais antigo: pesquise o e-mail do hóspede." }[cx.caixa];
   const nEm = x => `${x.toLocaleString("pt-BR")} e-mail${x === 1 ? "" : "s"}`;
   $("cx-sub").innerHTML = esc(busca ? `“${busca}” · ${nEm(lista.length)} no Outlook dos PCs` :
-    cx.caixa === "enviados" ? `${lista.length} nas últimas 24 h` : `${nEm(lista.length)}${naoLidos ? ` · ${naoLidos} não lido${naoLidos === 1 ? "" : "s"}` : ""}`)
+    cx.caixa === "enviados" ? `${lista.length} nas últimas 72 h` : `${nEm(lista.length)}${naoLidos ? ` · ${naoLidos} não lido${naoLidos === 1 ? "" : "s"}` : ""}`)
     + (cx.hotel ? ` · ${esc(cx.hotel)}` : "") + statusBusca(busca);
   desenharFiltroHotel();
   desenharPastas();
@@ -136,7 +136,7 @@ function desenharCorreio() {
   }
   const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
   const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
-    : cx.caixa === "enviados" ? "Nada enviado nas últimas 24 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : "";
+    : cx.caixa === "enviados" ? "Nada enviado nas últimas 72 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : "";
   const corpo = html || (vazio ? `<div class="vazio">${vazio}</div>`
     : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Caixa de Entrada vazia${quem}.`));
   $("cx-lista").innerHTML = busca ? secoesDaBusca(busca) + corpo : corpo;
@@ -226,7 +226,7 @@ function desenharAcoes() {
     const quem = escopoAtual() === "todos" ? "nas 4 caixas" : "de " + escopoAtual();
     el.innerHTML = `<div class="ind"><b>${emailsDa("entrada").filter(e => e.lido === false).length.toLocaleString("pt-BR")}</b><small>não lidos na entrada ${esc(quem)}</small></div>
       <div class="ind urg"><b>${emailsDa("urgencia").length.toLocaleString("pt-BR")}</b><small>em urgência</small></div>
-      <div class="ind"><b>${(cx.dados?.enviados || []).filter(e => doEscopo(e)).length.toLocaleString("pt-BR")}</b><small>enviados nas últimas 24 h</small></div>
+      <div class="ind"><b>${(cx.dados?.enviados || []).filter(e => doEscopo(e)).length.toLocaleString("pt-BR")}</b><small>enviados nas últimas 72 h</small></div>
       <span class="dica-prof so-texto" style="margin-left:auto">Clique num e-mail pra ler e responder · ↑ ↓ andam pela lista · tecla ? = ajuda</span>`;
     return;
   }

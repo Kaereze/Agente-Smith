@@ -21,17 +21,19 @@ def test_automaticos_e_listas_ficam_de_fora():
     assert not ee.e_automatico("maria.souza@gmail.com") and not ee.e_automatico("financeiro@empresa.com.br")
 
 
-def test_respondido_fica_e_enviado_fica_so_24h():
+def test_respondido_fica_e_enviado_fica_72h():
     itens = {"a": {"pasta": "entrada", "de": "ana@x.com", "quando": "2026-10-06T10:00:00"},
              "b": {"pasta": "entrada", "de": "bia@x.com", "quando": "2026-10-06T10:00:00"},
              "c": {"pasta": "entrada", "de": "caio@x.com", "quando": ""},
              "velho": {"pasta": "entrada", "de": "duda@x.com", "quando": "2026-09-20T10:00:00"},
              "env_hoje": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-06T08:00:00"},
-             "env_ontem": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-05T08:00:00"}}
+             "env_ontem": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-05T08:00:00"},
+             "env_3dias": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-03T13:00:00"},
+             "env_4dias": {"pasta": "enviado", "de": "nf@h.com", "quando": "2026-10-02T08:00:00"}}
     enviados = {"ana@x.com": D(2026, 10, 6, 11, 0), "bia@x.com": D(2026, 10, 6, 9, 0)}
     # espelho literal (14/10/2026): respondido também fica (o Painel marca "respondido"); sem data sai;
-    # antigo na caixa fica; enviado só 24 h
-    assert sorted(ee.resolver(itens, enviados, D(2026, 10, 6, 12, 0))) == ["a", "b", "env_hoje", "velho"]
+    # antigo na caixa fica; enviado fica 72 h (22/10/2026)
+    assert sorted(ee.resolver(itens, enviados, D(2026, 10, 6, 12, 0))) == ["a", "b", "env_3dias", "env_hoje", "env_ontem", "velho"]
 
 
 def test_aba_ida_e_volta():
@@ -214,8 +216,12 @@ def test_volta_espelha_entrada_e_enviados_e_some_o_resolvido(tmp_path, monkeypat
     assert {ee.id_do_email("S1"), ee.id_do_email("E4"), ee.id_do_email("E1")} <= set(ee.ler_textos(central.abas["CorreioTexto_PC-A"]))
     assert central.leituras == 1   # o cadastro é lido 1 vez e guardado (cota)
 
-    # dia seguinte, 11:00 — o enviado passou de 24 h: some também; o espelho fica vazio, nada acumula
+    # dia seguinte, 11:00 — o enviado tem 25 h: FICA (Itens Enviados guarda 72 h; 22/10/2026)
     agora[0] = D(2026, 10, 9, 11, 0)
+    esp.volta(ol)
+    assert sorted(e["pasta"] for e in ee.ler_aba(central.abas["Correio_PC-A"])) == ["entrada"] * 3 + ["enviado", "resposta"]
+    # 4 dias depois — passou de 72 h: some; nada acumula
+    agora[0] = D(2026, 10, 12, 11, 0)
     esp.volta(ol)
     assert [e["pasta"] for e in ee.ler_aba(central.abas["Correio_PC-A"])] == ["entrada"] * 3 + ["resposta"]   # só o que está na caixa
 

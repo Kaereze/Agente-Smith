@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.1] — 2026-10-22
+
+### Mudou
+
+- **Itens Enviados guardam 72 h** (pedido do João: "não está salvando os enviados, preciso ao menos 72 h para ver se já foi
+  enviado"): eram 24 h. Todos os PCs releem uma vez para trazer as 72 h. Os rótulos "24 h" viraram "72 h".
+- **Envio do hóspede sempre à mão:** pesquisando o e-mail do hóspede, o envio aparece mesmo com mais de 72 h (o índice
+  local guarda 12 meses e responde na hora). Se o índice de algum PC ainda não está completo e nenhum envio apareceu, o
+  Painel faz uma consulta rápida só nos Itens Enviados do Outlook (limite de ~1 s) e junta ao resultado.
+
 ## [2026.10.22] — 2026-10-22
 
 ### Mudou

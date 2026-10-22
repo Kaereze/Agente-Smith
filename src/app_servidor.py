@@ -104,6 +104,7 @@ VOLATEIS_TELA = {"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada vol
 VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
 ACORDAR_MIN_SEGUNDOS = 12     # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 DROPBOX_OLHAR_SEGUNDOS = 10   # pasta de notas do Dropbox: mudou = NF nova, refaz a lista e as NFs dos e-mails já
+ENVIADOS_RAPIDO_SEGUNDOS = 1.0   # consulta rápida nos Itens Enviados do Outlook quando o índice ainda não tem o envio do hóspede
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
 HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
@@ -883,8 +884,11 @@ class Estado:
         import pythoncom
         pythoncom.CoInitialize()
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+        rapido = bool(corpo.get("so_enviados"))   # só os Itens Enviados, com limite de tempo curto
         r = busca_outlook.buscar(ns, self._caixas_de_hotel(), corpo.get("q", ""), socket.gethostname(),
-                                 limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
+                                 limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200),
+                                 tempo_maximo=min(float(corpo.get("tempo") or busca_outlook.TEMPO_MAXIMO), busca_outlook.TEMPO_MAXIMO),
+                                 pastas=((5, "enviado"),) if rapido else busca_outlook.PASTAS)
         return {**r, "pc": socket.gethostname()}
 
     def rede_texto(self, corpo):
@@ -1057,8 +1061,51 @@ class Estado:
         situacao = {pc: ({"ok": True, "achados": len(r.get("resultados", [])), "completo": r.get("completo", True),
                           "fonte": r.get("fonte", "outlook")}
                          if "erro" not in r else {"ok": False, "erro": r["erro"]}) for pc, r in respostas.items()}
+        if self._falta_envio_do_hospede(termo, vivo, resultados, situacao):
+            achados = self._enviados_rapido(termo, enderecos)
+            ids = {r["id"] for r in resultados}
+            resultados += [r for r in achados if r["id"] not in ids]
+            resultados.sort(key=lambda r: r["quando"], reverse=True)
         return {"resultados": resultados, "pcs": situacao, "termo": termo, "vivo": bool(vivo),
                 "agentes": {p["pc"]: p["agente"] for p in pcs.values()}}
+
+    @staticmethod
+    def _falta_envio_do_hospede(termo, vivo, resultados, situacao):
+        """Pesquisa por endereço de hóspede (22/10/2026) e nenhum e-mail ENVIADO apareceu, com algum PC respondendo pelo
+        índice ainda incompleto (ou direto do Outlook sem pasta de enviados): vale a consulta rápida nos Itens Enviados."""
+        if vivo or "@" not in termo or any(r.get("pasta") == "enviado" for r in resultados):
+            return False
+        return any(s.get("ok") and not (s.get("fonte") == "indice" and s.get("completo", True)) for s in situacao.values())
+
+    def _enviados_rapido(self, termo, enderecos):
+        """Consulta só nos Itens Enviados do Outlook de cada PC, com limite de ~1 s. Guarda 60 s (o mesmo endereço
+        digitado de novo não repete). Qualquer falha = sem extra: o resultado normal já está na tela."""
+        cache = self.__dict__.setdefault("_enviados_rapido_cache", {})
+        agora = time.monotonic()
+        if termo in cache and agora - cache[termo][0] < 60:
+            return cache[termo][1]
+        corpo = {"q": termo, "vivo": True, "so_enviados": True, "tempo": ENVIADOS_RAPIDO_SEGUNDOS, "limite": 20}
+        achados, local = [], {}
+        fio = threading.Thread(target=lambda: local.update(r=self._buscar_local_rapido(corpo)))
+        fio.start()
+        try:
+            if enderecos and getattr(self, "segredo", None):
+                resp = rede_local.perguntar_a_todos(self.segredo, enderecos, "buscar", corpo, tempo=ENVIADOS_RAPIDO_SEGUNDOS + 1.5)
+                achados += [x for r in resp.values() for x in r.get("resultados", [])]
+        except Exception:
+            logger.debug("enviados rápido pela rede", exc_info=True)
+        fio.join(ENVIADOS_RAPIDO_SEGUNDOS + 2)
+        achados += (local.get("r") or {}).get("resultados", [])
+        achados = [x for x in achados if x.get("pasta") == "enviado"]
+        cache[termo] = (agora, achados)
+        return achados
+
+    def _buscar_local_rapido(self, corpo):
+        try:
+            return self.rede_buscar(corpo)
+        except Exception:
+            logger.debug("enviados rápido neste PC", exc_info=True)
+            return {}
 
     def _buscar_local(self, termo, vivo=False):
         try:

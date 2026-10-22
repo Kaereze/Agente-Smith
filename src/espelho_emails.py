@@ -9,7 +9,7 @@ em abas de passagem da Central, reescritas a cada volta (só quando muda). Nada 
   Notas fiscais). Excluiu/moveu no Outlook, some. Mais de 7 dias sem resposta vira "Urgência" no Painel.
 - Lido / não lido vem do Outlook. Lido no Outlook só vale depois de LIDO_CONFIRMA_MINUTOS (às vezes marca sem
   querer e volta atrás); não lido vale na hora.
-- Itens Enviados: últimas 24 h.
+- Itens Enviados: últimas 72 h (usuário, 22/10/2026: eram 24 h).
 - Resolvido = respondido (saiu e-mail de uma caixa deste PC pra quem escreveu, depois que ele escreveu) OU
   excluído (saiu da Caixa de Entrada). Resolvido some do espelho.
 - Fica de fora: o próprio robô (as "Solicitação NF - ..." com Código de envio) e remetente automático
@@ -75,12 +75,12 @@ def com_marca(classes, marca):
     return [c for c in (classes or []) if c not in MARCAS.values()] + ([marca] if marca else [])
 ENTRADA, ENVIADO, RESPOSTA = "entrada", "enviado", "resposta"
 JANELA_DIAS = 14                  # sem resposta há mais que isso: sai do espelho
-RECENTE_HORAS = 24                # Itens Enviados: só as últimas 24 h
+RECENTE_HORAS = 72                # Itens Enviados: as últimas 72 h (22/10/2026; eram 24 h). Mais antigo: pela pesquisa do hóspede
 URGENCIA_DIAS = 7                 # sem resposta há mais que isso: aba Urgência
 MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = 4
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
-VERSAO_ESTADO = 5   # 5: espelho literal + data certa dos avisos do Outlook (14/10/2026) — relê tudo 1 vez
+VERSAO_ESTADO = 6   # 6: Itens Enviados de 72 h (22/10/2026) — relê tudo 1 vez; 5: espelho literal + data certa dos avisos
 MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
 MAX_CITADO = 8000
 MAX_TEXTO_ENVIADO = 4000
@@ -351,7 +351,7 @@ def texto_quartos(e):
 def resolver(itens, enviados, agora):
     """Espelho LITERAL da Caixa de Entrada (usuário, 14/10/2026: "o Outlook da Clara tem 192 e o Painel menos"):
     tudo que está lá fica, inclusive o já respondido (o Painel marca "respondido" em correio.juntar).
-    Só os Itens Enviados com mais de 24 h saem. enviados: {endereço: último envio (datetime)}."""
+    Só os Itens Enviados com mais de 72 h saem. enviados: {endereço: último envio (datetime)}."""
     saida = {}
     for i, e in itens.items():
         try:

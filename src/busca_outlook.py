@@ -51,9 +51,11 @@ def resumo_do_item(item, pasta, caixa, hotel, pc, corpo=None):
             "anexos": ee.anexos_do_item(item), "pc": pc}
 
 
-def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMPO_MAXIMO, relogio=time.monotonic):
+def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMPO_MAXIMO, relogio=time.monotonic,
+           pastas=PASTAS):
     """caixas: {caixa: hotel} (só as caixas dos hotéis). -> {"resultados": [...], "completo": bool}
-    1º passo leve (só data e EntryID de cada achado, em todas as pastas); o texto só dos `limite` mais recentes."""
+    1º passo leve (só data e EntryID de cada achado, em todas as pastas); o texto só dos `limite` mais recentes.
+    pastas: só estas ((5, "enviado"),) na consulta rápida do envio do hóspede (22/10/2026)."""
     termo = limpar_termo(termo)
     if len(termo) < 3:
         return {"resultados": [], "completo": True}
@@ -64,7 +66,7 @@ def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMP
         caixa = str(conta.SmtpAddress or "").strip().lower()
         if caixa not in caixas:
             continue
-        for numero, pasta in PASTAS:
+        for numero, pasta in pastas:
             if relogio() - inicio > tempo_maximo:
                 completo = False
                 break

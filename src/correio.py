@@ -4,7 +4,7 @@ Regras do usuário (08/10/2026):
 - 1 linha por hóspede (o mesmo endereço), com o último e-mail e quantos são; abrir mostra a conversa toda.
 - Caixa de Entrada: o que está sem resposta. Respondido (por QUALQUER caixa da rede, de qualquer PC) some.
 - Urgência: sem resposta há mais de 7 dias, ou pedido de correção/cancelamento de NF (vai na hora).
-- Itens Enviados: 24 h. Mais de 14 dias sem resposta: já saiu do espelho no PC dono.
+- Itens Enviados: 72 h. Mais de 14 dias sem resposta: já saiu do espelho no PC dono.
 - Lido / não lido vale pra equipe toda ("lido por Clara às 10:32"); não mexe no Outlook.
 - Excluir: some na hora pra todos; o PC dono move pra Itens Excluídos do Outlook dele.
 - Etapa 2 (09/10/2026): prazo por tipo (prazos.py), contado do 1º e-mail sem resposta da conversa; a NF do hóspede
