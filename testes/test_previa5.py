@@ -14,7 +14,7 @@ TOPO = re.compile(r"^(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\
 def _scripts():
     html = (UI / "index.html").read_text(encoding="utf-8")
     blocos = re.findall(r"<script>([\s\S]*?)</script>", html)
-    return blocos + [(UI / f).read_text(encoding="utf-8") for f in ("graficos.js", "correio.js", "painel.js")]
+    return blocos + [(UI / f).read_text(encoding="utf-8") for f in ("graficos.js", "correio.js", "painel.js", "robo.js")]
 
 
 def test_nenhum_nome_repetido_entre_os_arquivos_da_tela():

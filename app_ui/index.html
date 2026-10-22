@@ -1788,44 +1788,104 @@ html,body{background:#1f1f1f}
 .env-pilula.erro button:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
 .env-pilula .env-ex{width:16px;height:16px;border-radius:50%;background:#e8484f;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700}
 .env-pilula.erro u{text-decoration:none;color:#79b8f7}
-/* aba Robô (22/10/2026, desenho A): uma frase, uma barra, uma lista; letra grande e poucas cores */
-#robo{padding:28px 40px 40px;max-width:1100px}
-.rb-topo{display:flex;align-items:center;gap:14px;margin-bottom:20px;color:#8c8c8c;font-size:13.5px}
-.rb-topo h3{margin:0;font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.rb-topo .bts{margin-left:auto;display:flex;gap:8px}
-.rb-bt{height:34px;padding:0 16px;border:1px solid #5a5a5a;border-radius:6px;background:#333;color:#f0f0f0;font:inherit;font-size:13.5px;cursor:pointer}
+/* tela do robô (22/10/2026, desenho v3): janela grande, calma e centralizada; Agora e Registro */
+.rb-fundo{padding:36px 40px 56px 76px;align-items:stretch;justify-content:stretch}
+.rb-fundo .modal.rb-sheet{position:relative;width:100%;max-width:none;height:100%;max-height:none;background:#1f1f1f;border:1px solid #363636;border-radius:12px;box-shadow:0 28px 72px rgba(0,0,0,.6),0 6px 16px rgba(0,0,0,.45);color:#f0f0f0;font-size:14px}
+.rb-sheet :is(button,[role=button],input):focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.rb-i{flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rb-ok{color:#7fd494}.rb-vm{color:#ffb3b8}.rb-cz{color:#8a8a8a}
+.rb-gira{display:inline-block;border-radius:50%;border:2px solid #479ef5;border-right-color:transparent;animation:olGira .8s linear infinite;flex:none;vertical-align:-2px}
+.rb-topo{display:flex;align-items:center;gap:16px;height:64px;padding:0 20px 0 32px;border-bottom:1px solid #2d2d2d;flex:none}
+.rb-topo h3{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.rb-estado{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px 0 10px;border-radius:14px;background:#16263d;color:#cfe4fb;font-size:13px}
+.rb-estado.ok{background:#17301f;color:#7fd494}.rb-estado.vm{background:#2a2022;color:#ffb3b8}
+.rb-acoes{margin-left:auto;display:flex;align-items:center;gap:8px}
+.rb-sep{width:1px;height:20px;background:#3a3a3a;margin:0 4px}
+.rb-bt{height:34px;padding:0 16px;border:1px solid #555;border-radius:6px;background:#333;color:#f0f0f0;font:inherit;font-size:13.5px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer}
+.rb-bt:hover{background:#3b3b3b}
+.rb-bt.pri{background:#479ef5;border-color:#479ef5;color:#0a1a2c;font-weight:600}.rb-bt.pri:hover{background:#5aabf7}
+.rb-bt.pri .rb-gira{border-color:#0a1a2c;border-right-color:transparent}
+.rb-bt.fant{background:transparent;border-color:transparent;color:#a8a8a8;padding:0 10px}.rb-bt.fant:hover{background:#2b2b2b;color:#f0f0f0}
+.rb-bt.ic{width:34px;padding:0;justify-content:center}.rb-bt.peq{height:28px;font-size:12px;padding:0 10px;margin-top:6px}
 .rb-bt:disabled{opacity:.5;cursor:not-allowed}
-.rb-frase{font-size:28px;line-height:1.25;margin:0 0 4px;font-weight:600;letter-spacing:-.01em;color:#f2f2f2}
-.rb-frase b{color:#479ef5;font-weight:600}.rb-frase .rb-vm{color:#ffb3b8}
-.rb-frase .rb-gira{display:inline-block;width:18px;height:18px;margin-right:10px;border-radius:50%;border:2px solid #479ef5;border-right-color:transparent;animation:olGira .8s linear infinite;vertical-align:-2px}
-.rb-leve{color:#bdbdbd;margin:0 0 22px;font-size:15px}
+.rb-abas{display:flex;gap:28px;padding:0 32px;height:44px;align-items:flex-end;border-bottom:1px solid #2d2d2d;flex:none}
+.rb-abas button{background:none;border:0;padding:0 0 12px;color:#a8a8a8;font:inherit;font-size:14px;position:relative;cursor:pointer}
+.rb-abas button.on{color:#f0f0f0;font-weight:600}.rb-abas button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#479ef5}
+.rb-abas small{color:#8a8a8a;margin-left:6px;font-weight:400}
+.rb-corpo{flex:1;min-height:0;display:flex;justify-content:center;gap:56px;padding:32px 40px 0}
+.rb-main{width:760px;flex:none;min-width:0;overflow:auto;padding:0 12px 32px 0}.rb-main.rb-largo{width:1000px}
+.rb-lado{width:340px;flex:none;min-width:0;border-left:1px solid #2d2d2d;padding-left:40px;overflow:auto}
+@media (max-width:1280px){.rb-corpo{gap:32px;padding-inline:24px}.rb-main,.rb-main.rb-largo{width:auto;flex:1}.rb-lado{width:300px;padding-left:28px}}
+.rb-frase{font-size:24px;line-height:1.25;font-weight:600;margin:0 0 6px;letter-spacing:-.01em;display:flex;align-items:center;gap:12px}
+.rb-frase b{color:#479ef5;font-weight:600}
+.rb-fsub{color:#a8a8a8;margin:0 0 20px}
 .rb-seg{display:flex;gap:4px;margin-bottom:8px}
-.rb-seg i{flex:1;height:8px;border-radius:4px;background:#363636}
-.rb-seg i.f{background:#3da755}.rb-seg i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
-@keyframes rbPulsa{50%{opacity:.55}}
-.rb-segtxt{display:flex;justify-content:space-between;color:#bdbdbd;font-size:14px;margin-bottom:26px;gap:12px}
-.rb-segtxt b{color:#f2f2f2;font-weight:600}
-.rb-nums{display:flex;gap:40px;margin-bottom:26px;flex-wrap:wrap}
-.rb-nums div{font-size:14px;color:#bdbdbd}.rb-nums b{display:block;font-size:30px;color:#f2f2f2;line-height:1.15;font-weight:600}
-.rb-nums .al b{color:#ffb3b8}
-.rb-atencao{display:flex;align-items:center;gap:14px;background:#2e2123;border:1px solid #5a2e33;border-radius:10px;padding:14px 18px;margin-bottom:12px}
-.rb-atencao .ex{width:26px;height:26px;border-radius:50%;background:#e8484f;display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
-.rb-atencao p{margin:0;font-size:15px;color:#f2f2f2}.rb-atencao p small{display:block;color:#ffb3b8;font-size:13.5px}
-.rb-sec{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8c8c8c;margin:22px 0 6px}
-.rb-l{display:grid;grid-template-columns:minmax(160px,260px) 1fr 130px;gap:18px;align-items:center;padding:15px 0;border-top:1px solid #2b2b2b}
-.rb-l:first-child{border-top:0}
-.rb-l b{font-size:15.5px;font-weight:600;display:block;color:#f2f2f2}.rb-l small{color:#8c8c8c;font-size:13.5px}
-.rb-onde{font-size:15px;color:#bdbdbd}.rb-onde strong{color:#f2f2f2;font-weight:600}.rb-onde .ok{color:#7fd494}
-.rb-onde .hora{font-size:13px;color:#8c8c8c;display:block}
-.rb-pts{display:flex;gap:5px;justify-content:flex-end}
-.rb-pts i{width:11px;height:11px;border-radius:50%;background:#383838;display:block}
-.rb-pts i.f{background:#3da755}.rb-pts i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
-.rb-cam{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;color:#bdbdbd;padding:0 0 4px}
-.rb-cam span{background:#2a2a2a;border-radius:14px;padding:3px 12px}
-.rb-cam span.f{color:#7fd494}.rb-cam span.a{background:#16263d;color:#cfe4fb}.rb-cam em{font-style:normal;color:#555}
-.rb-mais{margin-top:14px;color:#479ef5;font-size:14px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
-@media (max-width:900px){.rb-l{grid-template-columns:1fr}.rb-pts{justify-content:flex-start}#robo{padding:20px 16px}}
-@media (prefers-reduced-motion:reduce){.rb-seg i.a,.rb-pts i.a,.rb-frase .rb-gira{animation:none}}
+.rb-seg i{flex:1;height:6px;border-radius:3px;background:#383838}.rb-seg i.f{background:#3da755}.rb-seg i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
+@keyframes rbPulsa{50%{opacity:.5}}
+.rb-segtxt{display:flex;justify-content:space-between;gap:16px;color:#a8a8a8;font-size:13px;margin-bottom:32px}.rb-segtxt b{color:#f0f0f0;font-weight:600}
+.rb-grupo{margin-bottom:28px}
+.rb-grupo>h4{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:13px;font-weight:600;color:#a8a8a8}
+.rb-grupo>h4 em{font-style:normal;font-weight:400;color:#8a8a8a}
+.rb-mais{margin-left:auto;font-weight:400;color:#479ef5;background:none;border:0;font:inherit;font-size:13px;cursor:pointer;padding:0}
+.rb-l{display:grid;grid-template-columns:20px minmax(0,1fr) 124px 48px;gap:0 16px;align-items:center;min-height:56px;padding:10px 0;border-bottom:1px solid #292929;cursor:pointer}
+.rb-l:last-child{border-bottom:0}.rb-l:hover{background:#242424}
+.rb-l.sel{background:#262626;margin:0 -12px;padding-inline:12px;border-radius:8px;border-bottom-color:transparent}
+.rb-nome{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rb-nome span{font-weight:400;color:#a8a8a8}
+.rb-nm{min-width:0}.rb-onde{font-size:13px;color:#a8a8a8;margin-top:1px}.rb-onde b{color:#f0f0f0;font-weight:600}
+.rb-hr{font-size:13px;color:#8a8a8a;text-align:right;font-variant-numeric:tabular-nums}
+.rb-tri{display:flex;gap:3px}.rb-tri i{flex:1;height:4px;border-radius:2px;background:#383838}
+.rb-tri i.f{background:#3da755}.rb-tri i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
+.rb-aviso{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:0 16px;align-items:center;padding:14px 16px;background:#2a2022;border-radius:8px;margin-bottom:8px}
+.rb-aviso p{margin:0;font-size:14px}.rb-aviso small{display:block;color:#ffb3b8;font-size:13px}.rb-aviso .rb-bt{height:30px;font-size:13px}
+.rb-aviso+.rb-grupo,.rb-aviso:last-of-type{margin-bottom:28px}
+.rb-passo{grid-column:2/4;margin:10px 0 2px;padding:12px 16px;background:#33262a;border-radius:6px;font-size:13px;color:#f0d8db}
+.rb-passo ol{margin:0 0 10px;padding-left:18px}.rb-passo li{margin:2px 0}
+.rb-bloco{margin-bottom:32px}.rb-bloco h4,.rb-gaveta-ped h4{margin:0 0 8px;font-size:13px;font-weight:600;color:#a8a8a8}.rb-gaveta-ped h4 span{font-weight:400;color:#8a8a8a}
+.rb-txt{margin:0;color:#a8a8a8;font-size:13.5px}
+.rb-fatos{margin:0;display:grid;grid-template-columns:1fr auto}
+.rb-fatos dt,.rb-fatos dd{margin:0;padding:9px 0;border-bottom:1px solid #292929;font-size:13.5px}.rb-fatos dt{color:#a8a8a8}.rb-fatos dd{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.rb-fatos dt:nth-last-child(2),.rb-fatos dd:last-child{border-bottom:0}
+.rb-passos{list-style:none;margin:0;padding:0}
+.rb-passos li{display:grid;grid-template-columns:20px 1fr auto;gap:0 12px;padding:6px 0;font-size:13.5px;position:relative;align-items:start}
+.rb-passos li:not(:last-child)::before{content:"";position:absolute;left:9px;top:26px;bottom:-6px;width:2px;background:#3a3a3a}
+.rb-passos li.f:not(:last-child)::before{background:#3da755}.rb-passos li.p{color:#8a8a8a}
+.rb-passos small{display:block;color:#8a8a8a;font-size:12px}.rb-passos time{font-size:12px;color:#8a8a8a;font-variant-numeric:tabular-nums}
+.rb-passos.grande{margin-bottom:24px}
+.rb-bola{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#333;border:1.5px solid #4a4a4a;color:#8a8a8a;font-size:10px;font-weight:700}
+.f>.rb-bola{background:#3da755;border-color:#3da755;color:#06220f}.a>.rb-bola{border-color:#479ef5;background:#1f1f1f}
+.rb-gaveta-ped{position:absolute;right:0;top:108px;bottom:0;width:460px;max-width:100%;background:#262626;border-left:1px solid #3a3a3a;box-shadow:-18px 0 40px rgba(0,0,0,.4);padding:24px 28px;overflow:auto;animation:janelaFundo .18s ease-out both}
+.rb-gp-cab{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px}.rb-gp-cab>div{flex:1;min-width:0}.rb-gaveta-ped h5{margin:0 0 2px;font-size:16px;font-weight:600}.rb-cod{color:#8a8a8a;font-size:12.5px}
+.rb-gp-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.rb-log{font:12px/1.65 Consolas,monospace;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 12px;color:#c9d6e6;margin:0 0 12px;overflow-wrap:anywhere}.rb-log span{color:#8a8a8a}
+.rb-filtros{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.rb-chip-f{height:30px;padding:0 14px;border-radius:15px;border:1px solid #444;background:transparent;color:#a8a8a8;font:inherit;font-size:13px;cursor:pointer}
+.rb-chip-f.on{background:#16263d;border-color:#2d4a6e;color:#cfe4fb}.rb-chip-f small{color:#8a8a8a;margin-left:4px}
+.rb-busca{margin-left:auto;display:flex;align-items:center;gap:8px;height:32px;width:260px;border:1px solid #444;border-radius:6px;padding:0 10px;color:#8a8a8a;background:#1b1b1b}
+.rb-busca input{flex:1;min-width:0;background:none;border:0;color:#f0f0f0;font:inherit;font-size:13px;outline:0}
+.rb-chave{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#a8a8a8;background:none;border:0;font:inherit;cursor:pointer;margin-left:12px}
+.rb-chave i{width:30px;height:18px;border-radius:9px;background:#479ef5;position:relative;display:inline-block}.rb-chave i::after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#0a1a2c}
+.rb-chave.off i{background:#444}.rb-chave.off i::after{right:auto;left:2px;background:#bbb}
+.rb-reg{display:grid;grid-template-columns:56px 20px minmax(0,1fr) auto;gap:0 14px;padding:10px 0;border-bottom:1px solid #292929;align-items:start;font-size:14px;cursor:pointer}
+.rb-reg time{color:#8a8a8a;font-variant-numeric:tabular-nums;font-size:13px;padding-top:1px}
+.rb-reg small{display:block;color:#8a8a8a;font-size:12.5px}
+.rb-reg:hover{background:#242424}.rb-reg.aberta{background:#262626;margin:0 -12px;padding-inline:12px;border-radius:8px}
+.rb-h{font-size:12px;color:#8a8a8a;border:1px solid #3a3a3a;border-radius:10px;padding:0 8px;white-space:nowrap}
+.rb-reg .rb-cru{grid-column:3/5;margin-top:8px;cursor:default}
+.rb-rodape-reg{display:flex;gap:12px;align-items:center;padding:12px 0;color:#8a8a8a;font-size:12.5px}.rb-rodape-reg code{font:12px Consolas,monospace;color:#a8a8a8}
+.rb-rodape-reg .rb-bt:first-of-type{margin-left:auto}
+.rb-vazio{padding:56px 0;text-align:center;color:#a8a8a8;max-width:44ch;margin:0 auto}.rb-vazio b{display:block;color:#f0f0f0;font-size:16px;margin-bottom:6px}.rb-leg{font-size:12.5px;color:#8a8a8a;margin-top:12px}
+.rb-sk{display:grid;grid-template-columns:20px minmax(0,1fr) 124px;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #292929}
+.sk{height:10px;border-radius:5px;background:linear-gradient(90deg,#2a2a2a,#333,#2a2a2a);background-size:200% 100%;animation:rbSk 1.4s linear infinite}
+@keyframes rbSk{to{background-position:-200% 0}}
+.rodape-status .pill.rb-chip{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 12px 0 10px;border-radius:12px;border:0;cursor:pointer;background:#17301f;color:#7fd494}
+.rodape-status .pill.rb-chip.az{background:#16263d;color:#cfe4fb}.rodape-status .pill.rb-chip.vm{background:#2a2022;color:#ffb3b8}
+.rb-chip:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.rb-gaveta,.rb-fim{position:fixed;right:16px;bottom:96px;z-index:30;background:#2b2b2b;border:1px solid #444;border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.55);color:#f0f0f0;animation:janelaFundo .18s ease-out both}
+.rb-gaveta{width:420px;max-width:calc(100vw - 32px)}.rb-fim{width:380px;max-width:calc(100vw - 32px);border-color:#2b5a39;padding:14px 16px}.rb-fim.ruim{border-color:#6b3438}
+.rb-g-cx .rb-segtxt{flex-direction:column;gap:2px;margin-bottom:12px}
+.rb-g-ct{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #383838;font-size:13.5px}.rb-g-cx{padding:12px 16px}
+.rb-fim b{display:flex;gap:8px;align-items:center;font-size:14px}.rb-fim p{margin:4px 0 12px 26px;color:#a8a8a8;font-size:13px}
+@media (prefers-reduced-motion:reduce){.rb-gira,.rb-seg i.a,.rb-tri i.a,.sk{animation:none}}
 /* barra de status */
 .modo-ol .rodape-status{background:#1b1b1b;border-top:1px solid #2b2b2b}
 /* outras telas: fundo, cartões e respiro da Prévia 5 */
@@ -2054,7 +2114,7 @@ html,body{background:#1f1f1f}
     <div class="principal" role="group" aria-labelledby="rot-geral"><span class="rot-nav" id="rot-geral">Geral</span>
       <button class="ln raiz" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
       <button class="ln raiz" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n" title="Pedidos sem NF emitida"></span></button>
-      <button class="ln raiz" data-vista="robo" title="O que o robô está fazendo e onde está cada pedido"><svg class="ic"><use href="#i-sync"/></svg>Robô</button>
+      <button class="ln raiz" data-abrir-robo title="O que o robô está fazendo e onde está cada pedido (abre uma janela grande)"><svg class="ic"><use href="#i-sync"/></svg>Robô</button>
       <button class="ln raiz" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
@@ -2101,7 +2161,6 @@ html,body{background:#1f1f1f}
     <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta monit" id="v-log"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="log"></div></section>
-    <section class="vista oculta" id="v-robo"><div class="rolagem" id="robo"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta ol" id="v-correio" aria-label="E-mails">
@@ -2154,7 +2213,7 @@ html,body{background:#1f1f1f}
       <span class="pill demo oculta" id="pill-casa" title="Este PC só vê os dados reais: responder, enviar NF e marcar lido ficam nos PCs do trabalho">Modo casa · só visualização</span>
       <div class="sync">
         <span class="pill" id="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">conectando…</span></span>
-        <span class="pill" id="robo"><span class="dot" id="robo-dot"></span><span id="robo-txt">robô</span></span>
+        <span class="pill rb-chip" id="robo" role="button" tabindex="0">Robô</span>
         <span class="pill clicavel" id="pcs" data-vista="maquinas" title="PCs da equipe"><span class="dot" id="pcs-dot"></span><span id="pcs-txt">PCs</span></span>
         <button class="btn-ic" id="btn-atualizar" title="Reler a planilha agora" aria-label="Reler a planilha agora"><svg class="ic"><use href="#i-sync"/></svg></button>
         <button class="tema-btn" id="btn-tema" title="Tema: segue o Windows, claro ou escuro"><svg class="ic"><use href="#i-tema"/></svg><span id="tema-nome">Sistema</span></button>
@@ -2356,9 +2415,7 @@ async function carregarJa(soSeMudou){
     $("sync-dot").className = "dot " + (ok ? "on" : "off");
     $("sync-txt").textContent = ok ? "Central sincronizada " + quando(j.atualizado_em).slice(-5) : "sem conexão com a planilha";
     const s = j.status || {};
-    $("robo-dot").className = "dot " + (s.ligado ? "on" : "off");
-    $("robo-txt").textContent = "robô " + (s.ligado ? "ligado" : "desligado") + (s.comando ? " · " + s.comando.toLowerCase() : "");
-    $("robo").title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "");
+    if (typeof rbChip === "function") rbChip();   // o chip do robô (robo.js) mostra o estado, o resumo e a resposta
     desenharPcsCabecalho(j.pcs || []);
     desenharSaude(j.saude || []);
     // pedidos aparecem já; os e-mails (outra rota) entram em seguida, sem segurar a tela
@@ -2368,7 +2425,7 @@ async function carregarJa(soSeMudou){
     carregarCorreio(soSeMudou);
     if (pn.vista === "visao") desenharVisao();
     if (pn.vista === "gerencia") desenharGerencia();
-    if (pn.vista === "robo") desenharRobo();
+    if (typeof rbVigiar === "function") rbVigiar();   // chip do robô na barra de baixo (robo.js)
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
@@ -3204,7 +3261,7 @@ document.querySelectorAll(".secao").forEach(g => {
   });
 });
 $("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
-$("btn-enviar").addEventListener("click", () => trocarVista("robo"));   // a aba Robô substitui a janela de confirmação (22/10/2026)
+$("btn-enviar").addEventListener("click", () => rbAbrir());   // a janela do robô substitui a de confirmação (22/10/2026)
 let focoAntesDaJanela = null;
 const focaveis = el => [...el.querySelectorAll('button:not([disabled]),input:not([type="hidden"]):not([hidden]),select,textarea,[contenteditable="true"],a[href],[tabindex="0"]')]
   .filter(x => x.offsetParent !== null);
@@ -3281,6 +3338,7 @@ window.__painelOk = true;
 <script src="/graficos.js"></script>
 <script src="/correio.js"></script>
 <script src="/painel.js"></script>
+<script src="/robo.js"></script>
 <script>
 // Página que veio pela metade (arquivo recusado pelo servidor ocupado, ou lido enquanto a atualização regravava): mostra
 // "Recarregando o Painel…" e tenta de novo, cada vez esperando um pouco mais, sem desistir (usuário, 21/10/2026: antes

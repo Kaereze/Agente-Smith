@@ -118,6 +118,7 @@ ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/graficos.js": ("graficos.js", "text/javascript; charset=utf-8"),
     "/painel.js": ("painel.js", "text/javascript; charset=utf-8"),
     "/correio.js": ("correio.js", "text/javascript; charset=utf-8"),
+    "/robo.js": ("robo.js", "text/javascript; charset=utf-8"),
     "/fontes/fontes.css": ("fontes/fontes.css", "text/css; charset=utf-8"),
 }
 ESTATICOS.update({f"/fontes/{f.name}": (f"fontes/{f.name}", "font/woff2") for f in (PASTA_UI / "fontes").glob("*.woff2")})

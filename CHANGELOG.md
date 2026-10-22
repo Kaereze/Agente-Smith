@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.3] — 2026-10-22
+
+### Mudou
+
+- **Tela do robô** (desenho aprovado pelo João; substitui a aba Robô e a tela de Log): uma janela grande, quase da tela
+  toda (o Painel aparece atrás), calma e centralizada. Aba **Agora**: frase de como está o robô, barra da rodada, avisos em
+  vermelho com "Como resolver", pedidos agrupados por situação (em andamento, esperando a NF, concluídos) em linhas
+  compactas com uma trilha de 4 passos, e o resumo do dia ao lado. Clicar num pedido abre o **caminho completo** (passos,
+  horas e as linhas do log). Aba **Registro**: o log em frases, com filtros, busca, "Seguir ao vivo" e o texto original ao
+  clicar. "Enviar agora" sem janela de confirmação. Fechar ou minimizar não para o robô: um **chip na barra de baixo**
+  mostra o andamento (vermelho se houver problema), abre uma gaveta curta, e um aviso discreto diz quando a rodada
+  termina. "Registro do robô" no Monitoramento abre a mesma janela. Ficam para depois: "Ligar o robô" e "Pausar o envio
+  automático" (só o usuário João), por mexerem na aba Status.
+
 ## [2026.10.22.2] — 2026-10-22
 
 ### Adicionado
