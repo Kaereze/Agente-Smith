@@ -74,9 +74,9 @@ def test_pc_sem_config_local_nunca_envia(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CAMINHO_CONFIG", cfg_arq)
     monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "config.local.json")
     monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
-    assert not config.e_principal(config.carregar_config(cfg_arq))
+    assert not config.e_principal(config.carregar_config(cfg_arq, exigir_chave=False))
     (tmp_path / "config.local.json").write_text('{"papel": "principal", "outlook": {"tentativas_conexao": 2}}', encoding="utf-8")
-    cfg = config.carregar_config(cfg_arq)
+    cfg = config.carregar_config(cfg_arq, exigir_chave=False)
     assert config.e_principal(cfg) and cfg["outlook"]["tentativas_conexao"] == 2
 
 
@@ -91,14 +91,14 @@ def test_pc_do_agente_principal_vira_principal_sozinho(tmp_path, monkeypatch):
     cfg_arq.write_text(json.dumps(base), encoding="utf-8")
     monkeypatch.setattr(config, "CAMINHO_CONFIG", cfg_arq)
     (tmp_path / "maquina.json").write_text('{"agente": "Joao"}', encoding="utf-8")
-    assert config.carregar_config(cfg_arq)["papel"] == "principal"
+    assert config.carregar_config(cfg_arq, exigir_chave=False)["papel"] == "principal"
     (tmp_path / "maquina.json").write_text('{"agente": "Clara"}', encoding="utf-8")
-    assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+    assert config.carregar_config(cfg_arq, exigir_chave=False)["papel"] == "conferente"
     (tmp_path / "maquina.json").write_text('{"agente": "João", "conflito": "trocou"}', encoding="utf-8")
-    assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+    assert config.carregar_config(cfg_arq, exigir_chave=False)["papel"] == "conferente"
     # maquina.json copiado do PC do João pra outro PC: nunca vira principal
     (tmp_path / "maquina.json").write_text('{"agente": "João", "pc": "DESKTOP-DO-JOAO"}', encoding="utf-8")
-    assert config.carregar_config(cfg_arq)["papel"] == "conferente"
+    assert config.carregar_config(cfg_arq, exigir_chave=False)["papel"] == "conferente"
 
 
 def test_pastas_do_dropbox_seguem_o_usuario_de_cada_pc(tmp_path, monkeypatch):
@@ -106,5 +106,21 @@ def test_pastas_do_dropbox_seguem_o_usuario_de_cada_pc(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "nao_existe.json")
     monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
     monkeypatch.setenv("USERPROFILE", r"C:\Users\Cristian")
-    pastas = config.carregar_config()["dropbox_notas"]["pastas"]
+    pastas = config.carregar_config(exigir_chave=False)["dropbox_notas"]["pastas"]
     assert pastas and all(p.startswith(r"C:\Users\Cristian\REDE ANDRADE Dropbox") for p in pastas)
+
+
+def test_modo_demo_abre_sem_a_chave_do_google(tmp_path, monkeypatch):
+    """PC de casa sem a chave: o modo demo abre; o modo normal continua exigindo a chave."""
+    import json
+    import pytest
+    import config
+    monkeypatch.setattr(config, "CAMINHO_CONFIG_LOCAL", tmp_path / "nao_existe.json")
+    monkeypatch.setattr(config, "CAMINHO_MAQUINA", tmp_path / "maquina.json")
+    base = json.load(open(config.CAMINHO_CONFIG, encoding="utf-8"))
+    base["caminho_chave_google"] = str(tmp_path / "sem_chave.json")
+    cfg_arq = tmp_path / "config.json"
+    cfg_arq.write_text(json.dumps(base), encoding="utf-8")
+    assert config.carregar_config(cfg_arq, exigir_chave=False)["modo"]
+    with pytest.raises(config.ErroDeConfig, match="chave do Google"):
+        config.carregar_config(cfg_arq)

@@ -2409,8 +2409,8 @@ def main():
     from sheets import BackendGoogle
     import cota_google
     cota_google.configurar("painel")
-    cfg = carregar_config()
     modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/demo.py)
+    cfg = carregar_config(exigir_chave=not modo_demo)
     so_ver = "--visualizar" in sys.argv and not modo_demo   # PC de casa com a chave: dados reais, só leitura
     if modo_demo:
         import demo

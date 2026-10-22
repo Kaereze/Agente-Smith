@@ -18,7 +18,7 @@ class ErroDeConfig(Exception):
     pass
 
 
-def carregar_config(caminho=CAMINHO_CONFIG):
+def carregar_config(caminho=CAMINHO_CONFIG, exigir_chave=True):
     try:
         with open(caminho, "r", encoding="utf-8") as f:
             cfg = json.load(f)
@@ -34,7 +34,7 @@ def carregar_config(caminho=CAMINHO_CONFIG):
         dropbox["pastas"] = [os.path.expandvars(p) for p in dropbox["pastas"]]
     if "papel" not in cfg:
         cfg["papel"] = _papel_pela_identidade(cfg)
-    validar_config(cfg)
+    validar_config(cfg, exigir_chave)
     return cfg
 
 
@@ -81,7 +81,7 @@ def e_principal(cfg):
     return cfg.get("papel") == "principal"
 
 
-def validar_config(cfg):
+def validar_config(cfg, exigir_chave=True):
     problemas = []
 
     modo = str(cfg.get("modo", "")).strip().upper()
@@ -107,7 +107,7 @@ def validar_config(cfg):
         problemas.append("'formato_data_planilha' precisa ser 'americano' ou 'brasileiro'.")
 
     caminho_chave = caminho_chave_google(cfg)
-    if not caminho_chave or not os.path.exists(caminho_chave):
+    if exigir_chave and (not caminho_chave or not os.path.exists(caminho_chave)):   # modo demo roda sem chave
         problemas.append(f"Não achei a chave do Google em '{caminho_chave}'. "
                          f"Veja Segundo Cérebro\\6 Documentos\\Instalação e pendências.md (seção 7, a chave do Google).")
 

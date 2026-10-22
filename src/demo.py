@@ -158,6 +158,7 @@ class BackendDemo:
         self.abas["Status"][11][1] = agora.isoformat(timespec="seconds")
         trat = [dados.CABECALHO_TRATAMENTO]
         hospedes = []
+        nf_enviada = set()   # (hotel, e-mail, carimbo) que já receberam a NF: saíram da Caixa de Entrada
         for hotel, caixa, agente in r.sample(HOTEIS, 30):
             aba = f"Solicitação Nota Fiscal ({hotel}) (respostas)"
             linhas = [CAB_HOTEL]
@@ -174,7 +175,7 @@ class BackendDemo:
                                _cpf(r), nome, ci.strftime("%d/%m/%Y"), co.strftime("%d/%m/%Y"),
                                r.choice(["", "", "Colocar o número da reserva", "Descrever as diárias"]),
                                "Sim" if r.random() < 0.08 else "Não", "TRUE" if dias >= 1 else "FALSE"])
-                hospedes.append((hotel, caixa, agente, nome, email, quando, ci, co))
+                hospedes.append((hotel, caixa, agente, nome, email, quando, ci, co, carimbo))
                 # o que já foi feito (NF, envio, tratativa), como o robô e a equipe registram
                 sorte = r.random()
                 if dias >= 1 and sorte < 0.62:
@@ -182,6 +183,7 @@ class BackendDemo:
                     q = quando + datetime.timedelta(hours=r.randint(2, 30))
                     trat.append(dados.evento(q.astimezone(), "Robô", "DEMO", aba, carimbo, email, dados.NF, nf))
                     if r.random() < 0.85:
+                        nf_enviada.add((hotel, email, carimbo))
                         trat.append(dados.evento(q.astimezone(), "Robô", "DEMO", aba, carimbo, email, dados.OBS,
                                                  f"E-mail com a NF {nf} enviado para {email} em {q:%d/%m/%Y %H:%M} [m-{_id(email)[:6]}]"))
                 elif dias >= 2 and sorte < 0.75:
@@ -201,13 +203,31 @@ class BackendDemo:
         self.abas[envio_nf.ABA_PCS] = [list(envio_nf.CAB_PCS)] + [
             [pc, ag, ",".join(h[1] for h in HOTEIS if h[2] == ag), "", "aberto", "", "principal" if ag == "João" else "conferente",
              agora.isoformat(timespec="seconds") + "|2 NF · 1 tratativa · 3 recebido(s)", "", "3/1", uso[ag]] for ag, pc in PCS.items()]
-        self._gerar_correio(r, hospedes)
+        self._gerar_correio(r, [h[:8] for h in hospedes])
         # metade dos envios mais recentes marcados como ligação (22/10/2026), pra Itens Enviados e a Visão geral terem o que mostrar
         recentes = sorted((a for a in self.arquivo if a["pasta"] == "enviado"), key=lambda a: a["quando"], reverse=True)[:16:2]
         self.abas[ligacoes.ABA] = [list(ligacoes.CABECALHO)] + [
             ligacoes.evento(a["id"], ligacoes.MARCAR, next((g for g, pc in PCS.items() if pc == a["pc"]), "João"), a["hotel"],
                             a["caixa"], a["para"], a["assunto"], pc=a["pc"], quando=datetime.datetime.fromisoformat(a["quando"]))
             for a in recentes]
+        self._gerar_pedidos_na_caixa([h for h in hospedes if (h[0], h[4], h[8]) not in nf_enviada])
+
+    def _gerar_pedidos_na_caixa(self, pendentes):
+        """Abas CaixaPedidos_<PC>: as solicitações do robô ainda na Caixa de Entrada (é o que a tela Notas fiscais mostra)."""
+        r = random.Random(20261012)   # sorteio separado: não muda os outros dados fictícios
+        por_pc = {pc: {} for pc in PCS.values()}
+        for hotel, caixa, agente, nome, email, quando, ci, co, carimbo in pendentes:
+            if r.random() < 0.15:   # parte o agente já tirou da caixa
+                continue
+            pc = PCS.get(agente, "DEMO-JOAO")
+            i = _id("pedido", pc, email, carimbo)
+            recebido = min(quando + datetime.timedelta(minutes=r.randint(5, 40)), self.agora)
+            por_pc[pc][i] = {"id": i, "caixa": caixa, "hotel": hotel, "assunto": f"Solicitação NF - {hotel} - {nome}",
+                             "recebido": recebido.isoformat(timespec="seconds"), "lido": r.random() < 0.6,
+                             "pedidos": [{"nome": nome, "email": email, "carimbo": f"{quando:%d/%m/%Y %H:%M:%S}",
+                                          "ref": f"NF-{i[:8].upper()}"}]}
+        for pc, itens in por_pc.items():
+            self.abas[ee.nome_aba_pedidos(pc)] = ee.linhas_pedidos(itens, pc, self.agora)
 
     def _gerar_correio(self, r, hospedes):
         agora = self.agora
