@@ -14,6 +14,9 @@ Este cofre do Obsidian: a memória do projeto.
 
 ## O que tem dentro
 - Pastas 0 a 6, `4 Histórico/Diário/`, `99 Rascunhos/`, `.obsidian/` (configuração, cores em `snippets/cerebro.css`).
+- `6 Documentos/Designs/` (22/10/2026): as páginas de design (HTML, abrem no navegador), `previas/` (fotos que o
+  Obsidian mostra), o catálogo antigo em fotos e `ferramenta-catalogo/` (scripts que refazem o catálogo de peças; ficam
+  aqui dentro para mudança neles não reiniciar os PCs). Índice: [[Designs]].
 
 ## Como o Claude mexe
 - Atualizar no fim de cada etapa ([[Como usar este cérebro]]).

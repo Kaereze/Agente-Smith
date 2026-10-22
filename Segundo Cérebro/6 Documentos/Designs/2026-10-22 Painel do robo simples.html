@@ -1,0 +1,158 @@
+<title>Painel do robô simples</title>
+<style>
+:root{--bg:#141414;--painel:#1f1f1f;--rail:#181818;--linha:#2f2f2f;--card:#262626;--card2:#2b2b2b;--tinta:#f2f2f2;--tinta-2:#bdbdbd;--tinta-3:#8c8c8c;--azul:#479ef5;--azul-s:#16263d;--verde:#3da755;--verde-t:#7fd494;--verm:#e8484f;--vermt:#ffb3b8;--verms:#2e2123;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding-block:30px 60px;padding-inline:16px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:18px;margin:48px 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul)}
+h2 em{font-style:normal;font-size:11px;font-weight:700;color:#06220f;background:var(--verde);border-radius:10px;padding:1px 9px}
+.lead{color:var(--tinta-2);max-width:70ch;margin:0 0 8px}
+.sub{color:var(--tinta-2);font-size:14px;max-width:78ch;margin:0 0 12px}
+.rolar{overflow-x:auto;border-radius:12px;border:1px solid var(--linha);background:var(--painel)}
+.tela{min-width:960px;display:grid;grid-template-columns:52px 1fr}
+.rail{background:var(--rail);border-right:1px solid var(--linha);display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:16px}
+.rail i{width:20px;height:20px;border-radius:5px;background:#2c2c2c;display:block}
+.rail i.on{background:var(--azul-s);box-shadow:inset 0 0 0 1.5px var(--azul)}
+.cont{padding:28px 40px 30px;min-width:0}
+.topo{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.topo h3{margin:0;font-size:15px;color:var(--tinta-3);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.topo .dir{margin-left:auto;color:var(--tinta-3);font-size:13.5px}
+.frase{font-size:28px;line-height:1.25;margin:0 0 4px;font-weight:600;letter-spacing:-.01em}
+.frase b{color:var(--azul);font-weight:600}
+.leve{color:var(--tinta-2);margin:0 0 22px;font-size:15px}
+.gira{display:inline-block;border-radius:50%;border:2px solid var(--azul);border-right-color:transparent;animation:gira .8s linear infinite;flex:none;vertical-align:-2px}
+@keyframes gira{to{transform:rotate(360deg)}}
+.seg{display:flex;gap:4px;margin-bottom:8px}
+.seg i{flex:1;height:8px;border-radius:4px;background:#363636}
+.seg i.f{background:var(--verde)}.seg i.a{background:var(--azul);animation:pulsa 1.4s ease-in-out infinite}
+@keyframes pulsa{50%{opacity:.55}}
+.segtxt{display:flex;justify-content:space-between;color:var(--tinta-2);font-size:14px;margin-bottom:26px}
+.segtxt b{color:var(--tinta);font-weight:600}
+.nums{display:flex;gap:40px;margin-bottom:26px;flex-wrap:wrap}
+.nums div{font-size:14px;color:var(--tinta-2)}.nums b{display:block;font-size:30px;color:var(--tinta);line-height:1.15;font-weight:600}
+.nums .al b{color:var(--vermt)}
+.atencao{display:flex;align-items:center;gap:14px;background:var(--verms);border:1px solid #5a2e33;border-radius:10px;padding:14px 18px;margin-bottom:26px}
+.atencao .ex{width:26px;height:26px;border-radius:50%;background:var(--verm);display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.atencao p{margin:0;font-size:15px}.atencao p small{display:block;color:var(--vermt);font-size:13.5px}
+.bt{height:34px;padding:0 16px;border:1px solid #5a5a5a;border-radius:6px;background:#333;color:var(--tinta);font:inherit;font-size:13.5px;margin-left:auto;white-space:nowrap}
+.sec{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);margin:0 0 6px}
+.linhas{display:flex;flex-direction:column}
+.l{display:grid;grid-template-columns:260px 1fr 150px;gap:18px;align-items:center;padding:15px 0;border-top:1px solid #2b2b2b}
+.l:first-child{border-top:0}
+.l b{font-size:15.5px;font-weight:600;display:block}.l small{color:var(--tinta-3);font-size:13.5px}
+.l .onde{font-size:15px;color:var(--tinta-2)}.l .onde strong{color:var(--tinta);font-weight:600}
+.l .hora{font-size:13px;color:var(--tinta-3);display:block}
+.pts{display:flex;gap:5px;justify-content:flex-end}
+.pts i{width:11px;height:11px;border-radius:50%;background:#383838;display:block}
+.pts i.f{background:var(--verde)}.pts i.a{background:var(--azul);animation:pulsa 1.4s ease-in-out infinite}.pts i.v{background:var(--verm)}
+.caminho{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;color:var(--tinta-2);padding:0 0 4px}
+.caminho span{background:#2a2a2a;border-radius:14px;padding:3px 12px}
+.caminho span.f{color:var(--verde-t)}.caminho span.a{background:var(--azul-s);color:#cfe4fb}
+.caminho em{font-style:normal;color:#555}
+.mais{display:inline-block;margin-top:16px;color:var(--azul);font-size:14px}
+.mais code{font:12px Consolas,monospace;color:var(--tinta-3);margin-left:8px}
+.quadro{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.col h4{margin:0 0 12px;font-size:14px;font-weight:600;display:flex;align-items:baseline;gap:8px;color:var(--tinta-2)}
+.col h4 b{font-size:26px;color:var(--tinta);font-weight:600;line-height:1}
+.cd{background:var(--card);border-radius:10px;padding:13px 15px;margin-bottom:10px;border:1px solid #303030}
+.cd b{display:block;font-size:14.5px;font-weight:600}.cd small{display:block;color:var(--tinta-3);font-size:13px}
+.cd .q{font-size:13.5px;color:var(--tinta-2);margin-top:6px}
+.cd.a{border-color:#2d4a6e;background:#1a2638}.cd.v{border-color:#5a2e33;background:var(--verms)}.cd.v .q{color:var(--vermt)}
+.col.fim .cd{opacity:.65}
+.feed{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:70px 28px 1fr auto;gap:14px;align-items:start;padding:12px 0;position:relative}
+.ev:not(:last-child)::before{content:"";position:absolute;left:84px;top:36px;bottom:-12px;width:2px;background:#303030}
+.ev time{color:var(--tinta-3);font-size:14px;font-variant-numeric:tabular-nums;padding-top:2px}
+.ev .ic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:#333;color:var(--tinta-2)}
+.ev .ic.ok{background:var(--verde);color:#06220f}.ev .ic.az{background:var(--azul-s);box-shadow:inset 0 0 0 2px var(--azul)}.ev .ic.vm{background:var(--verm);color:#fff}
+.ev p{margin:0;font-size:15.5px}.ev p small{display:block;color:var(--tinta-3);font-size:13.5px}
+.ev .lg{font:12px Consolas,monospace;color:var(--tinta-3);padding-top:4px}
+.rec{margin-top:44px;border:1px solid #2d4a6e;background:#16233a;border-radius:12px;padding:20px 24px;color:#d6e6f8;max-width:84ch}
+.rec h3{margin:0 0 8px;font-size:18px;color:#fff}
+.rec p{margin:0 0 8px}.rec ul{margin:8px 0 0;padding-left:20px}.rec li{margin:3px 0}
+.fundo{display:flex;align-items:center;gap:12px;background:#1b1b1b;border:1px solid var(--linha);border-radius:10px;padding:12px 18px;max-width:84ch;margin-top:12px;color:var(--tinta-2);font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:8px;height:26px;padding:0 12px 0 10px;border-radius:13px;background:var(--azul-s);border:1px solid #2d4a6e;color:#cfe4fb;font-size:12.5px;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.gira,.seg i.a,.pts i.a{animation:none}}
+</style>
+
+<main>
+<h1>Painel do robô: 3 jeitos bem mais simples</h1>
+<p class="lead">Refiz tudo com muito menos coisa na tela: letra maior, poucas cores, uma ideia por linha e o registro técnico escondido até você querer ver. As três respondem às mesmas perguntas: <b>o robô está bem? o que ele está fazendo? onde está cada pedido?</b> Dados inventados.</p>
+<div class="fundo"><span class="chip"><span class="gira" style="width:11px;height:11px"></span>Robô · enviando 3 de 5</span> Nas três opções, ao sair da tela o robô segue sozinho e só este chip pequeno aparece na barra de baixo. Se der problema, o chip fica vermelho.</div>
+
+<h2><span>Opção A</span> Resumo e lista <em>minha recomendação</em></h2>
+<p class="sub">Uma frase diz como está tudo. Uma barra mostra a rodada. Depois só uma lista de pedidos, cada um com <b>uma frase</b> dizendo onde está. O problema, se houver, aparece em cima, em vermelho. O registro técnico fica atrás de "Ver registro".</p>
+<div class="rolar"><div class="tela">
+<div class="rail"><i></i><i></i><i></i><i></i><i class="on"></i><i></i></div>
+<div class="cont">
+<div class="topo"><h3>Robô</h3><span class="dir">Envio automático · próximo às 09:40</span></div>
+<p class="frase"><span class="gira" style="width:18px;height:18px;margin-right:10px"></span>O robô está enviando <b>3 pedidos</b> agora.</p>
+<p class="leve">Rodada começou às 09:31 · está no passo 5 de 7</p>
+<div class="seg"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="a"></i><i></i><i></i></div>
+<div class="segtxt"><span><b>Enviando às caixas dos hotéis</b> · 3 de 5</span><span>falta marcar a planilha e concluir</span></div>
+<div class="nums"><div><b>37</b>enviados hoje</div><div><b>12</b>NF confirmadas</div><div class="al"><b>1</b>precisa de você</div></div>
+<div class="atencao"><span class="ex">!</span><p>Hotel Lagoa · Paulo Exemplo Nunes<small>Não saiu: a Caixa de Saída do PC de Bernardo está travada</small></p><button class="bt" type="button">Como resolver</button></div>
+<div class="sec">Pedidos de hoje</div>
+<div class="linhas">
+<div class="l"><div><b>Hotel Mar Azul</b><small>Camila Exemplo Rocha</small></div><div class="onde"><strong>Enviando agora</strong> pelo PC de Clara<span class="hora">chegou 09:22</span></div><div class="pts"><i class="f"></i><i class="f"></i><i class="a"></i><i></i><i></i><i></i></div>
+<div class="caminho"><span class="f">✓ Recebido 09:22</span><em>›</em><span class="f">✓ E-mail montado 09:31</span><em>›</em><span class="a">Enviando à caixa do hotel</span><em>›</em><span>TRUE</span><em>›</em><span>NF</span><em>›</em><span>Hóspede</span></div></div>
+<div class="l"><div><b>Hotel Orquídea</b><small>Marina Exemplo Costa</small></div><div class="onde"><strong>Enviado às 09:31</strong> pelo PC de João · falta marcar a planilha<span class="hora">chegou 09:14</span></div><div class="pts"><i class="f"></i><i class="f"></i><i class="f"></i><i class="a"></i><i></i><i></i></div></div>
+<div class="l"><div><b>Pousada das Palmeiras</b><small>Rafael Exemplo Lima</small></div><div class="onde"><strong>Enviado às 09:31</strong> pelo PC de Cristian · falta marcar a planilha<span class="hora">chegou 09:20</span></div><div class="pts"><i class="f"></i><i class="f"></i><i class="f"></i><i class="a"></i><i></i><i></i></div></div>
+<div class="l"><div><b>Hotel Centro</b><small>Bruno Exemplo Alves</small></div><div class="onde"><strong>Esperando a NF</strong> · prazo hoje 12:00<span class="hora">chegou 08:03</span></div><div class="pts"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="a"></i><i></i></div></div>
+<div class="l"><div><b>Pousada Sol</b><small>Aline Exemplo Pires</small></div><div class="onde"><strong style="color:var(--verde-t)">Concluído às 08:20</strong><span class="hora">chegou 07:41</span></div><div class="pts"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div></div>
+</div>
+<a class="mais">Ver registro do robô ›<code>logs/solicitacoes_nf.log</code></a>
+</div></div></div>
+
+<h2><span>Opção B</span> Quadro em 4 colunas</h2>
+<p class="sub">Para ver de relance <b>onde está cada pedido</b>, como num quadro de recados: Chegou, Enviado ao hotel, Esperando a NF, Concluído. O pedido anda para a coluna ao lado sozinho. Quase sem texto: o lugar do cartão já diz o caminho.</p>
+<div class="rolar"><div class="tela">
+<div class="rail"><i></i><i></i><i></i><i></i><i class="on"></i><i></i></div>
+<div class="cont">
+<div class="topo"><h3>Robô</h3><span class="dir"><span class="gira" style="width:11px;height:11px;margin-right:8px"></span>Enviando agora · próxima rodada às 09:40</span></div>
+<div class="atencao" style="margin-bottom:22px"><span class="ex">!</span><p>1 pedido não saiu: Hotel Lagoa<small>Caixa de Saída travada no PC de Bernardo</small></p><button class="bt" type="button">Como resolver</button></div>
+<div class="quadro">
+<div class="col"><h4><b>2</b>Chegou, enviando</h4>
+<div class="cd a"><b>Hotel Mar Azul</b><small>Camila Exemplo Rocha</small><div class="q"><span class="gira" style="width:10px;height:10px;margin-right:6px"></span>enviando pelo PC de Clara</div></div>
+<div class="cd v"><b>Hotel Lagoa</b><small>Paulo Exemplo Nunes</small><div class="q">não saiu · ver motivo</div></div></div>
+<div class="col"><h4><b>2</b>Enviado ao hotel</h4>
+<div class="cd"><b>Hotel Orquídea</b><small>Marina Exemplo Costa</small><div class="q">09:31 · PC de João</div></div>
+<div class="cd"><b>Pousada das Palmeiras</b><small>Rafael Exemplo Lima</small><div class="q">09:31 · PC de Cristian</div></div></div>
+<div class="col"><h4><b>1</b>Esperando a NF</h4>
+<div class="cd"><b>Hotel Centro</b><small>Bruno Exemplo Alves</small><div class="q">prazo hoje 12:00</div></div></div>
+<div class="col fim"><h4><b>9</b>Concluído hoje</h4>
+<div class="cd"><b>Pousada Sol</b><small>Aline Exemplo Pires</small><div class="q">08:20</div></div>
+<div class="cd"><b>+ 8 outros</b><small>ver todos</small></div></div>
+</div>
+<a class="mais" style="margin-top:22px">Ver registro do robô ›<code>logs/solicitacoes_nf.log</code></a>
+</div></div></div>
+
+<h2><span>Opção C</span> Diário do dia, em português</h2>
+<p class="sub">O registro técnico vira uma <b>história lida de cima para baixo</b>, em frases normais, como um diário do que o robô fez. Cada linha tem a hora e, bem discreto, o arquivo do log. É o mais fiel ao "caminho exato", e o mais fácil de acompanhar um pedido do começo ao fim.</p>
+<div class="rolar"><div class="tela">
+<div class="rail"><i></i><i></i><i></i><i></i><i class="on"></i><i></i></div>
+<div class="cont">
+<div class="topo"><h3>Robô</h3><span class="dir">Tudo certo · 1 precisa de você · próxima rodada 09:40</span></div>
+<div class="feed">
+<div class="ev"><time>09:31</time><span class="ic az"><span class="gira" style="width:10px;height:10px"></span></span><p>Enviando o pedido de <b>Camila Exemplo Rocha</b> (Hotel Mar Azul)<small>pela caixa do hotel, que fica no PC de Clara</small></p><span class="lg">log 09:31:38</span></div>
+<div class="ev"><time>09:31</time><span class="ic ok">✓</span><p>Pedido de <b>Marina Exemplo Costa</b> enviado ao Hotel Orquídea<small>pelo PC de João · falta marcar a planilha</small></p><span class="lg">log 09:31:23</span></div>
+<div class="ev"><time>09:31</time><span class="ic ok">✓</span><p>E-mails montados: <b>3 e-mails</b> para 4 pedidos<small>um e-mail por operador</small></p><span class="lg">log 09:31:09</span></div>
+<div class="ev"><time>09:31</time><span class="ic ok">✓</span><p>Robô achou <b>4 pedidos novos</b> em 3 hotéis<small>leu a Planilha Central: 78 abas em 1,8 s</small></p><span class="lg">log 09:31:06</span></div>
+<div class="ev"><time>08:31</time><span class="ic vm">!</span><p><b>Não saiu:</b> pedido de Paulo Exemplo Nunes (Hotel Lagoa)<small style="color:var(--vermt)">a Caixa de Saída do PC de Bernardo está travada</small></p><span class="lg">log 08:31:20</span></div>
+<div class="ev"><time>08:20</time><span class="ic ok">✓</span><p>NF de <b>Aline Exemplo Pires</b> enviada ao hóspede<small>Pousada Sol · pedido concluído</small></p><span class="lg">log 08:20:03</span></div>
+</div>
+<a class="mais">Ver mais do dia ›<code>logs/solicitacoes_nf.log</code></a>
+</div></div></div>
+
+<div class="rec">
+<h3>Minha recomendação: Opção A</h3>
+<p>Ela responde às 3 perguntas sem você precisar procurar: a <b>frase de cima</b> diz se está tudo bem, a <b>barra</b> mostra a rodada e a <b>lista</b> diz, em uma frase por pedido, onde cada um está. O problema nunca se esconde: vem em vermelho no topo.</p>
+<ul>
+<li><b>Por que não a B:</b> o quadro é bonito de olhar, mas mostra só "em que fase está", sem a hora nem o PC, e você pediu o caminho exato.</li>
+<li><b>Por que não a C sozinha:</b> é ótima para acompanhar um pedido, mas você precisa ler a lista toda para saber como está o dia.</li>
+<li><b>O melhor das duas:</b> A na tela principal e a C como o conteúdo do "Ver registro". Assim o dia a dia é limpo e o "caminho exato nos logs" está a um clique.</li>
+</ul>
+</div>
+</main>

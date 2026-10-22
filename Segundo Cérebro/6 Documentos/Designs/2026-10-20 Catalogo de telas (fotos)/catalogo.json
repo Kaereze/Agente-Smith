@@ -1,0 +1,450 @@
+[
+ {
+  "arquivo": "cat-001.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Tela inteira (Visão geral): trilho à esquerda, topo, barra de baixo",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-002.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Menu do operador deste PC (quem está usando)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-003.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Avisos do sistema (bolha embaixo)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-004.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Ajuda (tecla ?)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-005.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Modo professor desligado (sem as frases de dica)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-008.png",
+  "secao": "1 · Estrutura do Painel",
+  "titulo": "Barra de baixo: Central, robô, PCs no ar, tema, professor, ajuda",
+  "w": 1600,
+  "h": 64
+ },
+ {
+  "arquivo": "cat-010.png",
+  "secao": "2 · Visão geral",
+  "titulo": "Resumo de hoje",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-011.png",
+  "secao": "2 · Visão geral",
+  "titulo": "Gráfico: 7 dias",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-012.png",
+  "secao": "2 · Visão geral",
+  "titulo": "Gráfico: 45 dias",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-013.png",
+  "secao": "2 · Visão geral",
+  "titulo": "Gráfico em tabela (Ver em tabela)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-014.png",
+  "secao": "2 · Visão geral",
+  "titulo": "Clicou num número do resumo: abre a lista já filtrada",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-015.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Caixa de entrada (todas)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-016.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Não lidos",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-017.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Pasta: Urgência",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-018.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Pasta: Formulários do robô",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-019.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Pasta: Itens Enviados",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-020.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Caixas de um PC abertas na lateral",
+  "w": 364,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-021.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Caixa de um hotel aberta",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-022.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Seletor \"Caixa de\" aberto (de quem é a caixa)",
+  "w": 432,
+  "h": 461
+ },
+ {
+  "arquivo": "cat-023.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Faixa de comandos: aba Enviar/Receber",
+  "w": 1600,
+  "h": 120
+ },
+ {
+  "arquivo": "cat-024.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Faixa de comandos: aba Exibir",
+  "w": 1600,
+  "h": 120
+ },
+ {
+  "arquivo": "cat-025.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Faixa de comandos: aba Página Inicial",
+  "w": 1600,
+  "h": 120
+ },
+ {
+  "arquivo": "cat-026.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Filtro da lista aberto",
+  "w": 310,
+  "h": 292
+ },
+ {
+  "arquivo": "cat-027.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Filtro ativo: Sem resposta (✕ tira)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-028.png",
+  "secao": "3 · Caixa de entrada · lista e pastas",
+  "titulo": "Botão direito num e-mail: lido/não lido, urgente",
+  "w": 410,
+  "h": 760
+ },
+ {
+  "arquivo": "cat-029.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "E-mail de hóspede aberto (ficha do pedido em cima)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-030.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "Histórico do hóspede embaixo do e-mail",
+  "w": 802,
+  "h": 120
+ },
+ {
+  "arquivo": "cat-031.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "Menu ⋯ do e-mail (Responder com a NF, lido, excluir)",
+  "w": 240,
+  "h": 182
+ },
+ {
+  "arquivo": "cat-032.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "E-mail urgente aberto (vermelho na lista, etiqueta)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-033.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "E-mail com anexos (botões em cima)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-034.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "Visualizador de anexo (na demonstração o arquivo não existe)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-035.png",
+  "secao": "4 · Caixa de entrada · leitura do e-mail",
+  "titulo": "Formulário do hóspede aberto (tabela verde/creme em grupos)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-036.png",
+  "secao": "5 · Pesquisa",
+  "titulo": "Pesquisa digitada: pedidos na hora + e-mails pelo índice",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-037.png",
+  "secao": "5 · Pesquisa",
+  "titulo": "Procurar também direto no Outlook (ao vivo)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-038.png",
+  "secao": "5 · Pesquisa",
+  "titulo": "Resultado da pesquisa aberto",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-039.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Responder (dentro da leitura)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-040.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Responder com a NF (anexo + mensagem padrão + assinatura)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-041.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Encaminhar",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-042.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Responder um formulário: Para = quem preencheu",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-043.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Responder um formulário: o original em tabela embaixo",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-044.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Novo e-mail (escolher a caixa do hotel)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-045.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Enviou: a janela fecha e o aviso acompanha (canto de baixo)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-046.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Aviso do envio: entregue / conferido",
+  "w": 412,
+  "h": 169
+ },
+ {
+  "arquivo": "cat-047.png",
+  "secao": "6 · Responder, encaminhar e enviar a NF",
+  "titulo": "Excluir: confirmação / barra de Desfazer",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-048.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Notas fiscais (na demonstração não há pedido de formulário)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-049.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Notas fiscais: lista com prazo",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-050.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Situação ▾ aberta",
+  "w": 310,
+  "h": 305
+ },
+ {
+  "arquivo": "cat-051.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Situação escolhida (✕ tira)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-052.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Hotel ▾ com busca (digitou \"so\")",
+  "w": 310,
+  "h": 216
+ },
+ {
+  "arquivo": "cat-053.png",
+  "secao": "7 · Notas fiscais",
+  "titulo": "Clicou numa linha: a ficha abre à direita",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-054.png",
+  "secao": "8 · Gerência",
+  "titulo": "Relatório: mês × mês anterior",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-055.png",
+  "secao": "8 · Gerência",
+  "titulo": "Relatório: semana",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-056.png",
+  "secao": "8 · Gerência",
+  "titulo": "Relatório: dia",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-057.png",
+  "secao": "8 · Gerência",
+  "titulo": "Período anterior (◀)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-058.png",
+  "secao": "8 · Gerência",
+  "titulo": "Copiar resumo (aviso de copiado)",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-059.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Máquinas: os 4 PCs, versão, Outlook, conferência",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-060.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Log do robô: tudo",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-061.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Log: Entradas",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-062.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Log: Saídas",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-063.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Log: Atualizações",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-064.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "Log: Outlook e PCs",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-065.png",
+  "secao": "9 · Monitoramento",
+  "titulo": "PC ▾ aberto (bolinha de ligado)",
+  "w": 320,
+  "h": 255
+ },
+ {
+  "arquivo": "cat-066.png",
+  "secao": "10 · Atalhos e janelas",
+  "titulo": "Tecla ?: ajuda com os atalhos",
+  "w": 1600,
+  "h": 1000
+ },
+ {
+  "arquivo": "cat-067.png",
+  "secao": "10 · Atalhos e janelas",
+  "titulo": "Ctrl+E: cursor na pesquisa de cima",
+  "w": 1600,
+  "h": 64
+ }
+]

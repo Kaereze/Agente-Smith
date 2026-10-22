@@ -1,0 +1,312 @@
+<title>Peças do Painel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#161616;--painel:#1f1f1f;--card:#222;--card2:#2a2a2a;--linha:#333;--linha2:#444;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8a8a8a;--azul:#479ef5;--lig:#86dccf;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--tinta)}
+body{margin:0;font:14px/1.5 "Segoe UI","IBM Plex Sans",system-ui,sans-serif}
+.casca{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1400px;margin:0 auto}
+.indice{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 14px 24px 16px;border-right:1px solid var(--linha)}
+.indice h1{font-size:17px;margin:0 0 2px}
+.indice p{margin:0 0 14px;color:var(--tinta3);font-size:12.5px}
+.indice input{width:100%;height:32px;border-radius:6px;border:1px solid var(--linha2);background:#1b1b1b;color:var(--tinta);padding:0 10px;font:inherit;margin-bottom:12px}
+.indice a{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border-radius:6px;color:var(--tinta2);text-decoration:none;font-size:13px}
+.indice a:hover{background:var(--card);color:var(--tinta)}
+.indice a em{font-style:normal;color:var(--tinta3);font:12px/1.6 "IBM Plex Mono",Consolas,monospace}
+main{padding-block:28px 80px;padding-inline:28px;min-width:0}
+.cab-pag h2{font-size:24px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.cab-pag p{margin:0;color:var(--tinta2);max-width:80ch}
+.regras-cat{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;padding:0;list-style:none}
+.regras-cat li{font-size:12.5px;color:var(--tinta2);border:1px solid var(--linha);border-radius:999px;padding:3px 11px;background:var(--card)}
+section.grupo{margin-top:44px;scroll-margin-top:16px}
+section.grupo > h3{font-size:19px;margin:0 0 2px;display:flex;gap:10px;align-items:baseline}
+section.grupo > h3 em{font-style:normal;font:12px "IBM Plex Mono",Consolas,monospace;color:var(--tinta3)}
+section.grupo > p{margin:0 0 16px;color:var(--tinta2);font-size:13.5px;max-width:80ch}
+.cartoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px}
+.peca{background:var(--card);border:1px solid var(--linha);border-radius:12px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.peca.largo{grid-column:1/-1}
+.peca header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 16px 4px}
+.peca header h4{margin:0;font-size:15px}
+.peca header span{font-size:12px;color:var(--tinta3)}
+.peca .desc{margin:0;padding:0 16px 12px;color:var(--tinta2);font-size:13px}
+.palco{background:#1f1f1f;border-block:1px solid var(--linha);padding:18px;overflow:auto;position:relative}
+.palco.claro{background:#161616}
+.hospede{display:block;transform:translateZ(0)}
+.codigo > *,.peca > *{min-width:0}
+.estados{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
+.estado{display:grid;gap:6px;justify-items:start}
+.estado small{font-size:11px;color:var(--tinta3);text-transform:uppercase;letter-spacing:.06em}
+.codigo{padding:12px 16px 16px;display:grid;gap:10px}
+.codigo .tit{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3)}
+.codigo .tit button{margin-left:auto}
+.bt-p{height:24px;padding:0 9px;border-radius:5px;border:1px solid var(--linha2);background:none;color:var(--tinta2);font:600 11.5px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.bt-p:hover{color:var(--tinta);border-color:#5a5a5a}
+pre{margin:0;font:11.5px/1.55 "IBM Plex Mono",Consolas,monospace;background:#1a1a1a;border:1px solid var(--linha);border-radius:6px;padding:9px 11px;color:#c9d6e6;overflow:auto;max-height:340px;white-space:pre}
+pre .s{color:#9fd0fa}pre .p{color:#c3a6f5}pre .v{color:#e8d9ae}pre .c{color:#7a8a7f}
+details summary{cursor:pointer;font-size:12.5px;color:var(--tinta2);padding:3px 0}
+details summary:hover{color:var(--tinta)}
+details[open] summary{margin-bottom:6px}
+.cores{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;padding:16px}
+.cor{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:center;font-size:12px}
+.cor i{width:34px;height:34px;border-radius:7px;border:1px solid #ffffff22}
+.cor b{display:block;font:500 12px "IBM Plex Mono",Consolas,monospace;color:var(--tinta);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cor span{color:var(--tinta3);font:11px "IBM Plex Mono",Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.letras{padding:16px;display:grid;gap:14px}
+.letras div{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:baseline}
+.letras small{color:var(--tinta3);font:11.5px "IBM Plex Mono",Consolas,monospace}
+.anim-quadro{width:100%;border:0;display:block;min-height:900px;background:#161616}
+.sumiu{display:none!important}
+.nada{color:var(--tinta3);padding:20px 0}
+button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+@media (max-width:900px){.casca{grid-template-columns:minmax(0,1fr)}.indice{position:static;height:auto;border-right:0;border-bottom:1px solid var(--linha)}
+  .indice nav{display:flex;flex-wrap:wrap;gap:4px}.indice a em{display:none}main{padding-inline:16px}.cartoes{grid-template-columns:minmax(0,1fr)}.letras div{grid-template-columns:minmax(0,1fr)}}
+</style>
+<style id="css-painel" media="not all">/*CSS_PAINEL*/</style>
+<script type="application/json" id="dados">/*DADOS*/</script>
+<template id="anim-html">/*ANIM*/</template>
+
+<div class="casca">
+  <aside class="indice">
+    <h1>Peças do Painel</h1>
+    <p id="conta"></p>
+    <input type="search" id="procurar" placeholder="Procurar peça…" aria-label="Procurar peça">
+    <nav id="nav" aria-label="Grupos"></nav>
+  </aside>
+  <main>
+    <div class="cab-pag">
+      <h2>Catálogo completo do Painel Fiscal</h2>
+      <p>Cada peça do Painel do jeito que ela é hoje, copiada do próprio Painel (modo demonstração, dados inventados) e desenhada com o estilo de verdade dele. Embaixo de cada uma: o HTML que monta a peça e o CSS que a desenha, tirados do código.</p>
+      <ul class="regras-cat"><li>Tema escuro, como o Painel da equipe</li><li>Botões com os estados: normal, mouse em cima, foco, desligado</li><li>Peças grandes aparecem reduzidas para caber</li><li>Versão 2026.10.22.7</li></ul>
+    </div>
+    <div id="grupos"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("dados").textContent);
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- o CSS do Painel numa folha só, usada por todas as caixinhas ----------
+  const folha = new CSSStyleSheet();
+  folha.replaceSync(document.getElementById("css-painel").textContent);
+  // estados à força: cada regra com :hover/:focus/:active ganha uma cópia com uma classe (.f-hover, .f-foco, .f-ativo)
+  const PSEUDO = [[/:hover/g, ".f-hover"], [/:focus-visible/g, ".f-foco"], [/:focus(?![-\w])/g, ".f-foco"], [/:active/g, ".f-ativo"]];
+  const clonar = lista => {
+    const n = lista.cssRules.length;
+    for (let i = 0; i < n; i++) {
+      const r = lista.cssRules[i];
+      if (r.cssRules && r.insertRule && !(r instanceof CSSKeyframesRule)) { clonar(r); continue; }
+      if (!(r instanceof CSSStyleRule) || !/:hover|:focus|:active/.test(r.selectorText)) continue;
+      let s = r.selectorText; PSEUDO.forEach(([a, b]) => { s = s.replace(a, b); });
+      try { lista.insertRule(`${s}{${r.style.cssText}}`, lista.cssRules.length); } catch (e) { }
+    }
+  };
+  clonar(folha);
+  // lista plana das regras (pra mostrar o código de cada peça)
+  const REGRAS = [];
+  const achatar = (lista, prefixo) => {
+    for (const r of lista.cssRules) {
+      if (r instanceof CSSMediaRule) { achatar(r, "@media " + r.conditionText); continue; }
+      if (!(r instanceof CSSStyleRule)) continue;
+      const sel = r.selectorText;
+      if (/\.cat-|\.f-hover|\.f-foco|\.f-ativo/.test(sel)) continue;
+      const limpo = sel.replace(/::?(before|after|placeholder|selection|-webkit-[\w-]+|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/g, "")
+                       .replace(/:(hover|focus-visible|focus-within|focus|active|visited)\b/g, "");
+      const generica = !/[.#\[]/.test(sel);
+      REGRAS.push({ r, sel, limpo: limpo.trim() || "*", generica, prefixo });
+    }
+  };
+  achatar(folha, "");
+  const QUADROS = {};
+  for (const r of folha.cssRules) if (r instanceof CSSKeyframesRule) QUADROS[r.name] = r;
+
+  const formatar = (txt, prefixo) => {
+    const m = txt.match(/^([^{]+)\{(.*)\}\s*$/s);
+    if (!m) return txt;
+    const decl = m[2].split(/;\s*/).map(x => x.trim()).filter(Boolean).map(x => "  " + x + ";").join("\n");
+    const bloco = `${m[1].trim()} {\n${decl}\n}`;
+    return prefixo ? `${prefixo} {\n${bloco.replace(/^/gm, "  ")}\n}` : bloco;
+  };
+  const colorir = t => esc(t).replace(/^(\s*)([^{}\n:]+)(\s\{)$/gm, '$1<span class="s">$2</span>$3')
+    .replace(/^(\s+)([\w-]+):(.*);$/gm, '$1<span class="p">$2</span>:<span class="v">$3</span>;');
+  const regrasDaPeca = (raiz, tudo) => {
+    const achadas = [], anims = new Set();
+    for (const x of REGRAS) {
+      if (!tudo && x.generica) continue;
+      let casa = false;
+      try { casa = tudo ? !!(raiz.matches(x.limpo) || raiz.querySelector(x.limpo)) : raiz.matches(x.limpo); } catch (e) { }
+      if (!casa) continue;
+      achadas.push(formatar(x.r.cssText, x.prefixo));
+      const a = x.r.style.getPropertyValue("animation-name");
+      if (a) a.split(",").forEach(n => n.trim() && n.trim() !== "none" && anims.add(n.trim()));
+    }
+    anims.forEach(n => { if (QUADROS[n]) achadas.push(QUADROS[n].cssText.replace(/\{\s*/, "{\n  ").replace(/\}\s*(?=\S)/g, "}\n  ")); });
+    return achadas;
+  };
+
+  // ---------- montar uma peça numa caixinha isolada (shadow DOM) ----------
+  const SPRITE = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${D.sprite}</defs></svg>`;
+  function montar(p, estado) {
+    const host = document.createElement("div"); host.className = "hospede";
+    const sh = host.attachShadow({ mode: "open" });
+    const extra = new CSSStyleSheet();
+    const h = Math.min(p.h, p.k.startsWith("lateral") ? 660 : 860);
+    extra.replaceSync(estado || p.menu ? ".cat-alvo{flex:none!important}" :
+      `.cat-alvo{width:${p.w}px!important;max-width:none!important;height:${h}px!important;max-height:none!important;flex:none!important;min-width:0!important}`);
+    sh.adoptedStyleSheets = [folha, extra];
+    const abre = [`<div class="cat-raiz cat-pai ${esc(p.raiz)}">`, `<div class="cat-corpo cat-pai ${esc(p.corpo)}">`]
+      .concat(p.pais.map(a => `<${a.tag}${a.id ? ` id="${esc(a.id)}"` : ""} class="cat-pai ${esc(a.cls)}">`));
+    const fecha = p.pais.slice().reverse().map(a => `</${a.tag}>`).join("") + "</div></div>";
+    sh.innerHTML = SPRITE + abre.join("") + `<template data-raiz></template>` + p.html + fecha;
+    const raiz = sh.querySelector("template[data-raiz]").nextElementSibling;
+    sh.querySelector("template[data-raiz]").remove();
+    raiz.classList.add("cat-alvo");
+    if (p.m === "flutua") raiz.classList.add("cat-solto");
+    if (estado === "hover") raiz.classList.add("f-hover");
+    if (estado === "foco") raiz.classList.add("f-foco");
+    if (estado === "desligado") { raiz.setAttribute("disabled", ""); raiz.setAttribute("aria-disabled", "true"); }
+    if (estado === "ligado") { raiz.setAttribute("aria-pressed", "true"); raiz.setAttribute("aria-current", "true"); raiz.classList.add("on", "sel"); }
+    if (estado === "normal") { raiz.classList.remove("on", "sel", "f-hover"); if (raiz.getAttribute("aria-pressed") === "true") raiz.setAttribute("aria-pressed", "false"); }
+    host._raiz = raiz;
+    return host;
+  }
+  const ajustar = (palco, host, p) => {   // peça mais larga que o espaço: reduz (zoom) pra caber
+    const livre = palco.clientWidth - 36;
+    host.style.width = p.w + "px";
+    host.style.zoom = p.w > livre ? String(Math.max(.35, livre / p.w)) : "1";
+  };
+
+  const copiar = (txt, bt) => {
+    const ok = () => { const t = bt.textContent; bt.textContent = "Copiado ✓"; setTimeout(() => bt.textContent = t, 1400); };
+    navigator.clipboard?.writeText(txt).then(ok, () => {});
+  };
+
+  // ---------- página ----------
+  const grupos = document.getElementById("grupos"), nav = document.getElementById("nav");
+  const porGrupo = {};
+  D.pecas.forEach(p => (porGrupo[p.g] ||= []).push(p));
+  const contagem = { fundamentos: 3, animacoes: 22, ...Object.fromEntries(Object.entries(porGrupo).map(([g, l]) => [g, l.length])) };
+  document.getElementById("conta").textContent = `${D.pecas.length} peças + cores, letras, ${D.sprite.split("<symbol").length - 1} ícones e 22 animações`;
+  const construidos = [];
+
+  for (const [g, nome, desc] of D.grupos) {
+    nav.insertAdjacentHTML("beforeend", `<a href="#g-${g}">${esc(nome)}<em>${contagem[g] || 0}</em></a>`);
+    const sec = document.createElement("section"); sec.className = "grupo"; sec.id = "g-" + g;
+    sec.innerHTML = `<h3>${esc(nome)}<em>${contagem[g] || 0}</em></h3><p>${esc(desc)}</p><div class="cartoes"></div>`;
+    grupos.appendChild(sec);
+    const caixa = sec.querySelector(".cartoes");
+    if (g === "fundamentos") { fundamentos(caixa); continue; }
+    if (g === "animacoes") {
+      caixa.style.display = "block";
+      caixa.innerHTML = `<iframe class="anim-quadro" title="Animações do Painel"></iframe>`;
+      const f = caixa.querySelector("iframe");
+      f.srcdoc = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>' + document.getElementById("anim-html").innerHTML + "</body></html>";
+      const medir = () => { try { f.style.height = f.contentDocument.documentElement.scrollHeight + "px"; } catch (e) { } };
+      f.addEventListener("load", () => { medir(); setTimeout(medir, 800); });
+      continue;
+    }
+    for (const p of porGrupo[g] || []) caixa.appendChild(cartao(p));
+  }
+
+  function cartao(p) {
+    const el = document.createElement("article");
+    el.className = "peca" + (p.e ? "" : p.w > 420 ? " largo" : "");
+    el.dataset.busca = (p.n + " " + p.d + " " + p.o + " " + p.k).toLowerCase();
+    el.innerHTML = `<header><h4>${esc(p.n)}</h4><span>${esc(p.o)}</span></header><p class="desc">${esc(p.d)}</p><div class="palco"></div>
+      <div class="codigo">
+        <div><div class="tit">CSS desta peça <button class="bt-p" data-c="css">Copiar</button></div><pre data-css></pre></div>
+        <details data-tudo><summary>Todo o CSS que ela usa (com o que está dentro dela)</summary><pre data-tudo-pre>Calculando…</pre></details>
+        <details ${p.bonito.split("\n").length <= 18 ? "open" : ""}><summary>HTML da peça (${p.bonito.split("\n").length} linhas)</summary>
+          <div class="tit" style="margin-bottom:6px">HTML <button class="bt-p" data-c="html">Copiar</button></div><pre>${esc(p.bonito)}</pre></details>
+      </div>`;
+    const palco = el.querySelector(".palco");
+    let principal;
+    if (p.e) {
+      const linha = document.createElement("div"); linha.className = "estados";
+      const lista = [["normal", "Normal"], ["hover", "Mouse em cima"], ["foco", "Foco (teclado)"], ["desligado", "Desligado"]];
+      if (/aria-pressed|aria-current|class="[^"]*\b(on|sel)\b/.test(p.html)) lista.push(["ligado", "Ligado / atual"]);
+      for (const [k, rot] of lista) {
+        const caixa = document.createElement("div"); caixa.className = "estado";
+        const host = montar(p, k);
+        caixa.innerHTML = `<small>${rot}</small>`; caixa.appendChild(host); linha.appendChild(caixa);
+        if (k === "normal") principal = host;
+      }
+      palco.appendChild(linha);
+    } else {
+      principal = montar(p);
+      palco.appendChild(principal);
+      if (p.menu) palco.style.minHeight = p.menu + "px";
+      construidos.push([palco, principal, p]);
+    }
+    requestAnimationFrame(() => {
+      if (!p.e && !p.menu) ajustar(palco, principal, p);
+      const css = regrasDaPeca(principal._raiz, false);
+      el.querySelector("[data-css]").innerHTML = css.length ? colorir(css.join("\n\n")) : '<span class="c">/* só herda das peças de fora (veja "Todo o CSS") */</span>';
+      el._css = css.join("\n\n");
+    });
+    el.querySelector("[data-tudo]").addEventListener("toggle", ev => {
+      if (!ev.target.open || el._tudo) return;
+      const tudo = regrasDaPeca(principal._raiz, true);
+      el._tudo = tudo.join("\n\n");
+      el.querySelector("[data-tudo-pre]").innerHTML = `<span class="c">/* ${tudo.length} regras */</span>\n` + colorir(el._tudo);
+    });
+    el.addEventListener("click", ev => {
+      const b = ev.target.closest("[data-c]");
+      if (b) copiar(b.dataset.c === "css" ? el._css : p.bonito, b);
+    });
+    return el;
+  }
+
+  function fundamentos(caixa) {
+    caixa.style.gridTemplateColumns = "minmax(0,1fr)";
+    const tok = D.cores.filter(([n, v]) => /^#|rgb|hsl/i.test(v));
+    const outros = D.cores.filter(([n, v]) => !/^#|rgb|hsl/i.test(v));
+    caixa.insertAdjacentHTML("beforeend", `<article class="peca"><header><h4>Cores com nome (tokens)</h4><span>no tema escuro</span></header>
+      <p class="desc">As variáveis do CSS (<code>--nome</code>) que as telas usam. Mudando aqui, muda em todo lugar.</p>
+      <div class="cores">${tok.map(([n, v]) => `<div class="cor"><i style="background:${esc(v)}"></i><div><b>${esc(n)}</b><span>${esc(v)}</span></div></div>`).join("")}</div>
+      <div class="codigo"><details><summary>Outras variáveis (letras, sombras, raios)</summary><pre>${esc(outros.map(([n, v]) => `${n}: ${v};`).join("\n"))}</pre></details></div></article>
+    <article class="peca"><header><h4>Cores fixas mais usadas</h4><span>o Painel escuro (estilo Outlook)</span></header>
+      <p class="desc">Cores escritas direto no CSS, da mais usada para a menos usada.</p>
+      <div class="cores">${D.fixas.map(([h, c]) => `<div class="cor"><i style="background:${esc(h)}"></i><div><b>${esc(h)}</b><span>usada ${c} vezes</span></div></div>`).join("")}</div></article>
+    <article class="peca"><header><h4>Letras</h4><span>IBM Plex e Segoe UI</span></header>
+      <p class="desc">As telas antigas usam IBM Plex (texto, títulos condensados e números em fonte de máquina). As telas no jeito do Outlook usam Segoe UI, a letra do Windows.</p>
+      <div class="letras">
+        <div><small>--f-texto · IBM Plex Sans</small><span style="font:400 15px 'IBM Plex Sans',sans-serif">Pedido de NF da Marina Exemplo Costa · Hotel Exemplo Praia</span></div>
+        <div><small>--f-titulo · Plex Condensed</small><span style="font:600 20px 'IBM Plex Sans Condensed',sans-serif;letter-spacing:.02em">VISÃO GERAL · PEDIDOS DE CADA DIA</span></div>
+        <div><small>--f-dado · IBM Plex Mono</small><span style="font:500 15px 'IBM Plex Mono',monospace">NF 1520 · 12.345.678/0001-95 · 22/10 16:42</span></div>
+        <div><small>Segoe UI (telas Outlook)</small><span style="font:400 14px 'Segoe UI',system-ui,sans-serif">Caixa de Entrada · 81 itens · 79 não lidos</span></div>
+        <div><small>Segoe UI 600 (nomes)</small><span style="font:600 14px 'Segoe UI',system-ui,sans-serif">Ana Lima Teixeira</span></div>
+      </div></article>`);
+    // ícones: uma caixinha com o sprite
+    const art = document.createElement("article"); art.className = "peca";
+    const ids = [...D.sprite.matchAll(/<symbol[^>]*id="([^"]+)"/g)].map(m => m[1]);
+    art.innerHTML = `<header><h4>Ícones</h4><span>${ids.length} desenhados à mão, um traço só</span></header>
+      <p class="desc">Ficam num "sprite" (uma lista de desenhos escondida) e cada tela usa por nome.</p><div class="palco"></div>
+      <div class="codigo"><div><div class="tit">Como usar</div><pre>&lt;svg class="ic"&gt;&lt;use href="#i-caixa"/&gt;&lt;/svg&gt;</pre></div>
+      <details><summary>Desenho de cada ícone (SVG)</summary><pre>${esc(D.sprite.replace(/<\/symbol>/g, "</symbol>\n"))}</pre></details></div>`;
+    const host = document.createElement("div"); const sh = host.attachShadow({ mode: "open" });
+    const est = new CSSStyleSheet();
+    est.replaceSync(`.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;color:#e0e0e0;font:11px Consolas,monospace}
+      .g div{display:grid;justify-items:center;gap:6px;padding:12px 6px;border:1px solid #333;border-radius:8px;background:#242424}
+      .g svg{width:26px;height:26px}`);
+    sh.adoptedStyleSheets = [est];
+    sh.innerHTML = SPRITE + `<div class="g">${ids.map(i => `<div><svg viewBox="0 0 24 24"><use href="#${esc(i)}"/></svg>${esc(i)}</div>`).join("")}</div>`;
+    art.querySelector(".palco").appendChild(host);
+    caixa.appendChild(art);
+  }
+
+  // procurar
+  document.getElementById("procurar").addEventListener("input", ev => {
+    const q = ev.target.value.trim().toLowerCase();
+    document.querySelectorAll("article.peca[data-busca]").forEach(a => a.classList.toggle("sumiu", !!q && !a.dataset.busca.includes(q)));
+    document.querySelectorAll("section.grupo").forEach(s => {
+      const tem = s.querySelectorAll("article.peca[data-busca]").length;
+      s.classList.toggle("sumiu", !!q && tem > 0 && !s.querySelector("article.peca[data-busca]:not(.sumiu)"));
+    });
+  });
+  let t = null;
+  addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => construidos.forEach(([a, b, c]) => ajustar(a, b, c)), 150); });
+})();
+</script>

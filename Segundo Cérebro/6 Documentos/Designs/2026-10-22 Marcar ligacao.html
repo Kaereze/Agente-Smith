@@ -1,0 +1,301 @@
+<title>Marcar ligação</title>
+<style>
+:root{--bg:#161616;--janela:#1f1f1f;--topo:#262626;--linha:#333333;--linha-2:#3f3f3f;--campo:#242424;--tinta:#f0f0f0;--tinta-2:#b4b4b4;--tinta-3:#8a8a8a;
+  --azul:#479ef5;--azul-f:#0f6cbd;--lig:#3cc4b8;--lig-fundo:#123a38;--lig-tinta:#86dccf;--verde-fundo:#173b2a;--verde-tinta:#8fd19e;--azul-fundo:#16324d;--azul-tinta:#8cc8fa;
+  --reco-borda:#2d4a6e;--reco-fundo:#16233a;--reco-tinta:#cfe0f5;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding-block:32px 64px;padding-inline:16px}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.lead{color:var(--tinta-2);margin:0;max-width:70ch}
+.regras{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 34px;padding:0;list-style:none}
+.regras li{font-size:12.5px;color:var(--tinta-2);border:1px solid var(--linha);border-radius:999px;padding:4px 12px;background:var(--campo)}
+.regras b{color:var(--tinta);font-weight:600}
+section{margin:0 0 44px}
+.cab-op{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 4px}
+.cab-op .n{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul)}
+.cab-op h2{font-size:17px;margin:0}
+.cab-op em{font-style:normal;font-size:11px;font-weight:700;color:#06220f;background:#3da755;border-radius:10px;padding:1px 9px}
+.desc{margin:0 0 14px;color:var(--tinta-2);font-size:13.5px;max-width:78ch}
+.experimente{font-size:12px;color:var(--tinta-3);margin:8px 0 0}
+.experimente b{color:var(--lig-tinta);font-weight:600}
+
+/* janela de escrever (cópia simplificada da do Painel) */
+.janela{background:var(--janela);border:1px solid var(--linha);border-radius:10px;overflow:hidden;box-shadow:0 18px 44px rgba(0,0,0,.45);max-width:860px}
+.j-topo{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--topo);border-bottom:1px solid var(--linha);font-size:13px;flex-wrap:wrap}
+.j-topo b{font-weight:600}
+.j-topo .sub{color:var(--tinta-2);flex:1;min-width:0}
+.j-topo .x{color:var(--tinta-2);font-size:18px;line-height:1}
+.j-corpo{padding:16px 18px 18px;display:grid;gap:12px}
+.cab{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px}
+.lado-env{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.bt-env{height:76px;border-radius:8px;border:1px solid var(--linha-2);background:#2b2b2b;color:var(--tinta);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:600 13px "Segoe UI",system-ui,sans-serif}
+.bt-env svg{width:22px;height:22px}
+.campos{display:grid;min-width:0}
+.lin{display:flex;align-items:center;gap:12px;min-height:38px;border-bottom:1px solid var(--linha);min-width:0}
+.lin .r{width:70px;flex:none;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--tinta-2)}
+.lin .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.lin .v small{color:var(--tinta-3);font-size:12px}
+.anexo{border:1.5px dashed var(--linha-2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--tinta-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip-pdf{display:inline-flex;align-items:center;gap:6px;background:#2b2b2b;border:1px solid var(--linha-2);border-radius:6px;padding:3px 10px;color:var(--tinta);font-size:12.5px}
+.texto{background:#fff;color:#1b1b1b;border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.55}
+.texto p{margin:0 0 8px}.texto p:last-child{margin:0}
+
+/* peça: etiqueta Ligação (mesma família das etiquetas do Painel) */
+.etq{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:10px;font:600 11.5px/1 "Segoe UI",system-ui,sans-serif;white-space:nowrap;vertical-align:middle}
+.etq svg{width:11px;height:11px;flex:none}
+.etq.lig{background:var(--lig-fundo);color:var(--lig-tinta)}
+.etq.env{background:var(--verde-fundo);color:var(--verde-tinta)}
+.etq.semnf{background:var(--azul-fundo);color:var(--azul-tinta)}
+.etq-topo{display:none}
+.on .etq-topo{display:inline-flex}
+
+/* A: interruptor */
+.sw{display:inline-flex;align-items:center;gap:10px;background:none;border:0;color:var(--tinta-2);font:13.5px "Segoe UI",system-ui,sans-serif;cursor:pointer;padding:4px 0;text-align:left}
+.sw .trilho{width:36px;height:20px;border-radius:10px;border:1.5px solid #8a8a8a;position:relative;flex:none;transition:background .15s,border-color .15s}
+.sw .trilho::after{content:"";position:absolute;left:3px;top:3px;width:11px;height:11px;border-radius:50%;background:#c8c8c8;transition:transform .15s,background .15s}
+.on .sw{color:var(--tinta)}
+.on .sw .trilho{background:var(--lig);border-color:var(--lig)}
+.on .sw .trilho::after{transform:translateX(16px);background:#0d2523}
+.sw .t-on{display:none}.on .sw .t-on{display:inline}.on .sw .t-off{display:none}
+
+/* B: botão ao lado do Enviar */
+.bt-lig{height:34px;border-radius:8px;border:1px solid var(--linha-2);background:none;color:var(--tinta-2);display:flex;align-items:center;justify-content:center;gap:6px;font:600 12.5px "Segoe UI",system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.bt-lig svg{width:14px;height:14px}
+.bt-lig .ok{display:none}
+.on .bt-lig{background:var(--lig-fundo);border-color:var(--lig);color:var(--lig-tinta)}
+.on .bt-lig .ok{display:inline}.on .bt-lig .tel{display:none}
+.lado-env .leg{font-size:11px;color:var(--tinta-3);text-align:center;line-height:1.35}
+
+/* C: como o hóspede pediu */
+.seg{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--linha-2);border-radius:8px;background:#242424;flex-wrap:wrap}
+.seg button{height:28px;padding:0 12px;border:0;border-radius:6px;background:none;color:var(--tinta-2);font:500 13px "Segoe UI",system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.seg button svg{width:13px;height:13px}
+.seg button[aria-pressed="true"]{background:#383838;color:#fff;box-shadow:inset 0 0 0 1px #4a4a4a}
+.seg button.b-lig[aria-pressed="true"]{background:var(--lig-fundo);color:var(--lig-tinta);box-shadow:inset 0 0 0 1px var(--lig)}
+.auto{font-size:11.5px;color:var(--tinta-3)}
+
+button:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+/* depois de enviar */
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.cartao{background:var(--janela);border:1px solid var(--linha);border-radius:10px;overflow:hidden;min-width:0}
+.cartao h3{margin:0;padding:12px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--linha);background:var(--topo);display:flex;align-items:center;gap:8px}
+.cartao h3 span{color:var(--tinta-3);font-weight:400}
+.item{padding:10px 16px;border-bottom:1px solid #2a2a2a;display:grid;gap:3px}
+.item:last-child{border-bottom:0}
+.item .l1{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.item .l1 span{color:var(--tinta-3);font-size:12px;font-variant-numeric:tabular-nums}
+.item .l2{font-size:12.5px;color:var(--azul);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .l3{display:flex;gap:4px;flex-wrap:wrap}
+.filtro{padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--linha)}
+.filtro span{font-size:12px;border:1px solid var(--linha-2);border-radius:999px;padding:2px 10px;color:var(--tinta-2)}
+.filtro span.at{border-color:var(--lig);color:var(--lig-tinta);background:var(--lig-fundo)}
+.menu-ctx{margin:10px 16px 14px;border:1px solid var(--linha-2);border-radius:8px;background:#2b2b2b;padding:4px;width:min(260px,100%);box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.menu-ctx div{padding:7px 10px;border-radius:5px;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--tinta-2)}
+.menu-ctx div.at{background:#383838;color:#fff}
+.menu-ctx svg{width:14px;height:14px}
+.nota-ctx{font-size:12px;color:var(--tinta-3);padding:0 16px 14px}
+
+.numeros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--linha)}
+.numeros div{padding:14px 16px;display:grid;gap:2px}
+.numeros div + div{border-left:1px solid var(--linha)}
+.numeros b{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.numeros span{font-size:12px;color:var(--tinta-2)}
+.numeros small{font-size:11.5px;color:var(--tinta-3)}
+.barras{padding:12px 16px 16px;display:grid;gap:8px}
+.barras .t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:2px}
+.bl{display:grid;grid-template-columns:132px minmax(0,1fr) 28px;align-items:center;gap:10px;font-size:12.5px}
+.bl .nm{color:var(--tinta-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl .tr{height:8px;border-radius:0 4px 4px 0;background:var(--lig)}
+.bl .q{text-align:right;font-variant-numeric:tabular-nums;color:var(--tinta)}
+.abas-b{display:flex;gap:16px;padding:0 16px;border-bottom:1px solid var(--linha);font-size:12.5px}
+.abas-b span{padding:9px 0;color:var(--tinta-3)}
+.abas-b span.at{color:var(--tinta);box-shadow:inset 0 -2px 0 var(--azul)}
+
+.reco{border:1px solid var(--reco-borda);background:var(--reco-fundo);border-radius:10px;padding:16px 18px;font-size:14px;color:var(--reco-tinta);max-width:86ch}
+.reco b{color:#fff}
+.reco p{margin:0 0 8px}.reco p:last-child{margin:0}
+.perg{margin:14px 0 0;padding:0 0 0 20px;color:var(--tinta-2);font-size:13.5px;max-width:84ch;display:grid;gap:6px}
+.perg b{color:var(--tinta)}
+.ficticio{font-size:12px;color:var(--tinta-3);margin-top:30px}
+
+@media (max-width:640px){
+  .cab{grid-template-columns:1fr}
+  .lado-env{flex-direction:row;flex-wrap:wrap}.bt-env{height:44px;flex-direction:row;flex:1}.bt-lig{flex:1;height:44px}.lado-env .leg{width:100%}
+  .lin .r{width:56px}
+  .bl{grid-template-columns:96px minmax(0,1fr) 24px}
+  .numeros b{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <h1>Marcar quando o pedido veio por ligação</h1>
+  <p class="lead">Os telefones não ligam no computador, então quem marca é você, na hora de enviar. É uma opção de ligar e desligar dentro da tela de escrever, que vale tanto para <b>Enviar NF</b> quanto para <b>Novo e-mail</b> e respostas. Tudo que foi marcado é contado depois na Visão geral.</p>
+  <ul class="regras">
+    <li>Começa <b>desligado</b> em todo e-mail</li>
+    <li><b>Um clique</b> liga, outro desliga</li>
+    <li>A marcação <b>não vai no e-mail</b> do hóspede, só fica no Painel</li>
+    <li>Esqueceu? Dá para <b>marcar depois</b> em Itens Enviados</li>
+  </ul>
+
+  <!-- A -->
+  <section>
+    <div class="cab-op"><span class="n">Opção A</span><h2>Linha nova no cabeçalho</h2></div>
+    <p class="desc">Uma linha "Ligação" embaixo do Assunto, com um interruptor. Ligado, a etiqueta aparece no topo da janela para você ver antes de enviar.</p>
+    <div class="janela" data-op>
+      <div class="j-topo"><b>Responder com a NF</b><span class="sub">Marina Exemplo Costa · Hotel Exemplo Centro</span>
+        <span class="etq lig etq-topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span><span class="x">×</span></div>
+      <div class="j-corpo">
+        <div class="cab">
+          <div class="lado-env"><div class="bt-env"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#env"/></svg>Enviar</div></div>
+          <div class="campos">
+            <div class="lin"><span class="r">DE</span><span class="v">nf@hotelexemplo.com.br <small>· por este PC</small></span></div>
+            <div class="lin"><span class="r">PARA</span><span class="v">marina.exemplo@email.com</span></div>
+            <div class="lin"><span class="r">ASSUNTO</span><span class="v">NF 1520 - MARINA EXEMPLO COSTA</span></div>
+            <div class="lin"><span class="r">LIGAÇÃO</span>
+              <button class="sw" type="button" aria-pressed="false" data-alterna><span class="trilho"></span><span class="t-off">Não: o hóspede pediu por e-mail ou formulário</span><span class="t-on">Sim: o hóspede pediu por telefone</span></button></div>
+          </div>
+        </div>
+        <div class="anexo"><span class="chip-pdf">📄 NF 1520.pdf</span> arraste outra nota aqui ou clique para escolher</div>
+        <div class="texto"><p>Prezada Marina,</p><p>Conforme solicitado, segue em anexo a Nota Fiscal referente à sua hospedagem.</p></div>
+      </div>
+    </div>
+    <p class="experimente">Clique no interruptor para ver ligado. <b>Bom:</b> fica claro o que quer dizer. <b>Ruim:</b> fica no meio dos campos, dá para passar sem ver.</p>
+  </section>
+
+  <!-- B -->
+  <section>
+    <div class="cab-op"><span class="n">Opção B</span><h2>Botão "Ligação" embaixo do Enviar</h2><em>Recomendo</em></div>
+    <p class="desc">Um botão pequeno colado no Enviar. Como o Enviar é o último clique, o olho já está ali: é o lugar mais difícil de esquecer. Ligado, ele fica verde-água com um ✓ e a etiqueta aparece no topo.</p>
+    <div class="janela" data-op>
+      <div class="j-topo"><b>Novo e-mail</b><span class="sub">sai da caixa do hotel, pelo Outlook do PC dono</span>
+        <span class="etq lig etq-topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span><span class="x">×</span></div>
+      <div class="j-corpo">
+        <div class="cab">
+          <div class="lado-env">
+            <div class="bt-env"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#env"/></svg>Enviar</div>
+            <button class="bt-lig" type="button" aria-pressed="false" data-alterna title="O hóspede pediu por telefone (Alt+L)">
+              <svg class="tel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#tel"/></svg><span class="ok">✓</span>Ligação</button>
+            <span class="leg">foi por telefone?</span>
+          </div>
+          <div class="campos">
+            <div class="lin"><span class="r">DE</span><span class="v">HOTEL EXEMPLO PRAIA · nf@exemplopraia.com.br</span></div>
+            <div class="lin"><span class="r">PARA</span><span class="v">rafael.teste@email.com</span></div>
+            <div class="lin"><span class="r">CC</span><span class="v"><small>opcional</small></span></div>
+            <div class="lin"><span class="r">ASSUNTO</span><span class="v">Nota Fiscal - HOTEL EXEMPLO PRAIA</span></div>
+          </div>
+        </div>
+        <div class="anexo"><span class="chip-pdf">📄 NF 2210.pdf</span> arraste outra nota aqui ou clique para escolher</div>
+        <div class="texto"><p>Prezado Rafael,</p><p>Conforme conversamos por telefone, segue em anexo a Nota Fiscal da sua hospedagem.</p></div>
+      </div>
+    </div>
+    <p class="experimente">Clique em <b>Ligação</b>. <b>Bom:</b> não ocupa linha nova e está do lado do clique final. Atalho Alt+L para quem usa teclado.</p>
+  </section>
+
+  <!-- C -->
+  <section>
+    <div class="cab-op"><span class="n">Opção C</span><h2>"Como pediu": E-mail · Formulário · Ligação</h2></div>
+    <p class="desc">Em vez de sim e não, os três jeitos de pedir. O Painel já sabe sozinho quando foi e-mail ou formulário e deixa marcado; você só troca para Ligação quando for o caso. Rende a conta completa (quantos de cada), mas é um pouco mais para ler.</p>
+    <div class="janela" data-op>
+      <div class="j-topo"><b>Responder com a NF</b><span class="sub">Lucas Modelo Ferreira · Hotel Exemplo Serra</span>
+        <span class="etq lig etq-topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span><span class="x">×</span></div>
+      <div class="j-corpo">
+        <div class="cab">
+          <div class="lado-env"><div class="bt-env"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#env"/></svg>Enviar</div></div>
+          <div class="campos">
+            <div class="lin"><span class="r">DE</span><span class="v">nf@exemploserra.com.br <small>· pelo PC de Clara</small></span></div>
+            <div class="lin"><span class="r">PARA</span><span class="v">lucas.modelo@email.com</span></div>
+            <div class="lin"><span class="r">ASSUNTO</span><span class="v">NF 0874 - LUCAS MODELO FERREIRA</span></div>
+            <div class="lin"><span class="r">PEDIU POR</span>
+              <span class="seg" role="group" aria-label="Como o hóspede pediu" data-seg>
+                <button type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#mail"/></svg>E-mail</button>
+                <button type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#form"/></svg>Formulário</button>
+                <button type="button" aria-pressed="false" class="b-lig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#tel"/></svg>Ligação</button>
+              </span>
+              <span class="auto">marcado sozinho</span></div>
+          </div>
+        </div>
+        <div class="anexo"><span class="chip-pdf">📄 NF 0874.pdf</span> arraste outra nota aqui ou clique para escolher</div>
+      </div>
+    </div>
+    <p class="experimente">Clique em <b>Ligação</b> ou volte para E-mail.</p>
+  </section>
+
+  <!-- depois -->
+  <section>
+    <div class="cab-op"><span class="n">Depois de enviar</span><h2>Onde a ligação aparece e é contada</h2></div>
+    <p class="desc">Vale para qualquer uma das três opções. Uma etiqueta nova, "Ligação", da mesma família das etiquetas que o Painel já usa, só que verde-água para não confundir com nenhuma outra.</p>
+    <div class="duas">
+      <div class="cartao">
+        <h3>Itens Enviados <span>· filtro e etiqueta</span></h3>
+        <div class="filtro"><span>Todos</span><span class="at">📞 Só ligações · 6</span><span>Com NF</span></div>
+        <div class="item"><div class="l1">Para: Rafael Teste Souza<span>16:42</span></div><div class="l2">Nota Fiscal - HOTEL EXEMPLO PRAIA</div>
+          <div class="l3"><span class="etq env">✓ NF enviada · 2210</span><span class="etq lig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span></div></div>
+        <div class="item"><div class="l1">Para: Marina Exemplo Costa<span>15:10</span></div><div class="l2">NF 1520 - MARINA EXEMPLO COSTA</div>
+          <div class="l3"><span class="etq env">✓ NF enviada · 1520</span><span class="etq lig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span></div></div>
+        <div class="item"><div class="l1">Para: Paula Fictícia Lima<span>14:03</span></div><div class="l2">Solicitação de dados - Nota Fiscal HOTEL EXEMPLO NORTE</div>
+          <div class="l3"><span class="etq lig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#tel"/></svg>Ligação</span></div></div>
+        <div class="menu-ctx" aria-label="Botão direito num item enviado">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#env"/></svg>Encaminhar</div>
+          <div class="at"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#tel"/></svg>Marcar como ligação</div>
+        </div>
+        <p class="nota-ctx">Esqueceu de marcar? Botão direito no e-mail enviado → "Marcar como ligação" (ou "Tirar marca de ligação").</p>
+      </div>
+
+      <div class="cartao">
+        <h3>Visão geral <span>· cartão Ligações</span></h3>
+        <div class="numeros">
+          <div><b>6</b><span>hoje</span><small>de 34 envios</small></div>
+          <div><b>31</b><span>7 dias</span><small>18% dos envios</small></div>
+          <div><b>112</b><span>outubro</span><small>até hoje</small></div>
+        </div>
+        <div class="abas-b"><span class="at">Por hotel</span><span>Por agente</span></div>
+        <div class="barras">
+          <div class="t">Ligações nos últimos 7 dias</div>
+          <div class="bl"><span class="nm">Hotel Exemplo Praia</span><span class="tr" style="width:100%"></span><span class="q">9</span></div>
+          <div class="bl"><span class="nm">Hotel Exemplo Centro</span><span class="tr" style="width:78%"></span><span class="q">7</span></div>
+          <div class="bl"><span class="nm">Hotel Exemplo Serra</span><span class="tr" style="width:56%"></span><span class="q">5</span></div>
+          <div class="bl"><span class="nm">Hotel Exemplo Lagoa</span><span class="tr" style="width:44%"></span><span class="q">4</span></div>
+          <div class="bl"><span class="nm">Outros 9 hotéis</span><span class="tr" style="width:67%;opacity:.55"></span><span class="q">6</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="reco">
+      <p><b>Minha recomendação: Opção B</b>, com a etiqueta, o filtro em Itens Enviados, o "Marcar como ligação" no botão direito e o cartão na Visão geral.</p>
+      <p>É a mais simples: um botão, um clique, colado no Enviar, que é onde você já está olhando. A Opção C dá mais informação, mas pede para ler três botões em todo envio, e e-mail e formulário o Painel já conta sozinho.</p>
+    </div>
+    <ol class="perg">
+      <li><b>Ligação sem enviar nada:</b> às vezes o hóspede liga só para perguntar e você não manda e-mail. Quer um botão "Registrar ligação" (hotel + nome) para contar esses também?</li>
+      <li><b>Mesmo hóspede:</b> se o primeiro envio foi marcado como ligação, as próximas respostas para ele já vêm marcadas sozinhas?</li>
+      <li><b>Contagem:</b> por hotel e por agente (quem atendeu) está bom, ou quer também por dia da semana e horário?</li>
+      <li><b>Quem vê:</b> os 4 agentes veem a contagem de todos, ou cada um só a sua?</li>
+    </ol>
+    <p class="ficticio">Nomes, hotéis, e-mails e números deste desenho são inventados.</p>
+  </section>
+</main>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="tel" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="env" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+  <symbol id="form" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+</svg>
+
+<script>
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-alterna]");
+  if (b) { const j = b.closest("[data-op]"); const on = !j.classList.contains("on"); j.classList.toggle("on", on); b.setAttribute("aria-pressed", on); return; }
+  const s = ev.target.closest("[data-seg] button");
+  if (s) { const g = s.closest("[data-seg]"); g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === s));
+    g.closest("[data-op]").classList.toggle("on", s.classList.contains("b-lig"));
+    g.parentElement.querySelector(".auto").textContent = s === g.firstElementChild ? "marcado sozinho" : s.classList.contains("b-lig") ? "você marcou" : "trocado por você"; }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.altKey && (ev.key === "l" || ev.key === "L")) { const b = document.querySelector(".bt-lig"); if (b) { ev.preventDefault(); b.click(); } }
+});
+</script>

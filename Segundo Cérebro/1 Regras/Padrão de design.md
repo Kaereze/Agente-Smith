@@ -11,6 +11,7 @@ tags: [cerebro/regras]
 ## Valendo desde 20/10/2026: Prévia 5 (Outlook escuro)
 > Aprovada pelo João ("Design ficou perfeito!" e "use exatamente esse design dentro do painel fiscal"). Prévia no quadro
 > "Painel Fiscal — Repaginação", página "Prévia 5". Guia de uso: [[Guia do Painel Fiscal]].
+> Cada peça do Painel como está hoje, com o CSS e o HTML embaixo, e todos os designs feitos: [[Designs]].
 
 | Item | Valor |
 |---|---|

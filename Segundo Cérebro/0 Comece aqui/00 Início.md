@@ -17,6 +17,9 @@ tags: [cerebro/inicio]
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (22/10/2026)
+- 22/10 (noite): **todos os designs no cofre**: [[Designs]] (prévia de cada um, link para abrir, o que o João escolheu e
+  em que versão entrou), o catálogo de peças com a ferramenta para refazer ([[LEIA-ME (catálogo)]]) e o catálogo antigo
+  em fotos. Pendente do João: medir o atraso do Drive (cópia rápida, opção A).
 - 22/10 (tarde): **marcar ligação** no ar (2026.10.22.7): botão Ligação no envio, etiqueta e filtro em Itens Enviados,
   cartão na Visão geral; e a pasta **Itens Enviados voltou a listar** (vazia desde 11/10). Antes: barra de rolagem da
   lateral (2026.10.22.6). Pedidos do João para depois: desenhos de cada animação do projeto, por página; medir o atraso
@@ -62,4 +65,4 @@ tags: [cerebro/inicio]
 > [[Ideias e pendências]] · rascunho do guia de design (`guia-painel-fiscal.html`)
 
 > [!cat-docs] 6 Documentos — guias longos
-> **[[Apresentação do projeto]]** (PDF + PowerPoint) · **[[Guia do Painel Fiscal]]** (cada tela) · **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
+> **[[Apresentação do projeto]]** (PDF + PowerPoint) · **[[Designs]]** (todos os designs e o catálogo de peças) · **[[Guia do Painel Fiscal]]** (cada tela) · **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
