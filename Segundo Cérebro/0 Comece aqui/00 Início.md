@@ -17,6 +17,7 @@ tags: [cerebro/inicio]
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (22/10/2026)
+- 22/10 (manhã): **Itens Enviados com 72 h** (2026.10.22.1) e **aba Robô etapa 1** + usuário João só no PC dele (2026.10.22.2). Falta o chip em segundo plano e o "Ver registro". Ver [[2026-10-22]].
 - 22/10: **aviso de envio em pílula** no ar (2026.10.22, `f070aa6`); notas e apresentação enviadas ao GitHub para o PC de casa. Ver [[2026-10-22]].
 - 21/10: versões 2026.10.21 a **2026.10.21.5** nos 4 PCs: etiquetas e resumo fixo do hóspede, aviso de pedido repetido,
   tela que não trava (fila do servidor 128, F5), "NF emitida" respeita o nº da estada, janelas por cima no cinza com
