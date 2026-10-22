@@ -110,3 +110,10 @@ tags: [cerebro/andamento]
   3. **E-mail novo mais rápido** no Painel (hoje: vigia 20 s + conferência + espelho na planilha + Painel relê a cada 15/60 s). Ideia: o PC dono avisa os outros pela rede na hora.
   4. **Painel mais leve**: a janela baixa `/api/estado` (1,8 MB) e `/api/correio` (1 MB) a cada 15 s mesmo sem mudança → mandar só quando mudou. E commit só de documentação não deveria reiniciar os 4 PCs (aconteceu às 15:20).
   5. **Ponte Graft/MCP**: o Claude consultar o Painel direto (ex.: "quantos pedidos atrasados?").
+  - **Medido de novo em 21/10/2026 (João: "o que falta pra ficar instantâneo?")**: abrir ~1 s; trocar de tela 8-37 ms;
+    pesquisa 11-36 ms; servidor responde em 10-90 ms; mas cada atualização de 15 s baixa ~3,4 MB (estado 1,9 MB +
+    correio 1 MB + e-mails 0,5 MB) e custa 0,1-0,9 s de trabalho na tela. Lento de verdade = caminhos entre PCs:
+    responder/enviar NF pela fila (até ~75 s), e-mail novo (20 s a ~2 min), NF do Dropbox (lista a cada 5 min + 2 min),
+    formulário novo do hotel (cópia a cada 10 min pelo Agendador; leva 2 s), abrir e-mail sem texto guardado (rede da
+    Clara 10.80.x bloqueada no firewall). Novo item: **vigiar a pasta do Dropbox** (aviso do Windows na hora) e **cópia
+    dos formulários a cada 1-2 min** (olhar a cota do Google).

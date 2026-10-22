@@ -1,7 +1,7 @@
 ---
 tipo: guia
 pasta: "0 Comece aqui"
-atualizado: 2026-10-20
+atualizado: 2026-10-21
 tags: [cerebro/inicio]
 ---
 # Segundo Cérebro — Projeto Notas Fiscais
@@ -16,7 +16,13 @@ tags: [cerebro/inicio]
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (20/10/2026)
+## Onde paramos (21/10/2026)
+- 21/10: versões 2026.10.21 a **2026.10.21.5** nos 4 PCs: etiquetas e resumo fixo do hóspede, aviso de pedido repetido,
+  tela que não trava (fila do servidor 128, F5), "NF emitida" respeita o nº da estada, janelas por cima no cinza com
+  animação nova. **Documentação oficial** em PDF e PowerPoint: [[Apresentação do projeto]]. Ver [[2026-10-21]].
+- 21/10 (fim do dia): **velocidade no ar nos 4 PCs (2026.10.21.6, `3f43103`)** (envio direto pela rede,
+  e-mail novo e NF do Dropbox na hora, tela só com o que mudou, documentação sem reiniciar + 2 riscos antigos de e-mail
+  duplicado consertados). PDF da apresentação com a seção 11 "Velocidade: antes e depois". Ver [[2026-10-21]].
 - 20/10: **Prévia 5 no Painel** (Outlook escuro, e-mail e formulário idênticos ao Outlook, pesquisa instantânea, envio sem espera). Como usar: [[Guia do Painel Fiscal]]. Falta o OK do João para o índice local e o envio direto pela rede ([[Ideias e pendências]]).
 - 20/10: decisões de LGPD feitas (recomendação do Claude): saída da cópia gira em 5 MB, simulações velhas apagadas, espaço temporário limpo. Achado: log disputado (14 mil "Logging error"), conserto proposto em [[Ideias e pendências]]. Ver [[2026-10-20]].
 - 19/10: travas de empresa no repositório: testes automáticos no GitHub a cada push, pre-commit que barra credenciais e `estado/`, guarda do git no Claude Code e README novo. Depois: manual [[Se o robô parar]], [[Dados de hóspedes (LGPD)]] (dados reais tirados do repositório; 6 decisões esperam o João), CHANGELOG com versões por data e ruff. Ver [[2026-10-19]].
@@ -49,4 +55,4 @@ tags: [cerebro/inicio]
 > [[Ideias e pendências]] · rascunho do guia de design (`guia-painel-fiscal.html`)
 
 > [!cat-docs] 6 Documentos — guias longos
-> **[[Guia do Painel Fiscal]]** (cada tela) · **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
+> **[[Apresentação do projeto]]** (PDF + PowerPoint) · **[[Guia do Painel Fiscal]]** (cada tela) · **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]
