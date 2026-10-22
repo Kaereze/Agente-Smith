@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.5] — 2026-10-22
+
+### Mudou
+
+- **Menu da lateral** (desenho aprovado pelo João: Opção A + nomes que empurram a tela): a barra abre só com os ícones
+  (56 px, espaços iguais, número vermelho no canto do ícone). O botão do pé da barra mostra os nomes das abas (232 px,
+  empurra a tela) e volta a só ícones, com animação de 0,22 s; o Painel lembra neste PC.
+- **"Quem está neste PC"** abre ao lado da barra (264 px), com nome inteiro, "você, neste PC", iniciais que não se
+  repetem (Cristian "CR", Clara "CL") e "Fechar o Painel" separado embaixo, com o ícone de desligar e a explicação.
+  Antes abria espremido na largura dos ícones.
+
 ## [2026.10.22.4] — 2026-10-22
 
 ### Corrigido

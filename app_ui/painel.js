@@ -14,7 +14,7 @@ function trocarVista(v) {
   // E-mails igual ao Outlook (usuário, 15/10/2026): só ícones na esquerda e as cores da prévia aprovada
   // ... e em todas as páginas (usuário, 15/10/2026 à noite: "o mesmo layout da caixa de entrada para todas")
   const app = document.querySelector(".app");
-  app.classList.add("modo-ol", "menu-fechado");
+  app.classList.add("modo-ol");   // só ícones ou com os nomes: o botão do pé da barra decide (aplicarMenu, 22/10/2026)
   app.classList.toggle("vista-correio", v === "correio");
   if (typeof desenharFaixaGlobal === "function") desenharFaixaGlobal();
   $("trilha").textContent = v === "correio" ? "E-mails / " + CAIXAS[cx.caixa] : TITULOS[v];

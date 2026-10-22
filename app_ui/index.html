@@ -1887,6 +1887,32 @@ html,body{background:#1f1f1f}
 .rb-g-ct{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #383838;font-size:13.5px}.rb-g-cx{padding:12px 16px}
 .rb-fim b{display:flex;gap:8px;align-items:center;font-size:14px}.rb-fim p{margin:4px 0 12px 26px;color:#a8a8a8;font-size:13px}
 @media (prefers-reduced-motion:reduce){.rb-gira,.rb-seg i.a,.rb-tri i.a,.sk{animation:none}}
+/* menu da lateral v2 (22/10/2026, desenho aprovado): só ícones (56 px) ou com os nomes (232 px, empurra a tela) */
+.app.modo-ol{grid-template-columns:232px minmax(0,1fr);transition:grid-template-columns .22s cubic-bezier(.2,.8,.2,1)}
+.app.modo-ol.menu-fechado{grid-template-columns:56px minmax(0,1fr)!important}
+.modo-ol .lateral{white-space:nowrap}
+.modo-ol.menu-fechado .lateral .ln{width:40px;height:40px;margin:2px auto!important;padding:0!important}
+.app.modo-ol:not(.menu-fechado) .lateral .ln{display:flex;align-items:center;gap:12px;height:40px;margin:2px 8px!important;padding:0 12px!important;font-size:14px}
+.app.modo-ol:not(.menu-fechado) .lateral .ln .n:not(:empty):not(.em-teste){display:block!important;margin-left:auto;min-width:22px;height:18px;padding:0 6px;border-radius:9px;background:#c4314b!important;color:#fff!important;font:600 11px/18px var(--f-dado)!important;text-align:center}
+.app.modo-ol:not(.menu-fechado) .lateral .marca{padding:12px 16px 10px!important;justify-content:flex-start;gap:10px}
+.app.modo-ol:not(.menu-fechado) .lateral :is(.ln,.rot-nav,.marca > div:not(.selo),.op-nome,.recolher-menu span){animation:menuNome .2s ease .06s both}
+@keyframes menuNome{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.modo-ol.menu-fechado .lateral .ln .n:not(:empty):not(.em-teste){top:3px;right:1px}
+.modo-ol .recolher-menu{display:flex;align-items:center;gap:12px;height:36px;margin:4px 8px 10px;padding:0 12px;color:#a8a8a8;font-size:13px}
+.modo-ol.menu-fechado .recolher-menu{width:40px;margin:4px auto 10px;padding:0;justify-content:center}
+.modo-ol .recolher-menu .ic{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.modo-ol .op-btn .av{box-shadow:0 0 0 2px #1b1b1b,0 0 0 3.5px #479ef5}
+.modo-ol .op-menu{position:fixed;right:auto;width:264px;padding:8px;border-radius:12px;background:#2b2b2b;border:1px solid #3d3d3d;box-shadow:0 18px 44px rgba(0,0,0,.55),0 4px 10px rgba(0,0,0,.35);z-index:40;white-space:normal}
+.modo-ol .op-cab{padding:6px 8px 8px}.modo-ol .op-cab b{display:block;font-size:13px;color:#f0f0f0}.modo-ol .op-cab small{color:#8a8a8a;font-size:12px}
+.modo-ol .op-item{gap:12px;min-height:48px;padding:8px;border-radius:8px;color:#f0f0f0}
+.modo-ol .op-item:hover{background:#333}.modo-ol .op-item.sel{background:#16263d}
+.modo-ol .op-item .n{font-size:14px}.modo-ol .op-item .s{display:block;font-size:12px;color:#8a8a8a}.modo-ol .op-item.sel .s{color:#9fc5ee}
+.modo-ol .op-item .ok{opacity:1;color:#479ef5;flex:none}
+.modo-ol .op-item .av{width:30px;height:30px;font-size:12px}
+.modo-ol .op-item.sair .n{color:#a8a8a8}.modo-ol .op-item.sair .av{background:#3a3a3a;color:#cfcfcf}
+.modo-ol .op-sep{height:1px;background:#3d3d3d;margin:6px 4px}
+.modo-ol .op-nota{padding:6px 8px;color:#8a8a8a;font-size:12px}
+@media (prefers-reduced-motion:reduce){.app.modo-ol,.modo-ol .recolher-menu .ic{transition:none}.app.modo-ol .lateral *{animation:none!important}}
 /* barra de status */
 .modo-ol .rodape-status{background:#1b1b1b;border-top:1px solid #2b2b2b}
 /* outras telas: fundo, cartões e respiro da Prévia 5 */
@@ -2127,9 +2153,6 @@ html,body{background:#1f1f1f}
       <button class="ln raiz" data-vista="maquinas" id="nav-maquinas" title="Máquinas e log do robô (só o administrador vê)"><svg class="ic"><use href="#i-log"/></svg>Monitoramento</button>
     </div>
     </nav>
-    <button type="button" class="recolher-menu" id="btn-recolher" aria-expanded="true" title="Recolher o menu (fica só com os ícones)">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Recolher menu</span></button>
-
     <div class="rodape">
       <button class="creme" id="btn-enviar" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes às caixas dos hotéis"><svg class="ic"><use href="#i-enviar"/></svg>Enviar pendentes</button>
       <div class="op" id="op">
@@ -2140,6 +2163,8 @@ html,body{background:#1f1f1f}
         <div class="op-menu" id="op-menu" role="listbox"></div>
       </div>
     </div>
+    <button type="button" class="recolher-menu" id="btn-recolher" aria-expanded="false" title="Mostrar os nomes das abas">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Mostrar os nomes</span></button>
   </aside>
 
   <div class="palco" role="main">
@@ -2348,15 +2373,17 @@ document.addEventListener("click", e => {
   if (e.target.closest("#saude .s-ver")) { el.classList.remove("aberta"); trocarVista("maquinas"); }
 });
 // Menu recolhível (usuário, 14/10/2026): fechado fica só com os ícones; lembra a escolha neste PC
+// Menu da lateral v2 (22/10/2026): só ícones (padrão) ou com os nomes das abas, empurrando a tela; lembra neste PC
 function aplicarMenu(fechado) {
   document.querySelector(".app").classList.toggle("menu-fechado", fechado);
   const b = $("btn-recolher"); b.setAttribute("aria-expanded", String(!fechado));
-  b.title = fechado ? "Abrir o menu" : "Recolher o menu (fica só com os ícones)";
-  b.querySelector("span").textContent = fechado ? "Abrir menu" : "Recolher menu";
-  try { localStorage.setItem("painel.menuFechado", fechado ? "1" : ""); } catch (e) {}
+  b.title = fechado ? "Mostrar os nomes das abas" : "Só ícones";
+  b.querySelector("span").textContent = fechado ? "Mostrar os nomes" : "Só ícones";
+  if (typeof menuOperador === "function") menuOperador(false);
+  try { localStorage.setItem("painel.menuNomes", fechado ? "" : "1"); } catch (e) {}
 }
 document.addEventListener("click", e => { if (e.target.closest("#btn-recolher")) aplicarMenu(!document.querySelector(".app").classList.contains("menu-fechado")); });
-try { if (localStorage.getItem("painel.menuFechado") === "1") setTimeout(() => aplicarMenu(true), 0); } catch (e) {}
+try { if (localStorage.getItem("painel.menuNomes") === "1") setTimeout(() => aplicarMenu(false), 0); } catch (e) {}
 function desenharPcsCabecalho(pcs) {
   const on = pcs.filter(p => p.online);
   const fechados = on.filter(p => p.outlook === "fechado"), parados = on.filter(p => p.conferencia_atrasada);
@@ -3295,20 +3322,26 @@ document.addEventListener("keydown", e => {
 const COR_OP = {};   // design fiscal (11/10/2026): sem cor por operador — a identificação é pelo nome
 const corOp = n => COR_OP[n] || "#5a5a5a";
 const inicial = n => (n || "?").trim().charAt(0).toUpperCase();
+// Iniciais que não se repetem (22/10/2026): Cristian e Clara viravam os dois "C"; com outro nome de mesma letra, vão 2 letras
+const iniciaisOp = (n, todos) => { const a = (n || "?").trim(); return (todos.some(o => o !== n && inicial(o) === inicial(a)) ? a.slice(0, 2) : a.charAt(0)).toUpperCase(); };
+const SVG_OK = '<svg class="ok" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3L15 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SVG_DESLIGAR = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v6.5M5.8 5.8a6 6 0 1 0 8.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 let opAtual = "", opLista = [];
 function desenharOperador(atual, lista, pc) {
   $("op-pc").textContent = pc || "";
   if (atual === opAtual && lista.join() === opLista.join()) return;
   opAtual = atual; opLista = lista.includes(atual) ? lista : [atual, ...lista];
   $("op-nome").textContent = atual;
-  $("op-av").textContent = inicial(atual);
+  $("op-av").textContent = iniciaisOp(atual, opLista);
   $("op-av").style.background = corOp(atual);
-  $("op-menu").innerHTML = `<span class="rot">Quem está neste PC</span>` + opLista.map(o =>
-    `<button class="op-item ${o === atual ? "sel" : ""}" role="option" data-op="${esc(o)}">
-      <span class="av" style="background:${corOp(o)}">${esc(inicial(o))}</span>
-      <span class="n">${esc(o)}${o === atual ? '<br><span class="s">este PC</span>' : ""}</span><span class="ok">✓</span></button>`).join("") +
-    (window.pywebview ? `<button class="op-item" id="op-sair" title="O X só esconde a janela (abre na hora). Isto fecha de verdade.">
-      <span class="av" style="background:var(--tinta-3)">×</span><span class="n">Fechar o Painel<br><span class="s">o X só esconde a janela</span></span></button>` : "");
+  // "Quem está neste PC" (Opção A, 22/10/2026): nome inteiro, quem é você agora e o Fechar separado embaixo
+  $("op-menu").innerHTML = `<div class="op-cab"><b>Quem está neste PC</b><small>${esc(pc || "")}</small></div>` + opLista.map(o =>
+    `<button class="op-item ${o === atual ? "sel" : ""}" role="option" aria-selected="${o === atual}" data-op="${esc(o)}">
+      <span class="av" style="background:${corOp(o)}">${esc(iniciaisOp(o, opLista))}</span>
+      <span class="n">${esc(o)}<span class="s">${o === atual ? "você, neste PC" : "trocar para " + esc(o)}</span></span>${o === atual ? SVG_OK : ""}</button>`).join("") +
+    (!opLista.includes("João") ? `<div class="op-nota">O usuário João só é usado no PC dele.</div>` : "") +
+    (window.pywebview ? `<div class="op-sep"></div><button class="op-item sair" id="op-sair" title="O X só esconde a janela (abre na hora). Isto fecha de verdade.">
+      <span class="av">${SVG_DESLIGAR}</span><span class="n">Fechar o Painel<span class="s">o X da janela só esconde</span></span></button>` : "");
 }
 document.addEventListener("click", e => { if (e.target.closest("#op-sair")) window.pywebview?.api?.sair(); });
 window.addEventListener("pywebviewready", () => { opAtual = null; carregar(); });   // o botão "Fechar o Painel" só existe na janela do app
@@ -3316,6 +3349,11 @@ function menuOperador(abrir) {
   const op = $("op"), aberto = abrir ?? !op.classList.contains("aberto");
   op.classList.toggle("aberto", aberto);
   $("op-btn").setAttribute("aria-expanded", aberto);
+  if (aberto) {   // ao lado da barra, alinhada pelo pé do avatar (a barra corta o que passa dela: posição fixa)
+    const barra = document.querySelector(".lateral").getBoundingClientRect(), b = $("op-btn").getBoundingClientRect(), m = $("op-menu");
+    m.style.left = Math.round(barra.right + 10) + "px";
+    m.style.bottom = Math.max(8, Math.round(innerHeight - b.bottom)) + "px";
+  }
 }
 $("op-btn").addEventListener("click", e => { e.stopPropagation(); menuOperador(); });
 $("op-menu").addEventListener("click", async e => {
