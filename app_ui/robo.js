@@ -56,8 +56,10 @@ function rbModelo() {
   const nfHoje = fila.reduce((n, x) => n + (x.envios || []).filter(e => String(e.quando || "").startsWith(hojeBr)).length, 0);
   const ultima = rbDataStatus(s.ultima_execucao), proxima = ultima ? new Date(ultima.getTime() + 10 * 60000) : null;
   const concluidos = fila.filter(x => rbConcl(x) && ((x.envios || []).some(e => String(e.quando || "").startsWith(hojeBr)) || x.data === hoje));
-  const espNF = fila.filter(x => x.enviado && !rbConcl(x));
-  return { s, env, rodando, ligado, esperando, hojeEnviados, nfHoje, ultima, proxima, concluidos, espNF, avisos: st.saude || [],
+  const sete = new Date(Date.now() - 7 * 86400000).toLocaleDateString("sv-SE");   // só a última semana: o resto fica em Notas fiscais
+  const abertos = fila.filter(x => x.enviado && !rbConcl(x));
+  const espNF = abertos.filter(x => !x.data || x.data >= sete);
+  return { s, env, rodando, ligado, esperando, hojeEnviados, nfHoje, ultima, proxima, concluidos, espNF, antigos: abertos.length - espNF.length, avisos: st.saude || [],
     carregando: !st.atualizado_em && !st.erro };
 }
 
@@ -148,7 +150,8 @@ function rbAgora(m) {
   const sub = [m.ultima ? `Última rodada às ${rbHora(m.ultima)}` : "", m.rodando && m.env.inicio ? `começou às ${rbHora(new Date(m.env.inicio))}` : "",
     !m.rodando && m.proxima ? `próxima por volta das ${rbHora(m.proxima)}` : ""].filter(Boolean).join(" · ");
   const grupos = rbGrupo("and", m.rodando ? "Em andamento" : "Esperando o envio ao hotel", m.esperando, m.rodando ? "and" : "env", m.rodando ? 12 : 8)
-    + rbGrupo("nf", "Esperando a NF", m.espNF, "nf", 5) + rbGrupo("ok", "Concluídos hoje", m.concluidos, "ok", 3);
+    + rbGrupo("nf", "Esperando a NF", m.espNF, "nf", 5, m.antigos ? `<button type="button" class="rb-mais rb-antigos" data-rb-ver-pedidos>${m.antigos} mais antigos (mais de 7 dias) ficam em Notas fiscais ${rbIc("cr", 14)}</button>` : "")
+    + rbGrupo("ok", "Concluídos hoje", m.concluidos, "ok", 3);
   const vazio = !grupos ? `<div class="rb-vazio"><b>Nenhum pedido hoje até agora.</b>Quando chegar um formulário, ele aparece aqui sozinho, com o caminho completo.</div>` : "";
   return `<div class="rb-corpo"><div class="rb-main"><p class="rb-frase">${frase}</p><p class="rb-fsub">${esc(sub)}</p>${m.env.modo ? rbSeg(m) : ""}
     ${rbAvisos(m)}${grupos || vazio}</div>${rbLado(m)}</div>`;

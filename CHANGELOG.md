@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.4] — 2026-10-22
+
+### Corrigido
+
+- **Tela do robô, "Esperando a NF":** mostrava todos os pedidos abertos (906 no Painel real, de semanas atrás). Agora só a
+  última semana, com um link "N mais antigos ficam em Notas fiscais".
+
 ## [2026.10.22.3] — 2026-10-22
 
 ### Mudou
