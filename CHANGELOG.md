@@ -9,6 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.6] — 2026-10-22
+
+### Corrigido
+
+- **Barra de rolagem para o lado na lateral:** ao clicar em "Mostrar os nomes", os nomes surgiam antes da barra chegar aos
+  232 px e a área das abas criava uma barra de rolagem horizontal. Agora a área das abas só rola para baixo; tudo fica
+  dentro da largura (56 px só ícones, 232 px com os nomes).
+
 ## [2026.10.22.5] — 2026-10-22
 
 ### Mudou

@@ -72,7 +72,7 @@ svg.ic{width:17px;height:17px;flex:none}
 /* ---------- casca ---------- */
 .app{display:grid;grid-template-columns:252px minmax(0,1fr);height:100vh}
 .lateral{background:var(--mata);color:var(--mata-tinta);display:flex;flex-direction:column;min-height:0;overflow:hidden;padding-block:18px 14px}
-.lateral .navega{flex:1;min-height:0;overflow-y:auto}
+.lateral .navega{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}   /* nunca rola pro lado: os nomes surgem antes da barra terminar de abrir (22/10/2026) */
 .lateral ::-webkit-scrollbar-thumb{background:var(--mata-2)}
 .marca{display:flex;align-items:center;gap:11px;padding:0 20px 18px}
 .marca .selo{width:36px;height:36px;border-radius:9px;background:var(--creme-forte);color:#063b2b;display:grid;place-items:center;font:600 14px var(--f-titulo);flex:none}

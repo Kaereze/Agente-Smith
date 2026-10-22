@@ -18,3 +18,8 @@ def test_lista_do_operador_sem_glifo_solto_e_com_iniciais_que_nao_se_repetem():
     assert "✓" not in bloco and ">×<" not in bloco
     assert "iniciaisOp(o, opLista)" in bloco and "você, neste PC" in bloco
     assert ".modo-ol .op-menu{position:fixed" in HTML
+
+
+def test_area_das_abas_nunca_rola_pro_lado():
+    # 22/10/2026: ao mostrar os nomes, eles surgem antes da barra chegar aos 232 px -> barra de rolagem horizontal
+    assert ".lateral .navega{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}" in HTML
