@@ -319,6 +319,38 @@ function resumoDiaHtml() {
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-rd]"); if (b) { pn.resumo = b.dataset.rd; desenharVisao(); } });
 
+// Cartão Ligações (usuário, 22/10/2026): o que foi marcado no botão "Ligação" ao enviar ou depois em Itens Enviados
+function cartaoLigacoes() {
+  const L = st.ligacoes;
+  if (!L) return "";
+  const n = v => (v ?? 0).toLocaleString("pt-BR");
+  const vista = pn.ligVista === "agente" ? "agente" : "hotel";
+  let linhas = vista === "agente" ? L.por_agente : L.por_hotel;
+  if (vista === "hotel" && linhas.length > 6) {   // os 5 que mais ligaram e o resto junto
+    const resto = linhas.slice(5);
+    linhas = [...linhas.slice(0, 5), [`Outros ${resto.length} hotéis`, resto.reduce((a, x) => a + x[1], 0), true]];
+  }
+  const max = Math.max(1, ...linhas.map(x => x[1]));
+  const corpo = !L.semana ? `<div class="lig-vazio">Nenhuma ligação marcada nos últimos 7 dias. Ao enviar, clique em <b>Ligação</b> embaixo do Enviar quando o hóspede pediu por telefone.</div>`
+    : `<div class="lig-barras" role="list">${linhas.map(([nome, q, outros]) => `<div class="lig-bl" role="listitem"><span class="nm" title="${esc(nome)}">${esc(nome)}</span>
+        <span class="tr"><i style="width:${Math.max(2, Math.round(q / max * 100))}%${outros ? ";opacity:.55" : ""}"></i></span><span class="q">${n(q)}</span></div>`).join("")}</div>`;
+  return `<div class="sec-tit" style="margin-top:4px">Ligações</div>
+    <div class="cartao lig-cartao"><div class="cartao-topo"><div><h3>Pedidos que vieram por telefone</h3>
+      <div class="sub">Marcados no botão Ligação ao enviar (ou depois, no botão direito em Itens Enviados). Os 4 PCs.</div></div>
+      <div class="seg" role="group" aria-label="Ligações por" style="margin-left:auto">${[["hotel", "Por hotel"], ["agente", "Por agente"]].map(([k, t]) =>
+        `<button data-lig-vista="${k}" aria-pressed="${vista === k}">${t}</button>`).join("")}</div></div>
+      <div class="lig-num">
+        <div><b>${n(L.hoje)}</b><span>hoje</span><small>${L.envios_hoje ? `de ${n(L.envios_hoje)} envios pelo Painel` : "marcadas hoje"}</small></div>
+        <div><b>${n(L.semana)}</b><span>7 dias</span><small>média de ${(L.semana / 7).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} por dia</small></div>
+        <div><b>${n(L.mes)}</b><span>${new Date().toLocaleDateString("pt-BR", { month: "long" })}</span><small>até hoje</small></div>
+      </div>
+      <div class="lig-t">Últimos 7 dias, ${vista === "agente" ? "por quem enviou" : "por hotel"}</div>${corpo}</div>`;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-lig-vista]");
+  if (b) { pn.ligVista = b.dataset.ligVista; desenharVisao(); }
+});
+
 function desenharVisao() {
   const el = $("visao");
   if (!st.atualizado_em) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
@@ -387,6 +419,7 @@ function desenharVisao() {
         ${botaoTabela("idade")}</div>
         <div id="graf-idade" style="margin-top:14px"></div></div>
     </div>
+    ${cartaoLigacoes()}
     <div class="sec-tit" style="margin-top:4px">Histórico</div>
     <div class="cartao"><div class="cartao-topo"><div><h3>Pedidos de cada dia e o que aconteceu com eles</h3>
       <div class="sub">Formulários da Planilha Central (inclui os já resolvidos e fora do Outlook). Cada coluna é o dia em que o hóspede pediu.</div></div>
@@ -523,7 +556,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   const enc = !!resp?.encaminhar, novo = !!resp?.novo;
   const titulo = novo ? "✉ Novo e-mail" : enc ? "↗ Encaminhar" : resp ? (resp.comNF ? "↩ Responder com a NF" : "↩ Responder") : "✉ Nova mensagem · Nota Fiscal";
   const miolo = `
-    <div class="compor-topo"><span>${titulo}</span><span id="nf-sub" class="compor-quem">carregando…</span>
+    <div class="compor-topo"><span>${titulo}</span>${enc ? "" : pecaLigacao({ id: "nf-lig-etq", oculta: true })}<span id="nf-sub" class="compor-quem">carregando…</span>
       ${alvo ? `<button class="descartar" id="nf-fechar" title="Descartar e voltar">Descartar</button>` : `<button class="fechar" id="nf-fechar" title="Descartar">×</button>`}</div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
     <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
@@ -568,7 +601,9 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
          <select id="nf-conta">${o.contas_locais.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>`;
   $("nf-corpo").innerHTML = `
     <div class="compor-cab">
-      <button class="btn-enviar" id="nf-ir" disabled><span class="ic">➤</span>Enviar</button>
+      <div class="env-col"><button class="btn-enviar" id="nf-ir" disabled><span class="ic">➤</span>Enviar</button>
+        ${enc ? "" : `<button type="button" class="btn-lig" id="nf-lig" aria-pressed="false" title="O hóspede pediu por telefone? Marque aqui (Alt+L). Não vai no e-mail, só conta no Painel.">
+          <svg class="tel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ETQ_IC.tel}</svg><span class="ok" aria-hidden="true">✓</span>Ligação</button>`}</div>
       <div class="campos-cab">
         <div class="linha-cab"><span class="rot">De</span>${de}</div>
         <div class="linha-cab"><span class="rot">Para</span><input id="nf-para" list="nf-paras" value="${esc(o.para[0] || "")}">
@@ -638,6 +673,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   $("nf-assunto").addEventListener("input", () => { envNF.assuntoAuto = !$("nf-assunto").value.trim(); validarEnvioNF(); });
   $("nf-para").addEventListener("input", validarEnvioNF);
   $("nf-ir").onclick = () => enviarNF();
+  $("nf-lig")?.addEventListener("click", () => alternarLigacao());
   if (o.sugestoes.length === 1) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada
   desenharAnexos();
   validarEnvioNF();
@@ -647,6 +683,17 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   }
   setTimeout(() => (enc || (novo && !resp.para) ? $("nf-para") : $("nf-msg"))?.focus(), 50);
 }
+
+// Botão "Ligação" (usuário, 22/10/2026, opção B): começa desligado em todo e-mail; ligado, a etiqueta aparece no topo
+function alternarLigacao(ligar) {
+  if (!envNF || !$("nf-lig")) return;
+  envNF.ligacao = ligar ?? !envNF.ligacao;
+  $("nf-lig").setAttribute("aria-pressed", String(envNF.ligacao));
+  $("nf-lig-etq")?.classList.toggle("oculta", !envNF.ligacao);
+}
+document.addEventListener("keydown", ev => {
+  if (ev.altKey && !ev.ctrlKey && !ev.metaKey && (ev.key === "l" || ev.key === "L") && $("nf-lig")) { ev.preventDefault(); alternarLigacao(); }
+});
 
 function escolherSelo(id) {
   envNF.selo = id;
@@ -832,19 +879,22 @@ async function enviarNF(contaForcada, jaConferido = false) {
   const conta = contaForcada || ($("nf-conta") ? $("nf-conta").value : "");
   const r = envNF.resp?.novo
     ? await api("/api/email/novo", { conta_de: $("nf-de").value, para: $("nf-para").value.trim(), cc: $("nf-cc").value.trim(),
-        assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos, selo: envNF.selo || undefined })
+        assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos, selo: envNF.selo || undefined,
+        ligacao: envNF.ligacao || undefined })
     : envNF.resp?.encaminhar
     ? await api("/api/correio/encaminhar", { id: envNF.resp.id, para: $("nf-para").value.trim(), corpo: $("nf-msg").innerText,
         selo: envNF.selo || undefined })
     : await api(envNF.resp ? "/api/email/responder" : "/api/envio_nf", {
     chave: envNF.chave || undefined, id: envNF.resp ? envNF.resp.id : undefined, para: $("nf-para").value.trim(),
     cc: $("nf-cc").value.trim(), assunto: $("nf-assunto").value.trim(), corpo: $("nf-msg").innerText, anexos,
-    conta_de: conta || undefined, selo: envNF.selo || undefined });
+    conta_de: conta || undefined, selo: envNF.selo || undefined, ligacao: envNF.ligacao || undefined });
   if (!r.ok) { $("nf-ir").disabled = false; return mostrarFalhaNF(r.motivo || r.erro, r.contas_locais); }
+  if (r.aviso_ligacao) toast(r.aviso_ligacao, true);
   // Envio sem espera (Prévia 5, 20/10/2026: "estamos em ligação com o hóspede"): a janela fecha na hora e o aviso no
   // canto acompanha (entregue · saindo · conferido). Falhou: o aviso diz o porquê e reabre a mensagem com o texto.
   const ctx = { chave: envNF.chave, resp: envNF.resp, alvo: envNF.alvo, pc: r.destino === envNF.o.este_pc ? "" : r.destino,
-    rascunho: { para: $("nf-para")?.value || "", cc: $("nf-cc")?.value || "", assunto: $("nf-assunto")?.value || "", msg: $("nf-msg")?.innerHTML || "" } };
+    rascunho: { para: $("nf-para")?.value || "", cc: $("nf-cc")?.value || "", assunto: $("nf-assunto")?.value || "", msg: $("nf-msg")?.innerHTML || "",
+      ligacao: !!envNF.ligacao } };
   envNF.fechar();
   seguirEnvio(r.id, ctx);
 }
@@ -932,6 +982,7 @@ document.addEventListener("click", async ev => {
   const por = (i, v) => { const x = $(i); if (x && v) x.value = v; };
   por("nf-para", rascunho.para); por("nf-cc", rascunho.cc); por("nf-assunto", rascunho.assunto);
   if ($("nf-msg") && rascunho.msg) $("nf-msg").innerHTML = rascunho.msg;
+  if (rascunho.ligacao) alternarLigacao(true);   // o envio que falhou teve a marca retirada: o reenvio marca de novo
   toast("Mensagem reaberta com o texto. Se tinha anexo, anexe de novo.");
 });
 

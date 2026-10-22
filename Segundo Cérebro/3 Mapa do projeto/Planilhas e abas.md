@@ -25,6 +25,7 @@ IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/
 | `CaixaPedidos_<PC>` | idem | Painel | Solicitações do robô na Caixa de Entrada |
 | `ContagemPainel_<PC>` | `contagem_painel.py` (João/Cristian) | Relatório | Fim de semana |
 | `Atividade_Robo` | Todos os robôs | Log da tela | Faxina 7 dias |
+| `Ligacoes` | Painel (botão Ligação no envio e botão direito em Itens Enviados) | Painel (etiqueta, filtro, cartão da Visão geral) | Quando · Chave (ENV-… ou id do e-mail) · Ação (LIGACAO/SEM_LIGACAO) · Agente · PC · Hotel · Caixa · Para · Assunto. Faxina 400 dias |
 | `Conferência da Cópia` | `conferir_copia.py` | — | Auditoria da cópia |
 
 ## Fora da Central (só leitura)

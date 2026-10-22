@@ -20,6 +20,7 @@ import app_dados as dados
 import atividade
 import envio_nf
 import espelho_emails
+import ligacoes
 import rede_pcs
 from arquivos import salvar_json
 from config import PASTA_ESTADO
@@ -35,7 +36,8 @@ HORAS_ENTRE = 20
 CAMINHO = PASTA_ESTADO / "faxina.json"
 BACKUPS = 3
 ABAS_CURTAS = {envio_nf.ABA_FILA: DIAS_REGISTROS, rede_pcs.ABA_COMANDOS: DIAS_REGISTROS,
-               espelho_emails.ABA_EVENTOS: DIAS_REGISTROS, atividade.ABA: DIAS_ATIVIDADE}
+               espelho_emails.ABA_EVENTOS: DIAS_REGISTROS, atividade.ABA: DIAS_ATIVIDADE,
+               ligacoes.ABA: ligacoes.DIAS_GUARDADOS}
 _OBS_QUE_FICA = (dados._ENVIO_ROBO, dados._ENVIO_PAINEL)
 
 

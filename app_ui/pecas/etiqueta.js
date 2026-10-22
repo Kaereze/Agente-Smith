@@ -13,6 +13,7 @@ const ETQ_IC = {
   bandeira: '<path d="M5 21V4h11l-2 4 2 4H5"/>',
   copia: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',
   carta: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  tel: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
 };
 const SITUACOES_ETQ = {
   sem_nf: ["Sem NF", "s-semnf", "doc"],
@@ -32,6 +33,10 @@ const etqEsc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<
 const ETQ_CURTO = { "o que quer na nota": "o que pede" };   // cabe na linha da lista
 const etqIcone = k => k ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ETQ_IC[k]}</svg>` : "";
 
+// Pedido que veio por ligação (usuário, 22/10/2026): marca do agente, não é situação nem alerta; verde-água, só dela
+function pecaLigacao({ id = "", oculta = false } = {}) {
+  return `<span class="peca-etq s-lig${oculta ? " oculta" : ""}"${id ? ` id="${etqEsc(id)}"` : ""} title="O hóspede pediu por telefone (marcado por quem enviou)">${etqIcone("tel")}Ligação</span>`;
+}
 function pecaSituacao(chave, { texto = "", titulo = "" } = {}) {
   const [nome, cls, ic] = SITUACOES_ETQ[chave] || SITUACOES_ETQ.sem_nf;
   return `<span class="peca-etq sit ${cls}"${titulo ? ` title="${etqEsc(titulo)}"` : ""}>${etqIcone(ic)}${etqEsc(texto || nome)}</span>`;

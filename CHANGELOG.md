@@ -9,6 +9,24 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.7] — 2026-10-22
+
+### Adicionado
+
+- **Marcar quando o pedido veio por ligação** (desenho aprovado pelo João: opção B). Na tela de escrever (Enviar NF,
+  Novo e-mail, Responder), um botão **Ligação** embaixo do Enviar: começa desligado em todo e-mail, um clique liga (fica
+  verde-água com ✓ e a etiqueta "Ligação" aparece no topo), outro desliga; atalho Alt+L. A marca **não vai no e-mail**,
+  só conta no Painel. Fica na aba nova **Ligacoes** da Planilha Central (uma linha por marca, guardada 400 dias).
+- **Itens Enviados:** etiqueta verde-água "Ligação", filtro **"Só ligações"** e, no botão direito, **"Marcar como
+  ligação"** / "Tirar marca de ligação" (para quando esqueceu de marcar no envio).
+- **Visão geral:** cartão **Ligações** com hoje, 7 dias e o mês, e os últimos 7 dias por hotel ou por agente.
+- Envio marcado que falhar perde a marca sozinho (o reenvio é que conta, para não contar 2 vezes).
+
+### Corrigido
+
+- **Itens Enviados aparecia vazio** desde 11/10 (no Painel real: 0 na tela, com 602 enviados nas 72 h). O filtro dos
+  4 agentes recebia a posição do e-mail no lugar do agente. A pesquisa pelo e-mail do hóspede não era afetada.
+
 ## [2026.10.22.6] — 2026-10-22
 
 ### Corrigido

@@ -54,6 +54,19 @@ def foi_pelo_painel(item):
         return bool(item.PropertyAccessor.GetProperty(MARCA_PAINEL))
     except Exception:
         return False
+
+
+def via_do_item(item):
+    """Itens Enviados: "painel|ENV-…" (saiu pelo Painel; o id do envio liga o e-mail à marca de ligação), "painel"
+    (marca antiga, sem id) ou "outlook"."""
+    try:
+        marca = str(item.PropertyAccessor.GetProperty(MARCA_PAINEL) or "")
+    except Exception:
+        return "outlook"
+    if not marca:
+        return "outlook"
+    fim = marca.rsplit("|", 1)[-1]
+    return f"painel|{fim}" if fim.startswith("ENV-") else "painel"
 CAB_TEXTOS = ["ID", "Texto", "Citado"]
 ABA_EVENTOS = "Eventos_Correio"
 PREFIXO_PEDIDOS = "CaixaPedidos_"
@@ -615,7 +628,7 @@ class Espelho:
                          "hotel": caixas.get(caixa, ""), "de": caixa, "nome": "", "para": ", ".join(sorted(destinos)),
                          "assunto": str(item.Subject or ""), "quando": quando.isoformat(timespec="seconds"),
                          "anexos": anexos_do_item(item), "texto": dividir_historico(corpo)[0][:MAX_TEXTO_ENVIADO],
-                         "citado": "", "via": "painel" if foi_pelo_painel(item) else "outlook"}
+                         "citado": "", "via": via_do_item(item)}
 
     def _recebido(self, item, caixa, caixas, rede, antigo, vouchers):
         i = id_do_email(item.EntryID)

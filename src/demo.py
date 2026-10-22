@@ -15,6 +15,7 @@ import app_dados as dados
 import atividade
 import envio_nf
 import espelho_emails as ee
+import ligacoes
 import rede_pcs
 from sheets import STATUS_LINHAS
 
@@ -201,6 +202,12 @@ class BackendDemo:
             [pc, ag, ",".join(h[1] for h in HOTEIS if h[2] == ag), "", "aberto", "", "principal" if ag == "João" else "conferente",
              agora.isoformat(timespec="seconds") + "|2 NF · 1 tratativa · 3 recebido(s)", "", "3/1", uso[ag]] for ag, pc in PCS.items()]
         self._gerar_correio(r, hospedes)
+        # metade dos envios mais recentes marcados como ligação (22/10/2026), pra Itens Enviados e a Visão geral terem o que mostrar
+        recentes = sorted((a for a in self.arquivo if a["pasta"] == "enviado"), key=lambda a: a["quando"], reverse=True)[:16:2]
+        self.abas[ligacoes.ABA] = [list(ligacoes.CABECALHO)] + [
+            ligacoes.evento(a["id"], ligacoes.MARCAR, next((g for g, pc in PCS.items() if pc == a["pc"]), "João"), a["hotel"],
+                            a["caixa"], a["para"], a["assunto"], pc=a["pc"], quando=datetime.datetime.fromisoformat(a["quando"]))
+            for a in recentes]
 
     def _gerar_correio(self, r, hospedes):
         agora = self.agora
@@ -327,7 +334,7 @@ def preparar(estado, backend):
         l[5] = str(getattr(estado, "versao", ""))
     contador = {"n": 0}
 
-    def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao=""):
+    def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao="", livre=False):
         contador["n"] += 1
         id_envio = f"DEMO-{contador['n']}"
         pc = backend.excluir(responder) if acao == envio_nf.EXCLUIR else backend.responder(responder) if responder and acao not in (envio_nf.ENCAMINHAR, envio_nf.URGENCIA) else ""

@@ -71,7 +71,7 @@ function itensDaTela(busca) {
     return [...(r?.resultados || []), ...espelho].filter(e => !vistos.has(e.id) && vistos.add(e.id))
       .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
-  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(doEscopo) : emailsDa(cx.caixa);
+  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(e => doEscopo(e)) : emailsDa(cx.caixa);
   const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false)
     && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario"))
     && (!cx.filtroL || FILTROS_LISTA[cx.filtroL]?.[1](e)));
@@ -84,6 +84,7 @@ const FILTROS_LISTA = {
   semresp: ["Sem resposta", e => e.pasta !== "enviado" && !e.respondido && !cx.resolvendo[e.id]],
   anexo: ["Com anexo", e => (e.anexos || []).length > 0],
   dividida: ["Nota dividida", e => (e.quartos?.[0] || e.quartos || 0) >= 2],
+  ligacao: ["Só ligações", e => !!e.ligacao],   // 22/10/2026: só aparece em Itens Enviados
 };
 function filtroDaListaHtml() {   // a peça única do Filtro (pecas/filtro.js)
   const atual = cx.filtroL; cx.filtroL = "";
@@ -91,7 +92,8 @@ function filtroDaListaHtml() {   // a peça única do Filtro (pecas/filtro.js)
   cx.filtroL = atual;
   return pecaFiltro({ id: "cx-filtro", rotulo: "Filtro", valor: cx.filtroL || "", padrao: "", nomePadrao: "Todos", alinhar: "direita",
     opcoes: [{ v: "", nome: "Todos os e-mails", n: base.length },
-             ...Object.entries(FILTROS_LISTA).map(([k, [nome, f]]) => ({ v: k, nome, n: base.filter(f).length }))] });
+             ...Object.entries(FILTROS_LISTA).filter(([k]) => k !== "ligacao" || cx.caixa === "enviados")
+               .map(([k, [nome, f]]) => ({ v: k, nome, n: base.filter(f).length }))] });
 }
 registrarFiltro("cx-filtro", { escolher: v => { cx.filtroL = v; cx.sel = null; desenharCorreio(); }, redesenhar: () => desenharCorreio() });
 
@@ -245,7 +247,7 @@ function desenharAcoes() {
   el.innerHTML = `<div class="av" aria-hidden="true">${enviado ? "↗" : esc(iniciais(e.nome || e.de))}</div>
     <div class="quem"><b>${esc(enviado ? "Para: " + e.para : e.nome || e.de)}</b>
       <small>${esc(e.hotel || "")}${e.pc ? " · caixa no PC de " + esc(nomeAgente(e.pc)) : ""} · ${esc(quando(e.quando))}</small>
-      ${(e.classes || []).length ? `<div class="linha-et">${e.classes.map(etiqueta).join("")}</div>` : ""}</div>
+      ${(e.classes || []).length || (enviado && e.ligacao) ? `<div class="linha-et">${(e.classes || []).map(etiqueta).join("")}${enviado && e.ligacao ? pecaLigacao() : ""}</div>` : ""}</div>
     <div class="botoes">${noEspelho && !cinza ? "" : botoes}<button class="fechar" id="cx-fechar" aria-label="Fechar o e-mail" title="Fechar (Esc)">×</button></div>
     ${noEspelho && !cinza ? `<span class="dica-prof so-texto" style="flex-basis:100%">Atalhos: Ctrl+R responder · Ctrl+Shift+R com NF · Ctrl+F encaminhar · Delete excluir · Ctrl+U não lido</span>` : ""}`;
 }
@@ -272,6 +274,7 @@ function pedidoDoEmail(e) {
   return e.solicitacao && typeof acharPedido === "function" ? acharPedido(e.solicitacao.chave) : null;
 }
 function tagsEmail(e, cinza) {   // a peça única das etiquetas (pecas/etiqueta.js); respondido não muda a situação (21/10/2026)
+  if (e.pasta === "enviado") return e.ligacao ? `<div class="it-tg">${pecaLigacao()}</div>` : "";   // Itens Enviados: só a Ligação
   if ((e.pasta && e.pasta !== "entrada") || cinza) return "";
   const form = (e.classes || []).includes("formulario") ? `<span class="tg t-form">Formulário</span>` : "";
   return `<div class="it-tg">${etiquetasDoEmail(e)}${form}</div>`;
@@ -1025,13 +1028,17 @@ document.addEventListener("click", e => {
 });
 // Botão direito no e-mail (usuário, 20/10/2026): lido/não lido e urgência. Shift+F10 ou a tecla de menu abrem também.
 function abrirMenuEmail(id, x, y) {
-  const e = (cx.dados?.emails || []).find(m => m.id === id);
+  const env = cx.caixa === "enviados" ? (cx.dados?.enviados || []).find(m => m.id === id) : null;
+  const e = env || (cx.dados?.emails || []).find(m => m.id === id);
   fecharMenuEmail();
   if (!e || cx.resolvendo[id]) return;
   const m = document.createElement("div");
   m.id = "cx-ctx"; m.className = "cx-ctx"; m.setAttribute("role", "menu");
   const ic = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  m.innerHTML = `<div class="cx-ctx-t">${esc(e.nome || e.de || "")}</div>
+  // Itens Enviados (22/10/2026): esqueceu de marcar a ligação no envio? marca aqui
+  m.innerHTML = env ? `<div class="cx-ctx-t">Para: ${esc(e.para || "")}</div>
+    <button type="button" role="menuitem" data-ctx="${e.ligacao ? "semlig" : "lig"}">${ic(ETQ_IC.tel)}${e.ligacao ? "Tirar marca de ligação" : "Marcar como ligação"}</button>`
+  : `<div class="cx-ctx-t">${esc(e.nome || e.de || "")}</div>
     <button type="button" role="menuitem" data-ctx="${e.lido === false ? "lido" : "naolido"}">${ic('<path d="M3 9l9-6 9 6v10H3z"/><path d="M3 9l9 6 9-6"/>')}${e.lido === false ? "Marcar como lido" : "Marcar como não lido"}</button>
     <button type="button" role="menuitem" data-ctx="${e.urgente ? "normal" : "urgente"}" class="${e.urgente ? "" : "urg"}">${ic('<path d="M5 21V4h11l-2 4 2 4H5"/>')}${e.urgente ? "Tirar urgência" : "Marcar como urgente"}</button>
     ${e.urgente && e.motivo_urgencia ? `<div class="cx-ctx-n">${esc(e.motivo_urgencia)}</div>` : ""}`;
@@ -1045,6 +1052,7 @@ function abrirMenuEmail(id, x, y) {
 function fecharMenuEmail() { document.getElementById("cx-ctx")?.remove(); }
 async function acaoMenuEmail(id, acao) {
   fecharMenuEmail();
+  if (acao === "lig" || acao === "semlig") return marcarLigacao(id, acao === "lig");
   const e = (cx.dados?.emails || []).find(m => m.id === id);
   if (!e) return;
   if (acao === "naolido") return marcarNaoLido(id);
@@ -1059,6 +1067,14 @@ async function acaoMenuEmail(id, acao) {
   const r = await api("/api/correio/urgencia", { id, marcar: acao });
   if (!r.ok) { [e.urgente, e.motivo_urgencia] = antes; desenharLateralCorreio(); desenharCorreio(); return toast(r.motivo || r.erro || "Não deu pra marcar agora", true); }
   toast(e.urgente ? "Marcado como urgente para a equipe (fica no Outlook do PC dono)" : "Urgência tirada para a equipe");
+}
+async function marcarLigacao(id, marcar) {
+  const e = (cx.dados?.enviados || []).find(m => m.id === id);
+  if (!e) return;
+  e.ligacao = marcar; desenharCorreio();
+  const r = await api("/api/ligacao", { id, marcar });
+  if (!r.ok) { e.ligacao = !marcar; desenharCorreio(); return toast(r.motivo || r.erro || "Não deu pra marcar agora", true); }
+  toast(marcar ? "Marcado como ligação: já conta na Visão geral dos 4 PCs" : "Marca de ligação tirada");
 }
 document.addEventListener("contextmenu", ev => {
   const l = ev.target.closest?.("#cx-lista .cx-l");

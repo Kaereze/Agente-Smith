@@ -37,6 +37,7 @@ import canceladas
 import correio
 import hospedes
 import indice_emails
+import ligacoes
 import cota_google
 import envio_nf
 import espelho_emails
@@ -196,6 +197,7 @@ class Estado:
         self.marca_dropbox, self.dropbox_olhado = None, -1e9
         self.trat_linhas, self.trat_lido_em, self.hoteis_lidos_em = None, -1e9, -1e9
         self.eventos_linhas, self.eventos_pendentes = [], []   # lido/não lido: gravados juntos, 1 escrita por volta
+        self.ligacoes_linhas, self.ligacoes = None, {}     # pedido por ligação (22/10/2026): aba Ligacoes e as marcadas
         self.eventos_correio, self.enviados_correio, self.convs = {}, [], []
         self.abas_textos, self.textos_cache = [], {}           # {pc: (versão, {id: (texto, citado)})}
         self.rede_ligada, self.segredo = False, b""
@@ -225,7 +227,8 @@ class Estado:
             for aba, cab in ((dados.ABA_TRATAMENTO, dados.CABECALHO_TRATAMENTO), (envio_nf.ABA_FILA, envio_nf.CAB_FILA),
                              (espelho_emails.ABA_EVENTOS, espelho_emails.CAB_EVENTOS),
                              (envio_nf.ABA_ANEXOS, envio_nf.CAB_ANEXOS), (envio_nf.ABA_PCS, envio_nf.CAB_PCS),
-                             (atividade.ABA, atividade.CABECALHO), (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS)):
+                             (atividade.ABA, atividade.CABECALHO), (rede_pcs.ABA_COMANDOS, rede_pcs.CAB_COMANDOS),
+                             (ligacoes.ABA, ligacoes.CABECALHO)):
                 if aba not in todas:
                     self.backend.criar_aba_log(self.central, aba, cab)
             if hasattr(self.backend, "garantir_colunas"):
@@ -248,7 +251,8 @@ class Estado:
             self._gravar_eventos_pendentes()
             nomes = [dados.ABA_TRATAMENTO, status_aba, envio_nf.ABA_FILA, envio_nf.ABA_PCS, rede_pcs.ABA_COMANDOS,
                      espelho_emails.ABA_EVENTOS] + self.abas_emails + list(getattr(self, "abas_pedidos", [])) + \
-                (list(abas) if ler_hoteis else [])
+                (list(abas) if ler_hoteis else []) + \
+                ([ligacoes.ABA] if ler_hoteis or self.ligacoes_linhas is None else [])   # muda pouco: junto com os hotéis
             # do fim conhecido em diante (a última linha de novo: confere que nada mudou por baixo, ex. faxina)
             faixas = {} if trat_inteira else {dados.ABA_TRATAMENTO: f"A{len(self.trat_linhas)}:H"}
             lidas, erros = self.backend.ler_abas(self.central, nomes, faixas=faixas)
@@ -279,6 +283,10 @@ class Estado:
                              for aba in getattr(self, "abas_pedidos", []) if aba in lidas}
             if espelho_emails.ABA_EVENTOS in lidas:
                 self.eventos_linhas = lidas[espelho_emails.ABA_EVENTOS]
+            if ligacoes.ABA in lidas:
+                with self.lock:
+                    self.ligacoes_linhas = lidas[ligacoes.ABA]
+                    self.ligacoes = ligacoes.dobrar(self.ligacoes_linhas)
             with self.lock:
                 self.solicitacoes = solicitacoes
                 self._aplicar_tratamento(trat, novas)
@@ -307,6 +315,10 @@ class Estado:
             self._rede(lidas, solicitacoes)
         except Exception:
             logger.exception("rede de PCs")
+        try:
+            self._ligacoes_de_envios_falhos()
+        except Exception:
+            logger.exception("ligações de envios que falharam")
         try:
             self._avisar_urgencias()
         except Exception:
@@ -819,6 +831,8 @@ class Estado:
                    "prazo": por_de.get(e["de"], {}).get("prazo"),
                    "notas": self.notas_emails.get(e["id"], []),
                    "solicitacao": por_de.get(e["de"], {}).get("solicitacao")} for e in entrada]
+        marcadas = self.ligacoes
+        enviados = [{**e, "ligacao": ligacoes.chave_do_enviado(e) in marcadas} for e in enviados]
         return {"conversas": saida, "emails": emails, "enviados": enviados, "contagem": correio.contagem(convs, entrada),
                 "pcs": [{"pc": p["pc"], "agente": p["agente"], "online": p["online"], "espelho": espelhos.get(p["pc"], ""),
                          "rede": bool(p.get("rede"))} for p in pcs.values()],
@@ -1292,8 +1306,9 @@ class Estado:
         selo = str(corpo.get("selo") or "")
         sol = {"aba": "", "carimbo": "", "email": para, "hotel": contas[conta]["hotel"], "nome": para}
         logger.info(f"✉️ Novo e-mail de {conta} para {para}: \"{assunto}\" — por {quem}")
-        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, str(corpo.get("corpo", "")), cc,
-                                   selo if envio_nf.caminho_selo(selo) else "", livre=True)
+        r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, str(corpo.get("corpo", "")), cc,
+                                selo if envio_nf.caminho_selo(selo) else "", livre=True)
+        return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
 
     def responder_email(self, corpo, quem):
         e = self._email(str(corpo.get("id", "")))
@@ -1316,8 +1331,9 @@ class Estado:
             raise ValueError("escreva a resposta ou anexe a nota")
         cc = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in x)
         selo = str(corpo.get("selo") or "")
-        return self.envio_nf.pedir(sol, para, assunto, e["caixa"], anexos, quem, str(corpo.get("corpo", "")), cc,
-                                   selo if envio_nf.caminho_selo(selo) else "", responder=e["id"])
+        r = self.envio_nf.pedir(sol, para, assunto, e["caixa"], anexos, quem, str(corpo.get("corpo", "")), cc,
+                                selo if envio_nf.caminho_selo(selo) else "", responder=e["id"])
+        return self._marcar_ligacao_do_envio(r, corpo, quem, e["hotel"] or sol["hotel"], e["caixa"], para, assunto)
 
     def opcoes_envio(self, chave_sol):
         sol = next((s for s in self.solicitacoes if s["chave"] == chave_sol), None)
@@ -1360,8 +1376,62 @@ class Estado:
             raise ValueError("anexe a nota fiscal")
         cc = ";".join(e.strip() for e in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in e)
         selo = str(corpo.get("selo") or "")
-        return self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
-                                   selo if envio_nf.caminho_selo(selo) else "")
+        r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
+                                selo if envio_nf.caminho_selo(selo) else "")
+        return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
+
+    # ---------- pedido por ligação (usuário, 22/10/2026) ----------
+    def _gravar_ligacao(self, chave, acao, agente, hotel="", caixa="", para="", assunto=""):
+        linha = ligacoes.evento(chave, acao, agente, hotel, caixa, para, assunto)
+        self.backend.anexar_linhas(self.central, ligacoes.ABA, [linha])
+        with self.lock:
+            self.ligacoes_linhas = (self.ligacoes_linhas or [ligacoes.CABECALHO]) + [linha]
+            self.ligacoes = ligacoes.dobrar(self.ligacoes_linhas)
+            self.versao_tela = getattr(self, "versao_tela", 0) + 1
+
+    def _marcar_ligacao_do_envio(self, r, corpo, quem, hotel, caixa, para, assunto):
+        """Botão "Ligação" ligado na tela de escrever: marca o envio (chave = id ENV-…). O e-mail já está na fila; se a
+        marca não gravar, o envio segue e a tela avisa pra marcar depois em Itens Enviados."""
+        if not (r.get("ok") and corpo.get("ligacao") and r.get("id")):
+            return r
+        try:
+            self._gravar_ligacao(r["id"], ligacoes.MARCAR, quem, hotel, caixa, para, assunto)
+            logger.info(f"📞 {r['id']}: marcado como ligação ({hotel}, por {quem})")
+        except Exception as e:
+            logger.warning(f"⚠️ {r['id']}: não consegui gravar a marca de ligação ({e})")
+            return {**r, "aviso_ligacao": "O e-mail vai sair, mas a marca de ligação não gravou. Marque depois em Itens Enviados (botão direito)."}
+        return r
+
+    def marcar_ligacao(self, id_email, marcar, agente):
+        """Botão direito num e-mail de Itens Enviados: "Marcar como ligação" / "Tirar marca de ligação"."""
+        with self.lock:
+            e = next((x for x in self.enviados_correio if x.get("id") == id_email), None)
+        if e is None:
+            raise KeyError("e-mail enviado não encontrado (pode ter passado das 72 h)")
+        chave = ligacoes.chave_do_enviado(e)
+        if bool(marcar) == (chave in self.ligacoes):
+            return {"ok": True, "ligacao": bool(marcar)}
+        self._gravar_ligacao(chave, ligacoes.MARCAR if marcar else ligacoes.DESMARCAR, agente, e.get("hotel", ""),
+                             e.get("caixa", ""), e.get("para", ""), e.get("assunto", ""))
+        logger.info(f"📞 {chave}: {'marcado' if marcar else 'desmarcado'} como ligação em Itens Enviados, por {agente}")
+        return {"ok": True, "ligacao": bool(marcar)}
+
+    def _ligacoes_de_envios_falhos(self):
+        """Envio marcado que falhou: o PC que marcou tira a marca (o reenvio é que conta)."""
+        if getattr(self, "so_ver", False) or not self.ligacoes:
+            return
+        for chave in ligacoes.envios_falhos_a_desmarcar(self.ligacoes, self.envio_nf.fila, socket.gethostname()):
+            m = self.ligacoes[chave]
+            self._gravar_ligacao(chave, ligacoes.DESMARCAR, m["agente"], m["hotel"], m["caixa"], m["para"], m["assunto"])
+            logger.info(f"📞 {chave}: o envio falhou — marca de ligação retirada (o reenvio é que conta)")
+
+    def resumo_ligacoes(self):
+        """Cartão Ligações da Visão geral; "de N envios" = envios do Painel que saíram hoje (a fila guarda 3 dias)."""
+        hoje = datetime.date.today().isoformat()
+        envios = sum(1 for e in list(getattr(self.envio_nf, "fila", {}).values())
+                     if e.get("resultado") == envio_nf.ENVIADO and str(e.get("pedido_em", ""))[:10] == hoje
+                     and not (e.get("pedido") or {}).get("acao"))
+        return ligacoes.resumo(self.ligacoes, envios)
 
     def conferir_anexos(self, corpo):
         """Antes de enviar (usuário, 11/10/2026): abre cada PDF anexado e confere com o pedido (CPF/CNPJ, valor, nome,
@@ -1703,7 +1773,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
-                    "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
+                    "hoteis": estado.hoteis_por_agente(), "ligacoes": estado.resumo_ligacoes(),
+                    "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
                     "admin": e_admin_aqui(estado.cfg, nome_do_agente(), liberado()),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 }, comparar=True)
@@ -1821,6 +1892,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/ligacao":
+                    return self._json(estado.marcar_ligacao(str(corpo.get("id", "")), bool(corpo.get("marcar")), nome_do_agente()))
                 if path == "/api/correio/encaminhar":
                     return self._json(estado.encaminhar_email(corpo, nome_do_agente()))
                 if path == "/api/comando":
