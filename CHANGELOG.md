@@ -9,6 +9,22 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.22.2] — 2026-10-22
+
+### Adicionado
+
+- **Aba Robô** (desenho A aprovado pelo João; aparece para os 4 agentes): uma frase diz como está o robô ("O robô está
+  enviando 3 pedidos agora"), a barra mostra a rodada passo a passo, três números do dia, o que precisa de atenção em
+  vermelho e a lista de pedidos de hoje com **uma frase por pedido** dizendo onde está (esperando o envio ao hotel,
+  enviado, NF emitida, concluído) e o caminho do primeiro pedido em aberto sempre à vista. "Enviar agora" fica; o envio
+  automático (a cada 10 min) segue. O botão lateral "Enviar pendentes" agora abre a aba (a janela de confirmação saiu do uso).
+  Etapas seguintes: chip na barra de baixo e "Ver registro".
+
+### Mudou
+
+- **Usuário João só no PC dele:** os outros PCs não escolhem o usuário João e não ganham as opções de administrador
+  (Monitoramento, Máquinas, Log) trocando de usuário.
+
 ## [2026.10.22.1] — 2026-10-22
 
 ### Mudou

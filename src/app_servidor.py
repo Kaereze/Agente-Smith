@@ -1607,10 +1607,29 @@ class Estado:
                 "comando": s.get("Comando", ""), "resposta": s.get("Resposta do robô", "")}
 
 
+def admins_do_painel(cfg):
+    return list((cfg.get("painel", {}) or {}).get("admins") or ["João"])
+
+
+def operadores_deste_pc(cfg, liberado=False):
+    """Operadores que este PC pode escolher (22/10/2026): o administrador (João) só no PC dele; nos outros PCs ele não
+    aparece nem é aceito. liberado: modo casa e demonstração (só leitura / dados fictícios)."""
+    todos = [k for k in cfg.get("agentes", {}) if not str(k).startswith("_")]
+    if liberado or e_principal(cfg):
+        return todos
+    return [k for k in todos if k not in admins_do_painel(cfg)]
+
+
+def e_admin_aqui(cfg, nome, liberado=False):
+    """Só o João, e só no PC dele (os outros PCs não ganham as opções de admin trocando de usuário)."""
+    return bool(liberado) or (nome in admins_do_painel(cfg) and e_principal(cfg))
+
+
 def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     pc = socket.gethostname()
     hosts_ok = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
     envio = envio or Envio(ao_terminar=estado.atualizar)
+    liberado = lambda: bool(getattr(estado, "so_ver", False) or getattr(estado, "demo", False))   # noqa: E731
     operadores = [k for k in cfg.get("agentes", {}) if not str(k).startswith("_")]
 
     class Handler(BaseHTTPRequestHandler):
@@ -1678,13 +1697,13 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 dias = int(parse_qs(url.query).get("dias", ["45"])[0] or 0)
                 estado.vista_atual = parse_qs(url.query).get("vista", [""])[0]
                 return self._json({
-                    "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores,
+                    "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores_deste_pc(cfg, liberado()),
                     "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
                     "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
                     "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
                     "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
                     "hoteis": estado.hoteis_por_agente(), "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
-                    "admin": nome_do_agente() in (estado.cfg.get("painel", {}).get("admins") or ["João"]) or bool(getattr(estado, "so_ver", False)),
+                    "admin": e_admin_aqui(estado.cfg, nome_do_agente(), liberado()),
                     "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
                 }, comparar=True)
             if url.path == "/api/envio":
@@ -1770,6 +1789,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     nome = str(corpo.get("nome", "")).strip()[:40]
                     if nome not in operadores:
                         return self._json({"ok": False, "motivo": "operador desconhecido"}, 400)
+                    if nome not in operadores_deste_pc(carregar_config(), liberado()):
+                        return self._json({"ok": False, "motivo": f"O usuário {nome} só pode ser usado no PC dele."}, 403)
                     salvar_pref("agente", nome)
                     return self._json({"ok": True})
                 if path == "/api/enviar":

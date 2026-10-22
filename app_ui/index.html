@@ -1788,6 +1788,44 @@ html,body{background:#1f1f1f}
 .env-pilula.erro button:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
 .env-pilula .env-ex{width:16px;height:16px;border-radius:50%;background:#e8484f;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700}
 .env-pilula.erro u{text-decoration:none;color:#79b8f7}
+/* aba Robô (22/10/2026, desenho A): uma frase, uma barra, uma lista; letra grande e poucas cores */
+#robo{padding:28px 40px 40px;max-width:1100px}
+.rb-topo{display:flex;align-items:center;gap:14px;margin-bottom:20px;color:#8c8c8c;font-size:13.5px}
+.rb-topo h3{margin:0;font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.rb-topo .bts{margin-left:auto;display:flex;gap:8px}
+.rb-bt{height:34px;padding:0 16px;border:1px solid #5a5a5a;border-radius:6px;background:#333;color:#f0f0f0;font:inherit;font-size:13.5px;cursor:pointer}
+.rb-bt:disabled{opacity:.5;cursor:not-allowed}
+.rb-frase{font-size:28px;line-height:1.25;margin:0 0 4px;font-weight:600;letter-spacing:-.01em;color:#f2f2f2}
+.rb-frase b{color:#479ef5;font-weight:600}.rb-frase .rb-vm{color:#ffb3b8}
+.rb-frase .rb-gira{display:inline-block;width:18px;height:18px;margin-right:10px;border-radius:50%;border:2px solid #479ef5;border-right-color:transparent;animation:olGira .8s linear infinite;vertical-align:-2px}
+.rb-leve{color:#bdbdbd;margin:0 0 22px;font-size:15px}
+.rb-seg{display:flex;gap:4px;margin-bottom:8px}
+.rb-seg i{flex:1;height:8px;border-radius:4px;background:#363636}
+.rb-seg i.f{background:#3da755}.rb-seg i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
+@keyframes rbPulsa{50%{opacity:.55}}
+.rb-segtxt{display:flex;justify-content:space-between;color:#bdbdbd;font-size:14px;margin-bottom:26px;gap:12px}
+.rb-segtxt b{color:#f2f2f2;font-weight:600}
+.rb-nums{display:flex;gap:40px;margin-bottom:26px;flex-wrap:wrap}
+.rb-nums div{font-size:14px;color:#bdbdbd}.rb-nums b{display:block;font-size:30px;color:#f2f2f2;line-height:1.15;font-weight:600}
+.rb-nums .al b{color:#ffb3b8}
+.rb-atencao{display:flex;align-items:center;gap:14px;background:#2e2123;border:1px solid #5a2e33;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+.rb-atencao .ex{width:26px;height:26px;border-radius:50%;background:#e8484f;display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.rb-atencao p{margin:0;font-size:15px;color:#f2f2f2}.rb-atencao p small{display:block;color:#ffb3b8;font-size:13.5px}
+.rb-sec{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8c8c8c;margin:22px 0 6px}
+.rb-l{display:grid;grid-template-columns:minmax(160px,260px) 1fr 130px;gap:18px;align-items:center;padding:15px 0;border-top:1px solid #2b2b2b}
+.rb-l:first-child{border-top:0}
+.rb-l b{font-size:15.5px;font-weight:600;display:block;color:#f2f2f2}.rb-l small{color:#8c8c8c;font-size:13.5px}
+.rb-onde{font-size:15px;color:#bdbdbd}.rb-onde strong{color:#f2f2f2;font-weight:600}.rb-onde .ok{color:#7fd494}
+.rb-onde .hora{font-size:13px;color:#8c8c8c;display:block}
+.rb-pts{display:flex;gap:5px;justify-content:flex-end}
+.rb-pts i{width:11px;height:11px;border-radius:50%;background:#383838;display:block}
+.rb-pts i.f{background:#3da755}.rb-pts i.a{background:#479ef5;animation:rbPulsa 1.4s ease-in-out infinite}
+.rb-cam{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;color:#bdbdbd;padding:0 0 4px}
+.rb-cam span{background:#2a2a2a;border-radius:14px;padding:3px 12px}
+.rb-cam span.f{color:#7fd494}.rb-cam span.a{background:#16263d;color:#cfe4fb}.rb-cam em{font-style:normal;color:#555}
+.rb-mais{margin-top:14px;color:#479ef5;font-size:14px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+@media (max-width:900px){.rb-l{grid-template-columns:1fr}.rb-pts{justify-content:flex-start}#robo{padding:20px 16px}}
+@media (prefers-reduced-motion:reduce){.rb-seg i.a,.rb-pts i.a,.rb-frase .rb-gira{animation:none}}
 /* barra de status */
 .modo-ol .rodape-status{background:#1b1b1b;border-top:1px solid #2b2b2b}
 /* outras telas: fundo, cartões e respiro da Prévia 5 */
@@ -2016,12 +2054,13 @@ html,body{background:#1f1f1f}
     <div class="principal" role="group" aria-labelledby="rot-geral"><span class="rot-nav" id="rot-geral">Geral</span>
       <button class="ln raiz" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
       <button class="ln raiz" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n" title="Pedidos sem NF emitida"></span></button>
+      <button class="ln raiz" data-vista="robo" title="O que o robô está fazendo e onde está cada pedido"><svg class="ic"><use href="#i-sync"/></svg>Robô</button>
       <button class="ln raiz" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
       <button class="ln raiz" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
       <button class="ln raiz" data-vista="correio" data-caixa="urgencia" title="Pedido de correção de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
-      <button class="ln raiz" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 24 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
+      <button class="ln raiz" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 72 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
     </div>
     <div class="nav-grupo so-admin" role="group" aria-labelledby="rot-admin"><span class="rot-nav" id="rot-admin">Admin</span>
       <button class="ln raiz" data-vista="maquinas" id="nav-maquinas" title="Máquinas e log do robô (só o administrador vê)"><svg class="ic"><use href="#i-log"/></svg>Monitoramento</button>
@@ -2062,6 +2101,7 @@ html,body{background:#1f1f1f}
     <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta monit" id="v-log"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="log"></div></section>
+    <section class="vista oculta" id="v-robo"><div class="rolagem" id="robo"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta ol" id="v-correio" aria-label="E-mails">
@@ -2328,6 +2368,7 @@ async function carregarJa(soSeMudou){
     carregarCorreio(soSeMudou);
     if (pn.vista === "visao") desenharVisao();
     if (pn.vista === "gerencia") desenharGerencia();
+    if (pn.vista === "robo") desenharRobo();
   } catch(e) {
     $("sync-dot").className = "dot off"; $("sync-txt").textContent = "app desconectado";
   }
@@ -3163,7 +3204,7 @@ document.querySelectorAll(".secao").forEach(g => {
   });
 });
 $("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
-$("btn-enviar").addEventListener("click", () => abrirEnvio());
+$("btn-enviar").addEventListener("click", () => trocarVista("robo"));   // a aba Robô substitui a janela de confirmação (22/10/2026)
 let focoAntesDaJanela = null;
 const focaveis = el => [...el.querySelectorAll('button:not([disabled]),input:not([type="hidden"]):not([hidden]),select,textarea,[contenteditable="true"],a[href],[tabindex="0"]')]
   .filter(x => x.offsetParent !== null);

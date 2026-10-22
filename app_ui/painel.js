@@ -3,7 +3,7 @@
 let pn = { vista: "visao", janela: 30, rz: null, tabela: {}, resumo: "ontem" };   // resumo: a Visão geral abre no dia anterior   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
-const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", robo: "Robô", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
                   gerencia: "Gerência (em teste)" };
 function trocarVista(v) {
   if (!TITULOS[v]) v = "fila";
@@ -31,6 +31,7 @@ function trocarVista(v) {
   desenhar();
   if (v === "visao") { pn.animar = true; desenharVisao(); }
   if (v === "gerencia") desenharGerencia();
+  if (v === "robo") carregarRobo();
   clearTimeout(at.timer);
   if (v === "log" || v === "maquinas") carregarAtividade();
 }
@@ -407,6 +408,96 @@ function desenharVisao() {
   else graficoBarrasH($("graf-idade"), idade, { aoClicar: it => abrirNotas({ filtro: it.atrasada ? "atrasadas" : "aberto",
     agente: escopoAtual() === "todos" ? "" : escopoAtual() }) });
 }
+
+// ---------- Aba Robô (22/10/2026, desenho A): como está, a rodada e onde está cada pedido ----------
+// O envio é automático (a cada 10 min no PC principal); aqui só se acompanha. "Enviar agora" adianta a rodada.
+const rb = { env: null, timer: null };
+const horaDe = d => (d instanceof Date && !isNaN(d)) ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+function dataDoStatus(txt) {   // "22/10/2026 09:31:02" (aba Status) -> Date
+  const m = String(txt || "").match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/);
+  return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]) : null;
+}
+function etapaDaRodada(linhas, rodando, ok) {   // mesmas linhas do log que a janela antiga usava
+  let atual = -1;
+  (linhas || []).forEach(l => ETAPAS_ENVIO.forEach(([, , re], k) => { if (re && re.test(l.texto)) atual = Math.max(atual, k); }));
+  if (!rodando) return ETAPAS_ENVIO.length - (ok ? 0 : 1);
+  return Math.max(atual, 0);
+}
+async function carregarRobo() {
+  clearTimeout(rb.timer);
+  if (pn.vista !== "robo") return;
+  rb.env = await api("/api/envio").catch(() => rb.env);
+  desenharRobo();
+  rb.timer = setTimeout(carregarRobo, rb.env?.rodando ? 2500 : 8000);
+}
+async function enviarAgora() {
+  $("rb-agora").disabled = true;
+  const r = await api("/api/enviar", {});
+  if (!r.ok) { $("rb-agora").disabled = false; return toast(r.motivo || "Não deu certo", true); }
+  toast("Pedido de envio feito. Acompanhe aqui.");
+  carregarRobo();
+}
+function caminhoDoPedido(x) {
+  const enviado = !!x.enviado, nf = (x.nfs || []).length > 0, hospede = (x.envios || []).length > 0 || x.situacao === "concluida";
+  return [["Recebido " + (horaDoCarimbo(x.carimbo) || ""), true], ["Enviado ao hotel", enviado], ["NF emitida", nf], ["NF enviada ao hóspede", hospede]];
+}
+function desenharRobo() {
+  const el = $("robo");
+  if (!el) return;
+  const s = st.status || {}, env = rb.env || {}, hoje = hojeIso(), hojeBr = new Date().toLocaleDateString("pt-BR");
+  const fila = (st.fila || []).filter(x => !x.repetido_de);
+  const aEnviar = fila.filter(x => !x.enviado && x.situacao === "aguardando_envio");
+  const deHoje = fila.filter(x => x.data === hoje);
+  const enviadosHoje = deHoje.filter(x => x.enviado).length;
+  const nfHoje = fila.reduce((n, x) => n + (x.envios || []).filter(e => String(e.quando || "").startsWith(hojeBr)).length, 0);
+  const avisos = st.saude || [];
+  const ultima = dataDoStatus(s.ultima_execucao), proxima = ultima ? new Date(ultima.getTime() + 10 * 60000) : null;
+  const rodando = !!env.rodando, ligado = s.ligado !== false;
+  let frase;
+  if (!ligado) frase = `O robô está <b class="rb-vm">desligado</b>.`;
+  else if (rodando) frase = `<span class="rb-gira"></span>O robô está enviando ${aEnviar.length ? `<b>${aEnviar.length} pedido${aEnviar.length === 1 ? "" : "s"}</b>` : "os pedidos"} agora.`;
+  else if (aEnviar.length) frase = `<b>${aEnviar.length} pedido${aEnviar.length === 1 ? "" : "s"}</b> esperando o próximo envio.`;
+  else frase = "Tudo certo. Nenhum pedido esperando.";
+  const leve = [ultima ? `Última rodada às ${horaDe(ultima)}` : "", ligado && proxima && !rodando ? `próxima por volta das ${horaDe(proxima)}` : "",
+                rodando && env.inicio ? `começou às ${horaDe(new Date(env.inicio))}` : ""].filter(Boolean).join(" · ");
+  let barra = "";
+  if (env.modo) {
+    const ok = env.codigo === 0, k = etapaDaRodada(env.linhas, rodando, ok);
+    barra = `<div class="rb-seg" aria-hidden="true">${ETAPAS_ENVIO.map((_, i) => `<i class="${i < k || (!rodando && ok) ? "f" : rodando && i === k ? "a" : ""}"></i>`).join("")}</div>
+      <div class="rb-segtxt"><span><b>${esc(rodando ? ETAPAS_ENVIO[k][0] : (env.resumo || "Rodada terminada"))}</b>${rodando ? ` · passo ${k + 1} de ${ETAPAS_ENVIO.length}` : ""}</span>
+      <span>${rodando ? esc((env.linhas || []).slice(-1)[0]?.texto?.replace(/^\W+\s*/u, "") || "") : ""}</span></div>`;
+  }
+  const nums = `<div class="rb-nums"><div><b>${enviadosHoje}</b>enviados ao hotel hoje</div><div><b>${nfHoje}</b>NF enviadas aos hóspedes hoje</div>
+    <div class="${avisos.length ? "al" : ""}"><b>${avisos.length}</b>${avisos.length === 1 ? "precisa" : "precisam"} de você</div></div>`;
+  const atencao = avisos.slice(0, 2).map(a => `<div class="rb-atencao"><span class="ex" aria-hidden="true">!</span><p>${esc(a.texto)}</p>
+    <button type="button" class="rb-bt so-admin" style="margin-left:auto" data-rb-monit>Ver no Monitoramento</button></div>`).join("");
+  const abertos = fila.filter(x => x.situacao !== "concluida");
+  const lista = [...deHoje, ...aEnviar.filter(x => x.data !== hoje)].filter((x, i, a) => a.findIndex(y => y.chave === x.chave) === i).slice(0, 40);
+  const linhas = lista.map(x => {
+    const cam = caminhoDoPedido(x), feitos = cam.filter(c => c[1]).length;
+    const concluido = x.situacao === "concluida";
+    const onde = concluido ? `<strong class="ok">Concluído</strong>` : !x.enviado ? `<strong>${rodando ? "Enviando agora" : "Esperando o envio ao hotel"}</strong>`
+      : (x.nfs || []).length ? `<strong>NF emitida</strong> · falta enviar ao hóspede` : `<strong>Enviado ao hotel</strong> · esperando a NF`;
+    const abertoPrimeiro = !concluido && abertos[0] && abertos[0].chave === x.chave;
+    return `<div class="rb-l"><div><b>${esc(x.hotel)}</b><small>${esc(x.nome || "")}</small></div>
+      <div class="rb-onde">${onde}<span class="hora">chegou ${esc(horaDoCarimbo(x.carimbo) || x.data || "")}</span></div>
+      <div class="rb-pts" aria-hidden="true">${cam.map((c, i) => `<i class="${c[1] ? "f" : (!concluido && i === feitos ? "a" : "")}"></i>`).join("")}</div>
+      ${abertoPrimeiro ? `<div class="rb-cam">${cam.map((c, i) => `<span class="${c[1] ? "f" : i === feitos ? "a" : ""}">${c[1] ? "✓ " : ""}${esc(c[0])}</span>`).join("<em>›</em>")}</div>` : ""}</div>`;
+  }).join("");
+  el.innerHTML = `<div class="rb-topo"><h3>Robô</h3><span>Envio automático a cada 10 min</span>
+      <div class="bts"><button type="button" class="rb-bt" id="rb-agora" ${rodando || !ligado ? "disabled" : ""}>Enviar agora</button></div></div>
+    <p class="rb-frase">${frase}</p><p class="rb-leve">${esc(leve)}</p>${barra}${nums}${atencao}
+    <div class="rb-sec">Pedidos de hoje</div>
+    <div>${linhas || `<div class="vazio" style="min-height:90px">Nenhum pedido hoje até agora.</div>`}</div>
+    <button type="button" class="rb-mais so-admin" data-rb-log>Ver registro do robô ›</button>`;
+  const n = $("nav-robo-n");
+  if (n) n.textContent = "";
+}
+document.addEventListener("click", ev => {
+  if (ev.target.closest("#rb-agora")) return enviarAgora();
+  if (ev.target.closest("[data-rb-monit]")) return trocarVista("maquinas");
+  if (ev.target.closest("[data-rb-log]")) { at.aba = "tudo"; return trocarVista("log"); }
+});
 
 // ---------- Enviar pendentes: o caminho que o robô faz, com as linhas reais do log ----------
 // Cada etapa acende quando aparece no log uma linha dela (main.py); a linha vira o detalhe da etapa.
