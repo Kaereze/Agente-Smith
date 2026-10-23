@@ -379,29 +379,21 @@ def _ler_planilha_hotel(cliente, arquivo, cfg):
     return aba, r["valueRanges"][0].get("values", [])
 
 
-def agrupar_por_hotel(arquivos, cfg, cadastro, ignorar=None):
-    """Planilhas da pasta (listagem do Drive) -> ({hotel: [arquivos]}, [nomes sem hotel no cadastro])."""
-    if ignorar is None:
-        ignorar = {normalizar(n) for n in cfg.get("fontes_hoteis", {}).get("ignorar", [])}
-    por_hotel, sem_hotel = {}, []
-    for a in arquivos:
-        if normalizar(a["name"]) in ignorar:
-            continue
-        h = hotel_da_planilha(a["name"], cfg, cadastro)
-        (por_hotel.setdefault(h, []).append(a) if h else sem_hotel.append(a["name"]))
-    return por_hotel, sem_hotel
-
-
-def mapear_fontes(backend, cfg, chave, arquivos=None):
-    """Planilhas da pasta por hotel e a aba da Central que recebe cada hotel. arquivos: listagem já feita (vigia)."""
+def mapear_fontes(backend, cfg, chave):
+    """Planilhas da pasta por hotel e a aba da Central que recebe cada hotel."""
     fontes = cfg.get("fontes_hoteis", {})
     central = cfg["planilha_central_id"]
     cad_linhas = backend.ler_abas(central, [cfg["aba_cadastro_hoteis"]])[0][cfg["aba_cadastro_hoteis"]]
     cadastro = {normalizar(l[0]): l[0].strip() for l in cad_linhas if l and l[0].strip()}
     ignorar = {normalizar(n) for n in fontes.get("ignorar", [])}
 
-    arquivos = listar_pasta(chave, fontes["pasta_drive_id"]) if arquivos is None else arquivos
-    por_hotel, sem_hotel = agrupar_por_hotel(arquivos, cfg, cadastro, ignorar)
+    arquivos = listar_pasta(chave, fontes["pasta_drive_id"])
+    por_hotel, sem_hotel = {}, []
+    for a in arquivos:
+        if normalizar(a["name"]) in ignorar:
+            continue
+        h = hotel_da_planilha(a["name"], cfg, cadastro)
+        (por_hotel.setdefault(h, []).append(a) if h else sem_hotel.append(a["name"]))
 
     abas_central = backend.listar_abas(central)
     destino_do_hotel = {}
@@ -430,15 +422,13 @@ def hoteis_que_mudaram(por_hotel, versoes, completa):
             if any(not a.get("version") or versoes.get(a["id"]) != a["version"] for a in lista)}
 
 
-def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
-    """so_hoteis: só estes hotéis, lidos mesmo sem versão nova (vigia dos formulários, 23/10/2026). mapa: o resultado de
-    mapear_fontes já pronto (a vigia guarda por 10 min e troca só a listagem do Drive)."""
+def sincronizar(gravar=False, completa=None):
     cfg = carregar_config()
     chave = caminho_chave_google(cfg)
     from sheets import BackendGoogle
     backend = BackendGoogle(chave, somente_leitura=not gravar)
     cliente, central = backend._cliente, cfg["planilha_central_id"]
-    m = mapa or mapear_fontes(backend, cfg, chave)
+    m = mapear_fontes(backend, cfg, chave)
     cadastro, por_hotel, sem_hotel = m["cadastro"], m["por_hotel"], m["sem_hotel"]
     abas_central, destino_do_hotel = m["abas_central"], m["destino_do_hotel"]
 
@@ -455,12 +445,7 @@ def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
     versoes, ultima_completa = guardado.get("versoes", {}), guardado.get("ultima_completa", "")
     if completa is None:
         completa = not ultima_completa or datetime.datetime.now() - datetime.datetime.fromisoformat(ultima_completa)             >= datetime.timedelta(hours=COMPLETA_HORAS)
-    if so_hoteis is not None:   # vigia dos formulários: só os hotéis que mudaram no Drive agora
-        completa = False
-        por_hotel = {h: lista for h, lista in por_hotel.items() if h in so_hoteis}
-        a_ler = dict(por_hotel)
-    else:
-        a_ler = hoteis_que_mudaram(por_hotel, versoes, completa)
+    a_ler = hoteis_que_mudaram(por_hotel, versoes, completa)
     lidas_agora = {}
 
     relatorio, copia_de_seguranca = [], {}
@@ -579,7 +564,7 @@ def rodar_agendado():
     if not e_principal(carregar_config()):
         logger.warning("⛔ Este PC está como conferente (config.local.json) — a cópia só roda no PC principal.")
         return 0
-    if not adquirir_lock(esperar=45):   # a vigia dos formulários segura a trava por segundos (23/10/2026)
+    if not adquirir_lock():
         logger.info("⏸️ Cópia dos hotéis pulada: o robô está rodando agora. Tento de novo na próxima.")
         return 0
     try:
@@ -602,42 +587,15 @@ def rodar_agendado():
         liberar_lock()
 
 
-CICLO = PASTA_ESTADO / "_ciclo_copia.txt"   # a rodada das 10 em 10 está rodando: a vigia dos formulários espera
-CICLO_MAX_MINUTOS = 15                        # marca mais velha que isso = rodada que morreu no meio
-
-
-def ciclo_rodando(agora=None):
-    try:
-        inicio = datetime.datetime.fromisoformat(CICLO.read_text(encoding="utf-8").strip())
-    except (OSError, ValueError):
-        return False
-    return (agora or datetime.datetime.now()) - inicio < datetime.timedelta(minutes=CICLO_MAX_MINUTOS)
-
-
 def copiar_e_enviar():
     """Ciclo do Agendador: copia e, em seguida, envia o que ficou pendente."""
-    try:
-        os.makedirs(PASTA_ESTADO, exist_ok=True)
-        CICLO.write_text(datetime.datetime.now().isoformat(timespec="seconds"), encoding="utf-8")
-    except OSError:
-        logger.debug("marca da rodada", exc_info=True)
-    try:
-        return _copiar_e_enviar()
-    finally:
-        try:
-            CICLO.unlink()
-        except OSError:
-            pass
-
-
-def _copiar_e_enviar():
     codigo = rodar_agendado()
     try:
         import main as robo_envio
         from historico import ORIGEM_SOLICITACAO_NOVA
         logger.info("📨 Cópia feita — conferindo se tem solicitação pendente pra disparar...")
         codigo_envio = robo_envio.rodar(codigo_se_ocupado=0, origem=ORIGEM_SOLICITACAO_NOVA,
-                                        quem="Robô (a cada 10 min)", esperar_lock=45)
+                                        quem="Robô (a cada 10 min)")
     except Exception:
         logger.exception("❌ O envio automático deu erro — tento de novo na próxima volta.")
         codigo_envio = 1

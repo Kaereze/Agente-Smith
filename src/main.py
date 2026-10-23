@@ -401,7 +401,7 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
 OCUPADO = 3   # exit code quando a trava está com outra execução
 
 
-def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_lock=0):
+def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None):
     from lock_execucao import adquirir_lock, liberar_lock
     from outlook import OutlookNF
     from sheets import BackendGoogle
@@ -419,7 +419,7 @@ def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_loc
     if not e_principal(cfg):
         logger.warning("⛔ Este PC está como conferente (config.local.json) — o envio só roda no PC principal.")
         return 0
-    if not adquirir_lock(esperar=esperar_lock):
+    if not adquirir_lock():
         return codigo_se_ocupado
     backend = None
     log_exec = Execucao(origem, quem, cfg["modo"])

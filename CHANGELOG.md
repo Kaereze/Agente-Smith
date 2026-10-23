@@ -9,20 +9,6 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [2026.10.23] — 2026-10-23
-
-### Mudou
-
-- **Pedido do formulário chega no Painel em ~10-20 s** (antes 6 a 12 min; OK do João). No PC principal, uma vigia nova
-  (`src/vigia_formularios.py`, linha própria dentro do conferente) pergunta ao Drive a cada 10 s quais planilhas dos hotéis
-  mudaram, copia só aqueles hotéis para a Central e avisa os 4 Painéis pela rede, que releem as abas dos hotéis na hora.
-  Medido em 22/10: o Drive mostra o pedido novo em 1-2 s (num caso, 3 min: dois pedidos seguidos na mesma planilha).
-  O e-mail para o hotel continua de 10 em 10 min (opção A do João).
-- **A rodada das 10 em 10 espera a trava** até 45 s em vez de pular a cópia ou o envio (`adquirir_lock(esperar=)`); a
-  vigia não copia enquanto a rodada roda (`estado/_ciclo_copia.txt`).
-- **Cota do Google:** a vigia tem fatia própria (4 leituras/min); o Painel de cada PC passou de 7 para 6 (usa ~4).
-  Soma dos 4 PCs continua 57 de 60.
-
 ## [2026.10.22.7] — 2026-10-22
 
 ### Adicionado

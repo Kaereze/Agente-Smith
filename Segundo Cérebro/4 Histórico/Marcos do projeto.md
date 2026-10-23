@@ -53,17 +53,3 @@ E-mail e formulário idênticos ao Outlook, pesquisa instantânea e envio sem es
 > "Faça um segundo cérebro de verdade, onde você conseguirá saber exatamente em que mexer… e vai utilizar menos tokens."
 
 Nascem a [[Hierarquia de prioridades]], o mapa de [[Credenciais]] (sem valores), [[Onde mexer]], [[Pastas e arquivos]], [[Planilhas e abas]] e [[API do Painel]].
-
-### 23/10/2026 · De Painel de NF a sistema de controle do financeiro
-> "A gente não tem nenhum aplicativo interno para ter esse controle todo de fiscalização do setor financeiro… quanto
-> chega, quanto é enviado, o que a gente emite, o que sai, o que entra, dinheiro, contabilidade, contas a pagar,
-> faturamento, notas fiscais, cancelamentos, substituições, caixa, tudo mesmo… que os outros consigam entender e levar
-> para frente… que o gerente venha perguntar e tudo apareça num clique."
-
-O Painel deixa de ser só das notas fiscais: vira **o sistema interno de controle do setor financeiro**, de nível
-empresarial, para outras pessoas usarem e continuarem. Guia as próximas decisões: dados visíveis em um clique
-(relatórios, gerência, caixa de entrada), design de empresa séria, organização sem erro, plano do banco (Supabase) e
-cronograma até dezembro pensados para os módulos novos (contas a pagar, faturamento, caixa, cancelamentos/substituições).
-No mesmo dia: cópia rápida dos formulários, revisão geral do design, CPF mascarado (mostra ao clicar, com registro),
-tarefas automáticas dentro do Painel (resumo do dia, pedido atrasado, robô/PC parado, relatório da semana).
-

@@ -5,8 +5,8 @@ Cada programa recebe uma fatia fixa (tabela abaixo) e nunca passa dela: se chega
 em vez de estourar a cota de todo mundo. A soma das fatias fica abaixo de 60, então um PC não derruba o outro.
 
   leituras/min   painel   conferente   sincronizar(*)   ×PCs   total
-  PC comum          6         4             —            3      30
-  PC principal      6         9             8            1      23 + vigia dos formulários 4 = 27   -> 57 de 60
+  PC comum          7         4             —            3      33
+  PC principal      7         9             8            1      24   -> 57 de 60
   (*) a cópia das planilhas dos hotéis só roda no principal; o conferente do principal atende o menu ⚡ (6/min).
 
 Cada programa grava o próprio consumo em estado/cota_google/<perfil>.json; o Painel soma e publica na PCs_Painel,
@@ -22,11 +22,10 @@ from config import PASTA_ESTADO
 
 LIMITE_GOOGLE = 60
 PERFIS = {   # perfil: (leituras/min, escritas/min)
-    "painel": (6, 6),   # 23/10/2026: era 7; a leitura de 15 s usa ~4/min. A sobra vai pra vigia dos formulários
+    "painel": (7, 6),
     "conferente": (4, 5),
     "conferente_principal": (9, 8),
     "sincronizar": (8, 6),
-    "vigia_formularios": (4, 3),   # cópia rápida, linha própria dentro do conferente do principal (23/10/2026)
     "padrao": (4, 4),
 }
 PASTA_CONSUMO = PASTA_ESTADO / "cota_google"
@@ -97,23 +96,6 @@ class Cota:
 
 
 COTA = Cota()
-_LINHA = threading.local()
-
-
-def usar_nesta_linha(perfil):
-    """Esta linha de execução (thread) passa a contar numa fatia própria (a vigia dos formulários dentro do conferente
-    não come a fatia dele). As outras linhas continuam na COTA do programa."""
-    _LINHA.cota = Cota(perfil)
-    return _LINHA.cota
-
-
-def da_linha():
-    """A fatia própria desta linha (usar_nesta_linha) ou None."""
-    return getattr(_LINHA, "cota", None)
-
-
-def atual():
-    return da_linha() or COTA
 
 
 def configurar(perfil):
