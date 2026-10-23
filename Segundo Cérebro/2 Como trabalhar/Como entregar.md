@@ -13,7 +13,9 @@ tags: [cerebro/trabalho]
 1. Rodar os testes (`python -m pytest -q` na pasta do projeto; 375 passando em 19/10). No PC do João o **pre-commit** já roda os testes e barra credenciais e `estado/` sozinho; depois do push, o **GitHub Actions** roda os testes de novo (aba Actions do repositório).
 2. Conferir a tela de verdade (captura no Edge sem janela, temas claro e escuro), sem erro de JavaScript.
 3. **Commit** em português, terminando com `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Acrescentar a entrega no topo do `CHANGELOG.md` (versão = data, `AAAA.MM.DD`) e, no último commit do dia, a etiqueta: `git tag -a AAAA.MM.DD -m "Versão AAAA.MM.DD"` e `git push origin AAAA.MM.DD`. Já tem etiqueta do dia? A próxima entrega é `AAAA.MM.DD.1`, `.2`…: etiqueta publicada **nunca** é movida (exigiria push forçado, que a guarda do git bloqueia).
-4. **Push** na `main`.
+4. **Push** na `main`. **Atenção (23/10/2026): commit de código na pasta do projeto do PC do João já é subir.** Os PCs se
+   atualizam sozinhos a cada 15 min (`painel.atualizar_sozinho`) e o Painel do João reinicia ~5 min depois que o código da
+   pasta muda (`_conferir_reinicio`). Mudança que ainda espera o OK do João fica **só na cópia de teste**, sem commit aqui.
 5. Conferir se `Bernardo`, `Christian` e `clara` estão atrás da main (`git merge-base --is-ancestor`) e deixá-las iguais: `git push origin main:Bernardo main:Christian main:clara`.
 6. **"Atualizar todos os PCs"** (botão em Máquinas ou o comando `atualizar` para TODOS).
 7. Mandar as capturas com zoom ao João e explicar em português simples.
