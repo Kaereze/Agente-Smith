@@ -16,7 +16,12 @@ tags: [cerebro/inicio]
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (22/10/2026)
+## Onde paramos (23/10/2026)
+- 23/10: **pedido do formulário no Painel em ~10-20 s** (2026.10.23, vigia de 10 s no PC principal). Nova direção:
+  sistema de controle do financeiro ([[Marcos do projeto]]). Na fila de hoje: revisão geral do design, CPF mascarado,
+  tarefas automáticas no Painel, cronograma até dezembro com o plano do Supabase. Ver [[2026-10-23]].
+
+## Antes (22/10/2026)
 - 22/10 (noite): **todos os designs no cofre**: [[Designs]] (prévia de cada um, link para abrir, o que o João escolheu e
   em que versão entrou), o catálogo de peças com a ferramenta para refazer ([[LEIA-ME (catálogo)]]) e o catálogo antigo
   em fotos. Pendente do João: medir o atraso do Drive (cópia rápida, opção A).

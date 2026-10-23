@@ -8,6 +8,7 @@ from gspread.utils import rowcol_to_a1
 
 from log_util import configurar_logging
 from modelos import Hotel, Solicitacao
+import cota_google
 from cota_google import COTA, e_cota_estourada
 from rede_util import com_retry, e_erro_passageiro_google
 from tratamento import campos_para_email, detectar_formato_data, ler_data, normalizar
@@ -78,12 +79,13 @@ class BackendGoogle:
     @staticmethod
     def _api(tipo, func):
         def chamada():
-            COTA.usar(tipo)
+            cota = cota_google.da_linha() or COTA   # a da linha (vigia dos formulários) ou a do programa
+            cota.usar(tipo)
             try:
                 return func()
             except Exception as e:
                 if e_cota_estourada(e):
-                    COTA.pausar()
+                    cota.pausar()
                 raise
         return com_retry(chamada, e_erro_passageiro_google)
 
@@ -285,7 +287,7 @@ class BackendSoLeitura(BackendGoogle):
 
 def limitar_leitura():
     """Pra quem chama a API do Google por fora do BackendGoogle (cópia das planilhas dos hotéis)."""
-    COTA.usar("leitura")
+    (cota_google.da_linha() or COTA).usar("leitura")
 
 
 def _achar_coluna(cabecalhos, nomes_aceitos):

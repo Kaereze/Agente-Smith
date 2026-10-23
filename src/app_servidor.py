@@ -956,6 +956,8 @@ class Estado:
         """O robô deste PC (ou o Painel de outro PC, repassando) gravou e-mail/NF novo na Central (21/10/2026): o laço
         relê já. Do robô daqui: repassa aos outros PCs uma vez (o repassado não é repassado de novo)."""
         acordar = self.__dict__.setdefault("acordar", threading.Event())
+        if str((corpo or {}).get("o_que", "")) == "formulario":   # cópia rápida (23/10/2026): relê as abas dos hotéis já
+            self.hoteis_lidos_em = -1e9
         acordar.set()
         if not (corpo or {}).get("repassado"):
             threading.Thread(target=self._repassar_novidade, args=(dict(corpo or {}),), daemon=True).start()

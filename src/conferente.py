@@ -681,6 +681,7 @@ def main():
     proximo_vigia, vigia, ultima_completa = time.monotonic() + 40, None, -1e9
     dropbox_antes = None   # marca das pastas de notas: mudou = NF nova (etiqueta "NF emitida" no e-mail do hóspede)
     proxima_faxina = time.monotonic() + 5 * 60   # faxina da Central: 1x por dia, só no principal (faxina.py)
+    vigia_form = None   # cópia rápida dos formulários (23/10/2026): linha própria, só no principal
     while True:
         agora = time.monotonic()
         try:
@@ -716,6 +717,14 @@ def main():
         except Exception as e:
             logger.warning(f"⚠️ Não consegui falar com a planilha ({e}) — tento de novo em {TICK_SEGUNDOS}s.")
             backend = None
+
+        if vigia_form is None and e_principal(cfg):
+            try:
+                import vigia_formularios
+                vigia_form = vigia_formularios.iniciar(cfg, lambda: avisar_paineis(carregar_config(), "formulario")) or False
+            except Exception as e:
+                logger.warning(f"⚠️ Vigia dos formulários não ligou ({e}) — a cópia continua de 10 em 10 min.")
+                vigia_form = False
 
         if agora >= proxima_conferencia:
             try:
