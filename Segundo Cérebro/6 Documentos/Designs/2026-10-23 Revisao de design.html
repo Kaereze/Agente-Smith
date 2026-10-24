@@ -1,0 +1,164 @@
+<title>Revisão de design do Painel</title>
+<style>
+:root{--bg:#f6f7f8;--folha:#ffffff;--linha:#e2e5e9;--tinta:#1b1f24;--tinta2:#4b5560;--tinta3:#6b7580;--azul:#0f6cbd;--azul-f:#e7f1fb;--verde:#107c41;--verde-f:#e6f4ec;--ambar:#9a6700;--ambar-f:#fdf3dc;--verm:#c4314b;--verm-f:#fbe9ec;--chip:#eef1f4;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:15px/1.6 "Segoe UI",system-ui,sans-serif}
+main{max-width:960px;margin:0 auto;padding-block:40px 80px;padding-inline:20px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px;letter-spacing:-.015em;text-wrap:balance}
+h2{font-size:21px;margin:48px 0 12px;letter-spacing:-.01em;text-wrap:balance}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:0 0 12px;max-width:72ch}
+.lead{color:var(--tinta2);font-size:16px}
+.meta{font-size:13px;color:var(--tinta3);margin:0 0 28px}
+.notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0 8px}
+.nota{background:var(--folha);border:1px solid var(--linha);border-radius:10px;padding:12px 14px}
+.nota b{display:block;font:600 26px/1.1 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.nota span{font-size:13px;color:var(--tinta2)}
+.nota i{display:block;height:4px;border-radius:2px;background:var(--chip);margin-top:10px;overflow:hidden}
+.nota i::after{content:"";display:block;height:100%;width:var(--p);background:var(--c)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--folha);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3);font-weight:600}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+td.ruim{color:var(--verm);font-weight:600}
+tr:last-child td{border-bottom:0}
+.tabela{overflow-x:auto}
+.achado{background:var(--folha);border:1px solid var(--linha);border-radius:12px;padding:18px 20px;margin:14px 0}
+.achado header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.pri{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+.p1{background:var(--verm-f);color:var(--verm)}.p2{background:var(--ambar-f);color:var(--ambar)}.p3{background:var(--azul-f);color:var(--azul)}
+.onde{font-size:13px;color:var(--tinta3)}
+.achado p{color:var(--tinta2);font-size:14.5px}
+.achado p b{color:var(--tinta)}
+.exemplo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 4px;padding:12px;border-radius:8px;background:var(--bg);border:1px dashed var(--linha)}
+.exemplo small{font-size:12px;color:var(--tinta3);width:100%}
+.bt{display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:6px;font:600 13px "Segoe UI",system-ui,sans-serif;color:#fff}
+.bt.az{background:#0f6cbd}.bt.vd{background:#107c41}
+.seta{color:var(--tinta3)}
+.regua{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap}
+.regua span{display:inline-block;background:var(--azul);opacity:.75;border-radius:2px}
+.escala{display:grid;gap:6px;margin:10px 0}
+.escala div{display:grid;grid-template-columns:90px 1fr;gap:12px;align-items:baseline}
+.escala small{color:var(--tinta3);font:12px Consolas,monospace}
+.cores{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.cores span{display:inline-flex;align-items:center;gap:6px;font:12px Consolas,monospace;color:var(--tinta2)}
+.cores i{width:22px;height:22px;border-radius:5px;border:1px solid #0002}
+ol.plano{padding-left:22px;margin:8px 0}
+ol.plano li{margin:0 0 10px;max-width:72ch}
+ol.plano li b{color:var(--tinta)}
+.chave{background:var(--azul-f);border-radius:10px;padding:14px 16px;color:var(--tinta);margin:16px 0}
+.chave b{color:var(--azul)}
+code{font:13px Consolas,monospace;background:var(--chip);padding:1px 5px;border-radius:4px}
+@media (max-width:520px){h1{font-size:25px}.escala div{grid-template-columns:70px 1fr}}
+</style>
+
+<main>
+  <h1>Revisão de design do Painel Fiscal</h1>
+  <p class="lead">O que falta para o Painel ter cara de sistema de empresa: medido no código e olhado tela por tela, com o que mudar primeiro.</p>
+  <p class="meta">23/10/2026 · versão 2026.10.23.1 · telas vistas no modo demonstração (dados inventados) e no Painel de verdade, só olhando · nada foi alterado</p>
+
+  <div class="chave"><b>Resumo em uma frase:</b> o Painel já é bom de usar (rápido, tudo num lugar, jeito de Outlook), mas parece feito por camadas: cada redesenho foi colocado por cima do anterior, então convivem dois estilos, muitas medidas diferentes e algumas ações com cores trocadas. Uma régua única (letras, espaços, cores, cantos) e as peças únicas resolvem a maior parte, sem mudar o jeito de trabalhar.</div>
+
+  <h2>Notas por critério</h2>
+  <div class="notas">
+    <div class="nota" style="--p:40%;--c:var(--verm)"><b>4</b><span>Consistência entre telas</span><i></i></div>
+    <div class="nota" style="--p:60%;--c:var(--ambar)"><b>6</b><span>Hierarquia (o que olhar primeiro)</span><i></i></div>
+    <div class="nota" style="--p:50%;--c:var(--ambar)"><b>5</b><span>Limpeza (sem texto demais)</span><i></i></div>
+    <div class="nota" style="--p:70%;--c:var(--verde)"><b>7</b><span>Legibilidade</span><i></i></div>
+    <div class="nota" style="--p:60%;--c:var(--ambar)"><b>6</b><span>Acessibilidade</span><i></i></div>
+    <div class="nota" style="--p:80%;--c:var(--verde)"><b>8</b><span>Utilidade no dia a dia</span><i></i></div>
+  </div>
+  <p class="onde">De 0 a 10. "Utilidade" vai bem; "consistência" é o que mais pesa na impressão de produto sério.</p>
+
+  <h2>Os números do código</h2>
+  <p>Contados no estilo de todas as telas (<code>index.html</code> e as peças únicas). A coluna "o normal" é o que um sistema de design bem amarrado costuma ter.</p>
+  <div class="tabela"><table>
+    <thead><tr><th>Medida</th><th>Hoje</th><th>O normal</th><th>O que quer dizer</th></tr></thead>
+    <tbody>
+      <tr><td>Tamanhos de letra</td><td class="n ruim">26</td><td class="n">6–7</td><td>9 px, 9,5, 10, 10,5, 11, 11,5, 12, 12,5, 13, 13,5, 14… quase cada tela inventou o seu</td></tr>
+      <tr><td>Cores escritas no código</td><td class="n ruim">311</td><td class="n">~20 com nome</td><td>vários azuis e verdes parecidos, mas diferentes</td></tr>
+      <tr><td>Espaçamentos internos</td><td class="n ruim">203</td><td class="n">régua de ~8</td><td>cartões com 14, 16, 18, 20, 22, 24 ou 26 px de borda interna</td></tr>
+      <tr><td>Espaços entre itens</td><td class="n ruim">40</td><td class="n">~8</td><td>2, 3, 4, 5, 6, 7, 8, 10, 12, 14…</td></tr>
+      <tr><td>Raios de canto</td><td class="n ruim">24</td><td class="n">3–4</td><td>cartões de 14 px ao lado de caixas de 4 px</td></tr>
+      <tr><td>Sombras</td><td class="n ruim">47</td><td class="n">3</td><td>cada janela com uma sombra própria</td></tr>
+      <tr><td>Regras "forçadas" (<code>!important</code>)</td><td class="n ruim">295</td><td class="n">poucas</td><td>sinal de camada por cima de camada: uma regra nova brigando com a velha</td></tr>
+      <tr><td>Estilos de letra</td><td class="n ruim">2</td><td class="n">1 (+ 1 para números)</td><td>IBM Plex (tema verde antigo) e Segoe UI (Outlook escuro) misturados</td></tr>
+      <tr><td>Linhas de estilo</td><td class="n">2.144</td><td class="n">—</td><td>tudo dentro de um arquivo só, com o tema verde antigo ainda lá embaixo</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>O que mudar, em ordem</h2>
+
+  <div class="achado"><header><span class="pri p1">Prioridade 1</span><h3>A mesma ação com cores diferentes</h3><span class="onde">Notas fiscais · E-mails</span></header>
+    <p><b>"Enviar NF" é azul na ficha do pedido e verde no topo do e-mail.</b> Quem usa o sistema aprende a cor como atalho: se muda de uma tela para outra, a pessoa hesita. Regra: <b>uma cor por papel</b>. Azul = ação principal da tela; verde só para "deu certo".</p>
+    <div class="exemplo"><small>Hoje</small><span class="bt az">Enviar NF</span><span class="seta">na ficha ·</span><span class="bt vd">Enviar NF</span><span class="seta">no e-mail →</span><span class="bt az">Enviar NF</span><span class="seta">nos dois</span></div>
+  </div>
+
+  <div class="achado"><header><span class="pri p1">Prioridade 1</span><h3>Datas, CPF e CEP sem padrão</h3><span class="onde">Ficha do pedido · resumo do e-mail</span></header>
+    <p>Na ficha aparece <b>10/23/2026 19:43:40</b> (mês na frente, jeito americano, vindo da planilha) enquanto o resto do Painel mostra 23/10/2026. CPF/CNPJ e CEP aparecem só com números (<code>81242854795</code>, <code>19650406</code>), o telefone já formatado. Regra: <b>uma função só de formatar</b> data (dd/mm/aaaa hh:mm), CPF (000.000.000-00), CNPJ e CEP, usada em todas as telas. Isso já prepara o <b>CPF mascarado</b> que você aprovou (a mesma função mostra 123.***.***-09).</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p1">Prioridade 1</span><h3>Dois estilos convivendo</h3><span class="onde">Visão geral e Gerência × E-mails e barra lateral</span></header>
+    <p>E-mails, lateral e barra de botões seguem o Outlook escuro (Segoe, cantos de 4–6 px, linhas finas). Visão geral, Gerência e a ficha do pedido ainda têm a cara do tema verde antigo: cartões com canto de 14 px, títulos em letra condensada maiúscula, números em fonte de máquina. Ao trocar de tela parece outro programa. Regra: <b>um estilo só</b> (o do Outlook escuro, que você aprovou), com uma letra para texto e uma para números.</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p2">Prioridade 2</span><h3>Texto de ajuda demais na tela de trabalho</h3><span class="onde">Faixa de botões dos E-mails · ações da ficha · coluna das Notas fiscais</span></header>
+    <p>Com o modo professor ligado, cada botão ganha duas linhas de explicação embaixo e a coluna das Notas fiscais abre com um parágrafo de 8 linhas. Para quem está aprendendo ajuda, mas para quem trabalha o dia todo vira ruído e empurra o conteúdo. Proposta: a explicação vira <b>dica ao passar o mouse</b> e um ícone "?" discreto; o modo professor continua existindo, mas começa desligado para quem já usa.</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p2">Prioridade 2</span><h3>Porcentagens que assustam</h3><span class="onde">Visão geral · Resumo de ontem</span></header>
+    <p>"<b>▲ 908% · eram 12</b>" e "<b>▲ 332%</b>": quando a base é pequena, a porcentagem explode e parece alarme. Para o gerente o que conta é a diferença em quantidade. Proposta: mostrar "<b>+109 que na quinta passada</b>" e só usar % quando a base for pelo menos 20.</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p2">Prioridade 2</span><h3>Aviso flutuante em cima do conteúdo</h3><span class="onde">Canto de baixo à direita, todas as telas</span></header>
+    <p>A bolha "⚠ 1 aviso" fica por cima do que está embaixo dela (na ficha, tampa a legenda do "Marcar NF"). E o mesmo aviso aparece duas vezes: na bolha e no chip "Robô · problemas" da barra de baixo. Proposta: <b>um lugar só para avisos</b>, um sino no topo com o número, que abre a lista; a barra de baixo fica só com o estado (Central, robô, PCs).</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p2">Prioridade 2</span><h3>Ícones que não dizem o que são</h3><span class="onde">Barra da esquerda (só ícones)</span></header>
+    <p>A Gerência usa um <b>cadeado</b> (parece "bloqueado" ou "senha") e o Robô usa <b>setas de atualizar</b> (parece "recarregar"). Com a barra só de ícones, o ícone precisa falar sozinho. Proposta: gráfico de barras para Gerência, robô/engrenagem para o Robô, e o nome ao passar o mouse em todos.</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p3">Prioridade 3</span><h3>Telas vazias sem orientação</h3><span class="onde">Gerência · Notas fiscais</span></header>
+    <p>Na Gerência, quando falta comparação aparecem seis cartões com "0 · sem comparação" e a tabela "Por agente" só com o cabeçalho. Proposta: estado vazio com uma frase do porquê ("o mês anterior ainda não tem dados no Painel") e o que fazer.</p>
+  </div>
+
+  <div class="achado"><header><span class="pri p3">Prioridade 3</span><h3>Letras muito pequenas</h3><span class="onde">Rótulos em maiúsculas, legendas</span></header>
+    <p>Há textos de 9 a 10,5 px (rótulos em maiúsculas cinza). Em monitor comum e no fim do dia cansa. Proposta: nada abaixo de 12 px; rótulos de 12 px com espaçamento entre letras.</p>
+  </div>
+
+  <h2>A régua que eu proponho</h2>
+  <p>Uma vez só, com nome, usada por todas as telas (vai para o Catálogo de peças e para o <code>Padrão de design</code> do cofre).</p>
+  <h3>Letras: 7 tamanhos</h3>
+  <div class="escala">
+    <div><small>12 px</small><span style="font-size:12px">Rótulos e legendas</span></div>
+    <div><small>13 px</small><span style="font-size:13px">Texto de lista e tabela</span></div>
+    <div><small>14 px</small><span style="font-size:14px">Texto padrão</span></div>
+    <div><small>16 px</small><span style="font-size:16px;font-weight:600">Título de cartão</span></div>
+    <div><small>20 px</small><span style="font-size:20px;font-weight:600">Título de tela</span></div>
+    <div><small>28 px</small><span style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums">1.234</span><span class="onde">número de indicador</span></div>
+    <div><small>36 px</small><span style="font-size:36px;font-weight:600;font-variant-numeric:tabular-nums">95</span><span class="onde">número de destaque</span></div>
+  </div>
+  <h3>Espaços: 7 medidas</h3>
+  <div class="regua"><span style="width:4px;height:4px"></span><span style="width:8px;height:8px"></span><span style="width:12px;height:12px"></span><span style="width:16px;height:16px"></span><span style="width:24px;height:24px"></span><span style="width:32px;height:32px"></span><span style="width:48px;height:48px"></span><span class="onde">4 · 8 · 12 · 16 · 24 · 32 · 48 px</span></div>
+  <h3>Cantos e sombras</h3>
+  <p>Cantos: <b>4 px</b> (botões e campos), <b>8 px</b> (cartões), <b>12 px</b> (janelas), redondo (etiquetas). Sombras: 3 níveis (cartão, menu, janela).</p>
+  <h3>Cores: por papel, com nome</h3>
+  <div class="cores">
+    <span><i style="background:#1f1f1f"></i>fundo</span><span><i style="background:#262626"></i>cartão</span><span><i style="background:#333"></i>linha</span>
+    <span><i style="background:#f0f0f0"></i>texto</span><span><i style="background:#a8a8a8"></i>texto 2</span>
+    <span><i style="background:#479ef5"></i>ação principal</span><span><i style="background:#5ec27e"></i>deu certo</span>
+    <span><i style="background:#f2c76b"></i>atenção</span><span><i style="background:#ff8d95"></i>erro/urgente</span><span><i style="background:#86dccf"></i>ligação</span>
+  </div>
+
+  <h2>Como eu faria, por etapas</h2>
+  <ol class="plano">
+    <li><b>Régua e peças no Catálogo</b>: as cores, letras, espaços e as peças únicas que faltam (botão, cartão, indicador, tabela, cabeçalho de tela, estado vazio, sino de avisos). Você aprova pelo Catálogo antes de qualquer tela mudar.</li>
+    <li><b>Antes e depois de cada tela</b>, na ordem: Visão geral → Notas fiscais (ficha) → E-mails → Gerência → Robô e Máquinas. Uma por vez, com o seu OK.</li>
+    <li><b>Aplicar no Painel</b> tela por tela, com foto de comparação a cada entrega (para nada mudar sem querer).</li>
+    <li><b>Limpar o estilo velho</b>: tirar o tema verde antigo que ficou por baixo e separar o estilo por tela. Meta: metade das 2.144 linhas e menos de 50 regras forçadas, sem mudar nada visível.</li>
+  </ol>
+  <p>Primeiros consertos rápidos, que podem sair antes da régua inteira: cor do "Enviar NF", formato de data/CPF/CEP e as porcentagens da Visão geral.</p>
+  <p class="meta" style="margin-top:28px">Os exemplos desta página são desenhados; nenhum dado de hóspede aparece aqui.</p>
+</main>

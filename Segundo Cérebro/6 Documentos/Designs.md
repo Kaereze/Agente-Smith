@@ -15,6 +15,17 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 **Dados:** todas as páginas usam dados inventados ou do modo demonstração. E-mails viraram `exemplo.com.br`, telefones
 `(00) 0000-0000` e os CPF/CNPJ sorteados pelo modo demonstração viraram zeros. Conferido em 22/10/2026.
 
+## Revisões
+
+### Revisão de design do Painel · 23/10/2026
+Notas por critério, os números do código (26 tamanhos de letra, 311 cores, 203 espaçamentos, 295 regras forçadas), os
+problemas em ordem de prioridade ("Enviar NF" azul num lugar e verde no outro, datas no formato americano, dois estilos
+convivendo, texto de ajuda demais, porcentagens que assustam, aviso flutuante, ícones confusos) e a régua proposta
+(7 tamanhos de letra, 7 espaços, 3 cantos, cores por papel). Pedido do João: "revisão geral primeiro".
+- **Abrir a página:** [[2026-10-23 Revisao de design.html|Revisão de design]] · claude.ai: https://claude.ai/artifact/HGrXWP5T1RSyeVfAaMHAaY
+
+![[2026-10-23 Revisao de design.png|700]]
+
 ## Catálogo completo (para consulta)
 
 ### Catálogo de peças do Painel · 22/10/2026
