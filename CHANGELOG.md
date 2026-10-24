@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.24.1] — 2026-10-24
+
+### Mudou
+
+- **"Enviar NF" azul em todo lugar** (era verde no topo do e-mail): azul é a ação principal; verde fica para "deu certo".
+- **Formatos únicos** na ficha do pedido: data `dd/mm/aaaa hh:mm` (vinha `10/23/2026 19:43:40` da planilha), CPF
+  `000.000.000-00`, CNPJ `00.000.000/0000-00`, CEP `00000-000` (volta o zero que a planilha perde).
+- **Visão geral compara em quantidade**: "+109 que na quinta passada (12)" no lugar de "▲ 908% · eram 12"; % só com base
+  de 20 ou mais; verde quando melhora, vermelho quando piora, neutro em pedidos recebidos; tempo até a NF em "mais
+  rápido/mais lento".
+
 ## [2026.10.24] — 2026-10-24
 
 ### Corrigido

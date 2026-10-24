@@ -1313,7 +1313,7 @@ button.dest,.acoes button.dest{background:var(--atencao-fundo)!important;border-
 .rd-kpi b{font:600 26px var(--f-dado,"IBM Plex Mono");color:var(--tinta);font-variant-numeric:tabular-nums}
 .rd-kpi span{font-size:12px;color:var(--tinta-2)}
 .rd-kpi em{font-style:normal;font-weight:600}
-.sobe{color:var(--ok)}.desce{color:var(--erro)}
+.sobe{color:var(--ok)}.desce{color:var(--erro)}.rd-kpi em.neutro{color:var(--tinta-2)}   /* neutro: nem bom nem ruim (24/10/2026) */
 .rd-grade{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
 .rd-painel{background:var(--folha);border:1px solid var(--linha);border-radius:8px;overflow:hidden;min-width:0}
 .rd-tit{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--linha)}
@@ -2059,7 +2059,7 @@ html,body{background:#1f1f1f}
 .ol-resumo .rf-bts button{height:30px;padding:0 12px!important;border:1px solid #4a4a4a!important;border-radius:6px!important;background:#2b2b2b!important;
   color:#f0f0f0!important;font:13px "Segoe UI",system-ui,sans-serif!important;cursor:pointer}
 .ol-resumo .rf-bts button:hover{background:#3a3a3a!important}
-.ol-resumo .rf-bts button.p{background:#2e7d57!important;border-color:#2e7d57!important;color:#fff!important;font-weight:600!important}
+.ol-resumo .rf-bts button.p{background:#479ef5!important;border-color:#479ef5!important;color:#fff!important;font-weight:600!important}   /* 24/10/2026: azul como o Enviar NF da ficha (era verde) */
 .ol-resumo .rf-bts button:disabled{opacity:.45;cursor:default}
 .ol-resumo .rf2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ol-resumo .rf-rot{font-size:11px;font-weight:700;letter-spacing:.06em;color:#a8a8a8;text-transform:uppercase}
@@ -2322,6 +2322,22 @@ const quando = iso => { if(!iso) return ""; const d = new Date(iso); return isNa
 const hojeIsoF = () => new Date().toLocaleDateString("sv-SE");
 const ontemIso = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString("sv-SE"); };
 function horaDoCarimbo(c) { const m = String(c || "").match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, "0") + ":" + m[2] : ""; }
+// Formatos únicos (24/10/2026): data, CPF/CNPJ e CEP iguais em todas as telas. A planilha às vezes perde o zero da frente
+// (CPF com 10 dígitos, CNPJ com 13): volta o zero. Qualquer outra coisa sai como veio.
+const digitosDe = v => String(v ?? "").replace(/\D/g, "");
+function fmtDoc(v) {
+  let d = digitosDe(v);
+  if (d.length === 10 || d.length === 13) d = "0" + d;
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  return String(v ?? "");
+}
+function fmtCep(v) { const d = digitosDe(v); return d.length === 8 ? d.slice(0, 5) + "-" + d.slice(5) : String(v ?? ""); }
+function fmtCarimbo(s) {   // dd/mm/aaaa hh:mm: o dia já vem lido pelo servidor (s.data), a hora sai do carimbo da planilha
+  if (!s?.data) return String(s?.carimbo || "");
+  const [a, m, d] = s.data.split("-"), h = horaDoCarimbo(s.carimbo);
+  return `${d}/${m}/${a}${h ? " " + h : ""}`;
+}
 function chegou(iso) {   // "10:31" hoje · "Ontem" · "05/10"
   if (!iso) return "";
   const d = iso.slice(0, 10);
@@ -2979,7 +2995,7 @@ function desenharDetalhe() {
       <button class="fechar" id="d-fechar" aria-label="Fechar leitura">×</button></div>
     <header class="cab-msg"><h2>${esc(s.nome)}</h2>
       <div class="remet"><div class="avatar">${esc((s.nome || "?").trim().charAt(0).toUpperCase())}</div><b>Solicitação pelo formulário · ${esc(s.hotel)}</b>
-        <span class="quando">${esc(s.carimbo)}<br><span class="dado">linha ${s.linha}</span></span>
+        <span class="quando">${esc(fmtCarimbo(s))}<br><span class="dado">linha ${s.linha}</span></span>
         <span class="de">&lt;${esc(s.email)}&gt;</span></div>
       <div class="etiquetas">${etiquetasDoPedido(s)}
         ${s.prazo ? prazoHtml(s.prazo) : ""}
@@ -3027,10 +3043,10 @@ function fichaResumoHtml(s) {
   return `<section class="ficha-resumo" aria-label="Resumo do pedido">
     <div class="fr-grade">
       <div class="fr-bloco"><h4>Tomador da nota</h4><dl>
-        <dt>Nome</dt>${val(nomeTom)}<dt>CPF/CNPJ</dt>${val(docTom, true)}<dt>CEP</dt>${val(cep, true)}
+        <dt>Nome</dt>${val(nomeTom)}<dt>CPF/CNPJ</dt>${val(docTom && fmtDoc(docTom), true)}<dt>CEP</dt>${val(cep && fmtCep(cep), true)}
         ${endereco ? `<dt>Endereço</dt><dd>${esc(endereco)}</dd>` : ""}<dt>Telefone</dt>${opc(fone, true)}</dl></div>
       <div class="fr-bloco"><h4>Estadia</h4><dl>
-        <dt>Hotel</dt><dd>${esc(s.hotel)}</dd><dt>Titular</dt>${opc(titular)}${cpfTit ? `<dt>CPF titular</dt><dd class="dado">${esc(cpfTit)}</dd>` : ""}
+        <dt>Hotel</dt><dd>${esc(s.hotel)}</dd><dt>Titular</dt>${opc(titular)}${cpfTit ? `<dt>CPF titular</dt><dd class="dado">${esc(fmtDoc(cpfTit))}</dd>` : ""}
         <dt>Datas</dt>${entrada || saida ? `<dd class="dado">${esc(entrada || "?")} → ${esc(saida || "?")}</dd>` : `<dd class="falta">falta pedir</dd>`}</dl></div>
       <div class="fr-bloco"><h4>Como quer a nota</h4><dl>
         <dt>Pedido</dt>${opc(info)}<dt>Dividida</dt><dd>${s.dividida ? `sim${s.partes > 1 ? ` · ${s.partes} notas` : ""}` : esc(dividida || "não")}</dd>

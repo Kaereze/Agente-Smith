@@ -281,7 +281,18 @@ function resumoDiaHtml() {
   const a = numeros(dia), b = numeros(diaAntes);
   const abertos = TODOS.filter(it => it.tipo === "form" && it.s.situacao !== "concluida" && it.s.data <= dia);
   const vencidos = abertos.filter(it => (prazoInfo(it.s.prazo)?.resta ?? 1) <= 0).length;
-  const varPct = (x, y) => !y ? "" : (x >= y ? `<em class="sobe">▲ ${Math.round(100 * (x - y) / y)}%</em>` : `<em class="desce">▼ ${Math.round(100 * (y - x) / y)}%</em>`) + ` · eram ${y}`;
+  // Comparação em quantidade (24/10/2026: "▲ 908% · eram 12" parecia alarme). % só com base de 20 ou mais.
+  // bom: +1 = subir é bom (verde), -1 = descer é bom, 0 = neutro
+  const diaPassado = (() => { const n = new Date(diaAntes + "T12:00").toLocaleDateString("pt-BR", { weekday: "long" }).split("-")[0];
+    return /sábado|domingo/.test(n) ? `no ${n} passado` : `na ${n} passada`; })();
+  const varN = (x, y, bom) => {
+    if (!x && !y) return "";
+    const d = x - y;
+    if (!d) return `igual ${diaPassado.startsWith("no") ? "ao" : "à"} ${diaPassado.slice(3)} (${y})`;
+    const cls = !bom ? "neutro" : (d > 0) === (bom > 0) ? "sobe" : "desce";
+    const pct = y >= 20 ? ` (${d > 0 ? "+" : "−"}${Math.abs(Math.round(100 * d / y))}%)` : "";
+    return `<em class="${cls}">${d > 0 ? "+" : "−"}${Math.abs(d)}${pct}</em> que ${diaPassado} (${y})`;
+  };
   const fmtH = h => h == null ? "—" : h < 1 ? Math.round(h * 60) + " min" : Math.round(h) + " h";
   const nomeDia = base.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit" });
   const porAgente = {};
@@ -298,10 +309,12 @@ function resumoDiaHtml() {
         <button type="button" data-rd="ontem" aria-pressed="${pn.resumo === "ontem"}">Ontem</button>
         <button type="button" data-rd="hoje" aria-pressed="${pn.resumo === "hoje"}">Hoje</button></div></div>
     <div class="rd-kpis">
-      <div class="rd-kpi"><small>Pedidos recebidos</small><b>${a.recebidos.length}</b><span>${varPct(a.recebidos.length, b.recebidos.length) || "pelo formulário"}</span></div>
-      <div class="rd-kpi"><small>NFs enviadas</small><b>${a.nfs}</b><span>${varPct(a.nfs, b.nfs) || "pelo Painel e Outlook"}</span></div>
-      <div class="rd-kpi"><small>Enviadas no prazo</small><b>${a.noPrazo == null ? "—" : a.noPrazo + "%"}</b><span>${b.noPrazo == null ? "prazo de 48 h" : `era ${b.noPrazo}%`}</span></div>
-      <div class="rd-kpi"><small>Tempo até a NF</small><b>${fmtH(a.mediana)}</b><span>mediana${b.mediana != null ? ` · era ${fmtH(b.mediana)}` : ""}</span></div>
+      <div class="rd-kpi"><small>Pedidos recebidos</small><b>${a.recebidos.length}</b><span>${varN(a.recebidos.length, b.recebidos.length, 0) || "pelo formulário"}</span></div>
+      <div class="rd-kpi"><small>NFs enviadas</small><b>${a.nfs}</b><span>${varN(a.nfs, b.nfs, 1) || "pelo Painel e Outlook"}</span></div>
+      <div class="rd-kpi"><small>Enviadas no prazo</small><b>${a.noPrazo == null ? "—" : a.noPrazo + "%"}</b><span>${b.noPrazo == null || a.noPrazo == null ? "prazo de 48 h" : a.noPrazo === b.noPrazo ? `igual (era ${b.noPrazo}%)`
+        : `<em class="${a.noPrazo > b.noPrazo ? "sobe" : "desce"}">${a.noPrazo > b.noPrazo ? "+" : "−"}${Math.abs(a.noPrazo - b.noPrazo)} pontos</em> (era ${b.noPrazo}%)`}</span></div>
+      <div class="rd-kpi"><small>Tempo até a NF</small><b>${fmtH(a.mediana)}</b><span>${a.mediana == null || b.mediana == null || Math.round(a.mediana) === Math.round(b.mediana) ? `mediana${b.mediana != null ? ` · era ${fmtH(b.mediana)}` : ""}`
+        : `<em class="${a.mediana < b.mediana ? "sobe" : "desce"}">${fmtH(Math.abs(b.mediana - a.mediana))} ${a.mediana < b.mediana ? "mais rápido" : "mais lento"}</em> (era ${fmtH(b.mediana)})`}</span></div>
       <div class="rd-kpi"><small>Ficaram para ${pn.resumo === "ontem" ? "hoje" : "amanhã"}</small><b>${abertos.length}</b><span class="${vencidos ? "desce" : ""}">${vencidos ? vencidos + " já vencido" + (vencidos > 1 ? "s" : "") : "nenhum vencido"}</span></div>
     </div>
     <div class="rd-grade">
