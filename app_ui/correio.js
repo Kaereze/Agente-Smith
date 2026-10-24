@@ -24,6 +24,7 @@ async function carregarCorreio(soSeMudou = false) {   // soSeMudou: volta autom�
     if (typeof desenharSeletorCaixa === "function") desenharSeletorCaixa();
     if (pn.vista === "correio") desenharCorreio();
     else if (pn.vista === "fila") desenharAbasNotas();   // e-mails chegaram: atualiza os números das abas
+    else if (pn.vista === "visao" && typeof desenharVisao === "function") desenharVisao();   // 23/10/2026: abria com "E-mails na caixa: 0"
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
 

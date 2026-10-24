@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.24] — 2026-10-24
+
+### Corrigido
+
+- **Visão geral abria com "E-mails na caixa: 0" e "Enviados 72 h: 0"** até a próxima atualização: a tela era desenhada
+  antes de os e-mails chegarem e não era redesenhada quando eles chegavam (`carregarCorreio`).
+
 ## [2026.10.23.1] — 2026-10-23
 
 ### Mudou
