@@ -17,8 +17,7 @@ tags: [cerebro/inicio]
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (23/10/2026)
-- 23/10: **cópia rápida dos formulários pronta e testada** (pedido no Painel em ~10-20 s), **esperando o OK do João** para
-  subir (código no commit `082e4bd`, voltado em `7eba119`). Nova direção: sistema de controle do financeiro
+- 23/10: **cópia rápida dos formulários no ar** (2026.10.23.1): pedido no Painel em ~10-20 s. Nova direção: sistema de controle do financeiro
   ([[Marcos do projeto]]). Na fila de hoje: revisão geral do design, CPF mascarado, tarefas automáticas no Painel,
   cronograma até dezembro com o plano do Supabase. Ver [[2026-10-23]].
 

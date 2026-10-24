@@ -3,6 +3,7 @@ import datetime
 import json
 import msvcrt
 import os
+import time
 
 import pywintypes
 import win32api
@@ -55,22 +56,36 @@ def _criar_lock_atomicamente():
     return True
 
 
-def adquirir_lock():
+def adquirir_lock(esperar=0):
+    """esperar: segundos tentando de novo (1 por segundo) antes de desistir. A vigia dos formulários (23/10/2026) segura a
+    trava por poucos segundos: a rodada das 10 em 10 espera em vez de pular a cópia e o envio."""
+    fim = time.monotonic() + esperar
+    while True:
+        ultima = time.monotonic() >= fim
+        if _tentar_lock(avisar=ultima):
+            return True
+        if ultima:
+            return False
+        time.sleep(max(0.05, min(1.0, fim - time.monotonic())))
+
+
+def _tentar_lock(avisar=True):
     os.makedirs(os.path.dirname(ARQUIVO_LOCK), exist_ok=True)
     with open(_ARQUIVO_MUTEX, "a+b") as arquivo_mutex:
         try:
             msvcrt.locking(arquivo_mutex.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError:
-            logger.warning("⚠️ Outra execução está começando exatamente agora — esta desiste.")
+            if avisar:
+                logger.warning("⚠️ Outra execução está começando exatamente agora — esta desiste.")
             return False
         try:
-            return _decidir_e_adquirir_lock()
+            return _decidir_e_adquirir_lock(avisar)
         finally:
             arquivo_mutex.seek(0)
             msvcrt.locking(arquivo_mutex.fileno(), msvcrt.LK_UNLCK, 1)
 
 
-def _decidir_e_adquirir_lock():
+def _decidir_e_adquirir_lock(avisar=True):
     if _criar_lock_atomicamente():
         return True
     try:
@@ -81,6 +96,8 @@ def _decidir_e_adquirir_lock():
         dados_lock = {}
 
     if not _lock_esta_orfao(dados_lock):
+        if not avisar:
+            return False
         logger.warning(f"⚠️ Já existe uma execução rodando (PID {dados_lock.get('pid')}, "
                        f"iniciada {dados_lock.get('iniciado_em')}) — esta desiste pra não duplicar.")
         return False
