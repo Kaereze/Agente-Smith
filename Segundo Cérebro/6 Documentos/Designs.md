@@ -17,6 +17,13 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Consertos rápidos · 24/10/2026
+Antes e depois dos 3 consertos que saem da revisão: "Enviar NF" azul em todo lugar, data/CPF/CNPJ/CEP num formato só
+(CPF mascarado com "Mostrar" registrado) e comparações em número em vez de porcentagem que assusta. Esperando o OK.
+- **Abrir a página:** [[2026-10-24 Consertos rapidos.html|Consertos rápidos]] · claude.ai: https://claude.ai/artifact/TeWCp4fDWtcq4vFJHoTjos
+
+![[2026-10-24 Consertos rapidos.png|700]]
+
 ### Revisão de design do Painel · 23/10/2026
 Notas por critério, os números do código (26 tamanhos de letra, 311 cores, 203 espaçamentos, 295 regras forçadas), os
 problemas em ordem de prioridade ("Enviar NF" azul num lugar e verde no outro, datas no formato americano, dois estilos

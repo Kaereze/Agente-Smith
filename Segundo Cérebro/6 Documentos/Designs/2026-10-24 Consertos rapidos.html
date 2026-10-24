@@ -1,0 +1,129 @@
+<title>Consertos rápidos de design</title>
+<style>
+:root{--bg:#161616;--painel:#1f1f1f;--card:#262626;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8a8a8a;--azul:#0f6cbd;--azul-c:#479ef5;--verde:#107c41;--verde-t:#8fd19e;--verde-f:#173b2a;--verm:#ff8d95;--ambar:#f2c76b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:14px/1.55 "Segoe UI",system-ui,sans-serif}
+main{max-width:1020px;margin:0 auto;padding-block:36px 72px;padding-inline:16px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.lead{color:var(--tinta2);margin:0 0 30px;max-width:72ch}
+section{margin:0 0 40px}
+h2{font-size:18px;margin:0 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul-c)}
+.desc{color:var(--tinta2);margin:0 0 14px;max-width:78ch;font-size:13.5px}
+.lado{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:10px;overflow:hidden;min-width:0}
+.caixa > b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--linha);color:var(--tinta3)}
+.caixa.depois > b{color:var(--verde-t)}
+.palco{padding:16px 14px;display:grid;gap:12px}
+.rot{font-size:11.5px;color:var(--tinta3)}
+.linha{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bt{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:4px;border:1px solid transparent;font:600 13px "Segoe UI",system-ui,sans-serif;color:#fff;cursor:default}
+.bt.az{background:var(--azul)}.bt.vd{background:var(--verde)}.bt.sec{background:none;border-color:#5a5a5a;color:var(--tinta)}
+.bt svg{width:14px;height:14px}
+.etq{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:10px;font:600 11.5px "Segoe UI";background:var(--verde-f);color:var(--verde-t)}
+dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:6px 12px;margin:0;font-size:13px}
+dt{color:var(--tinta3)}dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mostrar{height:22px;padding:0 8px;border-radius:4px;border:1px solid #4a4a4a;background:none;color:var(--azul-c);font:600 11.5px "Segoe UI";cursor:pointer}
+.ruim{color:var(--verm)}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kpi{background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.kpi small{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3)}
+.kpi b{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi span{font-size:12px;color:var(--tinta2)}
+.sobe{color:#5aa9ff;font-style:normal}.bom{color:var(--verde-t);font-style:normal}.neutro{color:var(--tinta2);font-style:normal}.pior{color:var(--verm);font-style:normal}
+.regra{background:#16233a;border:1px solid #2d4a6e;border-radius:8px;padding:10px 14px;font-size:13px;color:#cfe0f5;margin-top:12px;max-width:86ch}
+.regra b{color:#fff}
+.perg{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px;margin-top:8px}
+.perg ol{margin:6px 0 0;padding-left:20px;color:var(--tinta2);display:grid;gap:6px}
+.perg b{color:var(--tinta)}
+.nota{font-size:12px;color:var(--tinta3);margin-top:26px}
+@media (max-width:520px){dl{grid-template-columns:96px minmax(0,1fr)}.kpis{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<main>
+  <h1>Os 3 consertos rápidos</h1>
+  <p class="lead">Da revisão de design de 23/10: os que mais pesam e saem rápido, antes da régua inteira. Cada um com o antes e o depois, no estilo do Painel escuro. Dados inventados.</p>
+
+  <section>
+    <h2><span>Conserto 1</span>"Enviar NF" com uma cor só</h2>
+    <p class="desc">Hoje o botão é azul na ficha do pedido e verde no topo do e-mail. A mesma ação muda de cor de uma tela para outra. Depois: <b>azul em todo lugar</b>, porque azul é a ação principal da tela. O verde fica só para "deu certo" (a etiqueta "NF enviada").</p>
+    <div class="lado">
+      <div class="caixa"><b>Antes</b><div class="palco">
+        <div class="rot">Ficha do pedido (Notas fiscais)</div>
+        <div class="linha"><span class="bt az"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12 20 4l-6 16-3-7z"/></svg>Enviar NF</span><span class="bt sec">Assumir</span><span class="bt sec">Pedir o que falta</span></div>
+        <div class="rot">Topo do e-mail (E-mails)</div>
+        <div class="linha"><span class="etq">✓ NF enviada · 1552</span><span class="bt sec">Marcar tratativa</span><span class="bt vd">Enviar NF</span></div>
+      </div></div>
+      <div class="caixa depois"><b>Depois</b><div class="palco">
+        <div class="rot">Ficha do pedido (Notas fiscais)</div>
+        <div class="linha"><span class="bt az"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12 20 4l-6 16-3-7z"/></svg>Enviar NF</span><span class="bt sec">Assumir</span><span class="bt sec">Pedir o que falta</span></div>
+        <div class="rot">Topo do e-mail (E-mails)</div>
+        <div class="linha"><span class="etq">✓ NF enviada · 1552</span><span class="bt sec">Marcar tratativa</span><span class="bt az"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12 20 4l-6 16-3-7z"/></svg>Enviar NF</span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span>Conserto 2</span>Data, CPF, CNPJ e CEP no mesmo formato em todo lugar</h2>
+    <p class="desc">Hoje a ficha mostra a data do formulário como veio da planilha (mês na frente) e o CPF e o CEP só com números. Depois: <b>uma função só de formatar</b>, usada por todas as telas. O CPF já sai <b>mascarado</b>, como você aprovou, com o botão <b>Mostrar</b>, que fica registrado (quem viu e quando).</p>
+    <div class="lado">
+      <div class="caixa"><b>Antes</b><div class="palco">
+        <dl>
+          <dt>Pedido em</dt><dd class="ruim">10/23/2026 19:43:40</dd>
+          <dt>CPF/CNPJ</dt><dd>12345678909</dd>
+          <dt>CPF titular</dt><dd>98765432100</dd>
+          <dt>CEP</dt><dd>01001000</dd>
+          <dt>Telefone</dt><dd>(00) 90000-0000</dd>
+        </dl>
+      </div></div>
+      <div class="caixa depois"><b>Depois</b><div class="palco">
+        <dl>
+          <dt>Pedido em</dt><dd>23/10/2026 19:43</dd>
+          <dt>CPF/CNPJ</dt><dd>123.***.***-09 <button class="mostrar" type="button" data-cpf="123.456.789-09">Mostrar</button></dd>
+          <dt>CPF titular</dt><dd>987.***.***-00 <button class="mostrar" type="button" data-cpf="987.654.321-00">Mostrar</button></dd>
+          <dt>CEP</dt><dd>01001-000</dd>
+          <dt>Telefone</dt><dd>(00) 90000-0000</dd>
+        </dl>
+        <div class="rot">Clique em Mostrar para ver como fica. No Painel, isso grava: "João viu o CPF de Gustavo O. M. às 19:50".</div>
+      </div></div>
+    </div>
+    <div class="regra"><b>Como fica seguro de verdade:</b> o servidor já manda o CPF mascarado para a tela. O número inteiro só vem quando alguém clica em <b>Mostrar</b> ou em <b>Copiar dados</b> (para o emissor da NF), e cada vez fica registrado. Esconder só na tela não bastaria: o número continuaria no navegador.</div>
+  </section>
+
+  <section>
+    <h2><span>Conserto 3</span>Comparação sem porcentagem que assusta</h2>
+    <p class="desc">Hoje, quando a base é pequena, a porcentagem explode ("▲ 908% · eram 12") e parece alarme. Para quem lê, o que importa é quanto mudou em quantidade. Depois: <b>a diferença em número</b>, e a porcentagem só quando a base for de pelo menos 20. A cor diz se foi bom ou ruim: mais NF enviada é verde; mais tempo até a NF é vermelho; mais pedidos recebidos é neutro (não é bom nem ruim).</p>
+    <div class="lado">
+      <div class="caixa"><b>Antes</b><div class="palco"><div class="kpis">
+        <div class="kpi"><small>Pedidos recebidos</small><b>95</b><span><em class="sobe">▲ 332%</em> · eram 22</span></div>
+        <div class="kpi"><small>NFs enviadas</small><b>121</b><span><em class="sobe">▲ 908%</em> · eram 12</span></div>
+        <div class="kpi"><small>Enviadas no prazo</small><b>83%</b><span>era 55%</span></div>
+        <div class="kpi"><small>Tempo até a NF</small><b>32 h</b><span>mediana · era 44 h</span></div>
+      </div></div></div>
+      <div class="caixa depois"><b>Depois</b><div class="palco"><div class="kpis">
+        <div class="kpi"><small>Pedidos recebidos</small><b>95</b><span><em class="neutro">+73</em> que na quinta passada (22)</span></div>
+        <div class="kpi"><small>NFs enviadas</small><b>121</b><span><em class="bom">+109</em> que na quinta passada (12)</span></div>
+        <div class="kpi"><small>Enviadas no prazo</small><b>83%</b><span><em class="bom">+28 pontos</em> (era 55%)</span></div>
+        <div class="kpi"><small>Tempo até a NF</small><b>32 h</b><span><em class="bom">12 h mais rápido</em> (era 44 h)</span></div>
+      </div></div></div>
+    </div>
+  </section>
+
+  <div class="perg"><b>Para eu fazer, preciso de 2 respostas:</b>
+    <ol>
+      <li><b>Copiar dados</b> (para colar no emissor da NF) copia o CPF inteiro e fica registrado. Pode ser assim?</li>
+      <li>Quem pode ver o registro de "quem viu o CPF"? Sugestão: só você (usuário João), como as outras opções de administrador.</li>
+    </ol>
+  </div>
+  <p class="nota">Desenho de 24/10/2026. Nomes, CPFs e números desta página são inventados.</p>
+</main>
+
+<script>
+document.addEventListener("click", ev => {
+  const b = ev.target.closest(".mostrar");
+  if (!b) return;
+  const dd = b.parentElement, mostrado = b.textContent === "Esconder";
+  dd.firstChild.textContent = mostrado ? b.dataset.cpf.replace(/^(\d{3})\.\d{3}\.\d{3}-(\d{2})$/, "$1.***.***-$2") + " " : b.dataset.cpf + " ";
+  b.textContent = mostrado ? "Mostrar" : "Esconder";
+});
+</script>
