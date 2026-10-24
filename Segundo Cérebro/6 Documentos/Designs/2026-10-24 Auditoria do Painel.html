@@ -1,0 +1,137 @@
+<title>Auditoria do Painel Fiscal</title>
+<style>
+:root{--bg:#f6f7f8;--folha:#fff;--linha:#e2e5e9;--tinta:#1b1f24;--tinta2:#4b5560;--tinta3:#6b7580;--azul:#0f6cbd;--azul-f:#e7f1fb;--verde:#107c41;--verde-f:#e6f4ec;--ambar:#9a6700;--ambar-f:#fdf3dc;--verm:#c4314b;--verm-f:#fbe9ec;--chip:#eef1f4;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:15px/1.6 "Segoe UI",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding-block:40px 80px;padding-inline:20px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px;letter-spacing:-.015em;text-wrap:balance}
+h2{font-size:21px;margin:48px 0 12px;letter-spacing:-.01em}
+h3{font-size:16px;margin:0 0 4px}
+p{margin:0 0 12px;max-width:74ch}
+.lead{color:var(--tinta2);font-size:16px}
+.meta{font-size:13px;color:var(--tinta3);margin:0 0 26px}
+.geral{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--folha);border:1px solid var(--linha);border-radius:14px;padding:20px 24px;margin:8px 0 18px}
+.geral .n{font:700 56px/1 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.geral .n small{font-size:20px;color:var(--tinta3);font-weight:600}
+.geral p{margin:0;color:var(--tinta2)}
+.geral b{color:var(--tinta)}
+.areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.area{background:var(--folha);border:1px solid var(--linha);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.area .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.area b{font:700 22px/1 "Segoe UI";font-variant-numeric:tabular-nums}
+.area span{font-size:13.5px;font-weight:600}
+.area small{font-size:12.5px;color:var(--tinta2);line-height:1.45}
+.area i{display:block;height:4px;border-radius:2px;background:var(--chip);overflow:hidden}
+.area i::after{content:"";display:block;height:100%;width:var(--p);background:var(--c)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--folha);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3);font-weight:600}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.tabela{overflow-x:auto}
+.st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:10px;white-space:nowrap}
+.ok{background:var(--verde-f);color:var(--verde)}.par{background:var(--ambar-f);color:var(--ambar)}.nao{background:var(--verm-f);color:var(--verm)}
+.achado{background:var(--folha);border:1px solid var(--linha);border-radius:12px;padding:16px 20px;margin:12px 0}
+.achado header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.pri{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+.p0{background:var(--verm-f);color:var(--verm)}.p1{background:var(--ambar-f);color:var(--ambar)}.p2{background:var(--azul-f);color:var(--azul)}
+.achado p{color:var(--tinta2);font-size:14.5px;margin:0 0 6px}
+.achado p b{color:var(--tinta)}
+.chave{background:var(--azul-f);border-radius:10px;padding:14px 16px;margin:14px 0;max-width:80ch}
+.chave b{color:var(--azul)}
+code{font:13px Consolas,monospace;background:var(--chip);padding:1px 5px;border-radius:4px}
+@media (max-width:520px){h1{font-size:25px}.geral{grid-template-columns:1fr}.geral .n{font-size:44px}}
+</style>
+
+<main>
+  <h1>Auditoria do Painel Fiscal</h1>
+  <p class="lead">O projeto olhado de ponta a ponta: como os dados chegam (comparando com o Outlook), falhas, segurança, LGPD, código, design e o que um sistema financeiro de empresa grande precisa ter.</p>
+  <p class="meta">24/10/2026 · versão 2026.10.24.1 · medido no Painel de verdade só olhando (contagens, sem abrir e-mail) e no modo demonstração · nada foi alterado · skills usadas: code-review, security-review, codebase-design, impeccable, gdpr-data-handling</p>
+
+  <div class="geral"><div class="n">6,6<small> /10</small></div>
+    <p><b>Muito bom no que faz hoje, ainda não pronto para virar o sistema financeiro da empresa.</b> Os dados chegam certos e rápidos (o Painel bate 100% com o Outlook) e a entrega é cuidadosa (527 testes, testes no GitHub, cofre, manual de incidentes). O que puxa a nota para baixo é o que uma empresa grande cobra: não tem login nem perfis, tudo depende do PC do João, a Planilha Central já está no limite como banco de dados e o código da tela cresceu por camadas.</p></div>
+
+  <h2>Nota por área</h2>
+  <div class="areas">
+    <div class="area" style="--p:85%;--c:var(--verde)"><div class="t"><span>Dados chegando</span><b>8,5</b></div><i></i><small>Outlook × Painel 100%; formulário em ~10-20 s; NF do Dropbox em 10 s.</small></div>
+    <div class="area" style="--p:80%;--c:var(--verde)"><div class="t"><span>Testes e entrega</span><b>8</b></div><i></i><small>527 testes, GitHub Actions, trava de segredos, changelog. Falta teste de tela automático.</small></div>
+    <div class="area" style="--p:80%;--c:var(--verde)"><div class="t"><span>Documentação</span><b>8</b></div><i></i><small>Cofre, manual "Se o robô parar", guia do dev. Depende de quem escreve manter.</small></div>
+    <div class="area" style="--p:70%;--c:var(--ambar)"><div class="t"><span>Confiabilidade</span><b>7</b></div><i></i><small>Sem duplicar envio (3.000 pedidos simulados). Ponto único de falha: o PC do João.</small></div>
+    <div class="area" style="--p:60%;--c:var(--ambar)"><div class="t"><span>Segurança</span><b>6</b></div><i></i><small>Rede assinada e servidor local fechado. Sem login; tráfego da rede sem criptografia.</small></div>
+    <div class="area" style="--p:60%;--c:var(--ambar)"><div class="t"><span>Design e uso</span><b>6</b></div><i></i><small>Útil (8), pouco consistente (4). Consertos de hoje no ar; régua pendente.</small></div>
+    <div class="area" style="--p:50%;--c:var(--verm)"><div class="t"><span>Código e arquitetura</span><b>5</b></div><i></i><small>Dois arquivos concentram quase tudo e mudam todo dia.</small></div>
+    <div class="area" style="--p:50%;--c:var(--verm)"><div class="t"><span>LGPD e governança</span><b>5</b></div><i></i><small>Faxina e inventário existem. Falta registro de acesso, prazo por tipo de dado e pedido do titular.</small></div>
+    <div class="area" style="--p:50%;--c:var(--verm)"><div class="t"><span>Banco de dados</span><b>5</b></div><i></i><small>Planilha Central: 57 de 60 leituras/min já repartidas; sem transação nem perfil.</small></div>
+  </div>
+
+  <h2>Como os dados estão chegando (comparado com o Outlook)</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Caminho</th><th>Medido</th><th>Como</th></tr></thead>
+    <tbody>
+      <tr><td>Caixa de Entrada do Outlook × Painel</td><td class="n"><b>86 = 86</b> (100%)</td><td>Contagem nas 17 caixas do PC do João, sem abrir e-mail. A única diferença era uma solicitação do robô, que aparece em Notas fiscais e não na lista de e-mails, como deve ser. Uma diferença na LAGOA (e-mail saindo naquele minuto) fechou sozinha em seguida.</td></tr>
+      <tr><td>Formulário do hóspede → Painel</td><td class="n">~10-20 s</td><td>Vigia do Drive (no ar desde 23/10): 8 cópias até agora, cópia mediana de 7,3 s (a mais lenta 64,8 s, esperando a cota). Medição de 22/10: o Drive avisa em 1-2 s (caso raro: 3 min).</td></tr>
+      <tr><td>E-mail novo → Painel</td><td class="n">~10-30 s</td><td>Vigia do Outlook a cada 10 s + aviso aos Painéis pela rede (21/10).</td></tr>
+      <tr><td>NF salva no Dropbox → etiqueta "NF emitida"</td><td class="n">~10 s</td><td>Pasta olhada a cada 10 s.</td></tr>
+      <tr><td>Enviar NF pelo Painel → sai do Outlook</td><td class="n">segundos</td><td>Direto pela rede ao PC dono da caixa. <b>Depende do Outlook desse PC estar saindo.</b></td></tr>
+      <tr><td>Cota do Google</td><td class="n">57 de 60</td><td>Leituras por minuto já repartidas entre os 4 PCs. Pouca folga para módulos novos.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="chave"><b>Achado do dia:</b> a Caixa de Saída do Outlook do Cristian está travada (11 e-mails) e por isso 9 pedidos de PAMPULHA e BARRA estão sem envio ao hotel há mais de 2 h. O Painel mostra o aviso, mas ninguém é chamado. É exatamente o que o alerta automático "robô/PC parado" (já aprovado) vai resolver.</div>
+
+  <h2>O que corrigir, em ordem</h2>
+
+  <div class="achado"><header><span class="pri p0">Agora</span><h3>Alerta ativo quando a Caixa de Saída trava</h3></header>
+    <p>Hoje o aviso só aparece para quem olhar o Painel. Proposta: a tarefa automática "robô/PC parado" (aprovada em 23/10) avisa no Windows e no sino do Painel quem é o dono da caixa e o João, com o que fazer ("abra o Outlook, veja se está em Trabalhar Offline"). Já começar pela caixa do Cristian.</p></div>
+
+  <div class="achado"><header><span class="pri p0">Agora</span><h3>Um canal de teste antes de chegar aos 4 PCs</h3></header>
+    <p>Hoje <b>todo commit vira atualização</b>: os PCs puxam sozinhos a cada 15 min e o do João reinicia em 5 min (foi o tropeço de 23/10). Proposta: os PCs só atualizam quando a versão tem etiqueta (<code>2026.10.24.1</code>) ou com o "Atualizar todos"; commit sem etiqueta fica só no GitHub. É o que empresas chamam de homologação.</p></div>
+
+  <div class="achado"><header><span class="pri p0">Agora</span><h3>Tirar e-mail de hóspede dos arquivos de registro</h3></header>
+    <p>O <code>painel.log</code> tem 14 linhas com e-mail de hóspede (ex.: "Novo e-mail de … para …"). Registro técnico não precisa do dado: troca por <code>m***@gmail.com</code>.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas semanas</span><h3>O PC do João não pode ser o único</h3></header>
+    <p>Cópia dos formulários, envio aos hotéis, vigia e faxina rodam só no PC principal. Se ele desligar, tudo isso para (os outros continuam lendo). Proposta: um segundo PC assume sozinho se o principal ficar sem sinal por 15 min, e devolve quando ele voltar.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas semanas</span><h3>Login simples e perfis (gerente × operador)</h3></header>
+    <p>Hoje quem está no PC "é" o agente escolhido na lista; só o usuário João é protegido. Para o sistema financeiro: entrar com o usuário do Windows ou um PIN, perfil gerente (vê tudo, relatórios) e operador (as caixas dele), e um registro de quem fez e viu o quê (trilha de auditoria).</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas semanas</span><h3>Separar os dois arquivos gigantes</h3></header>
+    <p><code>index.html</code> (3.450 linhas: estilo, tela e lógica juntos) e <code>app_servidor.py</code> (2.074 linhas: estado, todas as rotas, envio, rede) entraram em 120 das 237 entregas do último mês. Na linguagem da skill codebase-design: são módulos <b>rasos</b>, onde qualquer mudança mexe em tudo. Proposta: estilo em arquivos por tela (junto com a régua de design) e o servidor dividido em módulos <b>profundos</b> por assunto (correio, envio, notas, relatórios), cada um com teste próprio. Sem mudar nada visível.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas semanas</span><h3>Criptografar o que passa entre os PCs</h3></header>
+    <p>Os pedidos entre PCs são assinados (ninguém de fora consegue falar com o Painel), mas o conteúdo (pesquisa, texto de e-mail) passa aberto na rede da empresa. Proposta: cifrar o conteúdo com o segredo que os 4 PCs já têm (AES-GCM). Para a LGPD, conta como "dado protegido em trânsito".</p></div>
+
+  <div class="achado"><header><span class="pri p2">Até dezembro</span><h3>Banco de dados de verdade (Supabase) e os módulos financeiros</h3></header>
+    <p>A Planilha Central já usa 57 de 60 leituras por minuto. Para contas a pagar, faturamento, caixa, cancelamentos e substituições, o caminho é um banco (Supabase/Postgres): tempo real, perfis de acesso no próprio banco, histórico de cada mudança e backup automático. Migração aos poucos, com a planilha funcionando junto até a virada.</p></div>
+
+  <div class="achado"><header><span class="pri p2">Até dezembro</span><h3>Testes de tela automáticos e política de dados completa</h3></header>
+    <p>Teste das telas no modo demonstração rodando no GitHub a cada mudança (hoje os testes são do servidor e do código da tela, não da tela desenhada). E a política LGPD fechada: prazo de guarda por tipo de dado (índice de e-mails, 144 cópias da Central, registros), como atender o hóspede que pede para apagar ou ver os dados dele, e quem tem acesso à Planilha Central.</p></div>
+
+  <h2>O que um sistema financeiro de empresa grande tem (e onde o Painel está)</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Item</th><th>Painel hoje</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>Testes automáticos e revisão a cada mudança</td><td><span class="st ok">Tem</span></td><td>527 testes, GitHub Actions, trava de segredos.</td></tr>
+      <tr><td>Versões e histórico de mudanças</td><td><span class="st ok">Tem</span></td><td>Versão por data, etiqueta, CHANGELOG, diário no cofre.</td></tr>
+      <tr><td>Documentação e manual de incidentes</td><td><span class="st ok">Tem</span></td><td>Segundo Cérebro, "Se o robô parar", guia do dev.</td></tr>
+      <tr><td>Monitoramento</td><td><span class="st par">Em parte</span></td><td>Saúde, Máquinas e avisos no Painel; falta chamar alguém (alertas automáticos aprovados).</td></tr>
+      <tr><td>Trilha de auditoria (quem fez o quê)</td><td><span class="st par">Em parte</span></td><td>Envios, tratativas e eventos ficam registrados; quem viu ou alterou dados, não.</td></tr>
+      <tr><td>Backup e recuperação</td><td><span class="st par">Em parte</span></td><td>Cópias da Central e histórico do Google; a volta nunca foi ensaiada.</td></tr>
+      <tr><td>Ambiente de teste (homologação)</td><td><span class="st par">Em parte</span></td><td>Cópias e modo demonstração; mas commit já chega aos PCs.</td></tr>
+      <tr><td>Criptografia</td><td><span class="st par">Em parte</span></td><td>Google e Outlook usam; a rede entre PCs e a pasta <code>estado/</code>, não.</td></tr>
+      <tr><td>Política de dados (LGPD)</td><td><span class="st par">Em parte</span></td><td>Inventário e faxina; falta prazo por tipo e atendimento ao titular.</td></tr>
+      <tr><td>Relatórios gerenciais em um clique</td><td><span class="st par">Em parte</span></td><td>Visão geral e Gerência; falta exportar (PDF/Excel) e o relatório automático da semana (aprovado).</td></tr>
+      <tr><td>Login e perfis de acesso</td><td><span class="st nao">Não tem</span></td><td>Só o usuário João é protegido.</td></tr>
+      <tr><td>Continuidade (se um PC cair)</td><td><span class="st nao">Não tem</span></td><td>O PC do João é o único que copia e envia aos hotéis.</td></tr>
+      <tr><td>Banco de dados transacional</td><td><span class="st nao">Não tem</span></td><td>Planilha Central com cota quase cheia.</td></tr>
+      <tr><td>Indicadores financeiros (R$, contas a pagar, caixa, cancelamentos)</td><td><span class="st nao">Não tem</span></td><td>Hoje é o fluxo de NF; cancelamentos vêm só lidos do Mail Analytics.</td></tr>
+      <tr><td>Integração com outros sistemas (emissor de NF, sistema do hotel)</td><td><span class="st nao">Não tem</span></td><td>Os dados são copiados à mão ("Copiar dados").</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Pontos fortes (não mexer)</h2>
+  <p>O Painel espelhar o Outlook em vez de guardar cópia própria; o envio sempre pela caixa do hotel no PC dono; nunca enviar duas vezes (provado em simulação); a pesquisa pelo índice local (milissegundos); as peças únicas (filtro, etiqueta, janela); o modo demonstração para testar sem dado real; e o costume de desenhar antes e testar numa cópia.</p>
+  <p class="meta" style="margin-top:28px">Nenhum dado de hóspede aparece nesta página: só contagens, tempos e nomes de hotel.</p>
+</main>

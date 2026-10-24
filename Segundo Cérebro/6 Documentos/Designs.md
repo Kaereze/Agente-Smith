@@ -17,6 +17,15 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Auditoria do Painel · 24/10/2026
+Nota geral **6,6/10**: dados chegando 8,5 (Outlook × Painel 86 = 86), testes 8, documentação 8, confiabilidade 7,
+segurança 6, design 6, código 5, LGPD 5, banco de dados 5. O que corrigir em ordem (alerta da Caixa de Saída, canal de
+teste antes dos 4 PCs, e-mail de hóspede fora dos registros, PC reserva do principal, login e perfis, separar os arquivos
+gigantes, criptografar a rede, Supabase e módulos financeiros) e a tabela do que um sistema financeiro de empresa tem.
+- **Abrir a página:** [[2026-10-24 Auditoria do Painel.html|Auditoria]] · claude.ai: https://claude.ai/artifact/72MWnQiSRryurMZsyRgBx4
+
+![[2026-10-24 Auditoria do Painel.png|700]]
+
 ### Consertos rápidos · 24/10/2026
 Antes e depois dos 3 consertos que saem da revisão: "Enviar NF" azul em todo lugar, data/CPF/CNPJ/CEP num formato só
 (CPF mascarado com "Mostrar" registrado) e comparações em número em vez de porcentagem que assusta. Esperando o OK.
