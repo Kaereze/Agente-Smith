@@ -1,0 +1,94 @@
+<title>Alerta de Outlook parado</title>
+<style>
+:root{--bg:#161616;--painel:#1f1f1f;--card:#262626;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8a8a8a;--azul:#479ef5;--verm:#ff8d95;--verm-f:#3a2326;--verm-b:#6b3438;--ambar:#f2c76b;--verde:#8fd19e;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:14px/1.55 "Segoe UI",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding-block:36px 72px;padding-inline:16px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.lead{color:var(--tinta2);margin:0 0 30px;max-width:74ch}
+section{margin:0 0 40px}
+h2{font-size:18px;margin:0 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul)}
+.desc{color:var(--tinta2);margin:0 0 14px;max-width:78ch;font-size:13.5px}
+.lado{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:10px;overflow:hidden;min-width:0}
+.caixa > b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--linha);color:var(--tinta3)}
+.caixa.depois > b{color:var(--verde)}
+.palco{padding:16px 14px;display:grid;gap:10px}
+.av{display:flex;gap:10px;align-items:flex-start;background:var(--verm-f);border:1px solid var(--verm-b);border-radius:8px;padding:10px 12px;color:#ffd0d4;font-size:13px}
+.av svg{width:16px;height:16px;flex:none;margin-top:2px}
+.av b{color:#fff}
+.av ol{margin:6px 0 0;padding-left:18px;color:var(--tinta2)}
+.av .q{font-size:12px;color:var(--tinta3);margin-top:4px}
+.toast{background:#2b2b2b;border:1px solid #444;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:12px 14px;max-width:380px;display:grid;gap:4px}
+.toast small{color:var(--tinta3);font-size:11.5px}
+.toast b{font-size:13.5px}
+.toast p{margin:0;font-size:13px;color:var(--tinta2)}
+.regras{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px}
+.regras table{width:100%;border-collapse:collapse;font-size:13.5px}
+.regras td{padding:7px 8px;border-bottom:1px solid var(--linha);vertical-align:top}
+.regras td:first-child{color:var(--tinta3);width:170px}
+.regras tr:last-child td{border-bottom:0}
+.perg{background:#16233a;border:1px solid #2d4a6e;border-radius:10px;padding:14px 18px;color:#cfe0f5}
+.perg b{color:#fff}
+.perg ol{margin:6px 0 0;padding-left:20px;display:grid;gap:6px}
+.nota{font-size:12px;color:var(--tinta3);margin-top:24px}
+@media (max-width:520px){.regras td:first-child{width:110px}}
+</style>
+
+<main>
+  <h1>Quando o Outlook de um PC para</h1>
+  <p class="lead">Hoje o Painel mostra "Caixa de Saída travada", mas não diz o porquê e ninguém é chamado. O Outlook do Cristian ficou parado de sábado (24/10, 18:07) até segunda e 12 pedidos não chegaram aos hotéis. Duas melhorias, no estilo do Painel escuro. Exemplos com dados do caso real (só contagens).</p>
+
+  <section>
+    <h2><span>Melhoria 1</span>O aviso diz o motivo e o que fazer</h2>
+    <p class="desc">Cada PC passa a olhar, a cada 2 minutos, <b>por que</b> o Outlook dele parou: se está em <b>"Trabalhar Offline"</b>, se tem uma <b>janela pedindo senha</b> ou aviso de certificado aberto, ou se só não recebe nada há horas (desconectado). O aviso do Painel mostra o motivo e o passo a passo daquele caso.</p>
+    <div class="lado">
+      <div class="caixa"><b>Antes</b><div class="palco">
+        <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20zM12 10v5M12 18h.01"/></svg><div>Caixa de Saída do Outlook de Cristian travada: 15 e-mail(s) parado(s) há mais de 10 min</div></div>
+        <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20zM12 10v5M12 18h.01"/></svg><div>Nenhum e-mail novo chega ao Outlook de Cristian desde 24/10 18:07: confira o Enviar/Receber (F9) nesse PC</div></div>
+      </div></div>
+      <div class="caixa depois"><b>Depois</b><div class="palco">
+        <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 21h20zM12 10v5M12 18h.01"/></svg><div>
+          <b>Outlook do Cristian parado desde sábado 18:07</b> · em "Trabalhar Offline"
+          <div class="q">15 e-mails presos · 12 pedidos sem chegar aos hotéis (PAMPULHA, BARRA, PORTO PRAIA, RENASSENÇA)</div>
+          <ol><li>No Outlook do Cristian: aba <b>Enviar/Receber</b> → clique em <b>Trabalhar Offline</b> para apagar.</li><li>Aperte <b>F9</b>. Os e-mails saem sozinhos, nada duplica.</li></ol>
+        </div></div>
+        <div class="q" style="font-size:12px;color:var(--tinta3)">Outros motivos que ele reconhece: "janela pedindo senha aberta (digite a senha da caixa X)", "aviso de certificado esperando resposta", "desconectado: nada chega há 3 h".</div>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span>Melhoria 2</span>Alerta que chama alguém</h2>
+    <p class="desc">Além do aviso no Painel, um <b>aviso do Windows</b> (o mesmo do canto da tela que o Painel já usa para urgência) no PC dono da caixa e no seu. Repete de 30 em 30 minutos enquanto não resolver, e avisa quando voltar.</p>
+    <div class="lado">
+      <div class="caixa depois"><b>No PC do Cristian</b><div class="palco">
+        <div class="toast"><small>Painel Fiscal · agora</small><b>Seu Outlook parou de enviar e receber</b><p>Está em "Trabalhar Offline". Clique em Enviar/Receber → Trabalhar Offline e aperte F9. 15 e-mails esperando.</p></div>
+      </div></div>
+      <div class="caixa depois"><b>No seu PC (João)</b><div class="palco">
+        <div class="toast"><small>Painel Fiscal · agora</small><b>Outlook do Cristian parado há 2 h</b><p>Trabalhar Offline · 15 e-mails presos · 12 pedidos sem chegar aos hotéis.</p></div>
+        <div class="toast"><small>Painel Fiscal · 14:32</small><b>Outlook do Cristian voltou</b><p>Os 15 e-mails saíram.</p></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="regras"><table>
+      <tr><td>Quando dispara</td><td>Caixa de Saída com e-mail parado há mais de 10 min, ou nenhum e-mail chegando há 3 h em horário de trabalho (seg–sex 8h–18h; sábado 8h–12h).</td></tr>
+      <tr><td>Quem recebe</td><td>O PC dono do Outlook parado e o seu (administrador). Os outros só veem no Painel.</td></tr>
+      <tr><td>Repete</td><td>De 30 em 30 min enquanto não resolver. Nunca mais de 1 aviso por vez.</td></tr>
+      <tr><td>Quando some</td><td>Sozinho, quando a Caixa de Saída esvazia e volta a chegar e-mail; vem o aviso "voltou".</td></tr>
+      <tr><td>Fora do horário</td><td>Só fica no Painel; o aviso do Windows espera o próximo horário de trabalho.</td></tr>
+      <tr><td>O que NÃO faz</td><td>Não mexe no Outlook de ninguém, não clica em nada, não envia por outro PC. Só olha e avisa.</td></tr>
+    </table></div>
+  </section>
+
+  <div class="perg"><b>Para eu fazer, 2 respostas:</b>
+    <ol>
+      <li>O horário de trabalho está certo (seg–sex 8h–18h, sábado 8h–12h)? Fora dele fica só no Painel.</li>
+      <li>Repetir de 30 em 30 minutos está bom, ou prefere de hora em hora?</li>
+    </ol>
+  </div>
+  <p class="nota">Desenho de 26/10/2026. Os números são do caso real de hoje; nenhum dado de hóspede.</p>
+</main>

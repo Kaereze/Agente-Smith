@@ -17,6 +17,14 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Alerta de Outlook parado · 26/10/2026
+Pedido do João ("resolva os erros que informaram dentro do painel"): o Outlook do Cristian parou de 24/10 18:07 em diante
+(15 presos, 12 pedidos sem chegar aos hotéis). Desenho do diagnóstico (motivo exato: Trabalhar Offline, janela de senha,
+certificado, desconectado) e do alerta do Windows no PC dono e no do João. Esperando o OK e 2 respostas.
+- **Abrir a página:** [[2026-10-26 Alerta de Outlook parado.html|Alerta de Outlook parado]] · claude.ai: https://claude.ai/artifact/FQX3xjjb4mTcdByVezEXea
+
+![[2026-10-26 Alerta de Outlook parado.png|700]]
+
 ### Auditoria do Painel · 24/10/2026
 Nota geral **6,6/10**: dados chegando 8,5 (Outlook × Painel 86 = 86), testes 8, documentação 8, confiabilidade 7,
 segurança 6, design 6, código 5, LGPD 5, banco de dados 5. O que corrigir em ordem (alerta da Caixa de Saída, canal de
