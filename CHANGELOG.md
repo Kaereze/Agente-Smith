@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.26] — 2026-10-26
+
+### Adicionado
+
+- **Outlook parado: o aviso diz o motivo e o que fazer.** Cada PC olha a cada 2 min se o Outlook está em "Trabalhar
+  Offline", com janela pedindo senha ou com aviso de certificado aberto (`saude.motivo_outlook`, publicado na Saúde como
+  `mot=`). Um aviso só por PC (Caixa de Saída travada já cobre "nenhum e-mail chega").
+- **Alerta do Windows de Outlook parado** no PC dono e no principal, repetindo de 30 em 30 min no horário de trabalho
+  (seg–sex 8h–18h, sábado 8h–12h), e "Outlook voltou" quando resolve (`avisos_windows.Avisos.outlook`).
+
+### Mudou
+
+- "Nenhum e-mail novo chega" avisa depois de 3 h (era 6 h), comparando com os outros PCs.
+
 ## [2026.10.24.1] — 2026-10-24
 
 ### Mudou

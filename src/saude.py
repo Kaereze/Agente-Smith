@@ -9,12 +9,61 @@ import datetime
 COPIA_ATRASADA_MIN = 35          # a cópia roda a cada 10 min (15/10/2026): duas voltas perdidas + folga
 SAIDA_TRAVADA_MIN = 10           # e-mail parado na Caixa de Saída há mais que isso
 HORARIO_COPIA = ("07:00", "23:30")
-SEM_EMAIL_HORAS = 6              # caixa deste PC sem e-mail novo há mais que isso...
+SEM_EMAIL_HORAS = 3              # caixa deste PC sem e-mail novo há mais que isso... (era 6; 26/10/2026)
 OUTRO_RECEBEU_HORAS = 2          # ...enquanto outro PC recebeu há menos que isso = Outlook não está baixando
 HORARIO_EMAIL = ("08:00", "22:00")
 
 
-def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""):
+# Por que o Outlook parou (26/10/2026: o do Cristian ficou de sábado 18:07 a segunda sem enviar nem receber)
+MOTIVOS = {"offline": "em \u201cTrabalhar Offline\u201d", "senha": "com uma janela pedindo senha aberta",
+           "certificado": "com um aviso de certificado esperando resposta"}
+PASSOS = {"offline": "No Outlook dele: Enviar/Receber \u2192 clique em Trabalhar Offline (para apagar) e aperte F9.",
+          "senha": "No PC dele: digite a senha na janela do Outlook (pode estar atrás das outras) e aperte F9.",
+          "certificado": "No PC dele: responda o aviso de certificado do Outlook e aperte F9.",
+          "": "No PC dele: veja se o Outlook está em Trabalhar Offline ou pedindo senha e aperte F9."}
+_JANELA_SENHA = ("senha", "password", "credenciais", "credentials", "segurança do windows", "windows security")
+
+
+def motivo_outlook(ns, janelas=None):
+    """-> "offline" | "senha" | "certificado" | "". Só olha: não clica nem fecha nada. janelas: [título] (teste)."""
+    try:
+        if ns.Offline:
+            return "offline"
+    except Exception:
+        pass
+    if janelas is None:
+        janelas = _janelas_do_outlook()
+    titulos = [str(t).strip().lower() for t in janelas]
+    if any(any(p in t for p in _JANELA_SENHA) for t in titulos):
+        return "senha"
+    import aviso_certificado
+    if any(t in aviso_certificado.TITULOS for t in titulos):
+        return "certificado"
+    return ""
+
+
+def _janelas_do_outlook():
+    """Títulos das caixas de diálogo abertas do Outlook (mesmo jeito do aviso_certificado)."""
+    try:
+        import win32gui
+        import aviso_certificado
+    except Exception:
+        return []
+    titulos = []
+
+    def topo(h, _):
+        if win32gui.IsWindowVisible(h) and win32gui.GetClassName(h) == "#32770" \
+                and aviso_certificado._exe_da_janela(h) == "outlook.exe":
+            titulos.append(win32gui.GetWindowText(h))
+        return True
+    try:
+        win32gui.EnumWindows(topo, None)
+    except Exception:
+        return []
+    return titulos
+
+
+def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido="", motivo=""):
     """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso;rec=iso"."""
     partes = [f"saida={int(saida_travada or 0)}"]
     if ultima_copia:
@@ -25,6 +74,8 @@ def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""
         partes.append(f"robo={robo}")
     if recebido:
         partes.append(f"rec={recebido}")
+    if motivo:
+        partes.append(f"mot={motivo}")
     return ";".join(partes)
 
 
@@ -126,9 +177,11 @@ def problemas(pcs, agora=None):
             continue
         quem = p.get("agente") or p.get("pc")
         n = p.get("saude", {}).get("saida", 0)
+        mot = p.get("saude", {}).get("mot", "")
         if n:
-            saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Caixa de Saída do Outlook de {quem} travada: "
-                          f"{n} e-mail(s) parado(s) há mais de {SAIDA_TRAVADA_MIN} min"})
+            texto = (f"Outlook de {quem} parado {MOTIVOS[mot]}: {n} e-mail(s) presos na Caixa de Saída. " if mot in MOTIVOS
+                     else f"Caixa de Saída do Outlook de {quem} travada: {n} e-mail(s) parado(s) há mais de {SAIDA_TRAVADA_MIN} min. ")
+            saida.append({"nivel": "erro", "pc": p["pc"], "texto": texto + PASSOS.get(mot, PASSOS[""])})
         if p.get("outlook") == "fechado":
             saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Outlook fechado no PC de {quem}: o robô não lê as caixas dele"})
         elif p.get("outlook") == "sem janela":
@@ -147,8 +200,12 @@ def problemas(pcs, agora=None):
             outros = [x for pc, x in recebidos.items() if pc != p.get("pc")]
             if r and outros and agora - r > datetime.timedelta(hours=SEM_EMAIL_HORAS) \
                     and agora - max(outros) < datetime.timedelta(hours=OUTRO_RECEBEU_HORAS):
+                mot = p.get("saude", {}).get("mot", "")
+                if p.get("saude", {}).get("saida"):
+                    continue   # já está no aviso da Caixa de Saída, com o motivo e o que fazer
                 saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Nenhum e-mail novo chega ao Outlook de "
-                              f"{p.get('agente') or p['pc']} desde {r:%d/%m %H:%M}: confira o Enviar/Receber (F9) nesse PC"})
+                              f"{p.get('agente') or p['pc']} desde {r:%d/%m %H:%M}"
+                              f"{' (' + MOTIVOS[mot] + ')' if mot in MOTIVOS else ''}. " + PASSOS.get(mot, PASSOS[""])})
     robos = [r for r in (_data(p.get("saude", {}).get("robo")) for p in pcs) if r]
     if robos and HORARIO_COPIA[0] <= agora.strftime("%H:%M") <= HORARIO_COPIA[1] and \
             agora - max(robos) > datetime.timedelta(minutes=COPIA_ATRASADA_MIN):
