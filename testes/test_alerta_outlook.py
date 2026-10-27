@@ -16,6 +16,8 @@ def test_motivo_do_outlook():
     assert saude.motivo_outlook(Ns(True), janelas=[]) == "offline"
     assert saude.motivo_outlook(Ns(False), janelas=["Inserir Senha de Rede"]) == "senha"
     assert saude.motivo_outlook(Ns(False), janelas=["Aviso de Segurança da Internet"]) == "certificado"
+    assert saude.motivo_outlook(Ns(False), janelas=["Email da Internet - notafiscal@redeandradebahia.com.br"]) == "senha"
+    assert saude.motivo_outlook(Ns(False), janelas=["Internet Email - a@b.com"]) == "senha"
     assert saude.motivo_outlook(Ns(False), janelas=["Lembrete"]) == ""
 
 

@@ -21,7 +21,10 @@ PASSOS = {"offline": "No Outlook dele: Enviar/Receber \u2192 clique em Trabalhar
           "senha": "No PC dele: digite a senha na janela do Outlook (pode estar atrás das outras) e aperte F9.",
           "certificado": "No PC dele: responda o aviso de certificado do Outlook e aperte F9.",
           "": "No PC dele: veja se o Outlook está em Trabalhar Offline ou pedindo senha e aperte F9."}
-_JANELA_SENHA = ("senha", "password", "credenciais", "credentials", "segurança do windows", "windows security")
+# "Email da Internet - caixa@dominio": a janela de usuário e senha do POP3 (27/10/2026: o Outlook do Cristian ficou preso
+# com ela aberta e o Painel dizia "motivo não identificado", porque o título não tem a palavra senha)
+_JANELA_SENHA = ("senha", "password", "credenciais", "credentials", "segurança do windows", "windows security",
+                 "email da internet", "e-mail da internet", "internet e-mail", "internet email")
 
 
 def motivo_outlook(ns, janelas=None):

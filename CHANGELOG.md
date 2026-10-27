@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.6] — 2026-10-27
+
+### Corrigido
+
+- **Janela "Email da Internet" (usuário e senha do POP3) agora é reconhecida.** O Painel só procurava a palavra "senha" no
+  título; a janela do Outlook se chama "Email da Internet - caixa@dominio", então o aviso saía como "motivo não
+  identificado" (era o caso do Outlook do Cristian com 15 e-mails presos). Agora diz "parado com uma janela pedindo senha
+  aberta", com o passo "digite a senha na janela do Outlook e aperte F9".
+
 ## [2026.10.27.5] — 2026-10-27
 
 ### Adicionado
