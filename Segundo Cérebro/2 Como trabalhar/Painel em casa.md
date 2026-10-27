@@ -35,3 +35,11 @@ Dê dois cliques em `PAINEL_DEMO_EM_CASA.bat` (na pasta do projeto). Ele instala
 
 ## Lembrete
 Mexeu no código em casa? Envie ao GitHub no fim. Ao chegar ao trabalho, `git pull` antes de começar. Ver [[Como entregar]].
+
+## Otimizar ou mexer em casa: checklist (27/10/2026)
+1. `git pull` antes de começar (confira que `origin/main` está na versão mais nova do [[CHANGELOG]]). Ver o plano em [[Designs]] ("Auditoria do Painel", 27/10).
+2. Trabalhe no **modo demonstração** ou **modo casa**: dados fictícios ou só leitura. **Nunca** copie dado real de hóspede para teste ou documento ([[Preferências do João]]).
+3. Rode os testes (`python -m pytest testes -q`) antes de enviar.
+4. Envie ao GitHub: `git push origin main`. **Sem etiqueta, nada chega aos PCs do trabalho.** Para entregar, crie a etiqueta da versão (ver [[Como entregar]]).
+5. **Nunca** `push --force`, nunca mover nem apagar etiqueta publicada: os PCs travariam na atualização.
+6. O que **não** sobe pelo GitHub, de propósito: a pasta `estado/` e `logs/` (dados de hóspedes), `config.local.json` e a chave do Google. No PC de casa a chave é a separada, de só leitura (Passo 2 acima).

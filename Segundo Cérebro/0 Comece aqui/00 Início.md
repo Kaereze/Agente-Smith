@@ -55,7 +55,7 @@ tags: [cerebro/inicio]
 > [[00 Início]] · [[Como usar este cérebro]] · [[Legenda de cores]]
 
 > [!cat-regras] 1 Regras — o que vence e o que não se mexe
-> [[Hierarquia de prioridades]] · [[O que não mexer]] · [[Credenciais]] · [[Padrão de design]]
+> [[Hierarquia de prioridades]] · [[O que não mexer]] · [[Credenciais]] · [[Padrão de design]] · [[Preferências do João]]
 
 > [!cat-trabalho] 2 Como trabalhar — passo a passo
 > [[Onde mexer]] · [[Como entregar]] · [[Painel em casa]] · [[Dia do administrador]]
