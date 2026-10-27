@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/pecas/etiqueta.css">
 <link rel="stylesheet" href="/pecas/janela.css">
 <link rel="stylesheet" href="/pecas/carregando.css">
+<link rel="stylesheet" href="/pecas/caixas.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
    Cores só por token: o tema claro/escuro segue o Windows. */
@@ -2296,6 +2297,7 @@ html,body{background:#1f1f1f}
 <script src="/pecas/etiqueta.js"></script>
 <script src="/pecas/janela.js"></script>
 <script src="/pecas/carregando.js"></script>
+<script src="/pecas/caixas.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
 const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
@@ -2362,7 +2364,7 @@ const FAZENDO = [["/api/correio/buscar", "Procurando no Outlook dos PCs…"], ["
   ["/api/correio/encaminhar", "Mandando encaminhar pelo Outlook do PC dono…"], ["/api/email/responder", "Entregando a resposta ao Outlook do PC dono…"],
   ["/api/envio_nf/opcoes", "Preparando o e-mail da NF…"], ["/api/email/opcoes", "Preparando a resposta…"], ["/api/envio_nf", "Entregando a NF ao Outlook…"],
   ["/api/acao", "Gravando na planilha…"], ["/api/atualizar", "Relendo a planilha…"], ["/api/agente", "Trocando o operador…"],
-  ["/api/enviar", "Pedindo o envio ao robô…"], ["/api/comando", "Mandando o comando ao PC…"]];
+  ["/api/enviar", "Pedindo o envio ao robô…"], ["/api/comando", "Mandando o comando ao PC…"], ["/api/outlook/reiniciar", "Reiniciando o Outlook…"]];
 let emAndamento = 0;
 function carregando(path, liga, erro) {
   const frase = (FAZENDO.find(([p]) => path.startsWith(p)) || [])[1];
@@ -2378,7 +2380,7 @@ function carregando(path, liga, erro) {
 // da leitura e os PCs) e aqui devolvemos a cópia guardada (lida de novo, igual a uma resposta nova) com essas partes
 // novas por cima, marcada com j.__igual (não entra no {...j}).
 const COMPARADAS = ["/api/estado", "/api/emails", "/api/correio"], GUARDADAS = {}, REDESENHO_MS = 60000;
-const SEM_TELA_K = ["/api/correio/evento", "/api/tema", "/api/professor", "/api/enviar_receber"];   // rápidas ou com tela própria
+const SEM_TELA_K = ["/api/correio/evento", "/api/tema", "/api/professor", "/api/enviar_receber", "/api/outlook/reiniciar"];   // rápidas ou com tela própria
 async function api(path, corpo){
   carregando(path, true);
   const longa = corpo && !SEM_TELA_K.some(p => path.startsWith(p)) ? acaoLonga((FAZENDO.find(([p]) => path.startsWith(p)) || [])[1] || "Trabalhando…") : null;   // passou de 3 s: tela do K
@@ -2505,6 +2507,7 @@ async function carregarJa(soSeMudou){
     if (typeof rbChip === "function") rbChip();   // o chip do robô (robo.js) mostra o estado, o resumo e a resposta
     desenharPcsCabecalho(j.pcs || []);
     desenharSaude(j.saude || []);
+    window.caixasProblema?.(j.saude || []);   // botão de caixas com problema (pecas/caixas.js)
     // pedidos aparecem já; os e-mails (outra rota) entram em seguida, sem segurar a tela
     montarTodos();
     try { if (!em) em = await api("/api/emails"); if (em.emails) { st.emails = em.emails; st.este_pc = em.este_pc; } } catch(e) {}

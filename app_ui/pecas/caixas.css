@@ -1,0 +1,44 @@
+/* Botão de caixas com problema (27/10/2026, desenho aprovado pelo João). Cores: exatamente a paleta da Auditoria
+   (cinzas, azul, âmbar, vermelho; sem verde), nos dois temas. */
+:root{--cp-bg:#f6f7f8;--cp-folha:#fff;--cp-linha:#e2e5e9;--cp-tinta:#1b1f24;--cp-t2:#4b5560;--cp-t3:#6b7580;
+  --cp-azul:#0f6cbd;--cp-azul-f:#e7f1fb;--cp-ambar:#9a6700;--cp-ambar-f:#fdf3dc;--cp-verm:#c4314b;--cp-verm-f:#fbe9ec;--cp-sobre:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-bg:#161616;--cp-folha:#1f1f1f;--cp-linha:#333;--cp-tinta:#f0f0f0;
+  --cp-t2:#b4b4b4;--cp-t3:#8f8f8f;--cp-azul:#479ef5;--cp-azul-f:#16324d;--cp-ambar:#f2c76b;--cp-ambar-f:#3d3212;--cp-verm:#ff8d95;--cp-verm-f:#3a2326;--cp-sobre:#0b1d2e}}
+:root[data-theme="dark"]{--cp-bg:#161616;--cp-folha:#1f1f1f;--cp-linha:#333;--cp-tinta:#f0f0f0;
+  --cp-t2:#b4b4b4;--cp-t3:#8f8f8f;--cp-azul:#479ef5;--cp-azul-f:#16324d;--cp-ambar:#f2c76b;--cp-ambar-f:#3d3212;--cp-verm:#ff8d95;--cp-verm-f:#3a2326;--cp-sobre:#0b1d2e}
+body.tem-caixas #saude{bottom:90px!important}   /* a bolha de avisos sobe; o botão de caixas fica logo abaixo dela */
+.cp-bt{position:fixed;right:26px;bottom:48px;z-index:90;width:34px;height:30px;border-radius:9px;border:1px solid var(--cp-verm);
+  background:var(--cp-verm-f);color:var(--cp-verm);cursor:pointer;display:grid;place-items:center;padding:0}
+.cp-bt[hidden],.cp-pn[hidden]{display:none}
+.cp-bt svg{width:18px;height:18px}
+.cp-bt .cp-n{position:absolute;right:-6px;top:-7px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--cp-verm);
+  color:var(--cp-folha);display:grid;place-items:center;font:700 10px/1 var(--f-dado,"IBM Plex Mono",monospace)}
+.cp-bt.pisca{animation:cp-pulso 2s ease-in-out infinite}
+@keyframes cp-pulso{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cp-verm) 50%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+.cp-pn{position:fixed;right:22px;bottom:90px;z-index:95;width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 130px);overflow:auto;
+  box-sizing:border-box;background:var(--cp-folha);color:var(--cp-tinta);border:1px solid var(--cp-linha);border-radius:10px;
+  box-shadow:0 14px 36px rgba(0,0,0,.35);padding:6px 0 10px;font:12.5px/1.45 var(--f-texto,"IBM Plex Sans",system-ui,sans-serif);animation:cp-sobe .16s ease-out}
+@keyframes cp-sobe{from{opacity:0;transform:translateY(8px)}}
+.cp-cab{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;border-bottom:1px solid var(--cp-linha)}
+.cp-cab b{font-size:13px}
+.cp-cab button{border:0;background:transparent;color:var(--cp-t3);font-size:18px;cursor:pointer;line-height:1;padding:0 4px}
+.cp-pc{margin:10px 14px 0;border:1px solid var(--cp-linha);border-radius:10px;padding:9px 10px;background:var(--cp-bg)}
+.cp-pc h4{margin:0 0 4px;font-size:13px}
+.cp-lin{display:flex;gap:8px;align-items:flex-start;padding:3px 0;color:var(--cp-t2)}
+.cp-lin i{width:8px;height:8px;border-radius:50%;background:var(--cp-verm);flex:none;margin-top:6px}
+.cp-lin.a i{background:var(--cp-ambar)}
+.cp-lin b{color:var(--cp-tinta);font-weight:600}
+.cp-lin small{display:block;color:var(--cp-t2);font-size:12px}
+.cp-acao{margin-top:8px;display:flex;gap:8px;align-items:center}
+.cp-acao button{font:600 12.5px var(--f-texto,"IBM Plex Sans",system-ui,sans-serif);border-radius:8px;padding:7px 11px;cursor:pointer;
+  border:1px solid var(--cp-verm);background:var(--cp-verm);color:var(--cp-sobre)}
+.cp-acao button.s{background:transparent;color:var(--cp-tinta);border-color:var(--cp-linha)}
+.cp-conf{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--cp-verm-f);color:var(--cp-tinta)}
+.cp-res{margin-top:8px;padding:7px 10px;border-radius:8px;font-weight:500}
+.cp-res.ok{background:var(--cp-azul-f);color:var(--cp-azul)}
+.cp-res.av{background:var(--cp-ambar-f);color:var(--cp-ambar)}
+.cp-res.er{background:var(--cp-verm-f);color:var(--cp-verm);animation:cp-treme .5s}
+.cp-res.an{background:var(--cp-linha);color:var(--cp-tinta)}
+@keyframes cp-treme{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.cp-rod{margin:10px 14px 0;font-size:11.5px;color:var(--cp-t3)}
+@media (prefers-reduced-motion:reduce){.cp-bt.pisca,.cp-pn,.cp-res.er{animation:none}}

@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.5] — 2026-10-27
+
+### Adicionado
+
+- **Botão de caixas com problema** (desenho do João, cores da Auditoria, sem verde): uma caixa de entrada com sinal de
+  perigo, pequena, logo abaixo da bolha de avisos; só aparece enquanto um PC está com o Outlook sem enviar/receber. O
+  clique abre um quadro do tamanho do de avisos com as caixas que têm e-mail preso (por conta de envio), o motivo e o
+  botão **Reiniciar o Outlook de [PC]**, que fecha o Outlook à força e abre de novo (o que o João fazia à mão), manda o
+  que estava preso e diz o resultado; pede confirmação antes e abre a tela do K. O × só guarda o quadro: o botão fica
+  enquanto houver problema. Também funciona para o PC de outro agente, pela rede assinada dos PCs. Código:
+  `app_ui/pecas/caixas.js/.css`, `outlook_vivo.reiniciar`, `saude.presos_por_conta`, rotas `/api/caixas`,
+  `/api/outlook/reiniciar`, `/rede/caixas`, `/rede/reiniciar_outlook`.
+
 ## [2026.10.27.4] — 2026-10-27
 
 ### Mudou

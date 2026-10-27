@@ -79,6 +79,37 @@ def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""
     return ";".join(partes)
 
 
+def presos_por_conta(ns, agora=None, minutos=None):
+    """Caixas com e-mail parado na Caixa de Saída (27/10/2026, botão "caixas com problema"). Só lê.
+    -> [{"caixa": "CAMPOGRANDE", "presos": 3}], atribuindo cada e-mail à conta que ia enviar (SendUsingAccount)."""
+    agora = agora or datetime.datetime.now()
+    limite = agora - datetime.timedelta(minutes=SAIDA_TRAVADA_MIN if minutos is None else minutos)
+    por_conta, vistos = {}, set()
+    pastas = [ns.GetDefaultFolder(4)]
+    try:
+        pastas += [c.DeliveryStore.GetDefaultFolder(4) for c in ns.Accounts]
+    except Exception:
+        pass
+    for pasta in pastas:
+        try:
+            if pasta.EntryID in vistos:
+                continue
+            vistos.add(pasta.EntryID)
+            for item in pasta.Items:
+                q = item.LastModificationTime
+                if datetime.datetime(q.year, q.month, q.day, q.hour, q.minute) >= limite:
+                    continue
+                try:
+                    conta = item.SendUsingAccount
+                    nome = nome_da_caixa(str(conta.SmtpAddress or conta.DisplayName))
+                except Exception:
+                    nome = "SEM CONTA DEFINIDA"
+                por_conta[nome] = por_conta.get(nome, 0) + 1
+        except Exception:
+            continue
+    return [{"caixa": c, "presos": n} for c, n in sorted(por_conta.items(), key=lambda x: -x[1])]
+
+
 def ultimo_recebido(ns):
     """Hora (iso) do e-mail mais novo nas Caixas de Entrada deste Outlook (13/10/2026: o Outlook do Cristian ficou 3 dias
     sem baixar e-mail e ninguém viu). Só lê; não abre item nem muda lido."""
@@ -181,11 +212,11 @@ def problemas(pcs, agora=None):
         if n:
             texto = (f"Outlook de {quem} parado {MOTIVOS[mot]}: {n} e-mail(s) presos na Caixa de Saída. " if mot in MOTIVOS
                      else f"Caixa de Saída do Outlook de {quem} travada: {n} e-mail(s) parado(s) há mais de {SAIDA_TRAVADA_MIN} min. ")
-            saida.append({"nivel": "erro", "pc": p["pc"], "texto": texto + PASSOS.get(mot, PASSOS[""])})
+            saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": texto + PASSOS.get(mot, PASSOS[""])})
         if p.get("outlook") == "fechado":
-            saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Outlook fechado no PC de {quem}: o robô não lê as caixas dele"})
+            saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": f"Outlook fechado no PC de {quem}: o robô não lê as caixas dele"})
         elif p.get("outlook") == "sem janela":
-            saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Outlook do PC de {quem} aberto sem janela: não baixa e-mail "
+            saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": f"Outlook do PC de {quem} aberto sem janela: não baixa e-mail "
                           "(o guardião está abrindo; se continuar, abra o Outlook pelo ícone e aperte F9)"})
         elif p.get("conferencia_atrasada"):
             saida.append({"nivel": "aviso", "pc": p["pc"], "texto": f"Robô do PC de {quem} parado (sem conferir o Outlook há mais de 10 min)"})
@@ -203,7 +234,7 @@ def problemas(pcs, agora=None):
                 mot = p.get("saude", {}).get("mot", "")
                 if p.get("saude", {}).get("saida"):
                     continue   # já está no aviso da Caixa de Saída, com o motivo e o que fazer
-                saida.append({"nivel": "erro", "pc": p["pc"], "texto": f"Nenhum e-mail novo chega ao Outlook de "
+                saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": f"Nenhum e-mail novo chega ao Outlook de "
                               f"{p.get('agente') or p['pc']} desde {r:%d/%m %H:%M}"
                               f"{' (' + MOTIVOS[mot] + ')' if mot in MOTIVOS else ''}. " + PASSOS.get(mot, PASSOS[""])})
     robos = [r for r in (_data(p.get("saude", {}).get("robo")) for p in pcs) if r]

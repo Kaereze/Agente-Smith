@@ -28,7 +28,7 @@ em React do João). Esperando a escolha.
 ### Botão de caixas com problema · 27/10/2026
 Pedido do João: botãozinho (caixa de entrada com sinal de perigo) logo abaixo da bolha de avisos; clique abre quadro do
 tamanho do de avisos com as caixas que não enviam/recebem e botão "Reiniciar o Outlook" (o que ele fazia à mão); o X deixa
-em espera, nunca fecha. **Aguardando OK e 3 respostas** (reiniciar PC de outro pela rede? reinício automático após 30 min?
+em espera, nunca fecha. **No ar na 2026.10.27.5 (OK do João; 3 respostas ainda abertas, usados padrões)** (reiniciar PC de outro pela rede? reinício automático após 30 min?
 quem vê?). Cores: exatamente a paleta da Auditoria (cinzas, azul, âmbar, vermelho; sem verde) a pedido do João. Nada mexido no código.
 - **Abrir a página:** [[2026-10-27 Caixas com problema.html|Caixas com problema]]
 

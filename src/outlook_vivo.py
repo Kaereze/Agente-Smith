@@ -25,6 +25,8 @@ ESPERA_ABRIR_SEGUNDOS = 90
 PAUSA_DEPOIS_DE_FALHAS_SEGUNDOS = 30 * 60   # 3 tentativas sem janela: para de insistir por 30 min (não fica em laço)
 CLASSE_JANELA_OUTLOOK = "rctrl_renwnd32"     # janela principal do Outlook clássico
 _SEM_JANELA_PRETA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+REINICIO_TEMPO_REDE = 240   # o PC de outro agente demora: fecha, abre, espera as contas e manda o que estava preso
+_reinicio = threading.Lock()
 _cache = {"em": -1e9, "estado": None}
 _falhas = {"n": 0, "pausa_ate": 0.0}
 
@@ -167,3 +169,39 @@ def aplicativo(motivo=""):
 def pode_usar():
     """Pro Painel: só mexe no Outlook pelo COM se ele já está aberto com janela (nunca cria um escondido)."""
     return _em_teste() or estado() == ABERTO
+
+
+def reiniciar():
+    """Fecha o Outlook à força e abre de novo, o que o João fazia à mão (27/10/2026, botão "caixas com problema"), e
+    deixa mandar o que estava preso. -> {"ok", "segundos", "saiu", "presos"} | {"erro": texto}.
+    Quem chama já confirmou na tela; e-mail aberto sendo escrito o Outlook costuma guardar como rascunho."""
+    if _em_teste():
+        return {"ok": True, "segundos": 0, "saiu": 0, "presos": 0}
+    if not _reinicio.acquire(blocking=False):
+        return {"erro": "o Outlook deste PC já está sendo reiniciado"}
+    inicio = time.monotonic()
+    try:
+        logger.warning("🔁 Reiniciando o Outlook à força (pedido pelo Painel)")
+        subprocess.run(["taskkill", "/F", "/IM", "OUTLOOK.EXE"], capture_output=True, timeout=30, creationflags=_SEM_JANELA_PRETA)
+        fim = time.monotonic() + 20
+        while time.monotonic() < fim and _pids_outlook():
+            time.sleep(1)
+        _cache.update(em=-1e9, estado=None)
+        _falhas.update(n=0, pausa_ate=0.0)
+        time.sleep(2)
+        if not garantir("reinício pedido pelo Painel"):
+            return {"erro": "o Outlook não abriu de novo: abra pelo ícone no PC"}
+        time.sleep(8)   # as contas POP3 carregam depois da janela
+        import enviar_receber
+        import pythoncom
+        import win32com.client
+        pythoncom.CoInitialize()
+        r = enviar_receber.rodar_aqui(win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI"), max_seg=40)
+        if r.get("erro"):
+            return {"ok": True, "segundos": round(time.monotonic() - inicio, 1), "saiu": 0, "presos": None, "aviso": r["erro"]}
+        return {"ok": True, "segundos": round(time.monotonic() - inicio, 1), "saiu": r.get("saiu", 0), "presos": r.get("presos", 0)}
+    except Exception as e:
+        logger.warning(f"⚠️ Reinício do Outlook falhou: {e}")
+        return {"erro": f"não deu certo ({str(e)[:80]})"}
+    finally:
+        _reinicio.release()

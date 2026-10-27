@@ -510,6 +510,10 @@ class Estado:
                         logger.warning(f"⚠️ Caixa de Saída do Outlook: {presos} e-mail(s) parado(s) há mais de "
                                        f"{saude.SAIDA_TRAVADA_MIN} min")
                     self.saida_travada = presos
+                    try:
+                        self.caixas_presas = saude.presos_por_conta(ns)   # por conta, pro botão "caixas com problema"
+                    except Exception:
+                        self.caixas_presas = []
                 except Exception:
                     logger.debug("Caixa de Saída", exc_info=True)
                 time.sleep(120)
@@ -956,6 +960,61 @@ class Estado:
         pythoncom.CoInitialize()
         r = enviar_receber.rodar_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"))
         self.versao_tela += 1
+        return r
+
+    def rede_caixas(self, _corpo):
+        """Outro PC (ou este Painel) pergunta quais caixas daqui têm e-mail preso (27/10/2026)."""
+        return {"pc": socket.gethostname(), "caixas": list(getattr(self, "caixas_presas", []) or [])}
+
+    def rede_reiniciar_outlook(self, _corpo):
+        """Fecha à força e abre de novo o Outlook DESTE PC (27/10/2026: o que o João fazia à mão quando parava de enviar)."""
+        import pythoncom
+        pythoncom.CoInitialize()
+        r = outlook_vivo.reiniciar()
+        self.versao_tela += 1
+        return r
+
+    def caixas_com_problema(self):
+        """Pro botão de caixas: por PC com Outlook sem enviar/receber, o aviso e as caixas com e-mail preso (27/10/2026)."""
+        demo = bool(getattr(self, "demo", False))
+        pcs = {p["pc"]: p for p in self.pcs()}
+        por_pc = {}
+        for p in saude.problemas(list(pcs.values())):
+            if p.get("tipo") == "caixa" and p.get("pc"):
+                por_pc.setdefault(p["pc"], []).append(p["texto"])
+        este = socket.gethostname()
+        enderecos = {pc: pcs[pc].get("rede") for pc in por_pc if pc != este and pcs.get(pc, {}).get("rede")}
+        det = {} if demo else rede_local.perguntar_a_todos(self.segredo, enderecos, "caixas", {}, tempo=6)
+        if este in por_pc and not demo:
+            det[este] = self.rede_caixas({})
+        saida = []
+        for pc, textos in por_pc.items():
+            d = det.get(pc) or {}
+            saida.append({"pc": pc, "agente": pcs[pc].get("agente") or pc, "textos": textos, "outlook": pcs[pc].get("outlook", ""),
+                          "caixas": [c for c in d.get("caixas", []) if c.get("presos")], "erro": d.get("erro", "")})
+        return {"pcs": saida, "este_pc": este}
+
+    def reiniciar_outlook(self, pc, quem):
+        if getattr(self, "so_ver", False):
+            return {"erro": "Modo só leitura: não reinicia nada"}
+        este = socket.gethostname()
+        todos = {p["pc"]: p for p in self.pcs()}
+        if getattr(self, "demo", False):
+            time.sleep(4)
+            return {"ok": True, "segundos": 4.0, "saiu": 3, "presos": 0}
+        if pc and pc != este and pc not in todos:
+            return {"erro": "PC desconhecido"}
+        if not pc or pc == este:
+            r = self.rede_reiniciar_outlook({})
+        else:
+            endereco = todos[pc].get("rede")
+            if not todos[pc].get("online") or not endereco:
+                return {"erro": f"{todos[pc].get('agente') or pc} está desligado ou sem rede: peça para reiniciar lá"}
+            try:
+                r = rede_local.perguntar(self.segredo, endereco, "reiniciar_outlook", {}, tempo=outlook_vivo.REINICIO_TEMPO_REDE)
+            except Exception as e:
+                r = {"erro": f"o PC não respondeu pela rede ({type(e).__name__})"}
+        logger.warning(f"🔁 Reinício do Outlook de {pc or este} pedido por {quem}: {r}")
         return r
 
     def _er_terminou(self, _pc):
@@ -1839,6 +1898,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.opcoes_envio(q.get("chave", "")))
                 if url.path == "/api/envio_nf/status":
                     return self._json(estado.situacao_envio(q.get("id", "")))
+                if url.path == "/api/caixas":
+                    return self._json(estado.caixas_com_problema())
                 if url.path == "/api/enviar_receber/status":
                     return self._json(estado._enviar_receber().status(q.get("id", "")))
                 if url.path == "/api/painel":
@@ -1943,6 +2004,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/outlook/reiniciar":
+                    return self._json(estado.reiniciar_outlook(str(corpo.get("pc", "")), nome_do_agente()))
                 if path == "/api/enviar_receber":
                     return self._json(estado.enviar_receber_todas(nome_do_agente()))
                 if path == "/api/ligacao":
@@ -2095,6 +2158,8 @@ def main():
                                                                   "envio_nf": estado.rede_envio_nf,
                                                                   "novidade": estado.rede_novidade,
                                                                   "enviar_receber": estado.rede_enviar_receber,
+                                                                  "caixas": estado.rede_caixas,
+                                                                  "reiniciar_outlook": estado.rede_reiniciar_outlook,
                                                                   "conferir_envio": estado.rede_conferir_envio}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]
