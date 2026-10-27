@@ -9,6 +9,22 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.13] — 2026-10-27
+
+### Adicionado
+
+- **O Painel compara o histórico INTEIRO do hóspede com as notas** (pedido do João): ao abrir o e-mail, junta tudo o que o hóspede
+  escreveu (texto novo e a parte citada "mensagens anteriores" de todos os e-mails dele), tira cada item pedido (serviço, valor,
+  datas: "hospedagem 19 a 23/10 R$ 1.188,00", "estacionamento R$ 120,00"), acha as notas prontas nas pastas pelo CPF/CNPJ e confere
+  item por item: "hospedagem → NF 1391 ✓ valor e datas conferem · estacionamento → NF 1392 ✓". Diz quando todas as notas pedidas já
+  estão prontas ("falta enviar") ou o que ainda falta. Código: `nf_cobre.pedido_do_historico`/`comparar_historico`,
+  `Estado._textos_do_hospede`/`nf_cobre`, `correio.js` `historicoNfHtml`. Só compara; nada é enviado nem movido.
+
+### Corrigido
+
+- O CPF/CNPJ que só aparece na parte citada de uma resposta agora conta (antes o Painel só lia o texto novo), e a resposta herda o
+  documento dos outros e-mails do mesmo remetente. Era o caso do e-mail "Re: Nf de hospedagem e estacionamento".
+
 ## [2026.10.27.12] — 2026-10-27
 
 ### Corrigido

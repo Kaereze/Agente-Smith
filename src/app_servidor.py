@@ -793,23 +793,60 @@ class Estado:
                 saida.pop(r["de"], None)
         return saida
 
+    def _textos_do_hospede(self, e):
+        """Texto novo + citado de TODOS os e-mails do hóspede na lista (o histórico inteiro), do mais velho ao mais novo."""
+        cache = self.__dict__.setdefault("_textos_email", {})
+        textos = []
+        irmaos = sorted((x for x in list(self.emails) if x["pasta"] == espelho_emails.ENTRADA
+                         and (x.get("de") or "").lower() == (e.get("de") or "").lower()), key=lambda x: x["quando"])
+        for x in irmaos:
+            if x["id"] not in cache:
+                try:
+                    t = self.texto_email(x["id"])
+                    cache[x["id"]] = (t.get("texto", ""), t.get("citado", ""))
+                except Exception:
+                    cache[x["id"]] = (x.get("previa", ""), "")
+            textos += list(cache[x["id"]])
+        return textos
+
     def nf_cobre(self, id_email):
-        """Caixa "NF enviada" do e-mail aberto: o que a NF já enviada cobre x o que o hóspede pede agora (27/10/2026)."""
+        """Caixa "NF" do e-mail aberto (27/10/2026): (1) a NF já enviada x o que o hóspede pede agora; (2) o HISTÓRICO INTEIRO do
+        hóspede (todas as mensagens, com a parte citada) x as notas prontas nas pastas, achadas pelo CPF/CNPJ."""
         e = self._email(id_email)
+        saida = {"nfs": []}
         achado = self._pedidos_com_nf_por_email().get((e.get("de") or "").lower())
-        if not achado:
-            return {"nfs": []}
-        sol, nfs = achado
-        try:
-            texto = self.texto_email(id_email).get("texto", "") or e.get("previa", "")
-        except Exception:
-            texto = e.get("previa", "")
-        notas = self._notas_do_pedido(sol, nfs)
-        analise = nf_cobre.analisar(texto, [t for _n, _p, t in notas])
-        enviados = list(self.enviados_correio)
-        sem = nf_achadas.sem_envio_confirmado(nfs, enviados, envio_nf.destinatarios(sol)) if enviados else []
-        return {**analise, "nfs": [{"nf": n, "pdf": next((p for nn, p, _t in notas if nn == n), "")} for n in nfs], "avisos_envio": sem,
-                "sugere_concluir": analise["cobre"] is True and not sem, "motivo_urgencia": nf_cobre.motivo_curto(analise, nfs)}
+        nfs = []
+        if achado:
+            sol, nfs = achado
+            try:
+                texto = self.texto_email(id_email).get("texto", "") or e.get("previa", "")
+            except Exception:
+                texto = e.get("previa", "")
+            notas = self._notas_do_pedido(sol, nfs)
+            analise = nf_cobre.analisar(texto, [t for _n, _p, t in notas])
+            enviados = list(self.enviados_correio)
+            sem = nf_achadas.sem_envio_confirmado(nfs, enviados, envio_nf.destinatarios(sol)) if enviados else []
+            saida = {**analise, "nfs": [{"nf": n, "pdf": next((p for nn, p, _t in notas if nn == n), "")} for n in nfs],
+                     "avisos_envio": sem, "sugere_concluir": analise["cobre"] is True and not sem,
+                     "motivo_urgencia": nf_cobre.motivo_curto(analise, nfs)}
+        indice = getattr(self, "nf_indice", None)
+        if indice is not None:
+            try:
+                textos = self._textos_do_hospede(e)
+                docs = set()
+                for t in textos:
+                    docs |= nf_achadas.documentos_do_texto(t)
+                sol = achado[0] if achado else self._solicitacao_do_email(e["de"])
+                if sol:
+                    docs |= set(nf_achadas._alvo(sol)["documentos"])
+                prontas = nf_achadas.notas_por_documento(indice, docs, raiz=envio_nf.raiz_dropbox(self.cfg), ja_ligadas=nfs, com_texto=True) if docs else []
+                itens = nf_cobre.pedido_do_historico(textos)
+                if prontas and itens:
+                    saida["prontas"] = [{"nf": n["nf"], "pdf": n["nome"]} for n in prontas]
+                    saida["historico"] = nf_cobre.comparar_historico(itens, [{"nf": n["nf"], "texto": n["texto"]} for n in prontas])
+            except Exception:
+                logger.exception("histórico do hóspede x notas prontas")
+        return saida
 
     def concluir_conversa(self, id_email, agente):
         """Botão Concluir (27/10/2026): move a conversa inteira do hóspede (os e-mails dele na entrada) para a pasta "NF enviada"
@@ -984,10 +1021,13 @@ class Estado:
             buscar[0] -= 1
             try:
                 local = espelho_emails.item_local(e["id"]) if e["pc"] == socket.gethostname() else {}
-                texto = local.get("texto") or self.texto_email(e["id"]).get("texto", "")
+                dados_texto = {"texto": local["texto"], "citado": local.get("citado", "")} if local.get("texto") else self.texto_email(e["id"])
             except Exception:
                 return docs, False   # PC dono sem rede agora: tenta na próxima volta
-            cache[e["id"]] = nf_achadas.documentos_do_texto(texto) | nf_achadas.documentos_do_texto(e.get("previa", ""))
+            # o CPF/CNPJ muitas vezes só está na parte citada ("Mostrar mensagens anteriores") de uma resposta
+            self.__dict__.setdefault("_textos_email", {})[e["id"]] = (dados_texto.get("texto", ""), dados_texto.get("citado", ""))
+            cache[e["id"]] = (nf_achadas.documentos_do_texto(dados_texto.get("texto", "")) |
+                              nf_achadas.documentos_do_texto(dados_texto.get("citado", "")) | nf_achadas.documentos_do_texto(e.get("previa", "")))
         return docs | cache.get(e["id"], set()), e["id"] in cache
 
     def _notas_por_documento(self):
@@ -1004,7 +1044,11 @@ class Estado:
         palavras = set().union(*(nf_achadas.palavras_do_nome(e.get("nome", "")) for _c, e in recentes))
         corte = (agora - datetime.timedelta(days=15)).isoformat()
         buscar, saida, raiz = [8], {}, envio_nf.raiz_dropbox(self.cfg)
-        for e in sorted((x for x in list(self.emails) if x["pasta"] == espelho_emails.ENTRADA), key=lambda x: x["quando"], reverse=True):
+        entradas = [x for x in list(self.emails) if x["pasta"] == espelho_emails.ENTRADA]
+        por_remetente = {}
+        for x in entradas:
+            por_remetente.setdefault((x.get("de") or "").lower(), []).append(x["id"])
+        for e in sorted(entradas, key=lambda x: x["quando"], reverse=True):
             if e["quando"] < corte or {"formulario", "aviso"} & set(e.get("classes", [])):
                 continue
             sol = self._solicitacao_do_email(e["de"])
@@ -1015,6 +1059,8 @@ class Estado:
             if not candidato:
                 continue
             docs, _ = self._documentos_do_email(e, sol, buscar)
+            for outro in por_remetente.get((e.get("de") or "").lower(), []):   # a resposta herda o documento do e-mail original
+                docs = docs | self.__dict__.get("_docs_do_email", {}).get(outro, set())
             if docs:
                 achadas = nf_achadas.notas_por_documento(indice, docs, agora, raiz, ja)
                 if achadas:

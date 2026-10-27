@@ -828,7 +828,8 @@ async function carregarCobre(id) {
 }
 function nfCobreHtml(e) {
   const c = cx.cobre?.[e.id];
-  if (!c || c.carregando || !c.nfs?.length) return "";
+  if (!c || c.carregando || (!c.nfs?.length && !c.historico?.itens?.length)) return "";
+  if (!c.nfs?.length) return historicoNfHtml(c);   // sem NF enviada ainda: só o histórico x notas prontas
   const nfs = c.nfs.map(n => `<span class="rf-chip">NF ${esc(n.nf)}${n.pdf ? ` · ${esc(n.pdf)}` : ""}</span>`).join(" ");
   const linhas = (c.linhas || []).map(l => `<div class="cobre-l ${l.ok === true ? "s" : l.ok === false ? "n" : ""}"><i>${l.ok === true ? "✓" : l.ok === false ? "✗" : "•"}</i><span><b>${esc(l.rotulo)}</b> ${esc(l.texto)}</span></div>`).join("");
   const aviso = (c.avisos_envio || []).length ? `<div class="cobre-f am">Marcado como enviado, mas não achei o envio da NF ${esc(c.avisos_envio.join(", "))} nos Itens Enviados. A resposta do hóspede com a nota anexada não conta como envio.</div>` : "";
@@ -836,8 +837,20 @@ function nfCobreHtml(e) {
     : c.sugere_concluir ? `<div class="cobre-f az">Tudo bate com a NF ${esc(c.nfs.map(n => n.nf).join(", "))}. Pode concluir.</div>`
     : c.cobre === null ? `<div class="cobre-f am">Não consegui ler a nota enviada: confira antes de concluir.</div>` : "";
   return `<section class="cx-cobre ${c.pede_nova ? "no" : c.sugere_concluir ? "ok" : "av"}" aria-label="NF já enviada"><div class="cobre-cab"><b>NF enviada</b>${nfs}</div>
-    ${linhas}${aviso}${faixa}<div class="cobre-bt"><button type="button" class="${c.sugere_concluir ? "p dest" : ""}" data-nf-concluir="${esc(e.id)}">Concluir</button>
+    ${linhas}${aviso}${faixa}${c.historico?.itens?.length ? historicoNfHtml(c, true) : ""}<div class="cobre-bt"><button type="button" class="${c.sugere_concluir ? "p dest" : ""}" data-nf-concluir="${esc(e.id)}">Concluir</button>
     <span class="dica">Move a conversa inteira para a pasta “NF enviada”. Nada é apagado.</span></div></section>`;
+}
+function historicoNfHtml(c, dentro = false) {
+  const h = c.historico;
+  if (!h?.itens?.length) return "";
+  const linhas = h.itens.map(i => `<div class="cobre-l ${i.ok ? "s" : "n"}"><i>${i.ok ? "✓" : "✗"}</i><span><b>${esc(i.nome)}</b> R$ ${esc(i.valor)}${i.datas ? ` · ${esc(i.datas)}` : ""}${
+    i.nf ? ` → <b>NF ${esc(i.nf)}</b>` : ""} <span class="dica">${esc(i.detalhe)}</span></span></div>`).join("");
+  const falta = h.itens.filter(i => !i.ok);
+  const faixa = h.completo ? `<div class="cobre-f az">Todas as notas que o hóspede pediu (${h.itens.length}) estão prontas nas pastas e conferem com o histórico dele. Falta enviar.</div>`
+    : `<div class="cobre-f am">Do histórico dele ainda falta: ${esc(falta.map(i => i.nome + (i.nf ? " (confira a NF " + i.nf + ")" : "")).join(", "))}.</div>`;
+  const corpo = `<div class="cobre-cab"><b>Histórico do hóspede x notas prontas</b>${(c.prontas || []).map(n => `<span class="rf-chip">NF ${esc(n.nf)}</span>`).join(" ")}</div>${linhas}${faixa}`;
+  return dentro ? `<div class="cobre-hist">${corpo}</div>` : `<section class="cx-cobre ${h.completo ? "ok" : "av"}" aria-label="Histórico do hóspede x notas">${corpo}
+    <div class="cobre-bt"><span class="dica">Compara tudo o que ele escreveu (inclusive as mensagens anteriores) com as notas das pastas. Nada é enviado nem movido.</span></div></section>`;
 }
 function concluirConversa(id) {
   const e = (cx.dados?.emails || []).find(x => x.id === id);

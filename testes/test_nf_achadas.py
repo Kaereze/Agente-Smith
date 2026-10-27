@@ -137,17 +137,17 @@ def test_tela_e_servidor_ligados_sem_marcar_outra_nota():
 
 # ---------- gatilho: nota nova na pasta -> etiqueta "NF pronta" do e-mail (27/10/2026) ----------
 def test_documentos_escritos_no_texto_do_email():
-    assert nf_achadas.documentos_do_texto("Segue Dados: Leonardo José Barbosa CPF 014.287.736-06 Valor R$ 1.188,00") == {"01428773606"}
+    assert nf_achadas.documentos_do_texto("Segue Dados: Marcos Exemplo da Silva CPF 111.444.777-35 Valor R$ 1.188,00") == {"11144477735"}
     assert nf_achadas.documentos_do_texto("cnpj 12345678000190 e 111.444.777-35") == {"12345678000190", "11144477735"}
     assert nf_achadas.documentos_do_texto("reserva 21657 valor 120,00") == set()
 
 
 def test_notas_por_documento_so_as_recentes_do_mesmo_cpf(tmp_path):
-    ind = indice(tmp_path, {"NF 1391 - LEONARDO BARBOSA - 1.pdf": (nota(doc="014.287.736-06"), 0),
-                            "NF 5 - VELHA.pdf": (nota(doc="014.287.736-06"), 20), "NF 6 - OUTRO.pdf": (nota(doc="98.765.432/0001-10"), 0)})
-    r = nf_achadas.notas_por_documento(ind, {"01428773606"}, agora=AGORA)
+    ind = indice(tmp_path, {"NF 1391 - MARCOS EXEMPLO - 1.pdf": (nota(doc="111.444.777-35"), 0),
+                            "NF 5 - VELHA.pdf": (nota(doc="111.444.777-35"), 20), "NF 6 - OUTRO.pdf": (nota(doc="98.765.432/0001-10"), 0)})
+    r = nf_achadas.notas_por_documento(ind, {"11144477735"}, agora=AGORA)
     assert [n["nf"] for n in r] == ["1391"] and r[0]["via"] == "documento" and "CPF" in r[0]["prova"]
-    assert nf_achadas.notas_por_documento(ind, {"01428773606"}, agora=AGORA, ja_ligadas=["1391"]) == []
+    assert nf_achadas.notas_por_documento(ind, {"11144477735"}, agora=AGORA, ja_ligadas=["1391"]) == []
 
 
 def test_varrer_avisa_o_gatilho_so_para_nota_fresca(tmp_path):
@@ -168,15 +168,42 @@ def test_email_sem_formulario_acha_a_nota_pelo_cpf_escrito_no_texto(tmp_path):
     est = app_servidor.Estado.__new__(app_servidor.Estado)
     agora = datetime.datetime.now()
     est.cfg, est.solicitacoes, est.estados = {}, [], {}
-    est.emails = [{"id": "E1", "pasta": "entrada", "pc": "OUTRO-PC", "de": "jose.leonardo@idv.com", "nome": "JOSE Leonardo (IDV Group)",
+    est.emails = [{"id": "E1", "pasta": "entrada", "pc": "OUTRO-PC", "de": "marcos.exemplo@empresa.com", "nome": "MARCOS Exemplo (Empresa X)",
                    "assunto": "Re: Nf de hospedagem e estacionamento", "previa": "Bom dia, Prezados preciso das Notas fiscais",
                    "classes": [], "quando": agora.isoformat(timespec="seconds"), "hotel": "L GINN"}]
     est.nf_indice = nf_achadas.Indice(tmp_path / "nf.json")
     mtime = (agora - datetime.timedelta(minutes=5)).timestamp()
-    est.nf_indice.dados["C:/d/NF 1391 - LEONARDO BARBOSA - 199128.pdf"] = {
-        "mtime": mtime, "nome": "NF 1391 - LEONARDO BARBOSA - 199128.pdf", "nf": "1391", "doc": "01428773606", "sem_texto": False, "texto": nota()}
-    est.texto_email = types.MethodType(lambda self, i: {"texto": "Segue Dados: Leonardo José Barbosa CPF 014.287.736-06"}, est)
+    est.nf_indice.dados["C:/d/NF 1391 - MARCOS EXEMPLO - 199128.pdf"] = {
+        "mtime": mtime, "nome": "NF 1391 - MARCOS EXEMPLO - 199128.pdf", "nf": "1391", "doc": "11144477735", "sem_texto": False, "texto": nota()}
+    est.texto_email = types.MethodType(lambda self, i: {"texto": "Segue Dados: Marcos Exemplo da Silva CPF 111.444.777-35"}, est)
     r = est._notas_por_documento()
     assert [n["nf"] for n in r["E1"]] == ["1391"]
     est.nf_indice.dados.clear()
+    assert est._notas_por_documento() == {}
+
+
+def test_cpf_so_na_parte_citada_e_resposta_herda_o_documento_do_original(tmp_path):
+    import types
+    import app_servidor
+    est = app_servidor.Estado.__new__(app_servidor.Estado)
+    agora = datetime.datetime.now()
+    est.cfg, est.solicitacoes, est.estados = {}, [], {}
+    base = {"pasta": "entrada", "pc": "OUTRO-PC", "de": "marcos.exemplo@empresa.com", "nome": "MARCOS Exemplo (Empresa X)", "classes": [],
+            "hotel": "L GINN"}
+    est.emails = [{**base, "id": "RESP", "assunto": "Re: Nf de hospedagem e estacionamento", "previa": "Bom dia, preciso das Notas fiscais",
+                   "quando": agora.isoformat(timespec="seconds")},
+                  {**base, "id": "ORIG", "assunto": "Nf de hospedagem e estacionamento", "previa": "Boa tarde, Prezado senhor",
+                   "quando": (agora - datetime.timedelta(days=4)).isoformat(timespec="seconds")}]
+    est.nf_indice = nf_achadas.Indice(tmp_path / "nf.json")
+    est.nf_indice.dados["C:/d/NF 1391 - MARCOS EXEMPLO - 1.pdf"] = {
+        "mtime": (agora - datetime.timedelta(minutes=5)).timestamp(), "nome": "NF 1391 - MARCOS EXEMPLO - 1.pdf", "nf": "1391",
+        "doc": "11144477735", "sem_texto": False, "texto": nota()}
+    textos = {"RESP": {"texto": "Bom dia, preciso das Notas fiscais para prestação de contas", "citado": "Segue Dados: CPF 111.444.777-35"},
+              "ORIG": {"texto": "Prezado, solicito a NF. Segue Dados: CPF 111.444.777-35", "citado": ""}}
+    est.texto_email = types.MethodType(lambda self, i: textos[i], est)
+    r = est._notas_por_documento()
+    assert [n["nf"] for n in r["RESP"]] == ["1391"] and [n["nf"] for n in r["ORIG"]] == ["1391"]   # a resposta (sem CPF no texto novo) também
+    textos["RESP"] = {"texto": "Bom dia, preciso das Notas fiscais", "citado": ""}   # sem CPF em lugar nenhum
+    est.__dict__["_docs_do_email"] = {}
+    est.emails = [est.emails[0]]
     assert est._notas_por_documento() == {}

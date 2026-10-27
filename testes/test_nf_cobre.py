@@ -82,3 +82,36 @@ def test_ligacoes_no_servidor_e_na_tela():
     assert "def mover_para_nf_enviada_no_outlook" in envio and "item.Delete()" not in envio.split("def mover_para_nf_enviada_no_outlook")[1].split("# ---------- pedido")[0]
     assert "data-nf-concluir" in js and "mostrarDesfazer(" in js and "Nada é apagado" in js    # só por clique, com desfazer de 10 s
     assert "concluir" not in srv.split("def _alertas_nova_nota")[1].split("def nf_cobre")[0]    # a urgência nunca move e-mail
+
+
+HISTORICO = ("Boa tarde, me chamo Marcos Exemplo e estive hospedado no hotel do dia 19 a 23 de outubro, solicito a NF de hospedagem e a "
+             "NF do estacionamento, sendo duas NFs separadas.\nSegue Dados:\nMarcos Exemplo da Silva\nCPF 111.444.777-35\n"
+             "Data hospedagem 19 a 23 de outubro. Valor pago R$ 1.188,00\n\nEstacionamento 19 a 23 valor pago R$120,00.\n")
+
+
+def nota_de(servico_rotulo, valor, total):
+    return ("DANFSe v1.0 Documento Auxiliar da NFS-e\nTOMADOR DO SERVIÇO CNPJ / CPF / NIF 111.444.777-35 Nome MARCOS EXEMPLO\n"
+            f"Descrição do Serviço DATA DE CHECK-IN: 19/10/2026 DATA DE CHECK-OUT: 23/10/2026 {servico_rotulo}: R$ {valor} "
+            f"Valor do serviço R$ {total} " + "x" * 80)
+
+
+def test_pedido_do_historico_inteiro_acha_hospedagem_e_estacionamento():
+    itens = nf_cobre.pedido_do_historico([HISTORICO, HISTORICO])   # a parte citada repete o texto: não duplica
+    assert itens == [{"servico": "diaria", "valor": "1.188,00", "datas": ["19/10", "23/10"]},
+                     {"servico": "estacionamento", "valor": "120,00", "datas": ["19/10", "23/10"]}]
+
+
+def test_as_duas_notas_cobrem_o_historico_do_hospede():
+    notas = [{"nf": "1391", "texto": nota_de("VALOR DA DIÁRIA", "297,00", "1.188,00")},
+             {"nf": "1392", "texto": nota_de("VALOR DO ESTACIONAMENTO", "30,00", "120,00")}]
+    r = nf_cobre.comparar_historico(nf_cobre.pedido_do_historico([HISTORICO]), notas)
+    assert r["completo"] and [(i["nome"], i["nf"], i["ok"]) for i in r["itens"]] == [("hospedagem", "1391", True), ("estacionamento", "1392", True)]
+
+
+def test_falta_a_nota_do_estacionamento_ou_o_valor_nao_bate():
+    so_diaria = [{"nf": "1391", "texto": nota_de("VALOR DA DIÁRIA", "297,00", "1.188,00")}]
+    r = nf_cobre.comparar_historico(nf_cobre.pedido_do_historico([HISTORICO]), so_diaria)
+    assert not r["completo"] and r["itens"][1]["ok"] is False and r["itens"][1]["nf"] == "" and "ainda não há nota" in r["itens"][1]["detalhe"]
+    errada = [{"nf": "1391", "texto": nota_de("VALOR DA DIÁRIA", "250,00", "1.000,00")}, {"nf": "1392", "texto": nota_de("VALOR DO ESTACIONAMENTO", "30,00", "120,00")}]
+    r2 = nf_cobre.comparar_historico(nf_cobre.pedido_do_historico([HISTORICO]), errada)
+    assert not r2["completo"] and "valor R$ 1.188,00 não bate" in r2["itens"][0]["detalhe"]

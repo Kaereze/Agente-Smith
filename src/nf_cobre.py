@@ -102,3 +102,70 @@ def motivo_curto(analise, nfs):
     if not analise.get("pede_nova"):
         return ""
     return f"Pede nova nota (NF {', '.join(str(n) for n in nfs)}): {analise['motivos'][0]}"
+
+
+# ---------- o pedido do histórico inteiro do hóspede x as notas já emitidas (27/10/2026) ----------
+_MESES = {"janeiro": 1, "fevereiro": 2, "marco": 3, "abril": 4, "maio": 5, "junho": 6, "julho": 7, "agosto": 8, "setembro": 9,
+          "outubro": 10, "novembro": 11, "dezembro": 12}
+_PERIODO = re.compile(r"(\d{1,2})\s*(?:a|à|ao|ate|até|-)\s*(\d{1,2})(?:\s*de\s*([a-zç]+))?", re.I)
+_VALOR_RS = re.compile(r"R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})")
+NOME_ITEM = {"diaria": "hospedagem", "consumo": "consumo", "estacionamento": "estacionamento"}
+
+
+def _mes_da_linha(linha):
+    n = normalizar(linha)
+    return next((num for nome, num in _MESES.items() if nome in n), None)
+
+
+def pedido_do_historico(textos):
+    """Tudo o que o hóspede escreveu (texto novo + parte citada de cada e-mail, sem repetir a mesma linha) -> itens pedidos:
+    [{"servico": "diaria"|"consumo"|"estacionamento", "valor": "1.188,00", "datas": ["19/10", "23/10"]}]. Um item = uma linha que
+    cita um serviço e um valor ("Estacionamento 19 a 23 valor pago R$120,00")."""
+    linhas, vistas = [], set()
+    for t in textos:
+        for l in str(t or "").splitlines():
+            n = normalizar(l).strip()
+            if n and n not in vistas:
+                vistas.add(n)
+                linhas.append(l.strip())
+    itens, mes = [], None
+    for l in linhas:
+        mes = _mes_da_linha(l) or mes
+        servicos, valor = servicos_no_texto(l), _VALOR_RS.search(l)
+        if not servicos or not valor:
+            continue
+        per = _PERIODO.search(l)
+        m = (_MESES.get(normalizar(per.group(3) or "")) if per else None) or mes
+        datas = [f"{int(per.group(1)):02d}/{m:02d}", f"{int(per.group(2)):02d}/{m:02d}"] if per and m else []
+        servico = "diaria" if "diaria" in servicos else sorted(servicos)[0]
+        item = {"servico": servico, "valor": valor.group(1), "datas": datas}
+        if item not in itens:
+            itens.append(item)
+    return itens
+
+
+def comparar_historico(itens, notas):
+    """itens: pedido_do_historico. notas: [{"nf", "texto"}] já emitidas (enviadas ou prontas).
+    -> {"itens": [{servico, nome, valor, datas, nf, ok, detalhe}], "completo": todos os itens têm nota que confere}"""
+    cobertas = [(n["nf"], cobertura_da_nota(n["texto"]), set(_VALOR_RS.findall(n["texto"] or ""))) for n in notas]
+    saida = []
+    for it in itens:
+        melhor = None
+        for nf, cob, valores in cobertas:
+            if cob["servicos"] and it["servico"] not in cob["servicos"]:
+                continue
+            valor_ok = not it["valor"] or it["valor"] in valores
+            datas_ok = not it["datas"] or set(it["datas"]) <= cob["datas"]
+            ponto = (valor_ok + datas_ok, nf, valor_ok, datas_ok)
+            if melhor is None or ponto[0] > melhor[0]:
+                melhor = ponto
+        ok = bool(melhor and melhor[2] and melhor[3])
+        if not melhor:
+            detalhe = "ainda não há nota deste serviço"
+        elif ok:
+            detalhe = "valor e datas conferem"
+        else:
+            detalhe = "; ".join(x for x in (None if melhor[2] else f"valor R$ {it['valor']} não bate", None if melhor[3] else "datas não batem") if x)
+        saida.append({"servico": it["servico"], "nome": NOME_ITEM.get(it["servico"], it["servico"]), "valor": it["valor"],
+                      "datas": " a ".join(it["datas"]), "nf": melhor[1] if melhor else "", "ok": ok, "detalhe": detalhe})
+    return {"itens": saida, "completo": bool(saida) and all(i["ok"] for i in saida)}

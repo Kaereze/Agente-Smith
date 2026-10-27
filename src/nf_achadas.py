@@ -200,13 +200,13 @@ def documentos_do_texto(texto):
 
 
 def palavras_do_nome(nome_arquivo):
-    """Palavras do nome do hóspede no arquivo "NF 1391 - LEONARDO BARBOSA - 199128.pdf" (para achar e-mails candidatos)."""
+    """Palavras do nome do hóspede no arquivo "NF 1391 - MARCOS EXEMPLO - 199128.pdf" (para achar e-mails candidatos)."""
     from envio_nf import _palavras
     nf = ler_assunto_nf(os.path.splitext(nome_arquivo)[0])
     return {p for p in _palavras(nf[1]) if len(p) >= 4} if nf else set()
 
 
-def notas_por_documento(indice, docs, agora=None, raiz=None, ja_ligadas=(), horas=NOTA_PRONTA_HORAS):
+def notas_por_documento(indice, docs, agora=None, raiz=None, ja_ligadas=(), horas=NOTA_PRONTA_HORAS, com_texto=False):
     """Notas (lidas há até `horas`) cujo CPF/CNPJ do tomador está em `docs` (os do pedido e/ou os do texto do e-mail).
     -> [{nome, nf, rel, prova, modificado, forte, via}] da mais nova para a mais velha. `ja_ligadas`: nºs que já são do pedido."""
     agora = agora or datetime.datetime.now()
@@ -220,7 +220,8 @@ def notas_por_documento(indice, docs, agora=None, raiz=None, ja_ligadas=(), hora
         saida.append({"nome": e.get("nome", os.path.basename(caminho)), "nf": e.get("nf", ""), "forte": True, "via": "documento",
                       "prova": ("CNPJ" if len(e["doc"]) == 14 else "CPF") + " do tomador da nota confere com o do e-mail",
                       "modificado": datetime.datetime.fromtimestamp(e["mtime"]).strftime("%d/%m/%Y %H:%M"),
-                      "rel": os.path.relpath(caminho, raiz) if raiz else caminho, "_m": e["mtime"]})
+                      "rel": os.path.relpath(caminho, raiz) if raiz else caminho, "_m": e["mtime"],
+                      **({"texto": e.get("texto", "")} if com_texto else {})})
     saida.sort(key=lambda a: -a["_m"])
     for a in saida:
         a.pop("_m")
