@@ -1,0 +1,33 @@
+AVISO DO OUTLOOK "Progr. tentando acessar inform. de endereço de email armazenados no Outlook"
+Preparado em 27/10/2026. NADA aqui foi aplicado em nenhum PC.
+
+O QUE FAZ
+  Deixa o Outlook aprovar sozinho, sem perguntar, só o acesso por programa a ENDEREÇOS de e-mail (o aviso da foto).
+  NÃO mexe no aviso de "programa enviando e-mail" (esse continua perguntando) nem nos outros avisos.
+  Vale só para o usuário do Windows em que for aplicado; precisa fechar e abrir o Outlook depois.
+
+POR QUE DÁ PARA FAZER
+  Esses PCs só têm as caixas POP/SMTP da rede e o Windows Defender fica ligado (checado neste PC em 27/10/2026:
+  Defender ligado e atualizado). Quem decide abrir mão do aviso é a empresa; o risco de tirar só este aviso é pequeno,
+  porque ele só deixa LER endereços, não manda nada para fora.
+
+COMO TESTAR (faça primeiro em UM PC, o do João)
+  1. Feche o Outlook. Dê dois cliques em liberar_aviso_endereco.reg e confirme.
+  2. Abra o Outlook. Abra o PowerShell e rode:  powershell -ExecutionPolicy Bypass -File testar_aviso.ps1
+  3. Resultado bom: aparece o endereço do remetente SEM nenhuma janela de aviso.
+     Resultado ruim A: a janela de aviso ainda aparece -> o Outlook não leu a regra: confira o desfazer abaixo e avise.
+     Resultado ruim B: aparece "ACESSO NEGADO" -> o número da regra estava errado para esta versão: rode já o
+     desfazer_aviso_endereco.reg e NÃO aplique nos outros PCs (o robô ficaria sem ler endereços).
+  4. Só depois de dar certo, aplique nos outros 3 PCs (no usuário do Windows que roda o Painel).
+
+COMO DESFAZER
+  Feche o Outlook, dê dois cliques em desfazer_aviso_endereco.reg e abra o Outlook de novo.
+
+DETALHES TÉCNICOS (para a TI)
+  Chave: HKEY_CURRENT_USER\Software\Policies\Microsoft\Office\16.0\Outlook\Security
+  AdminSecurityMode = 3  (Outlook usa as regras de política; sem isso a regra abaixo é ignorada)
+  PromptOOMAddressInformationAccess = 1  (1 = aprovar automaticamente, na ordem das opções do modelo de política do
+    Outlook: perguntar, aprovar, negar, perguntar conforme o antivírus. A página da Microsoft do Outlook 2007 usa outra
+    ordem (0 negar, 1 perguntar, 2 aprovar); por isso o teste acima é obrigatório antes de espalhar.)
+  Neste PC (27/10/2026) não existia nenhuma regra nessa chave. Se em outro PC já existir AdminSecurityMode ou outras
+  regras, o desfazer apaga o AdminSecurityMode: veja a chave antes de aplicar.

@@ -1,0 +1,6 @@
+Windows Registry Editor Version 5.00
+
+; Aprova sozinho o aviso "programa acessando endereços de e-mail" do Outlook 16 (so este aviso). Leia o LEIAME.txt antes.
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Office\16.0\Outlook\Security]
+"AdminSecurityMode"=dword:00000003
+"PromptOOMAddressInformationAccess"=dword:00000001

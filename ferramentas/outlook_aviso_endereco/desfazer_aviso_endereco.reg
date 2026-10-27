@@ -1,0 +1,6 @@
+Windows Registry Editor Version 5.00
+
+; Volta o Outlook ao normal (o aviso volta a aparecer). Leia o LEIAME.txt.
+[HKEY_CURRENT_USER\Software\Policies\Microsoft\Office\16.0\Outlook\Security]
+"AdminSecurityMode"=-
+"PromptOOMAddressInformationAccess"=-
