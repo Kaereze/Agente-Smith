@@ -25,6 +25,15 @@ em React do João). Esperando a escolha.
 
 ![[2026-10-27 Carregamento das acoes.png|700]]
 
+### Botão de caixas com problema · 27/10/2026
+Pedido do João: botãozinho (caixa de entrada com sinal de perigo) logo abaixo da bolha de avisos; clique abre quadro do
+tamanho do de avisos com as caixas que não enviam/recebem e botão "Reiniciar o Outlook" (o que ele fazia à mão); o X deixa
+em espera, nunca fecha. **Aguardando OK e 3 respostas** (reiniciar PC de outro pela rede? reinício automático após 30 min?
+quem vê?). Nada mexido no código.
+- **Abrir a página:** [[2026-10-27 Caixas com problema.html|Caixas com problema]]
+
+![[2026-10-27 Caixas com problema.png|700]]
+
 ### Tela de carregamento universal com o K desenhado · 27/10/2026
 Pedido do João: ao clicar em Enviar/Receber (e em qualquer ação acima de 3 s) aparece no meio do Painel a logo K sendo
 desenhada, no lugar da faixa feia "Pedindo o envio ao robô…". PNG do João vetorizado (marca d'água removida; caixa real do

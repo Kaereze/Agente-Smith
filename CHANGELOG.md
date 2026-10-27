@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.4] — 2026-10-27
+
+### Mudou
+
+- Fundo da tela do K só escurecido e desfocado, sem o tom verde (pedido do João).
+
 ## [2026.10.27.3] — 2026-10-27
 
 ### Adicionado

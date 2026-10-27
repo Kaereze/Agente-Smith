@@ -1,8 +1,10 @@
 /* Tela de carregamento (27/10/2026, desenho aprovado pelo João): só o K sendo desenhado no meio; o cartão do canto
    (barra, tempo, PCs) só aparece quando a ação tem o que contar. Cores do tema do Painel. */
 .cg-veu{position:fixed;inset:0;z-index:60;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;
-  background:color-mix(in srgb,var(--chao) 78%,transparent);backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);
+  background:rgba(20,20,20,.38);backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);
   transition:opacity .28s ease,visibility 0s linear .28s}
+:root[data-theme="dark"] .cg-veu{background:rgba(0,0,0,.55)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-veu{background:rgba(0,0,0,.55)}}
 .cg-veu.on{opacity:1;visibility:visible;transition:opacity .28s ease}
 .cg-k{width:min(240px,50vmin);height:auto;aspect-ratio:1;display:block;overflow:visible;transform:scale(.96);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .cg-veu.on .cg-k{transform:none}

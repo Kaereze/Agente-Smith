@@ -1,0 +1,148 @@
+<title>Caixas com problema</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--pg:#eef4f1;--chao:#eef4f1;--folha:#fff;--linha:#d9e5df;--tinta:#0f241d;--t2:#3d544b;--t3:#556a62;--verde:#08805a;--ok:#13693f;--atencao:#8a5a00;--erro:#b4352a;--erro-f:#fbe4df;--ok-f:#dff3e6;--sombra:0 6px 24px rgba(10,107,78,.16)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#0e1a17;--chao:#15302b;--folha:#1b3a34;--linha:#2d564d;--tinta:#ecf6f2;--t2:#c2d6ce;--t3:#9fb8ae;--verde:#3ddc9e;--ok:#7ae8b0;--atencao:#f3c66b;--erro:#ff9f94;--erro-f:#4c2a27;--ok-f:#1e4a3a;--sombra:0 10px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--pg:#0e1a17;--chao:#15302b;--folha:#1b3a34;--linha:#2d564d;--tinta:#ecf6f2;--t2:#c2d6ce;--t3:#9fb8ae;--verde:#3ddc9e;--ok:#7ae8b0;--atencao:#f3c66b;--erro:#ff9f94;--erro-f:#4c2a27;--ok-f:#1e4a3a;--sombra:0 10px 28px rgba(0,0,0,.4);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--pg);color:var(--tinta);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding-inline:16px;padding-block:20px}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;text-wrap:balance}.sub{color:var(--t2);margin:0 0 16px;max-width:70ch}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.ctl button{font:500 13px inherit;font-family:inherit;border:1px solid var(--linha);background:var(--folha);color:var(--tinta);padding:8px 12px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:var(--verde)}.ctl button.p{background:var(--verde);color:#052219;border-color:var(--verde)}
+.tela{position:relative;height:520px;border:1px solid var(--linha);border-radius:14px;overflow:hidden;background:var(--chao)}
+.rod{position:absolute;left:0;right:0;bottom:0;height:34px;border-top:1px solid var(--linha);background:var(--folha);display:flex;align-items:center;gap:12px;padding:0 14px;font-size:12px;color:var(--t2)}
+.rod .mo{margin-left:auto}
+.lin{height:36px;margin:14px 16px 0;border:1px solid var(--linha);border-radius:8px;background:var(--folha);opacity:.55}
+/* bolha de avisos (a que já existe) */
+.bolha-av{position:absolute;right:16px;bottom:48px;display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:9px;border:1px solid var(--erro);background:var(--erro-f);color:var(--erro);font:500 13px inherit;font-family:inherit}
+/* o botão novo: caixa de entrada com perigo, pequeno, logo abaixo */
+.cx{position:absolute;right:20px;bottom:10px;display:none;z-index:3}
+.cx.on{display:block}
+.cx-bt{position:relative;width:34px;height:30px;border-radius:9px;border:1px solid var(--erro);background:var(--erro-f);color:var(--erro);cursor:pointer;display:grid;place-items:center;padding:0}
+.cx-bt svg{width:18px;height:18px}
+.cx-bt .pg{position:absolute;right:-6px;top:-7px;width:15px;height:15px;border-radius:50%;background:var(--erro);color:var(--folha);display:grid;place-items:center;font:700 10px/1 inherit;font-family:inherit}
+.cx.pisca .cx-bt{animation:pulso 2s ease-in-out infinite}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--erro) 50%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+.cx.ok .cx-bt{border-color:var(--ok);background:var(--ok-f);color:var(--ok);animation:none}
+.cx.ok .pg{background:var(--ok)}
+/* painel aberto: do tamanho do quadro de avisos */
+.pn{position:absolute;right:16px;bottom:48px;width:min(340px,calc(100% - 32px));background:var(--folha);border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);padding:12px 14px;z-index:4;display:none}
+.pn.on{display:block;animation:sobe .25s ease}
+@keyframes sobe{from{opacity:0;transform:translateY(8px)}}
+.pn-cab{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pn-cab b{flex:1;font-size:13.5px}
+.pn-cab button{border:0;background:transparent;color:var(--t2);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.pn-cab button:hover{background:var(--linha)}
+.pc{border:1px solid var(--linha);border-radius:10px;padding:9px 10px;margin-top:8px}
+.pc h4{margin:0 0 4px;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.pc h4 span{font:500 11.5px "IBM Plex Mono",monospace;color:var(--t3)}
+.cai{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--t2);padding:3px 0}
+.cai i{width:8px;height:8px;border-radius:50%;background:var(--erro);flex:none;margin-top:6px}
+.cai.a i{background:var(--atencao)}
+.cai b{color:var(--tinta);font-weight:600}
+.cai small{display:block;color:var(--t3);font-size:11.5px}
+.acao{margin-top:8px;display:flex;gap:8px;align-items:center}
+.acao button{font:600 12.5px inherit;font-family:inherit;border-radius:8px;padding:7px 11px;cursor:pointer;border:1px solid var(--erro);background:var(--erro);color:var(--folha)}
+.acao button.s{background:transparent;color:var(--tinta);border-color:var(--linha)}
+.acao button:disabled{opacity:.5;cursor:default}
+.conf{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--erro-f);font-size:12.5px;color:var(--tinta)}
+.conf .acao{margin-top:8px}
+.res{margin-top:8px;padding:7px 10px;border-radius:8px;font-size:12.5px;font-weight:500}
+.res.ok{background:var(--ok-f);color:var(--ok)}.res.er{background:var(--erro-f);color:var(--erro);animation:treme .5s}
+@keyframes treme{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.bar{height:4px;border-radius:2px;background:var(--linha);margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--verde);transition:width .3s}
+.pn-rod{margin-top:10px;font-size:11.5px;color:var(--t3)}
+.notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:18px}
+.nota{border:1px solid var(--linha);background:var(--folha);border-radius:12px;padding:13px 15px}
+.nota h3{margin:0 0 6px;font-size:14px}.nota ul{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--t2);font-size:13px}
+.qs{margin-top:18px;border:1px solid var(--verde);border-radius:12px;padding:14px 16px;background:var(--folha)}.qs h3{margin:0 0 6px;font-size:14px}.qs ol{margin:0;padding-left:20px;display:grid;gap:5px;color:var(--t2);font-size:13px}
+code{font:12px "IBM Plex Mono",monospace;background:var(--linha);padding:1px 5px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<div class="wrap">
+  <h1>Botão de caixas com problema</h1>
+  <p class="sub">Um botãozinho de caixa de entrada com um sinal de perigo, logo abaixo da bolha de avisos. Ele só existe quando uma caixa não envia ou não recebe. Ao clicar, abre um quadro do tamanho do de avisos, mostra exatamente quais caixas e oferece reiniciar o Outlook daquele PC (o que você já fazia à mão).</p>
+  <div class="ctl">
+    <button class="p" data-c="um">Um PC com problema</button>
+    <button data-c="dois">Dois PCs</button>
+    <button data-c="falha">Reinício que não resolve</button>
+    <button data-c="espera">Em espera (clicou no X)</button>
+    <button data-c="tudo">Tudo certo (some)</button>
+  </div>
+  <div class="tela" id="tela">
+    <div class="lin"></div><div class="lin"></div><div class="lin"></div><div class="lin"></div>
+    <div class="bolha-av">⚠ 3 avisos</div>
+    <div class="cx on pisca" id="cx"><button class="cx-bt" id="bt" aria-label="Caixas com problema" title="Caixas que não enviam ou não recebem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1 3h6l1-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg><span class="pg" id="n">!</span></button></div>
+    <div class="pn" id="pn" role="dialog" aria-label="Caixas com problema">
+      <div class="pn-cab"><b id="tit">Caixas com problema</b><button id="x" aria-label="Deixar em espera" title="Deixar em espera (o botão continua avisando)">×</button></div>
+      <div id="corpo"></div>
+      <div class="pn-rod">O X só guarda o quadro: o botão fica na tela enquanto houver caixa com problema.</div>
+    </div>
+    <div class="rod"><span>● Central sincronizada</span><span class="mo">Painel Fiscal</span></div>
+  </div>
+
+  <div class="notas">
+    <div class="nota"><h3>O que mostra</h3><ul><li>Por PC e por caixa: “não envia” (e-mails presos na Caixa de Saída) e “não recebe” (nada novo há X horas).</li><li>O motivo quando o Painel sabe: Trabalhar Offline, janela de senha aberta, Outlook fechado.</li><li>Só avisa quando é de verdade: dentro do horário de trabalho e depois de alguns minutos.</li></ul></div>
+    <div class="nota"><h3>O que o botão resolve</h3><ul><li>“Reiniciar o Outlook deste PC”: fecha o Outlook de vez e abre de novo, como você fazia.</li><li>Pede confirmação antes, avisa se há e-mail aberto sendo escrito.</li><li>Depois confere sozinho se a Caixa de Saída esvaziou e diz o resultado; se não voltou, diz que precisa de alguém no PC.</li></ul></div>
+    <div class="nota"><h3>Como se comporta</h3><ul><li>Pisca devagar para chamar atenção; o X deixa em espera, nunca fecha.</li><li>Fica verde por alguns segundos quando resolve, e some.</li><li>Pode usar a tela do K durante o reinício.</li></ul></div>
+  </div>
+  <div class="qs"><h3>Preciso da sua decisão</h3><ol>
+    <li>O reinício pode ser pedido por você para o PC de outra pessoa (Cristian, Clara, Bernardo), pela rede dos PCs?</li>
+    <li>Reinício automático: deixo só o botão manual, ou o Painel reinicia sozinho se a caixa ficar parada mais de 30 min?</li>
+    <li>Quem vê o botão: todos os agentes ou só você?</li></ol></div>
+</div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},cx=$('cx'),pn=$('pn'),esp=false,aberto=false,estado=[];
+var CENARIOS={
+ um:[{pc:'Cristian',desde:'24/10 18:07',cai:[{n:'Pousada Jeri',e:'3 e-mails presos na Caixa de Saída',r:'sem receber desde 24/10 18:07',nv:'e'},{n:'Hotel Ondina',e:'1 preso na Caixa de Saída',r:'',nv:'a'}],mot:'Outlook sem resposta há 2 dias'}],
+ dois:[{pc:'Cristian',desde:'24/10 18:07',cai:[{n:'Pousada Jeri',e:'3 e-mails presos na Caixa de Saída',r:'sem receber desde 24/10 18:07',nv:'e'}],mot:'Janela de senha aberta no Outlook'},
+       {pc:'Bernardo',desde:'hoje 09:40',cai:[{n:'Hotel Barra',e:'',r:'sem receber há 2 h 10 min',nv:'a'}],mot:''}]};
+function desenhar(){
+  var tem=estado.length;
+  cx.classList.toggle('on',tem>0);
+  $('n').textContent=estado.reduce(function(s,p){return s+p.cai.length},0)||'!';
+  if(!tem){pn.classList.remove('on');return}
+  var h='';
+  estado.forEach(function(p,i){
+    h+='<div class="pc" data-i="'+i+'"><h4>'+p.pc+' <span>desde '+p.desde+'</span></h4>';
+    p.cai.forEach(function(c){h+='<div class="cai '+c.nv+'"><i></i><div><b>'+c.n+'</b><small>'+[c.e,c.r].filter(Boolean).join(' · ')+'</small></div></div>'});
+    if(p.mot)h+='<div class="cai a"><i></i><div><small>Motivo provável: '+p.mot+'</small></div></div>';
+    if(p.res)h+='<div class="res '+(p.res.ok?'ok':'er')+'">'+p.res.t+'</div>';
+    else if(p.andando)h+='<div class="res" style="background:var(--linha)">Reiniciando o Outlook de '+p.pc+'…</div><div class="bar"><i style="width:'+p.prog+'%"></i></div>';
+    else if(p.conf)h+='<div class="conf">Isso <b>fecha o Outlook de '+p.pc+' de vez</b> e abre de novo (uns 20 s). Rascunhos que estiverem abertos lá o Outlook guarda sozinho. Continuar?<div class="acao"><button data-r="'+i+'">Sim, reiniciar</button><button class="s" data-nao="'+i+'">Cancelar</button></div></div>';
+    else h+='<div class="acao"><button data-q="'+i+'">Reiniciar o Outlook de '+p.pc+'</button></div>';
+    h+='</div>';
+  });
+  $('corpo').innerHTML=h;
+}
+function reinicia(i,ok){
+  var p=estado[i];p.conf=false;p.andando=true;p.prog=0;desenhar();
+  var t=setInterval(function(){p.prog+=9;if(p.prog>=100){clearInterval(t);p.andando=false;
+    if(ok){p.res={ok:true,t:'Voltou: o Outlook abriu e '+p.cai.length+' caixa(s) já enviam. 3 e-mails saíram.'};cx.classList.add('ok');cx.classList.remove('pisca');desenhar();
+      setTimeout(function(){estado.splice(i,1);cx.classList.remove('ok');cx.classList.add('pisca');desenhar()},3200)}
+    else{p.res={ok:false,t:'Não voltou. Precisa de alguém no PC de '+p.pc+' (abrir o Outlook e conferir a senha).'};desenhar()}}else desenhar()},260);
+}
+$('corpo').addEventListener('click',function(e){var t=e.target;
+  if(t.dataset.q!==undefined){estado[t.dataset.q].conf=true;estado[t.dataset.q].res=null;desenhar()}
+  if(t.dataset.nao!==undefined){estado[t.dataset.nao].conf=false;desenhar()}
+  if(t.dataset.r!==undefined)reinicia(+t.dataset.r,window.__falha!==true)});
+$('bt').addEventListener('click',function(){aberto=!aberto;pn.classList.toggle('on',aberto&&estado.length>0);cx.classList.toggle('on',true)});
+$('x').addEventListener('click',function(){aberto=false;pn.classList.remove('on');cx.classList.add('pisca')});
+function cen(c){
+  esp=false;aberto=false;window.__falha=false;pn.classList.remove('on');cx.classList.remove('ok');cx.classList.add('pisca');
+  if(c==='tudo'){estado=[]}
+  else if(c==='espera'){estado=JSON.parse(JSON.stringify(CENARIOS.um))}
+  else{estado=JSON.parse(JSON.stringify(CENARIOS[c]))}
+  if(c==='falha'){estado=JSON.parse(JSON.stringify(CENARIOS.um))}
+  desenhar();
+  if(c==='falha')window.__falha=true;
+  if(c!=='espera'&&c!=='tudo'){aberto=true;pn.classList.add('on')}
+}
+document.querySelectorAll('.ctl button').forEach(function(b){b.addEventListener('click',function(){cen(b.dataset.c)})});
+cen('um');
+})();
+</script>
