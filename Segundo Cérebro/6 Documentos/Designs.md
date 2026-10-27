@@ -87,6 +87,18 @@ certificado, desconectado) e do alerta do Windows no PC dono e no do João. Espe
 
 ![[2026-10-26 Alerta de Outlook parado.png|700]]
 
+### Auditoria do Painel (atualizada) · 27/10/2026
+Pedido do João ("vamos para otimização, atualiza o documento de auditoria"): mesma página da auditoria (mesmo link), versão
+2026.10.27.14. Nota geral **6,8** (era 6,6). Estado do plano de 24/10 (alerta de Caixa de Saída, canal de teste e registros sem e-mail
+feitos; PC único, criptografia da rede e arquivos gigantes pendentes) e **medidas de hoje**: `estado/` 695 MB (560 MB são cache da janela),
+`logs/` 99 MB (um arquivo de console de 31 MB sem teto), `/api/estado` 1,8 MB e `/api/correio` 1,5 MB sem compressão (gzip: 9x e 8x menores,
+medido), 517 MB em 10 processos, `app_servidor.py` +20% em 3 dias. Ordem proposta: limpar o cache da janela, teto nos registros,
+comprimir as respostas, enxugar o índice das NF, guardar o documento de cada e-mail, separar os arquivos gigantes. **Só medição e
+proposta; nada foi alterado.** Versão de 24/10 guardada abaixo.
+- **Abrir a página:** [[2026-10-27 Auditoria do Painel.html|Auditoria 27/10]] · claude.ai: https://claude.ai/artifact/72MWnQiSRryurMZsyRgBx4
+
+![[2026-10-27 Auditoria do Painel.png|700]]
+
 ### Auditoria do Painel · 24/10/2026
 Nota geral **6,6/10**: dados chegando 8,5 (Outlook × Painel 86 = 86), testes 8, documentação 8, confiabilidade 7,
 segurança 6, design 6, código 5, LGPD 5, banco de dados 5. O que corrigir em ordem (alerta da Caixa de Saída, canal de
