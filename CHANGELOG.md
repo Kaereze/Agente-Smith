@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.9] — 2026-10-27
+
+### Adicionado
+
+- **Ligar o robô e Pausar o envio automático** na janela do robô (só o usuário João, no PC dele): grava a caixa
+  "Robô ligado?" da aba Status, a mesma que o robô confere antes de cada rodada. Pausar pede um segundo clique em 5 s e
+  deixa os pedidos esperando; "Enviar agora" fica travado enquanto desligado. Rota `POST /api/robo/ligado`
+  (`Estado.definir_robo_ligado`), botões em `app_ui/robo.js`.
+
+### Corrigido
+
+- **Botão de caixas com problema:** o texto do resultado do reinício saía espremido em coluna, porque a classe `.av` que
+  ele usava já é o círculo de avatar do Painel. As classes do quadro agora têm prefixo próprio (`cp-*`).
+
 ## [2026.10.27.8] — 2026-10-27
 
 ### Adicionado

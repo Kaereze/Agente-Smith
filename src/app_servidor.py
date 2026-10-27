@@ -56,7 +56,8 @@ from app_envio import Envio
 from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
 from log_util import configurar_logging
 import outlook_vivo
-from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
+from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba,
+                    nome_intervalo)
 from tratamento import normalizar
 
 logger = configurar_logging("app")
@@ -1050,6 +1051,19 @@ class Estado:
             return {"erro": "Modo só leitura: não pede nada aos PCs"}
         return self._enviar_receber().iniciar(quem)
 
+    def definir_robo_ligado(self, ligado, quem):
+        """Liga ou pausa o robô (27/10/2026, só o João): é a caixa "Robô ligado?" da aba Status, a mesma que o robô lê antes de
+        cada rodada. Desligado = nada é copiado nem enviado (os pedidos esperam) e o "Enviar agora" fica travado."""
+        if getattr(self, "so_ver", False):
+            return {"ok": False, "motivo": "Modo só leitura: não liga nem pausa o robô"}
+        valor = "TRUE" if ligado else "FALSE"
+        if not getattr(self, "demo", False):
+            self.backend.escrever(self.cfg["planilha_central_id"], [(f"{nome_intervalo(self.cfg['aba_status'])}!B1", valor)])
+        self.status[STATUS_ROTULO_A1] = valor
+        logger.warning(f"🔌 Robô {'LIGADO' if ligado else 'PAUSADO (desligado)'} no Painel por {quem}")
+        self.versao_tela += 1
+        return {"ok": True, "ligado": bool(ligado)}
+
     def rede_ping(self, _corpo):
         return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
 
@@ -2007,6 +2021,10 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/robo/ligado":
+                    if not e_admin_aqui(estado.cfg, nome_do_agente(), liberado()):
+                        return self._json({"ok": False, "motivo": "Só o João liga ou pausa o robô, no PC dele."}, 403)
+                    return self._json(estado.definir_robo_ligado(bool(corpo.get("ligado")), nome_do_agente()))
                 if path == "/api/outlook/reiniciar":
                     return self._json(estado.reiniciar_outlook(str(corpo.get("pc", "")), nome_do_agente()))
                 if path == "/api/enviar_receber":

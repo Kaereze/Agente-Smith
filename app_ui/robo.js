@@ -140,7 +140,7 @@ function rbSkeleton() {
 function rbAgora(m) {
   if (m.carregando) return `<div class="rb-corpo"><div class="rb-main"><p class="rb-frase">Lendo os pedidos…</p>${rbSkeleton()}</div></div>`;
   if (!m.ligado) return `<div class="rb-corpo"><div class="rb-main"><div class="rb-vazio" style="padding-top:88px"><b>O robô está desligado.</b>Ele parou de copiar e enviar os pedidos. Os pedidos que chegarem ficam esperando.
-    <div class="rb-leg">Avise o João para ligar o robô.</div></div></div></div>`;
+    <div class="rb-leg">Avise o João para ligar o robô.</div><button type="button" class="rb-bt pri so-admin" data-rb-liga="1" style="margin-top:14px">Ligar o robô</button></div></div></div>`;
   const n = m.esperando.length;
   let frase;
   if (m.rodando) frase = `${rbGira(20)}<span>O robô está enviando ${n ? `<b>${n} ${n === 1 ? "pedido" : "pedidos"}</b>` : "os pedidos"} agora.</span>`;
@@ -228,6 +228,8 @@ function rbGavetaPedido(m) {
 function rbCabecalho(m) {
   return `<header class="rb-topo"><h3 id="rb-titulo">Robô</h3>${rbEstado(m)}<div class="rb-acoes">
     <button type="button" class="rb-bt pri" id="rb-agora" ${m.rodando || !m.ligado ? "disabled" : ""}>${m.rodando ? rbGira(13) + "Enviando…" : rbIc("env") + "Enviar agora"}</button>
+    ${m.ligado ? `<button type="button" class="rb-bt so-admin" data-rb-liga="0" title="Para de copiar e enviar até ligar de novo">${rbz.confPausa ? "Confirmar: pausar tudo" : "Pausar o envio automático"}</button>`
+      : `<button type="button" class="rb-bt pri so-admin" data-rb-liga="1">Ligar o robô</button>`}
     <span class="rb-sep"></span><button type="button" class="rb-bt ic fant" data-rb-minimizar aria-label="Minimizar" title="Minimizar: o robô segue trabalhando">${rbIc("min")}</button>
     <button type="button" class="rb-bt ic fant fechar" data-rb-fechar aria-label="Fechar" title="Fechar (Esc)">${rbIc("x")}</button></div></header>
     <nav class="rb-abas" role="tablist"><button type="button" role="tab" aria-selected="${rbz.aba === "agora"}" class="${rbz.aba === "agora" ? "on" : ""}" data-rb-aba="agora">Agora</button>
@@ -328,6 +330,15 @@ function rbAgendar() {
   const ms = rbz.env?.rodando ? 2500 : (rbz.aberta || rbz.gaveta) ? 8000 : 0;
   if (ms) rbz.timer = setTimeout(rbVigiar, ms);
 }
+// Ligar/pausar o robô (só o João): pausar pede um segundo clique em até 5 s, para não parar o envio sem querer
+async function rbLigar(ligar) {
+  if (!ligar && !rbz.confPausa) { rbz.confPausa = true; rbRender(); setTimeout(() => { rbz.confPausa = false; rbRender(); }, 5000); return; }
+  rbz.confPausa = false;
+  const r = await api("/api/robo/ligado", { ligado: ligar });
+  if (!r.ok) { toast(r.motivo || "Não deu certo", true); return rbRender(); }
+  toast(ligar ? "Robô ligado: volta a copiar e enviar" : "Envio automático pausado: os pedidos ficam esperando");
+  carregar(false);
+}
 async function rbEnviarAgora() {
   const b = document.getElementById("rb-agora");
   if (b) b.disabled = true;
@@ -342,10 +353,11 @@ const rbCopiar = (txt, aviso) => navigator.clipboard?.writeText(txt).then(() => 
 document.addEventListener("click", ev => {
   const alvo = ev.target.closest("[data-abrir-robo],[data-rb-fechar],[data-rb-minimizar],[data-rb-aba],[data-rb-filtro],[data-rb-vivo],[data-rb-ped],[data-rb-fechar-ped],[data-rb-mais],"
     + "[data-rb-ajuda],[data-rb-copiar-ajuda],[data-rb-ver-pedidos],[data-rb-monit],[data-rb-reg],[data-rb-copiar-cru],[data-rb-dias],[data-rb-copiar-dia],[data-rb-copiar-ped],"
-    + "[data-rb-no-registro],[data-rb-abrir-tudo],[data-rb-recolher],[data-rb-fim-x],#rb-agora,#robo");
+    + "[data-rb-no-registro],[data-rb-abrir-tudo],[data-rb-recolher],[data-rb-fim-x],#rb-agora,#robo,[data-rb-liga]");
   if (!alvo) return;
   const d = alvo.dataset;
   if (alvo.id === "rb-agora") return rbEnviarAgora();
+  if ("rbLiga" in d) return rbLigar(d.rbLiga === "1");
   if (alvo.id === "robo") { rbz.gaveta = !rbz.gaveta && !rbz.aberta; if (rbz.aberta) return; rbRenderGaveta(); rbAgendar(); if (rbz.gaveta) rbVigiar(); return; }
   if ("abrirRobo" in d) return rbAbrir(d.abrirRobo === "reg" ? "reg" : "agora");
   if ("rbFechar" in d) return rbFechar();

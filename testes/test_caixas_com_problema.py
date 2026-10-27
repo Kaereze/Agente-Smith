@@ -77,3 +77,10 @@ def test_tela_do_k_tambem_usa_a_paleta_da_auditoria():
     for verde in ("var(--verde", "var(--mata", "var(--ok", "var(--chao", "var(--folha", "var(--linha"):
         assert verde not in k
     assert "var(--cp-azul)" in k and "var(--cp-verm)" in k
+
+
+def test_classes_do_resultado_nao_colidem_com_as_do_painel():
+    for antiga in ('"av"', '"ok"', '"er"', "cp-res an", "cp-lin a"):
+        assert antiga not in JS.replace('"cp-azul"', "")
+    for nova in ("cp-am", "cp-azul", "cp-verm", "cp-cinza", "cp-amb"):
+        assert nova in JS and f".{nova}" in CSS or f".cp-res.{nova}" in CSS

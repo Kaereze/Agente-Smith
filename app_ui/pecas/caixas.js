@@ -43,10 +43,10 @@
       + (pcs.length ? pcs.map(p => {
         const s = st[p.pc] || {}, nome = esc(p.agente);
         const linhas = (p.caixas || []).map(c => `<div class="cp-lin"><i></i><div><b>${esc(c.caixa)}</b><small>${c.presos} e-mail${c.presos > 1 ? "s" : ""} preso${c.presos > 1 ? "s" : ""} na Caixa de Saída</small></div></div>`).join("")
-          + (p.textos || []).map(t => `<div class="cp-lin a"><i></i><div><small>${esc(t)}</small></div></div>`).join("")
-          + (p.erro ? `<div class="cp-lin a"><i></i><div><small>Não consegui ler as caixas deste PC: ${esc(p.erro)}</small></div></div>` : "");
-        const acao = s.fase === "andando" ? `<div class="cp-res an">Reiniciando o Outlook de ${nome}…</div>`
-          : s.fase === "res" ? `<div class="cp-res ${s.ok ? (s.aviso ? "av" : "ok") : "er"}">${esc(s.texto)}</div>`
+          + (p.textos || []).map(t => `<div class="cp-lin cp-amb"><i></i><div><small>${esc(t)}</small></div></div>`).join("")
+          + (p.erro ? `<div class="cp-lin cp-amb"><i></i><div><small>Não consegui ler as caixas deste PC: ${esc(p.erro)}</small></div></div>` : "");
+        const acao = s.fase === "andando" ? `<div class="cp-res cp-cinza">Reiniciando o Outlook de ${nome}…</div>`
+          : s.fase === "res" ? `<div class="cp-res ${s.ok ? (s.aviso ? "cp-am" : "cp-azul") : "cp-verm"}">${esc(s.texto)}</div>`
           : s.fase === "conf" ? `<div class="cp-conf">Isso <b>fecha o Outlook de ${nome} de vez</b> e abre de novo (uns 30 s). Rascunhos abertos lá o Outlook costuma guardar sozinho. Continuar?<div class="cp-acao"><button type="button" data-sim="1" data-pc="${esc(p.pc)}">Sim, reiniciar</button><button type="button" class="s" data-nao="1" data-pc="${esc(p.pc)}">Cancelar</button></div></div>`
           : "";
         return `<section class="cp-pc"><h4>${nome}</h4>${linhas}${acao}`

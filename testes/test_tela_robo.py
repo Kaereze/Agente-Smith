@@ -29,5 +29,8 @@ def test_janela_usa_a_peca_unica_e_fecha_com_esc():
 
 
 def test_nada_de_glifo_solto_nem_botao_que_comanda_o_robo():
-    assert "/api/enviar" in JS and "/api/comando" not in JS and "Pausar" not in JS and "Ligar o robô" not in JS
+    assert "/api/enviar" in JS and "/api/comando" not in JS
+    # Ligar/Pausar o robô (OK do João em 27/10/2026): só o usuário João vê (so-admin) e pausar pede confirmação
+    assert "Pausar o envio automático" in JS and "Ligar o robô" in JS
+    assert JS.count('so-admin" data-rb-liga') + JS.count('pri so-admin" data-rb-liga') >= 3
     assert "&#10003;" not in JS and "✓" not in JS.replace("// ", "")
