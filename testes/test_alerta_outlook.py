@@ -72,3 +72,15 @@ def test_fora_do_horario_so_fica_no_painel_e_avisa_quando_comeca():
     assert a.outlook(pcs, "PC-João", True, agora=domingo) == []
     assert a.outlook(pcs, "PC-João", True, agora=datetime.datetime(2026, 10, 24, 12, 30)) == []   # sábado depois das 12h
     assert len(a.outlook(pcs, "PC-João", True, agora=SEG.replace(hour=8, minute=1))) == 1
+
+
+def test_caixa_que_pede_senha_aparece_no_aviso():
+    assert saude.caixas_pedindo_senha(["Email da Internet - notafiscal@redeandradebahia.com.br", "Lembrete"]) == ["BAHIA"]
+    assert saude.caixas_pedindo_senha(["Lembrete"]) == []
+    col = saude.coluna(2, motivo="senha", caixas_senha=["BAHIA", "JERI"])
+    assert saude.ler_coluna(col)["cxs"] == ["BAHIA", "JERI"] and saude.ler_coluna(saude.coluna(0))["cxs"] == []
+    assert "(caixa BAHIA)" in saude.motivo_texto("senha", ["BAHIA"]) and "caixa" not in saude.motivo_texto("offline", ["BAHIA"])
+    pcs = [{"pc": "PC1", "agente": "Cristian", "online": True, "outlook": "aberto",
+            "saude": saude.ler_coluna(saude.coluna(3, motivo="senha", caixas_senha=["BAHIA"]))}]
+    textos = [x["texto"] for x in saude.problemas(pcs)]
+    assert any("caixa BAHIA" in x and "TI" in x for x in textos)

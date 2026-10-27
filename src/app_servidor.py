@@ -368,7 +368,8 @@ class Estado:
                 rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
                 f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
                 saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia(), self._planilhas_sem_cadastro(),
-                             self._ultimo_robo(), getattr(self, "ultimo_recebido", ""), getattr(self, "motivo_outlook", ""))]
+                             self._ultimo_robo(), getattr(self, "ultimo_recebido", ""), getattr(self, "motivo_outlook", ""),
+                             getattr(self, "caixas_senha", []))]
 
     def _planilhas_sem_cadastro(self):
         if not e_principal(self.cfg):
@@ -493,8 +494,10 @@ class Estado:
                     self.ultimo_recebido = saude.ultimo_recebido(ns) or getattr(self, "ultimo_recebido", "")
                     try:   # por que o Outlook parou (26/10/2026): Trabalhar Offline, janela de senha, certificado
                         self.motivo_outlook = saude.motivo_outlook(ns)
+                        self.caixas_senha = saude.caixas_pedindo_senha() if self.motivo_outlook == "senha" else []
                     except Exception:
                         self.motivo_outlook = ""
+                        self.caixas_senha = []
                     for pasta in [ns.GetDefaultFolder(4)] + [c.DeliveryStore.GetDefaultFolder(4) for c in ns.Accounts]:
                         try:
                             if pasta.EntryID in vistos:

@@ -18,7 +18,8 @@ HORARIO_EMAIL = ("08:00", "22:00")
 MOTIVOS = {"offline": "em \u201cTrabalhar Offline\u201d", "senha": "com uma janela pedindo senha aberta",
            "certificado": "com um aviso de certificado esperando resposta"}
 PASSOS = {"offline": "No Outlook dele: Enviar/Receber \u2192 clique em Trabalhar Offline (para apagar) e aperte F9.",
-          "senha": "No PC dele: digite a senha na janela do Outlook (pode estar atrás das outras) e aperte F9.",
+          "senha": "No PC dele: digite a senha na janela do Outlook (pode estar atrás das outras) e aperte F9. "
+                   "Se ela voltar com a senha certa, o servidor está recusando o login: espere uns 15 min sem apertar F9 e chame a TI.",
           "certificado": "No PC dele: responda o aviso de certificado do Outlook e aperte F9.",
           "": "No PC dele: veja se o Outlook está em Trabalhar Offline ou pedindo senha e aperte F9."}
 # "Email da Internet - caixa@dominio": a janela de usuário e senha do POP3 (27/10/2026: o Outlook do Cristian ficou preso
@@ -66,7 +67,32 @@ def _janelas_do_outlook():
     return titulos
 
 
-def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido="", motivo=""):
+def caixas_pedindo_senha(janelas=None):
+    """Caixas cuja janela de usuário e senha do POP3 está aberta (27/10/2026): o título é "Email da Internet - caixa@dominio".
+    -> ["BAHIA"]. Só lê os títulos; nunca vê nem digita a senha."""
+    import re
+    if janelas is None:
+        janelas = _janelas_do_outlook()
+    achadas = []
+    for t in janelas:
+        baixo = str(t).lower()
+        if not any(p in baixo for p in _JANELA_SENHA):
+            continue
+        m = re.search(r"[\w.+-]+@[\w.-]+\.\w+", str(t))
+        if m and nome_da_caixa(m.group(0)) not in achadas:
+            achadas.append(nome_da_caixa(m.group(0)))
+    return achadas
+
+
+def motivo_texto(mot, caixas=()):
+    """O motivo por extenso; na janela de senha diz de qual caixa ("com uma janela pedindo senha aberta (caixa BAHIA)")."""
+    texto = MOTIVOS.get(mot, "")
+    if texto and mot == "senha" and caixas:
+        texto += f" (caixa {', '.join(caixas)})"
+    return texto
+
+
+def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido="", motivo="", caixas_senha=()):
     """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso;rec=iso"."""
     partes = [f"saida={int(saida_travada or 0)}"]
     if ultima_copia:
@@ -79,6 +105,8 @@ def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""
         partes.append(f"rec={recebido}")
     if motivo:
         partes.append(f"mot={motivo}")
+    if motivo == "senha" and caixas_senha:
+        partes.append("cxs=" + "|".join(str(x).replace(";", ",").replace("=", "-") for x in caixas_senha))
     return ";".join(partes)
 
 
@@ -148,6 +176,7 @@ def ler_coluna(texto):
     except ValueError:
         saida["saida"] = 0
     saida["cad"] = [x for x in str(saida.get("cad", "")).split("|") if x]
+    saida["cxs"] = [x for x in str(saida.get("cxs", "")).split("|") if x]
     return saida
 
 
@@ -213,7 +242,7 @@ def problemas(pcs, agora=None):
         n = p.get("saude", {}).get("saida", 0)
         mot = p.get("saude", {}).get("mot", "")
         if n:
-            texto = (f"Outlook de {quem} parado {MOTIVOS[mot]}: {n} e-mail(s) presos na Caixa de Saída. " if mot in MOTIVOS
+            texto = (f"Outlook de {quem} parado {motivo_texto(mot, p.get('saude', {}).get('cxs', []))}: {n} e-mail(s) presos na Caixa de Saída. " if mot in MOTIVOS
                      else f"Caixa de Saída do Outlook de {quem} travada: {n} e-mail(s) parado(s) há mais de {SAIDA_TRAVADA_MIN} min. ")
             saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": texto + PASSOS.get(mot, PASSOS[""])})
         if p.get("outlook") == "fechado":
@@ -239,7 +268,7 @@ def problemas(pcs, agora=None):
                     continue   # já está no aviso da Caixa de Saída, com o motivo e o que fazer
                 saida.append({"nivel": "erro", "pc": p["pc"], "tipo": "caixa", "texto": f"Nenhum e-mail novo chega ao Outlook de "
                               f"{p.get('agente') or p['pc']} desde {r:%d/%m %H:%M}"
-                              f"{' (' + MOTIVOS[mot] + ')' if mot in MOTIVOS else ''}. " + PASSOS.get(mot, PASSOS[""])})
+                              f"{' (' + motivo_texto(mot, p.get('saude', {}).get('cxs', [])) + ')' if mot in MOTIVOS else ''}. " + PASSOS.get(mot, PASSOS[""])})
     robos = [r for r in (_data(p.get("saude", {}).get("robo")) for p in pcs) if r]
     if robos and HORARIO_COPIA[0] <= agora.strftime("%H:%M") <= HORARIO_COPIA[1] and \
             agora - max(robos) > datetime.timedelta(minutes=COPIA_ATRASADA_MIN):

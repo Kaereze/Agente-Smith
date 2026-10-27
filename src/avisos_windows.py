@@ -68,7 +68,7 @@ def outlook_parado(p, pcs, agora):
 
 def texto_parado(p, n, mot, desde, proprio):
     quem = p.get("agente") or p["pc"]
-    motivo = saude.MOTIVOS.get(mot, "")
+    motivo = saude.motivo_texto(mot, (p.get("saude") or {}).get("cxs", []))
     presos = f"{n} e-mail(s) presos na Caixa de Saída." if n else ""
     if proprio:
         passo = saude.PASSOS.get(mot, saude.PASSOS[""]).replace("No Outlook dele: ", "").replace("No PC dele: ", "")

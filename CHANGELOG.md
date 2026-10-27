@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.8] — 2026-10-27
+
+### Adicionado
+
+- **O aviso de Outlook parado diz qual caixa está pedindo senha.** O PC lê o título da janela "Email da Internet -
+  caixa@dominio" (só o título, nunca a senha) e publica a caixa na Saúde (`cxs=`); o aviso vira "parado com uma janela
+  pedindo senha aberta (caixa BAHIA)". O passo para a senha agora também diz: se a janela voltar com a senha certa, o
+  servidor está recusando o login (erro `[SYS/TEMP]`), então espere uns 15 min sem apertar F9 e chame a TI.
+  Código: `saude.caixas_pedindo_senha`, `saude.motivo_texto`, `coluna(..., caixas_senha)`.
+
 ## [2026.10.27.7] — 2026-10-27
 
 ### Mudou
