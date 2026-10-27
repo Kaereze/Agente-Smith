@@ -1,5 +1,5 @@
 /* Tela de carregamento (27/10/2026, desenho aprovado pelo João): só o K sendo desenhado no meio; o cartão do canto
-   (barra, tempo, PCs) só aparece quando a ação tem o que contar. Cores do tema do Painel. */
+   (barra, tempo, PCs) só aparece quando a ação tem o que contar. Cores: a paleta da Auditoria (--cp-*, definidas em caixas.css), sem verde (pedido do João, 27/10/2026). */
 .cg-veu{position:fixed;inset:0;z-index:60;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;
   background:rgba(20,20,20,.38);backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);
   transition:opacity .28s ease,visibility 0s linear .28s}
@@ -8,14 +8,14 @@
 .cg-veu.on{opacity:1;visibility:visible;transition:opacity .28s ease}
 .cg-k{width:min(240px,50vmin);height:auto;aspect-ratio:1;display:block;overflow:visible;transform:scale(.96);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .cg-veu.on .cg-k{transform:none}
-.cg-k .tr path{fill:none;stroke:var(--tinta);stroke-width:5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
-.cg-k .pr{fill:var(--tinta);opacity:0}
+.cg-k .tr path{fill:none;stroke:var(--cp-tinta);stroke-width:5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
+.cg-k .pr{fill:var(--cp-tinta);opacity:0}
 .cg-k.desenha .tr path{animation:cg-traco var(--dur) cubic-bezier(.45,.05,.3,1) var(--ini) forwards}
 .cg-k.desenha .pr{animation:cg-enche .55s ease calc(var(--fim) - .5s) forwards}
 .cg-k.desenha .tr{animation:cg-some .4s ease calc(var(--fim) + .05s) forwards}
 .cg-k.apaga .pr{animation:cg-apaga .5s ease forwards}
-.cg-k.ok .pr{fill:var(--verde);opacity:1;transition:fill .3s}
-.cg-k.erro .pr{fill:var(--erro);opacity:1;transition:fill .3s}
+.cg-k.ok .pr{fill:var(--cp-azul);opacity:1;transition:fill .3s}
+.cg-k.erro .pr{fill:var(--cp-verm);opacity:1;transition:fill .3s}
 .cg-k.ok{animation:cg-pulo .5s ease}
 .cg-k.erro,.cg-k.treme{animation:cg-treme .55s cubic-bezier(.36,.07,.19,.97)}
 @keyframes cg-traco{0%{stroke-dashoffset:1;opacity:1}100%{stroke-dashoffset:0;opacity:1}}
@@ -24,35 +24,35 @@
 @keyframes cg-apaga{from{opacity:1}to{opacity:0}}
 @keyframes cg-pulo{40%{transform:scale(1.06)}}
 @keyframes cg-treme{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
-.cg-info{position:fixed;right:16px;bottom:88px;z-index:61;width:min(320px,calc(100vw - 32px));background:var(--folha);color:var(--tinta);
-  border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);padding:14px 16px 12px;font:13px/1.45 var(--f-texto);
+.cg-info{position:fixed;right:16px;bottom:88px;z-index:61;width:min(320px,calc(100vw - 32px));background:var(--cp-folha);color:var(--cp-tinta);
+  border:1px solid var(--cp-linha);border-radius:14px;box-shadow:var(--sombra);padding:14px 16px 12px;font:13px/1.45 var(--f-texto);
   opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s,transform .3s,visibility 0s linear .3s}
 .cg-info.on{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .3s}
 .cg-info .cg-tit{font-weight:600;font-size:14px;margin:0 0 2px}
-.cg-info.erro .cg-tit{color:var(--erro)}
-.cg-info .cg-det{color:var(--tinta-2)}
+.cg-info.erro .cg-tit{color:var(--cp-verm)}
+.cg-info .cg-det{color:var(--cp-t2)}
 .cg-info .cg-det:empty{display:none}
-.cg-bar{height:5px;border-radius:3px;background:var(--linha);margin:12px 0 6px;overflow:hidden}
-.cg-bar i{display:block;height:100%;width:0;background:var(--verde);border-radius:3px;transition:width .4s ease}
-.cg-bar.erro i{background:var(--erro)}
-.cg-meta{display:flex;justify-content:space-between;font:500 12px var(--f-dado);color:var(--tinta-3);font-variant-numeric:tabular-nums}
+.cg-bar{height:5px;border-radius:3px;background:var(--cp-linha);margin:12px 0 6px;overflow:hidden}
+.cg-bar i{display:block;height:100%;width:0;background:var(--cp-azul);border-radius:3px;transition:width .4s ease}
+.cg-bar.erro i{background:var(--cp-verm)}
+.cg-meta{display:flex;justify-content:space-between;font:500 12px var(--f-dado);color:var(--cp-t3);font-variant-numeric:tabular-nums}
 .cg-pcs{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
-.cg-pcs li{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--linha);border-radius:9px}
-.cg-pcs .pt{width:8px;height:8px;border-radius:50%;background:var(--tinta-3);flex:none}
+.cg-pcs li{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--cp-linha);border-radius:9px}
+.cg-pcs .pt{width:8px;height:8px;border-radius:50%;background:var(--cp-t3);flex:none}
 .cg-pcs .nm{flex:1;font-weight:500}
-.cg-pcs .rs{color:var(--tinta-3);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
-.cg-pcs li.andando .pt{background:var(--verde);animation:cg-pisca 1s ease-in-out infinite}
-.cg-pcs li.feito .pt{background:var(--ok)}
-.cg-pcs li.feito.aviso .pt{background:var(--atencao)}
-.cg-pcs li.falha{border-color:var(--erro);background:var(--erro-fundo)}
-.cg-pcs li.falha .pt{background:var(--erro)}
-.cg-pcs li.falha .rs{color:var(--erro);font-weight:600}
+.cg-pcs .rs{color:var(--cp-t3);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.cg-pcs li.andando .pt{background:var(--cp-azul);animation:cg-pisca 1s ease-in-out infinite}
+.cg-pcs li.feito .pt{background:var(--cp-azul)}
+.cg-pcs li.feito.aviso .pt{background:var(--cp-ambar)}
+.cg-pcs li.falha{border-color:var(--cp-verm);background:var(--cp-verm-f)}
+.cg-pcs li.falha .pt{background:var(--cp-verm)}
+.cg-pcs li.falha .rs{color:var(--cp-verm);font-weight:600}
 .cg-pcs li.falha:not(.vi){animation:cg-treme .55s cubic-bezier(.36,.07,.19,.97)}
 .cg-pcs li.feito:not(.vi) .pt{animation:cg-pop .4s ease}
 @keyframes cg-pisca{50%{opacity:.25}}
 @keyframes cg-pop{40%{transform:scale(1.9)}}
 .cg-rod{display:flex;justify-content:flex-end;margin-top:10px}
-.cg-rod button{font:500 12.5px var(--f-texto);border:1px solid var(--linha);background:transparent;color:var(--tinta);border-radius:8px;padding:6px 12px;cursor:pointer}
-.cg-rod button:hover{border-color:var(--verde)}
+.cg-rod button{font:500 12.5px var(--f-texto);border:1px solid var(--cp-linha);background:transparent;color:var(--cp-tinta);border-radius:8px;padding:6px 12px;cursor:pointer}
+.cg-rod button:hover{border-color:var(--cp-azul)}
 @media (prefers-reduced-motion:reduce){.cg-k .tr{display:none}.cg-k .pr{opacity:1!important;animation:none!important}
   .cg-k,.cg-k.erro,.cg-k.treme,.cg-k.ok,.cg-pcs li,.cg-pcs .pt{animation:none!important}.cg-veu,.cg-info,.cg-k{transition:none}}

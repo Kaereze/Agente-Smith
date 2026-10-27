@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.7] — 2026-10-27
+
+### Mudou
+
+- **Tela de carregamento do K na paleta da Auditoria** (sem verde, pedido do João): K de sucesso, barra e bolinhas em azul,
+  cartão em cinza neutro, erro em vermelho, aviso em âmbar. Mesmas cores do botão de caixas com problema.
+
 ## [2026.10.27.6] — 2026-10-27
 
 ### Corrigido

@@ -70,3 +70,10 @@ def test_cores_sao_as_da_auditoria_e_sem_verde():
         assert cor in CSS
     for verde in ("#3ddc9e", "#5ec27e", "#08805a", "#107c41", "var(--verde", "var(--mata", "var(--ok"):
         assert verde not in CSS
+
+
+def test_tela_do_k_tambem_usa_a_paleta_da_auditoria():
+    k = (UI / "pecas" / "carregando.css").read_text(encoding="utf-8")
+    for verde in ("var(--verde", "var(--mata", "var(--ok", "var(--chao", "var(--folha", "var(--linha"):
+        assert verde not in k
+    assert "var(--cp-azul)" in k and "var(--cp-verm)" in k
