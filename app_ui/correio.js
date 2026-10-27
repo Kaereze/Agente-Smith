@@ -1141,17 +1141,21 @@ function abrirMenuEmail(id, x, y) {
   const env = cx.caixa === "enviados" ? (cx.dados?.enviados || []).find(m => m.id === id) : null;
   const e = env || (cx.dados?.emails || []).find(m => m.id === id);
   fecharMenuEmail();
-  if (!e || cx.resolvendo[id]) return;
+  if (!e) return;   // linha já respondida (cinza) também abre o menu: lá só a ação de tirar da entrada
+  const travada = !!cx.resolvendo[id];
   const m = document.createElement("div");
   m.id = "cx-ctx"; m.className = "cx-ctx"; m.setAttribute("role", "menu");
   const ic = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const tirar = `<button type="button" role="menuitem" data-ctx="tirar" title="Move este e-mail para a pasta NF enviada da caixa do hotel. Nada é apagado.">${ic('<path d="M3 7h7l2 2h9v10H3z"/><path d="M9 14l2 2 4-4"/>')}Tirar da caixa de entrada</button>`;
   // Itens Enviados (22/10/2026): esqueceu de marcar a ligação no envio? marca aqui
   m.innerHTML = env ? `<div class="cx-ctx-t">Para: ${esc(e.para || "")}</div>
     <button type="button" role="menuitem" data-ctx="${e.ligacao ? "semlig" : "lig"}">${ic(ETQ_IC.tel)}${e.ligacao ? "Tirar marca de ligação" : "Marcar como ligação"}</button>`
+  : travada ? `<div class="cx-ctx-t">${esc(e.nome || e.de || "")}</div>${tirar}`
   : `<div class="cx-ctx-t">${esc(e.nome || e.de || "")}</div>
     <button type="button" role="menuitem" data-ctx="${e.lido === false ? "lido" : "naolido"}">${ic('<path d="M3 9l9-6 9 6v10H3z"/><path d="M3 9l9 6 9-6"/>')}${e.lido === false ? "Marcar como lido" : "Marcar como não lido"}</button>
     <button type="button" role="menuitem" data-ctx="${e.urgente ? "normal" : "urgente"}" class="${e.urgente ? "" : "urg"}">${ic('<path d="M5 21V4h11l-2 4 2 4H5"/>')}${e.urgente ? "Tirar urgência" : "Marcar como urgente"}</button>
-    ${e.urgente && e.motivo_urgencia ? `<div class="cx-ctx-n">${esc(e.motivo_urgencia)}</div>` : ""}`;
+    ${e.urgente && e.motivo_urgencia ? `<div class="cx-ctx-n">${esc(e.motivo_urgencia)}</div>` : ""}
+    ${tirar}`;
   document.body.appendChild(m);
   m.dataset.id = id;
   const r = m.getBoundingClientRect();
@@ -1160,8 +1164,23 @@ function abrirMenuEmail(id, x, y) {
   m.querySelector("button")?.focus({ preventScroll: true });
 }
 function fecharMenuEmail() { document.getElementById("cx-ctx")?.remove(); }
+// Tirar da caixa de entrada (27/10/2026): a entrada é só dos que esperam resposta. Move ESTE e-mail para a pasta "NF enviada"
+// (Outlook do PC dono), mesmo já respondido; some na hora, tem "Desfazer" de 10 s e nada é apagado.
+function tirarDaEntrada(id) {
+  const e = (cx.dados?.emails || []).find(x => x.id === id);
+  if (!e) return;
+  cx.escondidos[id] = true; if (cx.sel === id) cx.sel = null;
+  desenharCorreio();
+  mostrarDesfazer("E-mail movido para “NF enviada”", () => { delete cx.escondidos[id]; desenharCorreio(); }, async () => {
+    const r = await api("/api/correio/mover_nf", { id });
+    if (!r.ok) { delete cx.escondidos[id]; toast(r.motivo || "Não deu pra mover", true); }
+    else if (r.aviso) toast(r.aviso);
+    carregarCorreio();
+  }, "Movimento desfeito");
+}
 async function acaoMenuEmail(id, acao) {
   fecharMenuEmail();
+  if (acao === "tirar") return tirarDaEntrada(id);
   if (acao === "lig" || acao === "semlig") return marcarLigacao(id, acao === "lig");
   const e = (cx.dados?.emails || []).find(m => m.id === id);
   if (!e) return;

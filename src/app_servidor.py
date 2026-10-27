@@ -848,6 +848,22 @@ class Estado:
                 logger.exception("histórico do hóspede x notas prontas")
         return saida
 
+    def mover_email_nf(self, id_email, agente):
+        """Botão direito > "Tirar da caixa de entrada" (27/10/2026): ESTE e-mail, mesmo já respondido, vai para a pasta
+        "NF enviada" da caixa do hotel, no Outlook do PC dono. A Caixa de Entrada é só dos que ainda esperam resposta.
+        Nada é apagado; sempre um clique da pessoa (com "Desfazer" de 10 s na tela)."""
+        e = self._email(id_email)
+        sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+        r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.MOVER_NF)
+        if not r.get("ok"):
+            return r
+        linha = espelho_emails.evento(e["id"], "EXCLUIR", agente)   # some da entrada pra equipe toda, na hora
+        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
+        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
+        self._montar_correio()
+        logger.info(f"📁 Tirar da entrada: e-mail de {e['de']} indo para \"{envio_nf.PASTA_NF_ENVIADA}\" (pedido de {agente})")
+        return r
+
     def concluir_conversa(self, id_email, agente):
         """Botão Concluir (27/10/2026): move a conversa inteira do hóspede (os e-mails dele na entrada) para a pasta "NF enviada"
         da caixa do hotel, no Outlook do PC dono. Sempre um clique da pessoa; nada é apagado."""
@@ -2262,6 +2278,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/correio/mover_nf":
+                    return self._json(estado.mover_email_nf(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/concluir":
                     return self._json(estado.concluir_conversa(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/robo/ligado":

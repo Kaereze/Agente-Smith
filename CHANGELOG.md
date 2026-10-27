@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.14] — 2026-10-27
+
+### Adicionado
+
+- **Botão direito > "Tirar da caixa de entrada"** (pedido do João: a Caixa de Entrada é só dos e-mails que ainda esperam resposta): move
+  ESTE e-mail para a pasta "NF enviada" da caixa do hotel, no Outlook do PC dono, mesmo que já tenha sido respondido. Some na hora
+  para a equipe, tem "Desfazer" de 10 s (só depois o pedido sai) e nada é apagado. A linha cinza (já respondida) agora também abre o
+  menu, só com essa ação. Sempre um clique da pessoa, nunca automático. Código: `Estado.mover_email_nf`, rota
+  `POST /api/correio/mover_nf`, `tirarDaEntrada` em `correio.js` (reaproveita `envio_nf.MOVER_NF`).
+
 ## [2026.10.27.13] — 2026-10-27
 
 ### Adicionado

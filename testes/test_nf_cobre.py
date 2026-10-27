@@ -115,3 +115,14 @@ def test_falta_a_nota_do_estacionamento_ou_o_valor_nao_bate():
     errada = [{"nf": "1391", "texto": nota_de("VALOR DA DIÁRIA", "250,00", "1.000,00")}, {"nf": "1392", "texto": nota_de("VALOR DO ESTACIONAMENTO", "30,00", "120,00")}]
     r2 = nf_cobre.comparar_historico(nf_cobre.pedido_do_historico([HISTORICO]), errada)
     assert not r2["completo"] and "valor R$ 1.188,00 não bate" in r2["itens"][0]["detalhe"]
+
+
+def test_botao_direito_tirar_da_entrada_vale_ate_para_respondido_e_nunca_apaga():
+    srv = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    js = (RAIZ / "app_ui" / "correio.js").read_text(encoding="utf-8")
+    assert 'path == "/api/correio/mover_nf"' in srv and "def mover_email_nf" in srv
+    corpo = srv.split("def mover_email_nf")[1].split("def concluir_conversa")[0]
+    assert "acao=envio_nf.MOVER_NF" in corpo and "acao=envio_nf.EXCLUIR" not in corpo and "excluir_email(" not in corpo
+    assert 'data-ctx="tirar"' in js and "function tirarDaEntrada" in js and 'if (acao === "tirar") return tirarDaEntrada(id);' in js
+    assert "if (!e || cx.resolvendo[id]) return;" not in js          # a linha cinza (já respondida) abre o menu
+    assert 'mostrarDesfazer("E-mail movido para' in js                # Desfazer de 10 s, nada é apagado
