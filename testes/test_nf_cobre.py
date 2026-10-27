@@ -1,0 +1,84 @@
+"""A NF já enviada cobre o que o hóspede pede agora? (27/10/2026): só compara; nunca tira nem apaga e-mail sozinho."""
+import sys
+from pathlib import Path
+
+RAIZ = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(RAIZ / "src"))
+
+import nf_cobre  # noqa: E402
+
+NOTA = ("DANFSe v1.0 Documento Auxiliar da NFS-e\nChave de Acesso 4120000000000000000000000000000000000000000000000\n"
+        "TOMADOR DO SERVIÇO CNPJ / CPF / NIF 12.345.678/0001-90 Nome EMPRESA EXEMPLO LTDA\n"
+        "Descrição do Serviço DATA DE CHECK-IN: 30/09/2026 DATA DE CHECK-OUT: 02/10/2026 VALOR DA DIÁRIA: R$ 140,00 "
+        "HOSPEDAGEM CONFORME CONTRATO 4471/2026 " + "x" * 80)
+
+
+def linhas(r):
+    return {l["rotulo"]: l["ok"] for l in r["linhas"]}
+
+
+def test_agradecimento_nao_pede_nada_e_a_nota_cobre():
+    r = nf_cobre.analisar("Obrigado pela nota! Estava tudo certo na hospedagem.", [NOTA])
+    assert r["cobre"] is True and not r["pede_nova"] and r["motivos"] == []
+    assert linhas(r)["Serviço"] is True and linhas(r)["Datas"] is True and linhas(r)["CPF/CNPJ"] is True
+
+
+def test_pede_consumo_e_a_nota_so_tem_diarias():
+    r = nf_cobre.analisar("Boa tarde. Poderiam emitir também uma nota do consumo do restaurante?", [NOTA])
+    assert r["pede_nova"] and linhas(r)["Serviço"] is False and "consumo" in r["motivos"][0] and "diárias" in r["motivos"][0]
+
+
+def test_pede_outras_datas():
+    r = nf_cobre.analisar("Preciso da nota da segunda estadia, de 12/10 a 14/10.", [NOTA])
+    assert r["pede_nova"] and linhas(r)["Datas"] is False and "12/10" in r["motivos"][0]
+
+
+def test_datas_da_propria_nota_nao_disparam():
+    r = nf_cobre.analisar("Solicito a correção: a estadia foi de 30/09 a 02/10, ok?", [NOTA])
+    assert linhas(r)["Datas"] is True
+
+
+def test_pede_outro_cnpj():
+    r = nf_cobre.analisar("Favor emitir de novo no CNPJ 98.765.432/0001-10.", [NOTA])
+    assert r["pede_nova"] and linhas(r)["CPF/CNPJ"] is False
+
+
+def test_descricao_pedida_que_a_nota_nao_traz():
+    r = nf_cobre.analisar('Preciso que a descrição seja "Hospedagem conforme proposta 99/2026".', [NOTA])
+    assert r["pede_nova"] and linhas(r)["Descrição"] is False
+    ok = nf_cobre.analisar('Gostaria que a descrição fosse "Hospedagem conforme contrato 4471/2026".', [NOTA])
+    assert linhas(ok)["Descrição"] is True and not ok["pede_nova"]
+
+
+def test_sem_intencao_nunca_vira_nova_nota():
+    r = nf_cobre.analisar("Tudo certo com o consumo e com a estadia de 12/10, valeu.", [NOTA])
+    assert not r["pede_nova"]   # sem pedido de nota, citar consumo ou outra data não dispara
+
+
+def test_nota_ilegivel_nao_conclui_nada():
+    r = nf_cobre.analisar("Poderiam emitir a nota do consumo?", ["curto"])
+    assert r["cobre"] is None and not r["pede_nova"] and r["linhas"][0]["ok"] is None
+
+
+def test_duas_notas_somam_o_que_cobrem():
+    consumo = NOTA.replace("VALOR DA DIÁRIA: R$ 140,00", "VALOR DO CONSUMO: R$ 80,00")
+    r = nf_cobre.analisar("Poderiam emitir também o consumo?", [NOTA, consumo])
+    assert linhas(r)["Serviço"] is True and not r["pede_nova"]
+
+
+def test_motivo_curto_da_urgencia():
+    r = nf_cobre.analisar("Poderiam emitir uma nota do consumo?", [NOTA])
+    assert nf_cobre.motivo_curto(r, ["2186"]).startswith("Pede nova nota (NF 2186): serviço:")
+    assert nf_cobre.motivo_curto(nf_cobre.analisar("Obrigado!", [NOTA]), ["2186"]) == ""
+
+
+def test_ligacoes_no_servidor_e_na_tela():
+    srv = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    envio = (RAIZ / "src" / "envio_nf.py").read_text(encoding="utf-8")
+    js = (RAIZ / "app_ui" / "correio.js").read_text(encoding="utf-8")
+    assert 'url.path == "/api/nf_cobre"' in srv and 'path == "/api/correio/concluir"' in srv
+    assert "acao=envio_nf.MOVER_NF" in srv and "mover_para_nf_enviada_no_outlook" in envio
+    assert 'p.get("acao") not in (ENCAMINHAR, MOVER_NF)' in envio       # mover pasta nunca registra NF enviada
+    assert "def mover_para_nf_enviada_no_outlook" in envio and "item.Delete()" not in envio.split("def mover_para_nf_enviada_no_outlook")[1].split("# ---------- pedido")[0]
+    assert "data-nf-concluir" in js and "mostrarDesfazer(" in js and "Nada é apagado" in js    # só por clique, com desfazer de 10 s
+    assert "concluir" not in srv.split("def _alertas_nova_nota")[1].split("def nf_cobre")[0]    # a urgência nunca move e-mail

@@ -32,8 +32,7 @@ coisa depois de receber a nota (ex.: primeiro só diárias, depois consumo). **D
 (reversível); botão Concluir manual, com sugestão quando a NF cobre tudo; sai a conversa inteira do hóspede; etiqueta curta
 "NF 2186 enviada · diárias" + caixa com a NF enviada (número, data, o que cobre, atalho do PDF); o cruzamento compara o
 conjunto (datas, serviço, CPF/CNPJ e a descrição quando o corpo pede uma específica); se algo não bate vira "pede nova
-nota" e vai para Urgência. Tag ✅ sem envio nos Itens Enviados: avisa e não sugere Concluir. **Aguardando OK do desenho;
-nada mexido no código.**
+nota" e vai para Urgência. Tag ✅ sem envio nos Itens Enviados: avisa e não sugere Concluir. **No ar na 2026.10.27.11 (OK do João: "Pode codar assim!").**
 - **Abrir a página:** [[2026-10-27 NF enviada cobre o pedido.html|NF enviada cobre o pedido]]
 
 ![[2026-10-27 NF enviada cobre o pedido.png|700]]

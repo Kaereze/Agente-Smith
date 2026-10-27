@@ -83,7 +83,7 @@ function etiquetasDoEmail(e) {   // e: e-mail da caixa de entrada (com o pedido 
   else html = pecaSituacao("sem_nf");
   if (e.urgente && !correcao) {
     const m = e.motivo_urgencia || "";
-    html += pecaAlerta("urgente", { texto: /^(\d+) dias sem resposta$/.test(m) ? m.replace(/^(\d+) dias sem resposta$/, "Sem resposta há $1 dias") : /ouvidoria/i.test(m) ? "Ouvidoria" : "Urgente", titulo: m });
+    html += pecaAlerta("urgente", { texto: /^Pede nova nota/i.test(m) ? "Pede nova nota" : /^(\d+) dias sem resposta$/.test(m) ? m.replace(/^(\d+) dias sem resposta$/, "Sem resposta há $1 dias") : /ouvidoria/i.test(m) ? "Ouvidoria" : "Urgente", titulo: m });
   }
   if ((e.quartos?.[0] || e.quartos || 0) >= 2) html += pecaAlerta("dividida");
   if (e.alerta_doc) html += pecaAlerta("doc", { titulo: e.alerta_doc });

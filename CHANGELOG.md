@@ -9,6 +9,21 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.11] — 2026-10-27
+
+### Adicionado
+
+- **NF já enviada x o que o hóspede pede agora** (desenho do João): ao abrir o e-mail de um hóspede cujo pedido já tem NF, uma
+  caixa "NF enviada" compara, no conjunto, o que o e-mail novo pede (datas, serviço, CPF/CNPJ e a descrição, quando o corpo pede
+  uma específica) com o que o PDF da nota enviada traz (lido das pastas do Dropbox). Se algo não bate, o e-mail ganha a
+  etiqueta "Pede nova nota" e vai para Urgência (na lista, só pela prévia do e-mail; ao abrir, pelo texto inteiro). Só dispara
+  quando o e-mail realmente pede algo ("obrigado pela nota" nunca dispara). Tag ✅ sem envio nos Itens Enviados: avisa.
+- **Botão Concluir** (sempre um clique da pessoa): move a conversa inteira do hóspede para a pasta "NF enviada" da caixa do hotel,
+  no Outlook do PC dono (cria a pasta se não existir). Pede confirmação, tem "Desfazer" de 10 s e não apaga nada. Quando tudo
+  bate, o Painel só destaca o botão. **O Painel nunca tira nem apaga e-mail sozinho.**
+  Código: `src/nf_cobre.py`, `Estado.nf_cobre`/`concluir_conversa`/`_alertas_nova_nota`, `envio_nf.MOVER_NF`,
+  `mover_para_nf_enviada_no_outlook`, rotas `/api/nf_cobre` e `/api/correio/concluir`, `correio.js`.
+
 ## [2026.10.27.10] — 2026-10-27
 
 ### Adicionado

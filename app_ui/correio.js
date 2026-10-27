@@ -797,6 +797,7 @@ function desenharLeituraCorreio() {
   // como o Outlook (Prévia 5, 20/10/2026): cabeçalho, de onde veio, anexos, a ficha e o texto alinhado com o nome
   const ped = pedidoDoEmail(e), dividida = (e.quartos?.[0] || e.quartos || 0) >= 2 || !!(ped && (ped.dividida || ped.partes > 1));
   const anexos = anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" });
+  if (!enviado && !robo && !(cx.cobre && cx.cobre[e.id])) setTimeout(() => carregarCobre(e.id), 0);   // NF enviada x o que ele pede
   const entra = cx.animou !== e.id ? " ol-entra" : "";
   cx.animou = e.id;
   el.innerHTML = `<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e) + avisoRepetidoHtml(e)}<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
@@ -810,10 +811,62 @@ function desenharLeituraCorreio() {
     ${anexos ? `<div class="ol-anexos">${anexos}</div>` : ""}
     ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
-    ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}
+    ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}${nfCobreHtml(e)}
     <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div>
     ${h ? historicoHtml(h, e, alvoH) : ""}</div>`;
 }
+
+// NF já enviada x o que o hóspede pede agora (27/10/2026): nunca tira o e-mail da entrada sozinha; o Concluir é um clique da pessoa
+async function carregarCobre(id) {
+  cx.cobre = cx.cobre || {};
+  if (cx.cobre[id]) return;
+  cx.cobre[id] = { nfs: [], carregando: true };
+  let r;
+  try { r = await api("/api/nf_cobre?id=" + encodeURIComponent(id)); } catch (e) { r = null; }
+  cx.cobre[id] = r && !r.erro && r.nfs ? r : { nfs: [] };
+  if (cx.sel === id) desenharLeituraCorreio();
+}
+function nfCobreHtml(e) {
+  const c = cx.cobre?.[e.id];
+  if (!c || c.carregando || !c.nfs?.length) return "";
+  const nfs = c.nfs.map(n => `<span class="rf-chip">NF ${esc(n.nf)}${n.pdf ? ` · ${esc(n.pdf)}` : ""}</span>`).join(" ");
+  const linhas = (c.linhas || []).map(l => `<div class="cobre-l ${l.ok === true ? "s" : l.ok === false ? "n" : ""}"><i>${l.ok === true ? "✓" : l.ok === false ? "✗" : "•"}</i><span><b>${esc(l.rotulo)}</b> ${esc(l.texto)}</span></div>`).join("");
+  const aviso = (c.avisos_envio || []).length ? `<div class="cobre-f am">Marcado como enviado, mas não achei o envio da NF ${esc(c.avisos_envio.join(", "))} nos Itens Enviados. A resposta do hóspede com a nota anexada não conta como envio.</div>` : "";
+  const faixa = c.pede_nova ? `<div class="cobre-f vm">Pede nova nota: ${esc((c.motivos || [])[0] || "")}. Foi para Urgência.</div>`
+    : c.sugere_concluir ? `<div class="cobre-f az">Tudo bate com a NF ${esc(c.nfs.map(n => n.nf).join(", "))}. Pode concluir.</div>`
+    : c.cobre === null ? `<div class="cobre-f am">Não consegui ler a nota enviada: confira antes de concluir.</div>` : "";
+  return `<section class="cx-cobre ${c.pede_nova ? "no" : c.sugere_concluir ? "ok" : "av"}" aria-label="NF já enviada"><div class="cobre-cab"><b>NF enviada</b>${nfs}</div>
+    ${linhas}${aviso}${faixa}<div class="cobre-bt"><button type="button" class="${c.sugere_concluir ? "p dest" : ""}" data-nf-concluir="${esc(e.id)}">Concluir</button>
+    <span class="dica">Move a conversa inteira para a pasta “NF enviada”. Nada é apagado.</span></div></section>`;
+}
+function concluirConversa(id) {
+  const e = (cx.dados?.emails || []).find(x => x.id === id);
+  if (!e || document.querySelector(".modal-fundo")) return;
+  const c = cx.cobre?.[id] || {};
+  const conversa = (cx.dados?.emails || []).filter(x => x.de === e.de && x.pasta !== "enviado");
+  const fundo = document.createElement("div");
+  fundo.className = "modal-fundo";
+  fundo.innerHTML = `<div class="modal" style="width:min(520px,94vw)"><div class="modal-topo"><div><h3>Mover a conversa para “NF enviada”?</h3>
+      <div class="sub">${esc(e.nome || e.de)} · ${conversa.length} e-mail${conversa.length === 1 ? "" : "s"}</div></div></div>
+    <div class="ficha-corpo" style="padding:16px 22px">Os e-mails deste hóspede saem da Caixa de Entrada e vão para a pasta <b>“NF enviada” da caixa ${esc(e.caixa || "")}</b>,
+      no Outlook de ${esc(nomeAgente(e.pc))}. Nada é apagado. Fica registrado que foi você.
+      ${c.pede_nova ? `<div class="cobre-f vm" style="margin-top:10px">Atenção: o Painel acha que este hóspede pede nova nota (${esc((c.motivos || [])[0] || "")}).</div>` : ""}</div>
+    <div class="modal-rodape"><button id="nfc-nao">Cancelar</button><button class="p" id="nfc-sim">Mover</button></div></div>`;
+  document.body.appendChild(fundo);
+  $("nfc-nao").onclick = () => fundo.remove();
+  $("nfc-sim").onclick = () => {
+    fundo.remove();
+    conversa.forEach(x => { cx.escondidos[x.id] = true; });
+    if (cx.sel === id) cx.sel = null;
+    desenharCorreio();
+    mostrarDesfazer("Conversa movida para “NF enviada”", () => { conversa.forEach(x => delete cx.escondidos[x.id]); desenharCorreio(); }, async () => {
+      const r = await api("/api/correio/concluir", { id });
+      if (!r.ok) { conversa.forEach(x => delete cx.escondidos[x.id]); toast(r.motivo || "Não deu pra mover", true); }
+      carregarCorreio();
+    }, "Movimento desfeito");
+  };
+}
+document.addEventListener("click", ev => { const b = ev.target.closest?.("[data-nf-concluir]"); if (b) concluirConversa(b.dataset.nfConcluir); });
 
 // Verificação da NF (Etapa 2): 1 motivo principal em destaque, o que a NF diz, a comparação e o resto que ele citou
 function verificacaoHtml(e) {
@@ -938,13 +991,13 @@ function excluir(id) {
   };
 }
 
-function mostrarDesfazer(msg, desfazer, confirmar) {   // 10 s pra desfazer: só depois disso o pedido sai daqui
+function mostrarDesfazer(msg, desfazer, confirmar, aviso = "Exclusão desfeita") {   // 10 s pra desfazer: só depois disso o pedido sai daqui
   if (cx.desfazer) { clearTimeout(cx.desfazer.timer); clearInterval(cx.desfazer.tique); cx.desfazer.confirmar(); }
   const bar = $("cx-desfazer");
   let s = 10;
   const pintar = () => { bar.innerHTML = `<span>${esc(msg)} · ${s}s</span><button id="cx-desfazer-btn">Desfazer</button>`;
     $("cx-desfazer-btn").onclick = () => { clearInterval(cx.desfazer.tique); clearTimeout(cx.desfazer.timer); cx.desfazer = null;
-      bar.classList.add("oculta"); desfazer(); toast("Exclusão desfeita"); }; };
+      bar.classList.add("oculta"); desfazer(); toast(aviso); }; };
   bar.classList.remove("oculta"); pintar();
   const tique = setInterval(() => { s--; if (s > 0) pintar(); }, 1000);
   const timer = setTimeout(() => { clearInterval(tique); bar.classList.add("oculta"); cx.desfazer = null; confirmar(); }, 10000);

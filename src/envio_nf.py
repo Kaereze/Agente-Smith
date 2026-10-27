@@ -53,6 +53,8 @@ FALHOU_SEM_ACHAR_APOS = 300      # ... e não está em Itens Enviados nem na Cai
 MAX_ITENS_CONFERIDOS = 3000      # Itens Enviados é lido do mais novo até a hora do envio; isto é só o teto
 EXCLUIR, ENCAMINHAR = "excluir", "encaminhar"   # ações no Outlook do PC dono (além de enviar/responder)
 URGENCIA = "urgencia"   # botão direito no Painel: categoria "Urgente (Painel)" / "Sem urgência (Painel)" no e-mail
+MOVER_NF = "mover_nf"   # botão Concluir: move o e-mail para a pasta "NF enviada" da caixa (27/10/2026)
+PASTA_NF_ENVIADA = "NF enviada"
 DISPID_SEND_USING_ACCOUNT = 64209
 
 MENSAGEM_PADRAO = (
@@ -798,6 +800,24 @@ def marcar_urgencia_no_outlook(entry_id, marcar):
     return True
 
 
+def mover_para_nf_enviada_no_outlook(entry_id):
+    """Move o e-mail para a pasta "NF enviada" da MESMA caixa (cria a pasta se não existir). Nada é apagado: dá para tirar de lá."""
+    import pythoncom
+    pythoncom.CoInitialize()
+    ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
+    try:
+        item = ns.GetItemFromID(entry_id)
+    except Exception:
+        return False   # já não está mais lá (alguém moveu ou excluiu pelo Outlook)
+    raiz = item.Parent.Store.GetRootFolder()
+    try:
+        destino = raiz.Folders[PASTA_NF_ENVIADA]
+    except Exception:
+        destino = raiz.Folders.Add(PASTA_NF_ENVIADA)
+    item.Move(destino)
+    return True
+
+
 # ---------- pedido ----------
 def novo_id():
     return "ENV-" + uuid.uuid4().hex[:10].upper()
@@ -858,6 +878,7 @@ class ServicoEnvio:
         self.enviar = enviar or (lambda *a, **k: enviar_pelo_outlook(*a, **k))
         self.excluir = lambda entry: excluir_no_outlook(entry)
         self.marcar_urgencia = lambda entry, marcar: marcar_urgencia_no_outlook(entry, marcar)
+        self.mover_nf = lambda entry: mover_para_nf_enviada_no_outlook(entry)
         self.ler_contas = ler_contas or (lambda: contas_do_outlook())
         self.relogio = relogio
         self.agente = ""
@@ -1059,6 +1080,10 @@ class ServicoEnvio:
                 entry = espelho_emails.entry_do_email(p["responder"])
                 if entry:
                     self.marcar_urgencia(entry, p.get("mensagem", ""))
+            elif acao == MOVER_NF:
+                entry = espelho_emails.entry_do_email(p["responder"])
+                if entry:
+                    self.mover_nf(entry)
             else:
                 linhas = self.backend.ler_abas(self.central, [ABA_ANEXOS])[0].get(ABA_ANEXOS, [[]]) if na_planilha else [[]]
                 arquivos = arquivos_do_pedido(p, self.cfg, linhas, id_envio)
@@ -1089,6 +1114,10 @@ class ServicoEnvio:
         if p.get("acao") == URGENCIA:   # só categoria: não é NF, não registra nada
             logger.info(f"🚩 {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} marcado como "
                         f"{'urgente' if p.get('mensagem') == 'urgente' else 'sem urgência'} (pedido de {e['quem']})")
+            return
+        if p.get("acao") == MOVER_NF:   # só muda de pasta: não é envio, não registra NF
+            logger.info(f"📁 {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} movido para a pasta "
+                        f"\"{PASTA_NF_ENVIADA}\" (pedido de {e['quem']})")
             return
         if p.get("acao") == EXCLUIR:
             logger.info(f"🗑️ {id_envio}: e-mail \"{p['assunto']}\" de {p['conta_de']} movido pra Itens Excluídos "
@@ -1160,7 +1189,7 @@ class ServicoEnvio:
             self.locais[id_envio] = {"estado": "enviado", "pc": self.pc}
             logger.info(f"📧 {id_envio}: \"{p['assunto']}\" já tinha saído (achado em Itens Enviados depois de um reinício)")
             try:
-                if p.get("acao") != ENCAMINHAR:
+                if p.get("acao") not in (ENCAMINHAR, MOVER_NF):
                     self.ao_registrar_nf(p, e["quem"])
             except Exception:
                 logger.exception("NF enviada, mas não consegui registrar na aba Tratamento")

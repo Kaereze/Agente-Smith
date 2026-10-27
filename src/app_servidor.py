@@ -42,6 +42,7 @@ import cota_google
 import envio_nf
 import enviar_receber
 import nf_achadas
+import nf_cobre
 import espelho_emails
 import envio_pc_dono
 import rede_local
@@ -739,9 +740,102 @@ class Estado:
                     saida[x] = f"NF {urgentes[0]['nf']}: {urgentes[0]['texto']}"
         return saida
 
+    def _notas_do_pedido(self, sol, nfs):
+        """Textos dos PDFs (índice das pastas do Dropbox) das NF já ligadas ao pedido: [(nº, nome do arquivo, texto)].
+        O CPF/CNPJ da nota tem que ser o do pedido: a numeração das notas se repete entre hotéis."""
+        indice = getattr(self, "nf_indice", None)
+        if indice is None:
+            return []
+        docs = set(nf_achadas._alvo(sol)["documentos"])
+        return [(e.get("nf"), e.get("nome", ""), e.get("texto", "")) for _c, e in indice.itens()
+                if e.get("nf") in nfs and not e.get("sem_texto") and (not docs or e.get("doc") in docs)]
+
+    def _pedidos_com_nf_por_email(self):
+        """{e-mail do hóspede: (pedido, [nº das NF])} dos pedidos dos últimos 45 dias que já têm NF."""
+        corte = (datetime.date.today() - datetime.timedelta(days=45)).isoformat()
+        with self.lock:
+            sols, estados = list(self.solicitacoes), self.estados
+        mapa = {}
+        for s in sols:
+            nfs = [str(n) for n in (estados.get(s["chave"]) or {}).get("nfs", [])]
+            if not nfs or (s.get("data") or "") < corte:
+                continue
+            for x in {str(e).lower() for e in [s["email"]] + s.get("emails", []) if e}:
+                if x not in mapa or (s["data"], s["carimbo"]) > (mapa[x][0]["data"], mapa[x][0]["carimbo"]):
+                    mapa[x] = (s, nfs)
+        return mapa
+
+    def _alertas_nova_nota(self):
+        """{e-mail do hóspede: "Pede nova nota (NF 2186): ..."} — o e-mail novo pede algo (datas, serviço, CPF/CNPJ,
+        descrição) que a NF já enviada não cobre (27/10/2026). Só marca urgência; nada é movido nem apagado. Aqui lê só a prévia
+        do e-mail (a tela confere o texto inteiro ao abrir)."""
+        mapa = self._pedidos_com_nf_por_email()
+        if not mapa or getattr(self, "nf_indice", None) is None:
+            return {}
+        saida, vistos = {}, {}
+        with self.lock:
+            emails = list(self.emails)
+        for r in emails:
+            de = (r.get("de") or "").lower()
+            if r["pasta"] != espelho_emails.ENTRADA or {"formulario", "aviso"} & set(r.get("classes", [])) or de not in mapa:
+                continue
+            if r["quando"] <= vistos.get(r["de"], ""):
+                continue
+            sol, nfs = mapa[de]
+            textos = [t for _n, _p, t in self._notas_do_pedido(sol, nfs)]
+            if not textos:
+                continue
+            vistos[r["de"]] = r["quando"]
+            motivo = nf_cobre.motivo_curto(nf_cobre.analisar(r.get("previa", ""), textos), nfs)
+            if motivo:
+                saida[r["de"]] = motivo
+            else:
+                saida.pop(r["de"], None)
+        return saida
+
+    def nf_cobre(self, id_email):
+        """Caixa "NF enviada" do e-mail aberto: o que a NF já enviada cobre x o que o hóspede pede agora (27/10/2026)."""
+        e = self._email(id_email)
+        achado = self._pedidos_com_nf_por_email().get((e.get("de") or "").lower())
+        if not achado:
+            return {"nfs": []}
+        sol, nfs = achado
+        try:
+            texto = self.texto_email(id_email).get("texto", "") or e.get("previa", "")
+        except Exception:
+            texto = e.get("previa", "")
+        notas = self._notas_do_pedido(sol, nfs)
+        analise = nf_cobre.analisar(texto, [t for _n, _p, t in notas])
+        enviados = list(self.enviados_correio)
+        sem = nf_achadas.sem_envio_confirmado(nfs, enviados, envio_nf.destinatarios(sol)) if enviados else []
+        return {**analise, "nfs": [{"nf": n, "pdf": next((p for nn, p, _t in notas if nn == n), "")} for n in nfs], "avisos_envio": sem,
+                "sugere_concluir": analise["cobre"] is True and not sem, "motivo_urgencia": nf_cobre.motivo_curto(analise, nfs)}
+
+    def concluir_conversa(self, id_email, agente):
+        """Botão Concluir (27/10/2026): move a conversa inteira do hóspede (os e-mails dele na entrada) para a pasta "NF enviada"
+        da caixa do hotel, no Outlook do PC dono. Sempre um clique da pessoa; nada é apagado."""
+        e0 = self._email(id_email)
+        conversa = [x for x in self.entrada_correio if x["de"] == e0["de"]] or [e0]
+        linhas, feitos, falhas = [], 0, set()
+        for e in conversa:
+            sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
+            r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.MOVER_NF)
+            if r.get("ok"):
+                feitos += 1
+                linhas.append(espelho_emails.evento(e["id"], "EXCLUIR", agente))   # some da entrada pra equipe toda, na hora
+            else:
+                falhas.add(str(r.get("motivo", ""))[:120])
+        if linhas:
+            self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, linhas)
+            self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + linhas
+            self._montar_correio()
+        logger.info(f"📁 Concluir: {feitos} e-mail(s) de {e0['de']} indo para \"{envio_nf.PASTA_NF_ENVIADA}\" (pedido de {agente})")
+        return {"ok": feitos > 0, "movidos": feitos, "motivo": "; ".join(sorted(f for f in falhas if f))}
+
     def _montar_correio(self):
         eventos = espelho_emails.dobrar_eventos(self.eventos_linhas + self.eventos_pendentes)
-        entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now(), self._alertas_documento())
+        entrada, enviados, _ = correio.juntar(self.emails, eventos, datetime.datetime.now(), self._alertas_documento(),
+                                              self._alertas_nova_nota())
         convs = correio.conversas([e for e in entrada if e.get("pendente", True)])   # conversa = esperando resposta
         with self.lock:
             self.eventos_correio, self.entrada_correio, self.enviados_correio, self.convs = eventos, entrada, enviados, convs
@@ -1960,6 +2054,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.opcoes_envio(q.get("chave", "")))
                 if url.path == "/api/envio_nf/status":
                     return self._json(estado.situacao_envio(q.get("id", "")))
+                if url.path == "/api/nf_cobre":
+                    return self._json(estado.nf_cobre(q.get("id", "")))
                 if url.path == "/api/caixas":
                     return self._json(estado.caixas_com_problema())
                 if url.path == "/api/enviar_receber/status":
@@ -2066,6 +2162,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/correio/concluir":
+                    return self._json(estado.concluir_conversa(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/robo/ligado":
                     if not e_admin_aqui(estado.cfg, nome_do_agente(), liberado()):
                         return self._json({"ok": False, "motivo": "Só o João liga ou pausa o robô, no PC dele."}, 403)

@@ -45,11 +45,12 @@ def lido_atual(e, ev):
     return bool(e["lido_outlook"])
 
 
-def juntar(emails, eventos, agora, alertas=None):
+def juntar(emails, eventos, agora, alertas=None, nova_nota=None):
     """emails: linhas de todas as Correio_<PC> (espelho_emails.ler_aba). eventos: espelho_emails.dobrar_eventos.
     alertas: {endereço: "CPF/CNPJ da NF ... diferente do pedido"} (vai pra Urgência).
     -> (entrada [e-mail], enviados [e-mail], respostas {endereço: último envio iso})"""
     alertas = alertas or {}
+    nova_nota = nova_nota or {}   # {endereço: "Pede nova nota (NF 2186): ..."} (nf_cobre)
     respostas = {}
     for e in emails:
         if e["pasta"] == ee.RESPOSTA and e["quando"] > respostas.get(e["de"], ""):
@@ -72,7 +73,7 @@ def juntar(emails, eventos, agora, alertas=None):
         especial = respondido or bool({"formulario", "aviso"} & set(e["classes"]))
         quando = _data(e["quando"])
         dias = (agora - quando).total_seconds() / 86400 if quando else 0
-        motivo = "" if especial else motivo_urgencia(e["classes"], dias, alertas.get(e["de"], ""), e["de"], e.get("nome", ""))
+        motivo = "" if especial else motivo_urgencia(e["classes"], dias, alertas.get(e["de"], "") or nova_nota.get(e["de"], ""), e["de"], e.get("nome", ""))
         # marcado pela equipe (botão direito): vale o clique enquanto o PC dono não grava no Outlook; depois, a categoria
         marca = ev.get("urgencia") if ev.get("urgencia_em") and ev["urgencia_em"] >= e.get("atualizado", "") else \
             {"marcado_urgente": "urgente", "marcado_normal": "normal"}.get(next((c for c in e["classes"] if c.startswith("marcado_")), ""), "")
@@ -83,7 +84,8 @@ def juntar(emails, eventos, agora, alertas=None):
         entrada.append({**e, "respondido": respondido, "pendente": not especial,
                         "lido": lido_atual(e, ev), "lido_por": ev.get("lido_por", ""),
                         "lido_em": ev.get("lido_em", ""), "dias": round(dias, 2),
-                        "urgente": bool(motivo), "motivo_urgencia": motivo, "alerta_doc": alertas.get(e["de"], "")})
+                        "urgente": bool(motivo), "motivo_urgencia": motivo, "alerta_doc": alertas.get(e["de"], ""),
+                        "nova_nota": nova_nota.get(e["de"], "")})
     entrada.sort(key=lambda e: e["quando"], reverse=True)
     enviados.sort(key=lambda e: e["quando"], reverse=True)
     return entrada, enviados, respostas
