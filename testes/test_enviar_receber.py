@@ -149,10 +149,25 @@ def test_botao_chama_o_pedido_aos_pcs_e_nao_so_recarrega():
 
 def test_gancho_de_acao_longa_avisa_depois_de_3_s_e_o_api_liga_sozinho():
     assert "LIMITE_ACAO_LONGA_MS = 3000" in PAINEL and "painel:acao-longa" in PAINEL and "painel:acao-longa-fim" in PAINEL
-    assert "const longa = corpo ? acaoLonga(path) : null;" in HTML and HTML.count("longa?.fim(") == 3
+    assert "const longa = corpo && !SEM_TELA_K.some(" in HTML and HTML.count("longa?.fim(") == 3
+    assert "acao.limiteMs ?? LIMITE_ACAO_LONGA_MS" in PAINEL and "limiteMs: 0" in CORREIO   # o Enviar/Receber abre na hora
 
 
 def test_servidor_so_atende_pelo_painel_deste_pc_e_pela_rede_assinada():
     import app_servidor
     fonte = Path(app_servidor.__file__).read_text(encoding="utf-8")
     assert '"enviar_receber": estado.rede_enviar_receber' in fonte and 'path == "/api/enviar_receber"' in fonte
+
+
+# ---------- tela de carregamento do K (peça única, 27/10/2026) ----------
+def test_tela_do_k_entra_na_pagina_e_escuta_os_eventos():
+    ui = Path(__file__).resolve().parents[1] / "app_ui"
+    js = (ui / "pecas" / "carregando.js").read_text(encoding="utf-8")
+    assert '<link rel="stylesheet" href="/pecas/carregando.css">' in HTML and '<script src="/pecas/carregando.js"></script>' in HTML
+    assert "painel:acao-longa" in js and "painel:acao-longa-fim" in js and js.count('"M') >= 60   # os 62 contornos do K
+    css = (ui / "pecas" / "carregando.css").read_text(encoding="utf-8")
+    assert "prefers-reduced-motion" in css and ".cg-pcs li.falha" in css                   # sem movimento + erro de PC
+
+
+def test_a_faixa_de_baixo_nao_mostra_mais_carregando():
+    assert 'classList.remove("oculta", "erro"); $("carregando-txt").textContent = frase' not in HTML

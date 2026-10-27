@@ -25,6 +25,16 @@ em React do João). Esperando a escolha.
 
 ![[2026-10-27 Carregamento das acoes.png|700]]
 
+### Tela de carregamento universal com o K desenhado · 27/10/2026
+Pedido do João: ao clicar em Enviar/Receber (e em qualquer ação acima de 3 s) aparece no meio do Painel a logo K sendo
+desenhada, no lugar da faixa feia "Pedindo o envio ao robô…". PNG do João vetorizado (marca d'água removida; caixa real do
+desenho 598×602, 62 contornos). Ordem do traço: contorno principal, estrias da moeda, setas; depois enche; repete enquanto
+a ação dura; termina em K verde (ok) ou vermelho (falha). **Ajuste do João: no meio só a logo**; barra, tempo e lista dos PCs ficam num cartão separado no canto, só quando a ação tem o que contar.
+SVG + CSS, sem React. **Aguardando o OK do João; nada foi mexido no Painel.** Os caminhos do K estão em `2026-10-27 logo K vetorizada.json`.
+- **Abrir a página:** [[2026-10-27 Tela de carregamento K.html|Tela de carregamento K]] · claude.ai: https://claude.ai/artifact/JYVzpfUtQKikMyoPsKF29H
+
+![[2026-10-27 Tela de carregamento K.png|700]]
+
 ### Enviar/Receber todas com a logo sendo desenhada · 27/10/2026
 Pedido do João: o botão "Enviar/Receber todas" deve mandar os 4 PCs rodarem o Enviar/Receber do Outlook e o Painel
 espelhar; carregamento com a logo desenhada no ritmo do tempo estimado (ideia: React/Framer Motion). 3 opções que rodam

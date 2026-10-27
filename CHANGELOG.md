@@ -9,6 +9,22 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.3] — 2026-10-27
+
+### Adicionado
+
+- **Tela de carregamento do K** (desenho do João): em qualquer ação que passe de 3 s (e na hora no Enviar/Receber), a logo
+  K é desenhada traço a traço no meio do Painel, repetindo enquanto a ação dura; termina em K verde (deu certo) ou
+  vermelho que treme (falhou). O Enviar/Receber ganha um cartão separado no canto (barra, tempo estimado, os 4 PCs); um PC
+  que falha treme em vermelho com o motivo, e ações sem lista de PCs mostram o motivo do erro no cartão. Sem movimento se
+  o computador pedir menos animação. Código: `app_ui/pecas/carregando.js` e `carregando.css` (62 contornos do PNG do
+  João vetorizados, sem React), `acaoLonga(..., {limiteMs})` em `painel.js`.
+
+### Mudou
+
+- A faixa do rodapé "Pedindo o envio ao robô…" não mostra mais "carregando" (só o erro rápido). Ações rápidas
+  (`/api/tema`, `/api/professor`, `/api/correio/evento`) não abrem a tela.
+
 ## [2026.10.27.2] — 2026-10-27
 
 ### Adicionado

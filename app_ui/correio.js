@@ -535,10 +535,11 @@ function pintarSync() {
 }
 async function enviarReceberTodas() {
   if (cx.er && !cx.er.fim) return;
+  // a tela do K abre na hora (limiteMs: 0), não só depois de 3 s
+  const longa = acaoLonga("Enviar/Receber todas", { limiteMs: 0, progresso: () => cx.er?.progresso ?? 0, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
   const r = await api("/api/enviar_receber", {});
-  if (r.erro || r.ok === false) return toast(r.erro || r.motivo || "Não deu pra pedir agora", true);
+  if (r.erro || r.ok === false) { longa.fim(false, r.erro || r.motivo || "Não deu pra pedir agora"); return toast(r.erro || r.motivo || "Não deu pra pedir agora", true); }
   cx.er = r;
-  const longa = acaoLonga("Enviar/Receber todas", { progresso: () => cx.er?.progresso ?? 1, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
   pintarSync();
   for (let i = 0; i < 90 && !cx.er.fim; i++) {   // até ~1 min; o Painel já dá cada PC como falha em 40 s
     await esperar(700);

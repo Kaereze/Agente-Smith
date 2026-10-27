@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/fontes/fontes.css">
 <link rel="stylesheet" href="/pecas/etiqueta.css">
 <link rel="stylesheet" href="/pecas/janela.css">
+<link rel="stylesheet" href="/pecas/carregando.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
    Cores só por token: o tema claro/escuro segue o Windows. */
@@ -2294,6 +2295,7 @@ html,body{background:#1f1f1f}
 <script src="/pecas/filtro.js"></script>
 <script src="/pecas/etiqueta.js"></script>
 <script src="/pecas/janela.js"></script>
+<script src="/pecas/carregando.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
 const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
@@ -2367,7 +2369,8 @@ function carregando(path, liga, erro) {
   if (!frase) return;
   const b = $("carregando");
   emAndamento = Math.max(0, emAndamento + (liga ? 1 : -1));
-  if (liga) { b.classList.remove("oculta", "erro"); $("carregando-txt").textContent = frase; clearTimeout(b._h); return; }
+  // a faixa não mostra mais "carregando": isso agora é a tela do K (pecas/carregando.js). Ela fica só para o erro rápido.
+  if (liga) { clearTimeout(b._h); return; }
   if (erro) { b.classList.add("erro"); $("carregando-txt").textContent = "Não deu certo: " + erro; b._h = setTimeout(() => b.classList.add("oculta"), 6000); return; }
   if (!emAndamento) b._h = setTimeout(() => b.classList.add("oculta"), 250);
 }
@@ -2375,9 +2378,10 @@ function carregando(path, liga, erro) {
 // da leitura e os PCs) e aqui devolvemos a cópia guardada (lida de novo, igual a uma resposta nova) com essas partes
 // novas por cima, marcada com j.__igual (não entra no {...j}).
 const COMPARADAS = ["/api/estado", "/api/emails", "/api/correio"], GUARDADAS = {}, REDESENHO_MS = 60000;
+const SEM_TELA_K = ["/api/correio/evento", "/api/tema", "/api/professor", "/api/enviar_receber"];   // rápidas ou com tela própria
 async function api(path, corpo){
   carregando(path, true);
-  const longa = corpo ? acaoLonga(path) : null;   // ação que passa de 3 s avisa a tela (animação de carregamento)
+  const longa = corpo && !SEM_TELA_K.some(p => path.startsWith(p)) ? acaoLonga((FAZENDO.find(([p]) => path.startsWith(p)) || [])[1] || "Trabalhando…") : null;   // passou de 3 s: tela do K
   const base = path.split("?")[0], guardada = !corpo && COMPARADAS.includes(base) ? GUARDADAS[base] : null;
   const headers = {"X-Token":TOKEN,"Content-Type":"application/json"};
   if (guardada && guardada.path === path && Date.now() - guardada.em < REDESENHO_MS) headers["X-Versao"] = guardada.v;
@@ -2398,7 +2402,7 @@ async function api(path, corpo){
   }
   if (!r.ok && j.ok === undefined) j.ok = false;
   carregando(path, false, j.ok === false ? (j.motivo || j.erro) : j.erro);
-  longa?.fim(j.ok !== false && !j.erro);
+  longa?.fim(j.ok !== false && !j.erro, j.motivo || j.erro || "");
   return j;
 }
 function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.className = "toast" + (erro ? " erro" : ""); t.style.display = "block";
