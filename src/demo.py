@@ -334,7 +334,7 @@ def preparar(estado, backend):
         l[5] = str(getattr(estado, "versao", ""))
     contador = {"n": 0}
 
-    def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao="", livre=False):
+    def pedir(self, sol, para, assunto, conta_de, anexos, quem, mensagem=None, cc="", selo="", responder="", acao="", livre=False, ligacao=False):
         contador["n"] += 1
         id_envio = f"DEMO-{contador['n']}"
         pc = backend.excluir(responder) if acao == envio_nf.EXCLUIR else backend.responder(responder) if responder and acao not in (envio_nf.ENCAMINHAR, envio_nf.URGENCIA) else ""

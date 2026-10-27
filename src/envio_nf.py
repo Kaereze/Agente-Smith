@@ -621,8 +621,29 @@ def tirar_assinatura_automatica(html):
     return html[:inicio] + html[fim:], cids
 
 
+CATEGORIA_LIGACAO = "LIGAÇÃO"   # categoria que o João já tem no Outlook (verde); o botão Ligação do Painel põe no e-mail
+
+
+def aplicar_categoria_ligacao(ns, mail):
+    """Põe a categoria LIGAÇÃO no e-mail (sem tirar as que já tem). Se este Outlook não tem a categoria na lista mestra,
+    cria igual à do João (verde). Nunca atrapalha o envio: erro vira aviso no log. -> True se ficou no e-mail."""
+    try:
+        if CATEGORIA_LIGACAO not in {c.Name for c in ns.Categories}:
+            ns.Categories.Add(CATEGORIA_LIGACAO, 5)   # 5 = verde
+    except Exception:
+        logger.debug("lista mestra de categorias", exc_info=True)   # sem a lista mestra, a categoria funciona igual
+    try:
+        atuais = [c.strip() for c in re.split(r"[;,]", str(mail.Categories or "")) if c.strip()]
+        if CATEGORIA_LIGACAO not in atuais:
+            mail.Categories = ", ".join(atuais + [CATEGORIA_LIGACAO])
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ Não consegui pôr a categoria {CATEGORIA_LIGACAO} no e-mail ({e}) — o e-mail sai mesmo assim")
+        return False
+
+
 def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente="", selo="", responder_a="",
-                        encaminhar_de="", id_envio=""):
+                        encaminhar_de="", id_envio="", ligacao=False):
     """Envia saindo da conta `conta_de` deste Outlook, com a mensagem + o selo escolhido (ou, sem selo,
     a assinatura da caixa no Outlook), imagens embutidas, e os anexos. responder_a / encaminhar_de: EntryID do
     e-mail original (resposta ou encaminhamento de verdade, com o original embaixo). Levanta erro legível."""
@@ -679,6 +700,8 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     for anexo in anexos:
         mail.Attachments.Add(str(anexo))
     mail._oleobj_.Invoke(*(DISPID_SEND_USING_ACCOUNT, 0, 8, 0, conta))
+    if ligacao:   # botão Ligação do Painel: a categoria LIGAÇÃO do Outlook vai no e-mail (27/10/2026)
+        aplicar_categoria_ligacao(ns, mail)
     try:   # marca invisível: o espelho mostra "pelo Painel" nos Itens enviados
         import espelho_emails
         marca = f"{agente}|{agora().isoformat(timespec='seconds')}" + (f"|{id_envio}" if id_envio else "")
@@ -895,7 +918,7 @@ class ServicoEnvio:
                       f" estar aberto/rodando).")
 
     def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder="",
-              acao="", livre=False):
+              acao="", livre=False, ligacao=False):
         """responder: id do e-mail do espelho (espelho_emails) — sai como resposta, anexo opcional.
         acao: "encaminhar" | "excluir" (no Outlook do PC dono). anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} |
         {"tipo": "arquivo", "nome", "conteudo": bytes}]. PC dono desligado: o pedido espera na fila."""
@@ -923,6 +946,8 @@ class ServicoEnvio:
         pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos,
                                mensagem if (responder or livre) else (mensagem or mensagem_padrao(self.cfg)), selo, responder, acao)
         pedido["pc_destino"] = destino
+        if ligacao:
+            pedido["ligacao"] = True   # o PC dono põe a categoria LIGAÇÃO no e-mail ao enviar
         self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
         if destino == self.pc:
             self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
@@ -1044,7 +1069,8 @@ class ServicoEnvio:
                     if acao == ENCAMINHAR and not entry:
                         raise RuntimeError("o e-mail a encaminhar não está mais no espelho deste PC")
                 self.enviar(p["conta_de"], p["para"], p.get("cc", ""), p["assunto"], p["mensagem"], arquivos,
-                            agente=self.agente, selo=p.get("selo", ""), id_envio=id_envio, **extra)
+                            agente=self.agente, selo=p.get("selo", ""), id_envio=id_envio,
+                            **extra, **({"ligacao": True} if p.get("ligacao") else {}))
         except Exception as erro:
             detalhe = str(erro)[:300]
             logger.warning(f"⚠️ Envio {id_envio} falhou: {detalhe}")

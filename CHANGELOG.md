@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.1] — 2026-10-27
+
+### Mudou
+
+- **Botão Ligação põe a categoria LIGAÇÃO do Outlook no e-mail.** Ao enviar (Enviar NF, Novo e-mail ou Responder) com o
+  botão ligado, o PC dono da caixa aplica a categoria **LIGAÇÃO** (a que o João já tem, verde) no e-mail, mantendo as
+  que ele já tiver. Se o Outlook daquele PC não tiver a categoria, cria igual (verde). Erro na categoria nunca impede
+  o envio. A categoria aparece no e-mail dos Itens Enviados do Outlook (`envio_nf.aplicar_categoria_ligacao`).
+
 ## [2026.10.27] — 2026-10-27
 
 ### Mudou

@@ -1315,7 +1315,7 @@ class Estado:
         sol = {"aba": "", "carimbo": "", "email": para, "hotel": contas[conta]["hotel"], "nome": para}
         logger.info(f"✉️ Novo e-mail de {conta} para {para}: \"{assunto}\" — por {quem}")
         r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, str(corpo.get("corpo", "")), cc,
-                                selo if envio_nf.caminho_selo(selo) else "", livre=True)
+                                selo if envio_nf.caminho_selo(selo) else "", livre=True, **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
 
     def responder_email(self, corpo, quem):
@@ -1340,7 +1340,7 @@ class Estado:
         cc = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in x)
         selo = str(corpo.get("selo") or "")
         r = self.envio_nf.pedir(sol, para, assunto, e["caixa"], anexos, quem, str(corpo.get("corpo", "")), cc,
-                                selo if envio_nf.caminho_selo(selo) else "", responder=e["id"])
+                                selo if envio_nf.caminho_selo(selo) else "", responder=e["id"], **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, e["hotel"] or sol["hotel"], e["caixa"], para, assunto)
 
     def opcoes_envio(self, chave_sol):
@@ -1385,7 +1385,7 @@ class Estado:
         cc = ";".join(e.strip() for e in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in e)
         selo = str(corpo.get("selo") or "")
         r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
-                                selo if envio_nf.caminho_selo(selo) else "")
+                                selo if envio_nf.caminho_selo(selo) else "", **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
 
     # ---------- pedido por ligação (usuário, 22/10/2026) ----------
@@ -1951,6 +1951,12 @@ def assinatura_tela(corpo):
             return [limpar(v) for v in x]
         return x
     return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16]
+
+
+def _kw_ligacao(corpo):
+    """Botão Ligação ligado na tela de escrever: o pedido de envio leva ligacao=True (categoria LIGAÇÃO no Outlook).
+    Desligado: nenhum argumento a mais."""
+    return {"ligacao": True} if (corpo or {}).get("ligacao") else {}
 
 
 def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):
