@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.2] — 2026-10-27
+
+### Adicionado
+
+- **"Enviar/Receber todas" pede aos 4 PCs** (desenho do João, opção C): manda um pedido assinado pela rede dos PCs
+  (`/rede/enviar_receber`, sem usar a cota do Google); cada PC roda o Enviar/Receber do próprio Outlook (o F9, que também
+  manda o que estiver preso na Caixa de Saída) e responde quando a Caixa de Saída esvazia. O botão vira um anel que enche
+  e mostra "✓ Atualizado" ou o motivo de cada falha (Trabalhar Offline, desligado, presos). A estimativa é a mediana dos
+  últimos 8 tempos de cada PC (`estado/enviar_receber_tempos.json`). Um pedido por vez, 10 s entre pedidos.
+  Código: `src/enviar_receber.py`, `Estado.enviar_receber_todas` e `rede_enviar_receber`, `pintarSync`/`enviarReceberTodas`.
+- **Gancho de ação longa:** toda ação que passa de 3 s (`LIMITE_ACAO_LONGA_MS`) dispara `painel:acao-longa` e, ao acabar,
+  `painel:acao-longa-fim` (`acaoLonga` em `painel.js`; o `api()` liga em todo POST). A animação de carregamento com a logo
+  (do João, em React) escuta esses eventos.
+
 ## [2026.10.27.1] — 2026-10-27
 
 ### Mudou

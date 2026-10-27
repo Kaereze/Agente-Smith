@@ -40,6 +40,7 @@ import indice_emails
 import ligacoes
 import cota_google
 import envio_nf
+import enviar_receber
 import espelho_emails
 import envio_pc_dono
 import rede_local
@@ -947,6 +948,46 @@ class Estado:
         pythoncom.CoInitialize()
         return envio_pc_dono.conferir_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
 
+    def rede_enviar_receber(self, _corpo):
+        """Outro PC (ou este Painel) pede o Enviar/Receber deste Outlook (27/10/2026): roda e espera acabar."""
+        if not outlook_vivo.pode_usar():
+            return {"erro": "Outlook fechado neste PC"}
+        import pythoncom
+        pythoncom.CoInitialize()
+        r = enviar_receber.rodar_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"))
+        self.versao_tela += 1
+        return r
+
+    def _er_terminou(self, _pc):
+        self.__dict__.setdefault("acordar", threading.Event()).set()   # a tela relê já; o espelho vem da vigia do conferente
+        self.versao_tela += 1
+
+    def _enviar_receber(self):
+        if getattr(self, "_er", None) is None:
+            demo = bool(getattr(self, "demo", False))
+
+            def local():
+                if demo:
+                    time.sleep(1.5)
+                    return {"ok": True, "segundos": 1.5, "saiu": 0, "presos": 0}
+                return self.rede_enviar_receber({})
+
+            def remoto(pc, endereco):
+                if demo:
+                    time.sleep(2 + (hash(pc) % 40) / 10)
+                    return {"ok": True, "segundos": 3.0, "saiu": 0, "presos": 0}
+                return rede_local.perguntar(self.segredo, endereco, "enviar_receber", {}, tempo=enviar_receber.TEMPO_REDE)
+            self._er = enviar_receber.EnviarReceber(
+                socket.gethostname(), local, remoto,
+                lambda: [{**p, "rede": p.get("rede") or ("demo" if demo else "")} for p in self.pcs()],
+                PASTA_ESTADO / "enviar_receber_tempos.json", ao_terminar=self._er_terminou)
+        return self._er
+
+    def enviar_receber_todas(self, quem):
+        if getattr(self, "so_ver", False):
+            return {"erro": "Modo só leitura: não pede nada aos PCs"}
+        return self._enviar_receber().iniciar(quem)
+
     def rede_ping(self, _corpo):
         return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
 
@@ -1798,6 +1839,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.opcoes_envio(q.get("chave", "")))
                 if url.path == "/api/envio_nf/status":
                     return self._json(estado.situacao_envio(q.get("id", "")))
+                if url.path == "/api/enviar_receber/status":
+                    return self._json(estado._enviar_receber().status(q.get("id", "")))
                 if url.path == "/api/painel":
                     return self._json(estado.painel(q.get("ini"), q.get("fim")))
                 if url.path == "/api/hotel":
@@ -1900,6 +1943,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
+                if path == "/api/enviar_receber":
+                    return self._json(estado.enviar_receber_todas(nome_do_agente()))
                 if path == "/api/ligacao":
                     return self._json(estado.marcar_ligacao(str(corpo.get("id", "")), bool(corpo.get("marcar")), nome_do_agente()))
                 if path == "/api/correio/encaminhar":
@@ -2049,6 +2094,7 @@ def main():
                                                                   "enviar": estado.rede_enviar,
                                                                   "envio_nf": estado.rede_envio_nf,
                                                                   "novidade": estado.rede_novidade,
+                                                                  "enviar_receber": estado.rede_enviar_receber,
                                                                   "conferir_envio": estado.rede_conferir_envio}).iniciar()
     token = secrets.token_urlsafe(24)
     ultimo_uso = [-1e9]

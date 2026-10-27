@@ -21,7 +21,7 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 Pedido do João: o botão "Enviar/Receber todas" deve mandar os 4 PCs rodarem o Enviar/Receber do Outlook e o Painel
 espelhar; carregamento com a logo desenhada no ritmo do tempo estimado (ideia: React/Framer Motion). 3 opções que rodam
 ao vivo (A cartão no canto, B janela no centro, C anel no botão) com cenários de PC desligado e Outlook travado.
-Recomendação: A, e a mesma peça para todas as ações demoradas. SVG puro (o Painel não usa React). Esperando as escolhas.
+Recomendação: A, e a mesma peça para todas as ações demoradas. SVG puro (o Painel não usa React). **Escolhido pelo João: opção C (anel no botão)**, no ar na 2026.10.27.2; a tela de carregamento com a logo ele desenha depois, em React, para ações acima de 3 s.
 - **Abrir a página:** [[2026-10-27 Enviar-Receber todas.html|Enviar/Receber todas]] · claude.ai: https://claude.ai/artifact/1NJSwxZkjsuD5tABEGXZ4S
 
 ![[2026-10-27 Enviar-Receber todas.png|700]]

@@ -2130,6 +2130,16 @@ html,body{background:#1f1f1f}
 .lig-bl .q{text-align:right;font-variant-numeric:tabular-nums;color:var(--tinta)}
 .lig-vazio{font-size:13px;color:var(--tinta-2);padding:4px 0 2px}
 @media (prefers-reduced-motion:reduce){.btn-lig{transition:none}}
+/* Enviar/Receber todas (27/10/2026, opção C): o botão vira um anel que enche enquanto os PCs trabalham */
+.er-anel{width:16px;height:16px;transform:rotate(-90deg);flex:none}
+.er-anel circle{fill:none;stroke-width:3}
+.er-anel .fd{stroke:#4a4a4a}
+.er-anel .pr{stroke:#479ef5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--p,0) * 100);transition:stroke-dashoffset .6s linear}
+[data-ol-acao="sync"].er-ativo{color:#cfe6ff}
+[data-ol-acao="sync"].er-ativo:disabled{opacity:1!important;cursor:progress;color:#cfe6ff!important}
+[data-ol-acao="sync"].er-ok .er-anel .pr{stroke:#5ec27e}
+[data-ol-acao="sync"].er-aviso .er-anel .pr{stroke:#f2c76b}
+@media (prefers-reduced-motion:reduce){.er-anel .pr{transition:none}}
 </style>
 </head>
 <body>
@@ -2367,18 +2377,19 @@ function carregando(path, liga, erro) {
 const COMPARADAS = ["/api/estado", "/api/emails", "/api/correio"], GUARDADAS = {}, REDESENHO_MS = 60000;
 async function api(path, corpo){
   carregando(path, true);
+  const longa = corpo ? acaoLonga(path) : null;   // ação que passa de 3 s avisa a tela (animação de carregamento)
   const base = path.split("?")[0], guardada = !corpo && COMPARADAS.includes(base) ? GUARDADAS[base] : null;
   const headers = {"X-Token":TOKEN,"Content-Type":"application/json"};
   if (guardada && guardada.path === path && Date.now() - guardada.em < REDESENHO_MS) headers["X-Versao"] = guardada.v;
   let r;
   try {
     r = await fetch(path, {method: corpo ? "POST" : "GET", headers, body: corpo ? JSON.stringify(corpo) : undefined});
-  } catch (e) { carregando(path, false, "o Painel deste PC não respondeu"); throw e; }
+  } catch (e) { carregando(path, false, "o Painel deste PC não respondeu"); longa?.fim(false); throw e; }
   const texto = await r.text().catch(() => "");
   let j;
   try { j = JSON.parse(texto); } catch (e) { j = {ok:false, motivo:"resposta inválida"}; }
   if (j && j.__igual === true) {
-    if (!headers["X-Versao"]) { carregando(path, false); return api(path, corpo); }   // nunca acontece; por garantia
+    if (!headers["X-Versao"]) { carregando(path, false); longa?.fim(true); return api(path, corpo); }   // nunca acontece; por garantia
     const junto = {...j}; delete junto.__igual;
     j = Object.assign(JSON.parse(guardada.texto), junto);
     Object.defineProperty(j, "__igual", {value: true, enumerable: false});
@@ -2387,6 +2398,7 @@ async function api(path, corpo){
   }
   if (!r.ok && j.ok === undefined) j.ok = false;
   carregando(path, false, j.ok === false ? (j.motivo || j.erro) : j.erro);
+  longa?.fim(j.ok !== false && !j.erro);
   return j;
 }
 function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.className = "toast" + (erro ? " erro" : ""); t.style.display = "block";

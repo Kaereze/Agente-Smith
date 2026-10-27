@@ -559,6 +559,21 @@ function assuntoDoArquivo(nomeArquivo, nome) {
   const num = (base.match(/\d{2,}/) || [""])[0];
   return (num ? `NF ${num} - ` : "NF - ") + nome.toUpperCase();
 }
+// Ação longa (27/10/2026): toda ação que passa de LIMITE_ACAO_LONGA_MS avisa a tela com um evento. A animação de
+// carregamento (a do João, em React, com a logo sendo desenhada) escuta "painel:acao-longa" e "painel:acao-longa-fim";
+// sem ela, nada aparece além do que a ação já mostra. detail: { id, titulo, inicio, progresso(): 0..1, eta(): segundos,
+// itens(): [{agente, estado, res}] } e, no fim, { id, ok, texto, duracao }. O api() liga isto sozinho em todo POST.
+const LIMITE_ACAO_LONGA_MS = 3000;
+let acaoLongaSeq = 0;
+function acaoLonga(titulo, estado = {}) {
+  const acao = { id: "acao-" + (++acaoLongaSeq), titulo, inicio: Date.now(), progresso: () => null, eta: () => null, itens: () => [], ...estado };
+  let avisou = false;
+  const timer = setTimeout(() => { avisou = true; window.dispatchEvent(new CustomEvent("painel:acao-longa", { detail: acao })); }, LIMITE_ACAO_LONGA_MS);
+  return { acao, fim(ok = true, texto = "") {
+    clearTimeout(timer);
+    if (avisou) window.dispatchEvent(new CustomEvent("painel:acao-longa-fim", { detail: { id: acao.id, ok, texto, duracao: Date.now() - acao.inicio } }));
+  } };
+}
 const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
 // Escrever (responder, responder com NF, encaminhar, enviar NF). Com `alvo`, igual ao Outlook (usuário, 09/10/2026): abre

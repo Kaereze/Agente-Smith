@@ -514,6 +514,46 @@ window.addEventListener("keydown", ev => {   // com o visor aberto, as teclas s�
     visor.i = (visor.i + (ev.key === "ArrowRight" ? 1 : -1) + n) % n; desenharVisor(); }
 }, true);
 
+// Enviar/Receber todas (27/10/2026, opção C: anel no botão): pede aos 4 PCs que rodem o Enviar/Receber do Outlook
+const esperar = ms => new Promise(r => setTimeout(r, ms));
+function pintarSync() {
+  const er = cx.er;
+  document.querySelectorAll('[data-ol-acao="sync"]').forEach(b => {
+    if (!er) {
+      if (b.dataset.erOrig) { b.innerHTML = b.dataset.erOrig; delete b.dataset.erOrig; b.disabled = false; b.removeAttribute("title"); b.classList.remove("er-ativo", "er-ok", "er-aviso"); }
+      return;
+    }
+    if (!b.dataset.erOrig) b.dataset.erOrig = b.innerHTML;
+    const aviso = er.fim && (er.falhas?.length || er.avisos?.length);
+    const anel = `<svg class="er-anel" viewBox="0 0 36 36" aria-hidden="true"><circle class="fd" cx="18" cy="18" r="15.5"/><circle class="pr" cx="18" cy="18" r="15.5" pathLength="100" style="--p:${er.fim ? 1 : er.progresso}"/></svg>`;
+    b.classList.add("er-ativo"); b.classList.toggle("er-ok", !!er.fim && !aviso); b.classList.toggle("er-aviso", !!aviso);
+    b.disabled = true;
+    b.innerHTML = `${anel} ${er.fim ? (aviso ? "Atualizado, com aviso" : "✓ Atualizado") : "Enviando/recebendo…"}`;
+    b.title = er.fim ? [...(er.falhas || []), ...(er.avisos || [])].join(" · ") || `${er.total} PCs atualizados`
+      : `${er.feitos} de ${er.total} PCs · uns ${er.eta} s`;
+  });
+}
+async function enviarReceberTodas() {
+  if (cx.er && !cx.er.fim) return;
+  const r = await api("/api/enviar_receber", {});
+  if (r.erro || r.ok === false) return toast(r.erro || r.motivo || "Não deu pra pedir agora", true);
+  cx.er = r;
+  const longa = acaoLonga("Enviar/Receber todas", { progresso: () => cx.er?.progresso ?? 1, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
+  pintarSync();
+  for (let i = 0; i < 90 && !cx.er.fim; i++) {   // até ~1 min; o Painel já dá cada PC como falha em 40 s
+    await esperar(700);
+    const s = await api("/api/enviar_receber/status?id=" + encodeURIComponent(cx.er.id));
+    if (s.erro) break;
+    cx.er = s; pintarSync();
+  }
+  cx.er = { ...cx.er, fim: true };
+  pintarSync();
+  const falhas = cx.er.falhas || [], avisos = cx.er.avisos || [];
+  longa.fim(!falhas.length, falhas.join("; "));
+  toast(falhas.length ? "Atualizado, mas: " + falhas.join("; ") : avisos.length ? "Atualizado. " + avisos.join("; ") : `${cx.er.total} PCs atualizados`, !!falhas.length);
+  carregarCorreio();
+  setTimeout(() => { cx.er = null; pintarSync(); }, 2500);
+}
 const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC = { resp: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v5"/>', todos: '<path d="M7 14L2 9l5-5"/><path d="M12 14L7 9l5-5"/><path d="M7 9h9a5 5 0 015 5v5"/>',
   enc: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 00-5 5v5"/>', lixo: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
@@ -538,6 +578,7 @@ function desenharFaixa() {
       bt('data-cx-faixa="resp"', "resp", "Responder", 'title="Ctrl+R"') + bt('data-cx-faixa="resp"', "todos", "Responder a todos") + bt('data-cx-faixa="enc"', "enc", "Encaminhar", 'title="Ctrl+F"') +
       `<span class="sep"></span>` + bt('data-cx-faixa="lido"', "lido", "Não lido/Lido", 'title="Ctrl+U / Ctrl+Q"') + bt("", "band", "Sinalizar", nao) +
       `<div class="dir">${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
+  pintarSync();
 }
 function desenharFaixaGlobal() {
   const el = $("ol-faixa-g");
@@ -548,6 +589,7 @@ function desenharFaixaGlobal() {
   el.innerHTML = bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
       bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
+  pintarSync();
 }
 const hotelDaCaixa = c => (st.hoteis || []).filter(h => h.email === c).map(h => h.hotel).join(" / ");
 const nomeDaCaixa = c => hotelDaCaixa(c) || String(c).split("@")[1]?.replace(/^(redeandrade|hotel)/, "").replace(/(hotel)?\.com(\.br)?$/, "").toUpperCase() || c;
@@ -964,7 +1006,7 @@ document.addEventListener("click", ev => {
   const d = t.dataset;
   if (d.olAba) { cx.aba = d.olAba; desenharFaixaGlobal(); return desenharFaixa(); }
   if (d.olAcao) {
-    if (d.olAcao === "sync") { toast("Relendo as caixas dos 4 PCs…"); $("btn-atualizar")?.click(); carregarCorreio(); }
+    if (d.olAcao === "sync") enviarReceberTodas();
     if (d.olAcao === "pendentes") $("btn-enviar")?.click();
     if (d.olAcao === "pastas") { cx.semPastas = !cx.semPastas; desenharCorreio(); }
     if (d.olAcao === "tema") $("btn-tema")?.click();
