@@ -12,6 +12,7 @@ Cuidados que o João pediu:
 import datetime
 import json
 import os
+import re
 import threading
 import time
 import types
@@ -22,6 +23,8 @@ from log_util import configurar_logging
 
 logger = configurar_logging("nf_achadas")
 
+FRESCA_HORAS = 72           # nota lida há menos que isso dispara o gatilho (recalcular a etiqueta "NF pronta" dos e-mails)
+NOTA_PRONTA_HORAS = 168     # a etiqueta "NF pronta" dos e-mails usa notas dos últimos 7 dias
 JANELA_DIAS = 30            # notas dos últimos 30 dias (também as que já estavam nas pastas)
 INTERVALO_SEGUNDOS = 45     # entre uma olhada e outra nas pastas
 MAX_LIDAS_POR_VOLTA = 12    # PDF escaneado (OCR) leva segundos: uma fatia por volta, sem pesar
@@ -69,13 +72,14 @@ def _listar_pasta(pasta):
         return
 
 
-def varrer(cfg, indice, ler_texto, agora=None, listar=None, na_nuvem=so_na_nuvem):
+def varrer(cfg, indice, ler_texto, agora=None, listar=None, na_nuvem=so_na_nuvem, ao_novas=None):
     """Lê as notas novas (ou trocadas) e guarda o CPF/CNPJ do tomador de cada uma. -> quantas leu.
     Arquivo ainda só na nuvem (Dropbox online-only) não é lido: ler puxaria o PDF inteiro para o disco."""
     agora = agora or datetime.datetime.now()
     desde = (agora - datetime.timedelta(days=JANELA_DIAS)).timestamp()
     recentes = pdfs_recentes(cfg, desde, listar)
-    lidas = 0
+    lidas, frescas = 0, False
+    corte_fresca = (agora - datetime.timedelta(hours=FRESCA_HORAS)).timestamp()
     for caminho, mtime, nome in sorted(recentes, key=lambda x: -x[1]):
         atual = indice.dados.get(caminho)
         if atual and atual.get("mtime") == mtime:
@@ -95,6 +99,7 @@ def varrer(cfg, indice, ler_texto, agora=None, listar=None, na_nuvem=so_na_nuvem
                                      "doc": documento_tomador(texto), "sem_texto": len(texto.strip()) < 30,
                                      "texto": texto[:MAX_TEXTO]}
         lidas += 1
+        frescas = frescas or mtime >= corte_fresca
     with indice.lock:   # esquece o que saiu da janela ou foi apagado
         existentes = {c for c, _, _ in recentes}
         for c in [c for c in indice.dados if c not in existentes]:
@@ -102,15 +107,20 @@ def varrer(cfg, indice, ler_texto, agora=None, listar=None, na_nuvem=so_na_nuvem
     if lidas:
         indice.salvar()
         logger.info(f"📄 NF achadas: {lidas} nota(s) nova(s) lida(s) nas pastas do Dropbox")
+        if frescas and ao_novas:   # GATILHO: nota nova na pasta recalcula já a etiqueta "NF pronta" dos e-mails
+            try:
+                ao_novas()
+            except Exception:
+                logger.debug("gatilho da nota nova", exc_info=True)
     return lidas
 
 
-def iniciar(cfg, indice, ler_texto, intervalo=INTERVALO_SEGUNDOS):
+def iniciar(cfg, indice, ler_texto, intervalo=INTERVALO_SEGUNDOS, ao_novas=None):
     """Fio em segundo plano (roda no Painel de cada PC que tem as pastas do Dropbox)."""
     def rodar():
         while True:
             try:
-                varrer(cfg, indice, ler_texto)
+                varrer(cfg, indice, ler_texto, ao_novas=ao_novas)
             except Exception:
                 logger.debug("varredura das NF achadas", exc_info=True)
             time.sleep(intervalo)
@@ -176,3 +186,48 @@ def sem_envio_confirmado(nfs_do_pedido, enviados, pedido_para):
                    for e in enviados):
             sem.append(n)
     return sem
+
+
+# ---------- gatilho: nota nova na pasta -> e-mail do hóspede (27/10/2026) ----------
+_CPF_CNPJ_TEXTO = re.compile(r"(?:cpf|cnpj)\D{0,15}(\d{11}|\d{14})(?!\d)", re.I)
+_DOC_FORMATADO = re.compile(r"(?<![\d.])(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2})(?!\d)")
+
+
+def documentos_do_texto(texto):
+    """CPF/CNPJ escritos no texto do e-mail (formatados ou logo depois de "CPF"/"CNPJ") -> {só dígitos}."""
+    docs = {re.sub(r"\D", "", x) for x in _DOC_FORMATADO.findall(texto or "")} | set(_CPF_CNPJ_TEXTO.findall(texto or ""))
+    return {d for d in docs if len(d) in (11, 14)}
+
+
+def palavras_do_nome(nome_arquivo):
+    """Palavras do nome do hóspede no arquivo "NF 1391 - LEONARDO BARBOSA - 199128.pdf" (para achar e-mails candidatos)."""
+    from envio_nf import _palavras
+    nf = ler_assunto_nf(os.path.splitext(nome_arquivo)[0])
+    return {p for p in _palavras(nf[1]) if len(p) >= 4} if nf else set()
+
+
+def notas_por_documento(indice, docs, agora=None, raiz=None, ja_ligadas=(), horas=NOTA_PRONTA_HORAS):
+    """Notas (lidas há até `horas`) cujo CPF/CNPJ do tomador está em `docs` (os do pedido e/ou os do texto do e-mail).
+    -> [{nome, nf, rel, prova, modificado, forte, via}] da mais nova para a mais velha. `ja_ligadas`: nºs que já são do pedido."""
+    agora = agora or datetime.datetime.now()
+    desde = (agora - datetime.timedelta(hours=horas)).timestamp()
+    saida = []
+    for caminho, e in indice.itens():
+        if not e.get("doc") or e.get("sem_texto") or e.get("mtime", 0) < desde or e["doc"] not in docs:
+            continue
+        if e.get("nf") and e["nf"] in {str(n) for n in ja_ligadas}:
+            continue
+        saida.append({"nome": e.get("nome", os.path.basename(caminho)), "nf": e.get("nf", ""), "forte": True, "via": "documento",
+                      "prova": ("CNPJ" if len(e["doc"]) == 14 else "CPF") + " do tomador da nota confere com o do e-mail",
+                      "modificado": datetime.datetime.fromtimestamp(e["mtime"]).strftime("%d/%m/%Y %H:%M"),
+                      "rel": os.path.relpath(caminho, raiz) if raiz else caminho, "_m": e["mtime"]})
+    saida.sort(key=lambda a: -a["_m"])
+    for a in saida:
+        a.pop("_m")
+    return saida[:LIMITE_SUGESTOES]
+
+
+def _palavras_texto(texto):
+    """Palavras (4+ letras, sem as comuns) de um texto livre, para ver se o e-mail fala do hóspede da nota."""
+    from envio_nf import _palavras
+    return {p for p in _palavras(texto) if len(p) >= 4}

@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.12] — 2026-10-27
+
+### Corrigido
+
+- **Nota nova na pasta agora aparece no próprio e-mail do hóspede (gatilho).** Na 2026.10.27.10 o cruzamento só aparecia dentro do
+  Enviar NF e só para pedido do formulário: e-mail "sem formulário" (o hóspede escreve o CPF no texto) não mudava nada. Agora,
+  quando o Painel lê uma nota nova das pastas do Dropbox, recalcula na hora a etiqueta "NF pronta, falta enviar · nº" dos e-mails
+  (`ao_novas` → `atualizar_notas_emails`). A nota é ligada ao e-mail pelo CPF/CNPJ do tomador, que pode vir do pedido OU estar escrito
+  no texto do e-mail (`documentos_do_texto`; o texto de e-mail de outro PC é buscado só para candidatos, que têm palavra do nome da
+  nota, no máximo 8 por volta). Vale as notas dos últimos 7 dias. A nota achada também vira sugestão no Enviar NF do e-mail.
+  Código: `nf_achadas.notas_por_documento`, `Estado._notas_por_documento`/`_documentos_do_email`.
+
 ## [2026.10.27.11] — 2026-10-27
 
 ### Adicionado

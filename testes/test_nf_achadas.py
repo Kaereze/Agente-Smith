@@ -133,3 +133,50 @@ def test_tela_e_servidor_ligados_sem_marcar_outra_nota():
     assert "!o.sugestoes[0].outra && !o.sugestoes[0].possivel" in js          # "outra nota" e "possível" nunca vêm marcadas
     assert "estado.iniciar_nf_achadas()" in srv and "nf_achadas.achadas_do_pedido" in srv
     assert "nf_achadas" not in (RAIZ / "src" / "envio_nf.py").read_text(encoding="utf-8")   # a peça não envia nada
+
+
+# ---------- gatilho: nota nova na pasta -> etiqueta "NF pronta" do e-mail (27/10/2026) ----------
+def test_documentos_escritos_no_texto_do_email():
+    assert nf_achadas.documentos_do_texto("Segue Dados: Leonardo José Barbosa CPF 014.287.736-06 Valor R$ 1.188,00") == {"01428773606"}
+    assert nf_achadas.documentos_do_texto("cnpj 12345678000190 e 111.444.777-35") == {"12345678000190", "11144477735"}
+    assert nf_achadas.documentos_do_texto("reserva 21657 valor 120,00") == set()
+
+
+def test_notas_por_documento_so_as_recentes_do_mesmo_cpf(tmp_path):
+    ind = indice(tmp_path, {"NF 1391 - LEONARDO BARBOSA - 1.pdf": (nota(doc="014.287.736-06"), 0),
+                            "NF 5 - VELHA.pdf": (nota(doc="014.287.736-06"), 20), "NF 6 - OUTRO.pdf": (nota(doc="98.765.432/0001-10"), 0)})
+    r = nf_achadas.notas_por_documento(ind, {"01428773606"}, agora=AGORA)
+    assert [n["nf"] for n in r] == ["1391"] and r[0]["via"] == "documento" and "CPF" in r[0]["prova"]
+    assert nf_achadas.notas_por_documento(ind, {"01428773606"}, agora=AGORA, ja_ligadas=["1391"]) == []
+
+
+def test_varrer_avisa_o_gatilho_so_para_nota_fresca(tmp_path):
+    cfg = {"dropbox_notas": {"pastas": ["P"]}}
+    avisos = []
+    velha = {"C:/d/NF 1 - A.pdf": ((AGORA - datetime.timedelta(days=10)).timestamp(), "NF 1 - A.pdf")}
+    nova = {"C:/d/NF 2 - B.pdf": ((AGORA - datetime.timedelta(hours=1)).timestamp(), "NF 2 - B.pdf")}
+    for lista in (velha, nova):
+        ind = nf_achadas.Indice(tmp_path / f"{len(avisos)}.json")
+        nf_achadas.varrer(cfg, ind, lambda c: nota(), agora=AGORA, na_nuvem=lambda c: False,
+                          listar=lambda pasta, l=lista: [(c, m, n) for c, (m, n) in l.items()], ao_novas=lambda: avisos.append(1))
+    assert avisos == [1]   # só a nota de 1 h atrás disparou; a de 10 dias (backlog) não
+
+
+def test_email_sem_formulario_acha_a_nota_pelo_cpf_escrito_no_texto(tmp_path):
+    import types
+    import app_servidor
+    est = app_servidor.Estado.__new__(app_servidor.Estado)
+    agora = datetime.datetime.now()
+    est.cfg, est.solicitacoes, est.estados = {}, [], {}
+    est.emails = [{"id": "E1", "pasta": "entrada", "pc": "OUTRO-PC", "de": "jose.leonardo@idv.com", "nome": "JOSE Leonardo (IDV Group)",
+                   "assunto": "Re: Nf de hospedagem e estacionamento", "previa": "Bom dia, Prezados preciso das Notas fiscais",
+                   "classes": [], "quando": agora.isoformat(timespec="seconds"), "hotel": "L GINN"}]
+    est.nf_indice = nf_achadas.Indice(tmp_path / "nf.json")
+    mtime = (agora - datetime.timedelta(minutes=5)).timestamp()
+    est.nf_indice.dados["C:/d/NF 1391 - LEONARDO BARBOSA - 199128.pdf"] = {
+        "mtime": mtime, "nome": "NF 1391 - LEONARDO BARBOSA - 199128.pdf", "nf": "1391", "doc": "01428773606", "sem_texto": False, "texto": nota()}
+    est.texto_email = types.MethodType(lambda self, i: {"texto": "Segue Dados: Leonardo José Barbosa CPF 014.287.736-06"}, est)
+    r = est._notas_por_documento()
+    assert [n["nf"] for n in r["E1"]] == ["1391"]
+    est.nf_indice.dados.clear()
+    assert est._notas_por_documento() == {}

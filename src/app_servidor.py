@@ -967,7 +967,59 @@ class Estado:
                 mapa[e["id"]] = envio_nf.notas_do_email({**e, "texto": local.get("texto") or e.get("previa", "")}, self.cfg)
             except Exception as erro:
                 logger.debug(f"NF do Dropbox pro e-mail {e['id']}: {erro}")
+        try:   # NF achadas pelo CPF/CNPJ (do pedido ou escrito no e-mail): vale também para e-mail sem formulário
+            for i, itens in self._notas_por_documento().items():
+                atuais = mapa.get(i, [])
+                mapa[i] = atuais + [n for n in itens if n["rel"] not in {x.get("rel") for x in atuais}]
+        except Exception:
+            logger.exception("NF achadas por documento")
         self.notas_emails = mapa
+
+    def _documentos_do_email(self, e, sol, buscar):
+        """CPF/CNPJ do e-mail: os do pedido do formulário + os escritos no texto (guardados; o texto vem do Outlook do PC dono,
+        então só se busca para e-mail candidato, no máximo `buscar` por vez)."""
+        docs = set(nf_achadas._alvo(sol)["documentos"]) if sol else set()
+        cache = self.__dict__.setdefault("_docs_do_email", {})
+        if e["id"] not in cache and buscar[0] > 0:
+            buscar[0] -= 1
+            try:
+                local = espelho_emails.item_local(e["id"]) if e["pc"] == socket.gethostname() else {}
+                texto = local.get("texto") or self.texto_email(e["id"]).get("texto", "")
+            except Exception:
+                return docs, False   # PC dono sem rede agora: tenta na próxima volta
+            cache[e["id"]] = nf_achadas.documentos_do_texto(texto) | nf_achadas.documentos_do_texto(e.get("previa", ""))
+        return docs | cache.get(e["id"], set()), e["id"] in cache
+
+    def _notas_por_documento(self):
+        """{id do e-mail: [NF das pastas cujo CPF/CNPJ é o do e-mail]} — GATILHO (27/10/2026): nota nova na pasta aparece na etiqueta
+        "NF pronta" do e-mail do hóspede, com ou sem formulário. Só lê; nunca envia nem move nada."""
+        indice = getattr(self, "nf_indice", None)
+        if indice is None:
+            return {}
+        agora = datetime.datetime.now()
+        desde = (agora - datetime.timedelta(hours=nf_achadas.NOTA_PRONTA_HORAS)).timestamp()
+        recentes = [(c, e) for c, e in indice.itens() if e.get("doc") and not e.get("sem_texto") and e.get("mtime", 0) >= desde]
+        if not recentes:
+            return {}
+        palavras = set().union(*(nf_achadas.palavras_do_nome(e.get("nome", "")) for _c, e in recentes))
+        corte = (agora - datetime.timedelta(days=15)).isoformat()
+        buscar, saida, raiz = [8], {}, envio_nf.raiz_dropbox(self.cfg)
+        for e in sorted((x for x in list(self.emails) if x["pasta"] == espelho_emails.ENTRADA), key=lambda x: x["quando"], reverse=True):
+            if e["quando"] < corte or {"formulario", "aviso"} & set(e.get("classes", [])):
+                continue
+            sol = self._solicitacao_do_email(e["de"])
+            ja = [str(n) for n in ((self.estados.get(sol["chave"]) or {}).get("nfs", []) if sol else [])]
+            cache = self.__dict__.get("_docs_do_email", {})
+            candidato = bool(sol) or e["id"] in cache or bool(
+                palavras & set(nf_achadas._palavras_texto(f"{e.get('nome', '')} {e.get('de', '')} {e.get('assunto', '')} {e.get('previa', '')}")))
+            if not candidato:
+                continue
+            docs, _ = self._documentos_do_email(e, sol, buscar)
+            if docs:
+                achadas = nf_achadas.notas_por_documento(indice, docs, agora, raiz, ja)
+                if achadas:
+                    saida[e["id"]] = achadas
+        return saida
 
     def _email(self, id_email):
         e = next((x for x in self.emails if x["id"] == id_email and x["pasta"] != espelho_emails.RESPOSTA), None)
@@ -1467,6 +1519,8 @@ class Estado:
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg) if sol else []
         if not sugestoes:   # e-mail sem formulário (ex.: recepção repassando o pedido): a NF achada pelo nº/nome
             sugestoes = envio_nf.notas_do_email(e, self.cfg)
+        vistas = {x.get("rel") for x in sugestoes}   # + as achadas pelo CPF/CNPJ (gatilho da nota nova)
+        sugestoes = sugestoes + [n for n in self.notas_emails.get(e["id"], []) if n.get("rel") not in vistas]
         assunto = e["assunto"] if e["assunto"].lower().startswith(("re:", "res:")) else "RE: " + e["assunto"]
         return {"para": [e["de"]], "conta_de": e["caixa"], "destino": destino, "motivo": motivo,
                 "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
@@ -1564,7 +1618,7 @@ class Estado:
             from conferente import texto_de_arquivo_dropbox
             return texto_de_arquivo_dropbox(caminho)
         self.nf_indice = nf_achadas.Indice(PASTA_ESTADO / "nf_achadas.json")
-        nf_achadas.iniciar(self.cfg, self.nf_indice, ler)
+        nf_achadas.iniciar(self.cfg, self.nf_indice, ler, ao_novas=lambda: self.atualizar_notas_emails(forcar=True))
 
     def _nf_achadas(self, sol):
         """-> (sugestões de NF pelo documento, avisos). A tag ✅ não é prova: confere se o envio existe nos Itens Enviados."""
