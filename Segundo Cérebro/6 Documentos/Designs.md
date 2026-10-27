@@ -25,6 +25,19 @@ em React do João). Esperando a escolha.
 
 ![[2026-10-27 Carregamento das acoes.png|700]]
 
+### NF já enviada: o que ela cobre e o que o hóspede pede · 27/10/2026
+Pedido do João: mesmo com a NF enviada, poder tirar o e-mail da Caixa de Entrada (iria para uma pasta, com a marca de NF
+enviada). **Cuidado dele:** o robô NÃO pode reconhecer e tirar/apagar e-mail sozinho, porque o hóspede às vezes pede outra
+coisa depois de receber a nota (ex.: primeiro só diárias, depois consumo). **Decisões:** pasta "NF enviada" no Outlook
+(reversível); botão Concluir manual, com sugestão quando a NF cobre tudo; sai a conversa inteira do hóspede; etiqueta curta
+"NF 2186 enviada · diárias" + caixa com a NF enviada (número, data, o que cobre, atalho do PDF); o cruzamento compara o
+conjunto (datas, serviço, CPF/CNPJ e a descrição quando o corpo pede uma específica); se algo não bate vira "pede nova
+nota" e vai para Urgência. Tag ✅ sem envio nos Itens Enviados: avisa e não sugere Concluir. **Aguardando OK do desenho;
+nada mexido no código.**
+- **Abrir a página:** [[2026-10-27 NF enviada cobre o pedido.html|NF enviada cobre o pedido]]
+
+![[2026-10-27 NF enviada cobre o pedido.png|700]]
+
 ### NF achadas nas pastas, dentro do Enviar NF · 27/10/2026
 Pedido do João: quando entrar nota nova numa pasta, o Painel cruza pelo CPF/CNPJ dentro do PDF com os pedidos e deixa o
 e-mail pronto no Enviar NF. **Decisões dele:** e-mail pronto (nunca envia sozinho, nem nas notas antigas); só pastas do
