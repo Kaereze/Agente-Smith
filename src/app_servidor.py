@@ -41,6 +41,7 @@ import ligacoes
 import cota_google
 import envio_nf
 import enviar_receber
+import nf_achadas
 import espelho_emails
 import envio_pc_dono
 import rede_local
@@ -1460,6 +1461,43 @@ class Estado:
                                 selo if envio_nf.caminho_selo(selo) else "", responder=e["id"], **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, e["hotel"] or sol["hotel"], e["caixa"], para, assunto)
 
+    def iniciar_nf_achadas(self):
+        """Liga o fio que lê as notas novas das pastas do Dropbox e guarda o CPF/CNPJ do tomador (27/10/2026)."""
+        if not (self.cfg.get("dropbox_notas") or {}).get("ativo"):
+            return
+
+        def ler(caminho):
+            from conferente import texto_de_arquivo_dropbox
+            return texto_de_arquivo_dropbox(caminho)
+        self.nf_indice = nf_achadas.Indice(PASTA_ESTADO / "nf_achadas.json")
+        nf_achadas.iniciar(self.cfg, self.nf_indice, ler)
+
+    def _nf_achadas(self, sol):
+        """-> (sugestões de NF pelo documento, avisos). A tag ✅ não é prova: confere se o envio existe nos Itens Enviados."""
+        est = self.estados.get(sol["chave"]) or dados.estado_inicial()
+        nfs = [str(n) for n in est.get("nfs", [])]
+        avisos = []
+        enviados = list(self.enviados_correio)
+        if nfs and enviados:
+            sem = nf_achadas.sem_envio_confirmado(nfs, enviados, envio_nf.destinatarios(sol))
+            if sem:
+                avisos.append(f"Marcado como enviado, mas não achei o envio da NF {', '.join(sem)} nos Itens Enviados. "
+                              "A resposta do hóspede com a nota anexada não conta como envio.")
+        indice = getattr(self, "nf_indice", None)
+        if indice is None:
+            return [], avisos
+        limite = (datetime.date.today() - datetime.timedelta(days=120)).isoformat()
+        ligadas, outros = set(), {}
+        for o in self.solicitacoes:
+            if o["chave"] == sol["chave"] or (o.get("data") or "") < limite:
+                continue
+            for n in (self.estados.get(o["chave"]) or {}).get("nfs", []):
+                ligadas.add((o.get("hotel", ""), str(n)))
+            alvo = nf_achadas._alvo(o)
+            for d in alvo["documentos"]:
+                outros.setdefault(d, []).append(alvo)
+        return nf_achadas.achadas_do_pedido(indice, sol, nfs, ligadas, outros, raiz=envio_nf.raiz_dropbox(self.cfg)), avisos
+
     def opcoes_envio(self, chave_sol):
         sol = next((s for s in self.solicitacoes if s["chave"] == chave_sol), None)
         if sol is None:
@@ -1467,6 +1505,13 @@ class Estado:
         conta = self.cadastro.dados(sol["hotel"]).get("email", "")
         destino, motivo = self.envio_nf.destino_para(conta, aceitar_desligado=True)
         sugestoes = envio_nf.sugestoes_dropbox(sol, self.cfg)
+        try:   # NF achadas pelo CPF/CNPJ dentro do PDF (27/10/2026); nunca anexa nem envia sozinha
+            achadas, avisos_nf = self._nf_achadas(sol)
+        except Exception:
+            logger.exception("NF achadas")
+            achadas, avisos_nf = [], []
+        vistas = {x.get("rel") for x in sugestoes}
+        sugestoes = sugestoes + [a for a in achadas if a["rel"] not in vistas]
         try:
             assinatura = envio_nf.assinatura_previa(conta, nome_do_agente())
         except Exception:
@@ -1475,7 +1520,7 @@ class Estado:
         com_mensagem = envio_nf.assinatura_tem_mensagem(assinatura)
         selos = envio_nf.selos()
         return {"para": envio_nf.destinatarios(sol), "conta_de": conta, "destino": destino, "motivo": motivo,
-                "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes,
+                "este_pc": socket.gethostname(), "contas_locais": self.envio_nf.contas, "sugestoes": sugestoes, "avisos_nf": avisos_nf,
                 "nome": sol["nome"], "hotel": sol["hotel"],
                 "corpo": envio_nf.mensagem_padrao(self.cfg) if selos or not com_mensagem else "",
                 "assinatura": assinatura, "assinatura_com_mensagem": com_mensagem and not selos,
@@ -2207,6 +2252,7 @@ def main():
     if not modo_demo and not so_ver:
         estado.vigiar_caixa_de_saida()
         estado.iniciar_indice()
+        estado.iniciar_nf_achadas()
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
     if not sem_janela:
         abrir_janela()

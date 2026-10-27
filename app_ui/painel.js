@@ -644,8 +644,11 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
       <div class="soltar-txt">${novo ? "📎 Anexar arquivo <b>(opcional)</b> · arraste aqui ou <u>clique para escolher</u>"
         : `📎 <b>Arraste a nota fiscal aqui</b> ou <u>clique para escolher</u> · PDF ou XML · pode mais de um (nota dividida)${resp ? " · opcional numa resposta" : ""}`}</div>
       <div class="chips-anexo" id="nf-anexos"></div></div>
+    ${(o.avisos_nf || []).map(t => `<div class="aviso-nf" role="note">${esc(t)}</div>`).join("")}
     ${o.sugestoes.length ? `<div class="sug-linha"><span class="dica">Do Dropbox:</span>${o.sugestoes.map((a, i) =>
-      `<button class="sug forte" data-nf-sug="${i}" title="${esc(a.prova || "")}">📄 ${esc(a.nome)}</button>`).join("")}</div>` : ""}
+      `<button class="sug ${a.outra || a.possivel ? "" : "forte"}" data-nf-sug="${i}" title="${esc(a.prova || "")}">📄 ${esc(a.nome)}${
+        a.outra ? ' <b class="sug-tag am">outra nota</b>' : a.possivel ? ' <b class="sug-tag am">possível</b>' : a.mais_nova ? ' <b class="sug-tag">mais nova</b>' : ""}</button>`).join("")}</div>
+      ${o.sugestoes.some(a => a.outra || a.possivel) ? `<div class="dica sug-aviso">${esc(o.sugestoes.filter(a => a.outra || a.possivel).map(a => (a.outra ? "Outra nota" : "Possível") + " · " + a.nome + ": " + (a.prova || "")).join(" | "))}. Clique para anexar; nada vem marcado.</div>` : ""}` : ""}
     <div class="quadro-e2 erro oculta" id="nf-conferir" role="alert"></div>
     ${enc ? "" : linhaModelos()}
     <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
@@ -702,7 +705,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   $("nf-para").addEventListener("input", validarEnvioNF);
   $("nf-ir").onclick = () => enviarNF();
   $("nf-lig")?.addEventListener("click", () => alternarLigacao());
-  if (o.sugestoes.length === 1) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada
+  if (o.sugestoes.length === 1 && !o.sugestoes[0].outra && !o.sugestoes[0].possivel) escolherSugestao(0);   // nota confirmada pelo conteúdo: já vem anexada ("outra nota" e "possível" nunca vêm marcadas)
   desenharAnexos();
   validarEnvioNF();
   if (novo && resp.conta && resp.conta !== o.conta_de && o.contas.some(c => c.conta === resp.conta)) {   // a caixa do hotel do pedido

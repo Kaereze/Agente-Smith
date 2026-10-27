@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.10] — 2026-10-27
+
+### Adicionado
+
+- **NF achadas nas pastas, dentro do Enviar NF** (desenho do João): um fio em segundo plano (`src/nf_achadas.py`) olha as
+  pastas de notas do Dropbox a cada 45 s (só leitura; arquivo ainda só na nuvem não é lido), lê o PDF novo (texto ou
+  imagem/OCR) e guarda o CPF/CNPJ do tomador; vale também para as notas dos últimos 30 dias. Ao abrir o Enviar NF de um pedido,
+  as notas cujo CPF/CNPJ bate aparecem em "Do Dropbox": uma só e confirmada já vem anexada; "outra nota" (pedido já com
+  NF e nota de outras datas/valor), "possível" (o mesmo CNPJ tem outros pedidos) e várias notas (a mais nova em destaque)
+  **nunca vêm marcadas**. A tag ✅ não é prova: o aviso "Marcado como enviado, mas não achei o envio…" aparece quando a NF
+  da tag não está nos Itens Enviados, e a resposta do hóspede com a nota anexada não conta como envio. A mesma nota já ligada
+  ao pedido (ou a outro pedido do mesmo hotel) não volta a aparecer. **Nunca envia sozinho.**
+  Código: `Estado.iniciar_nf_achadas`, `_nf_achadas`, `opcoes_envio` (`avisos_nf`), `app_ui/painel.js`.
+
 ## [2026.10.27.9] — 2026-10-27
 
 ### Adicionado

@@ -34,8 +34,7 @@ dias; duas notas no mesmo pedido: mostra todas, a mais nova em destaque; PDF esc
 vários pedidos no mesmo CNPJ: o usuário escolhe (aparece como "possível"). **Cuidado dele:** a tag "NF enviada" às vezes
 está errada (não foi enviada) e o hóspede às vezes responde com a nota anexada pedindo outra (outro dia, consumo,
 estacionamento): a tag não vale como prova, cada PDF liga a um pedido uma vez, um pedido pode ter várias notas, e pedido
-já com ✅ só ganha a sugestão "outra nota" quando datas ou valor forem diferentes (recomendação aceita). **Aguardando OK
-do desenho; nada mexido no código.**
+já com ✅ só ganha a sugestão "outra nota" quando datas ou valor forem diferentes (recomendação aceita). **No ar na 2026.10.27.10 (OK do João: "Pode subir!").**
 - **Abrir a página:** [[2026-10-27 NF achadas nas pastas.html|NF achadas nas pastas]]
 
 ![[2026-10-27 NF achadas nas pastas.png|700]]
