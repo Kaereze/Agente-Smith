@@ -17,6 +17,14 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Carregamento das ações (faixa do rodapé) · 27/10/2026
+Pedido do João: a faixa cinza "Pedindo o envio ao robô…" no rodapé é feia e escondida; quer animação simples e realista.
+3 opções ao vivo: A pílula com segundos, B linha fina, C cartão com a logo desenhada. Recomendação A + C (A até 3 s, C acima de 3 s, onde entra a animação
+em React do João). Esperando a escolha.
+- **Abrir a página:** [[2026-10-27 Carregamento das acoes.html|Carregamento das ações]] · claude.ai: https://claude.ai/artifact/CkKzetB9shuqKfySFDzUtp
+
+![[2026-10-27 Carregamento das acoes.png|700]]
+
 ### Enviar/Receber todas com a logo sendo desenhada · 27/10/2026
 Pedido do João: o botão "Enviar/Receber todas" deve mandar os 4 PCs rodarem o Enviar/Receber do Outlook e o Painel
 espelhar; carregamento com a logo desenhada no ritmo do tempo estimado (ideia: React/Framer Motion). 3 opções que rodam

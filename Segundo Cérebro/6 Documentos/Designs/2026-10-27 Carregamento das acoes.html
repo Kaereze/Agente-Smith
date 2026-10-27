@@ -1,0 +1,126 @@
+<title>Carregamento das ações</title>
+<style>
+:root{--bg:#161616;--painel:#1f1f1f;--card:#262626;--card2:#2b2b2b;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8a8a8a;--azul:#479ef5;--verde:#5ec27e;--ambar:#f2c76b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:14px/1.55 "Segoe UI",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding-block:36px 72px;padding-inline:16px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.lead{color:var(--tinta2);margin:0 0 26px;max-width:76ch}
+section{margin:0 0 38px}
+h2{font-size:18px;margin:0 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul)}
+.desc{color:var(--tinta2);margin:0 0 12px;max-width:80ch;font-size:13.5px}
+.tela{position:relative;background:var(--painel);border:1px solid var(--linha);border-radius:12px;overflow:hidden;height:250px}
+.corpo{position:absolute;left:14px;right:14px;top:14px;display:grid;gap:9px}
+.corpo i{display:block;height:9px;border-radius:4px;background:#2a2a2a}
+.corpo i:nth-child(1){width:42%}.corpo i:nth-child(2){width:88%}.corpo i:nth-child(3){width:70%}.corpo i:nth-child(4){width:80%}
+.rodape{position:absolute;left:0;right:0;bottom:0;height:34px;border-top:1px solid var(--linha);background:#1b1b1b;display:flex;align-items:center;gap:14px;padding:0 14px;font-size:12px;color:var(--tinta3)}
+.rodape .acao{margin-left:auto}
+.bt{height:30px;padding:0 12px;border-radius:6px;border:1px solid #4a4a4a;background:var(--card);color:var(--tinta);font:600 12.5px "Segoe UI";cursor:pointer}
+.dica{display:block;font-size:12px;color:var(--tinta3);margin:8px 0 0}
+.gira{width:13px;height:13px;border-radius:50%;border:2px solid var(--azul);border-right-color:transparent;animation:gira .8s linear infinite;flex:none}
+@keyframes gira{to{transform:rotate(360deg)}}
+/* hoje */
+.hoje{position:absolute;left:0;bottom:34px;height:34px;display:flex;align-items:center;gap:10px;padding:0 16px;background:#202020;border-top:1px solid var(--linha);font-size:13px;color:var(--tinta2);width:100%}
+.hoje::before{content:"";position:absolute;left:0;top:-1px;height:2px;width:30%;background:var(--azul)}
+/* A */
+.pil{position:absolute;left:14px;bottom:46px;height:34px;padding:0 14px 0 10px;border-radius:17px;background:var(--card2);border:1px solid #4a4a4a;box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;font-size:13px;animation:sobe .25s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sobe{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pil .t{color:var(--tinta3);font-variant-numeric:tabular-nums;font-size:12px}
+.pil.ok{border-color:#2f6b4f}.pil.ok .gira{display:none}
+.chk{display:none;width:15px;height:15px;border-radius:50%;background:var(--verde);position:relative;flex:none}
+.chk::after{content:"";position:absolute;left:4.5px;top:2px;width:4px;height:7px;border:solid #06220f;border-width:0 2px 2px 0;transform:rotate(40deg)}
+.pil.ok .chk{display:block}
+/* B */
+.fio{position:absolute;left:0;right:0;bottom:34px;height:3px;overflow:hidden;background:transparent}
+.fio i{position:absolute;top:0;height:3px;width:30%;background:var(--azul);animation:corre 1.2s ease-in-out infinite;border-radius:2px}
+@keyframes corre{0%{left:-30%}100%{left:100%}}
+.fio.det i{animation:none;left:0;width:calc(var(--p,0) * 100%);transition:width .4s linear}
+.fio.ok i{background:var(--verde)}
+/* C */
+.cart{position:absolute;right:14px;bottom:46px;width:290px;border-radius:12px;background:var(--card2);border:1px solid #4a4a4a;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:12px 14px;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:center;animation:sobe .25s both}
+.cart b{display:block;font-size:13px}
+.cart small{color:var(--tinta2);font-size:12px}
+.cart .barra{grid-column:1/-1;height:3px;background:#3a3a3a;border-radius:2px;overflow:hidden}
+.cart .barra i{display:block;height:100%;width:calc(var(--p,0) * 100%);background:var(--azul);transition:width .4s linear}
+.logo{width:34px;height:34px}
+.logo .tr{fill:none;stroke:var(--azul);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--p,0) * 100);transition:stroke-dashoffset .4s linear}
+.cart.ok .logo .tr{stroke:var(--verde)}
+.regras{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px}
+.regras table{width:100%;border-collapse:collapse;font-size:13.5px}
+.regras td{padding:7px 8px;border-bottom:1px solid var(--linha);vertical-align:top}
+.regras td:first-child{color:var(--tinta3);width:170px}
+.regras tr:last-child td{border-bottom:0}
+.reco{border:1px solid #2d4a6e;background:#16233a;border-radius:10px;padding:14px 18px;color:#cfe0f5;max-width:90ch}
+.reco b{color:#fff}
+.perg{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px;margin-top:14px}
+.perg ol{margin:6px 0 0;padding-left:20px;color:var(--tinta2);display:grid;gap:6px}
+.perg b{color:var(--tinta)}
+button:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fio i{animation:none;width:100%}.gira{animation-duration:3s}.pil,.cart{animation:none}}
+</style>
+
+<main>
+  <h1>Carregamento das ações: simples e realista</h1>
+  <p class="lead">Hoje a ação em andamento aparece numa faixa cinza que cobre a barra de baixo ("Pedindo o envio ao robô…") com um risquinho azul. É escondida, não diz há quanto tempo está esperando e parece parte do rodapé. Três jeitos de mostrar, todos com o mesmo pedido: <b>"Pedindo o envio ao robô…"</b>. Clique em <b>Rodar ação</b> em cada um. Dados inventados.</p>
+
+  <section>
+    <h2><span>Hoje</span>A faixa do rodapé</h2>
+    <div class="tela"><div class="corpo"><i></i><i></i><i></i><i></i></div><div class="hoje"><span>Pedindo o envio ao robô…</span></div><div class="rodape"><span>Itens: 631</span><span>Não lidos: 606</span></div></div>
+  </section>
+
+  <section>
+    <h2><span>Opção A</span>Pílula flutuante com o tempo que passou</h2>
+    <p class="desc">Igual à pílula de envio que você já aprovou. Uma rodinha, a frase e os segundos. Some sozinha com ✓. Se passar de 3 s, ela cresce e mostra o que o robô está fazendo.</p>
+    <div class="tela" id="tA"><div class="corpo"><i></i><i></i><i></i><i></i></div><div class="rodape"><span>Itens: 631</span><span>Não lidos: 606</span><button class="bt acao" data-r="A">Rodar ação</button></div></div>
+  </section>
+
+  <section>
+    <h2><span>Opção B</span>Linha fina colada no rodapé</h2>
+    <p class="desc">Só uma linha de 3 px que corre, acima da barra de baixo, sem texto por cima do que você lê. Quando o tempo é conhecido ela enche de verdade; vira verde no fim. A frase fica dentro da barra de baixo, no lugar de "Itens/Não lidos".</p>
+    <div class="tela" id="tB"><div class="corpo"><i></i><i></i><i></i><i></i></div><div class="rodape"><span id="tBt">Itens: 631 · Não lidos: 606</span><button class="bt acao" data-r="B">Rodar ação</button></div></div>
+  </section>
+
+  <section>
+    <h2><span>Opção C</span>Cartão no canto com a logo desenhada</h2>
+    <p class="desc">A logo pequena vai sendo desenhada com o andamento, com a frase e o tempo que falta. É a mesma ideia da tela de carregamento que você vai desenhar em React, só que menor: serve de "primeiro passo" para ações acima de 3 s.</p>
+    <div class="tela" id="tC"><div class="corpo"><i></i><i></i><i></i><i></i></div><div class="rodape"><span>Itens: 631</span><span>Não lidos: 606</span><button class="bt acao" data-r="C">Rodar ação</button></div></div>
+  </section>
+
+  <section>
+    <div class="reco"><b>Recomendo a A para as ações curtas (menos de 3 s) e a C quando passa de 3 s</b>, que é onde entra a sua animação em React. A B fica como a linha fina de fundo para as duas. O rodapé volta a ser só do rodapé.</div>
+    <div class="regras" style="margin-top:14px"><table>
+      <tr><td>Realista</td><td>Mostra os segundos de verdade e, quando a ação tem etapas (envio de NF: entregue, saindo, conferido), o nome da etapa. Se o tempo é desconhecido, a linha corre sem prometer porcentagem.</td></tr>
+      <tr><td>Quando erra</td><td>Fica na tela, vermelha, com o motivo (como o envio de NF já faz), até você fechar.</td></tr>
+      <tr><td>Onde</td><td>Todas as frases de hoje ("Entregando a NF ao Outlook…", "Mandando o comando ao PC…", etc.) usam a mesma peça.</td></tr>
+    </table></div>
+    <div class="perg"><b>Para eu fazer:</b><ol><li>Qual combinação: <b>A + C</b> (recomendo), só <b>A</b>, só <b>B</b> ou só <b>C</b>?</li></ol></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const FRASE = "Pedindo o envio ao robô…", ETAPAS = ["Pedindo o envio ao robô…", "Entregue ao PC dono", "Saindo pelo Outlook", "Conferindo nos Itens Enviados"];
+  const MAKE = {
+    A: tela => { const e = document.createElement("div"); e.className = "pil"; e.setAttribute("role", "status"); tela.appendChild(e); return e; },
+    C: tela => { const e = document.createElement("div"); e.className = "cart"; e.setAttribute("role", "status"); tela.appendChild(e); return e; }
+  };
+  const LOGO = '<svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect class="tr" x="3" y="3" width="42" height="42" rx="10" pathLength="100" style="--p:var(--q)"/><path class="tr" d="M14 34V14l8 20V14M29 34V14h7M29 24h6" pathLength="100" style="--p:var(--n)"/></svg>';
+  function roda(modo, botao) {
+    const tela = botao.closest(".tela"); botao.disabled = true; const t0 = performance.now(); const total = 7; let el, fio;
+    if (modo !== "B") el = MAKE[modo](tela);
+    if (modo === "B") { fio = document.createElement("div"); fio.className = "fio"; fio.innerHTML = "<i></i>"; tela.appendChild(fio); }
+    const passo = () => {
+      const s = (performance.now() - t0) / 1000, fim = s >= total, p = Math.min(1, s / total);
+      const etapa = ETAPAS[Math.min(3, Math.floor(p * 4))];
+      if (modo === "A") { el.className = "pil" + (fim ? " ok" : ""); el.innerHTML = `<span class="gira"></span><span class="chk"></span><span>${fim ? "Enviado ao robô" : (s > 3 ? etapa : FRASE)}</span><span class="t">${Math.floor(s)} s</span>`; }
+      if (modo === "C") { el.className = "cart" + (fim ? " ok" : ""); el.style.setProperty("--p", p); el.innerHTML = `${LOGO.replace("var(--q)", Math.min(1, p / .4)).replace("var(--n)", Math.max(0, (p - .4) / .6))}<div><b>${fim ? "Pronto" : "Pedindo o envio ao robô"}</b><small>${fim ? "Enviado em " + total + " s" : etapa + " · uns " + Math.max(1, Math.ceil(total - s)) + " s"}</small></div><div class="barra"><i></i></div>`; }
+      if (modo === "B") { fio.className = "fio" + (s > 1.2 ? " det" : "") + (fim ? " ok" : ""); fio.style.setProperty("--p", fim ? 1 : p); document.getElementById("tBt").textContent = fim ? "Enviado ao robô" : `${FRASE} ${Math.floor(s)} s`; }
+      if (fim) { setTimeout(() => { el?.remove(); fio?.remove(); document.getElementById("tBt").textContent = "Itens: 631 · Não lidos: 606"; botao.disabled = false; }, 1600); return; }
+      requestAnimationFrame(() => setTimeout(passo, 120));
+    };
+    passo();
+  }
+  document.querySelectorAll("[data-r]").forEach(b => b.onclick = () => roda(b.dataset.r, b));
+})();
+</script>
