@@ -17,6 +17,15 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Enviar/Receber todas com a logo sendo desenhada · 27/10/2026
+Pedido do João: o botão "Enviar/Receber todas" deve mandar os 4 PCs rodarem o Enviar/Receber do Outlook e o Painel
+espelhar; carregamento com a logo desenhada no ritmo do tempo estimado (ideia: React/Framer Motion). 3 opções que rodam
+ao vivo (A cartão no canto, B janela no centro, C anel no botão) com cenários de PC desligado e Outlook travado.
+Recomendação: A, e a mesma peça para todas as ações demoradas. SVG puro (o Painel não usa React). Esperando as escolhas.
+- **Abrir a página:** [[2026-10-27 Enviar-Receber todas.html|Enviar/Receber todas]] · claude.ai: https://claude.ai/artifact/1NJSwxZkjsuD5tABEGXZ4S
+
+![[2026-10-27 Enviar-Receber todas.png|700]]
+
 ### Alerta de Outlook parado · 26/10/2026
 Pedido do João ("resolva os erros que informaram dentro do painel"): o Outlook do Cristian parou de 24/10 18:07 em diante
 (15 presos, 12 pedidos sem chegar aos hotéis). Desenho do diagnóstico (motivo exato: Trabalhar Offline, janela de senha,

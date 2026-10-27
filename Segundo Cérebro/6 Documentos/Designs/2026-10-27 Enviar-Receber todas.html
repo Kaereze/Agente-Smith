@@ -1,0 +1,222 @@
+<title>Enviar/Receber todas</title>
+<style>
+:root{--bg:#161616;--painel:#1f1f1f;--card:#262626;--card2:#2b2b2b;--linha:#333;--linha2:#444;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8a8a8a;--azul:#479ef5;--azul-f:#0f6cbd;--verde:#5ec27e;--ambar:#f2c76b;--verm:#ff8d95;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:14px/1.55 "Segoe UI",system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding-block:36px 72px;padding-inline:16px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.lead{color:var(--tinta2);margin:0 0 26px;max-width:76ch}
+section{margin:0 0 42px}
+h2{font-size:18px;margin:0 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--azul)}
+.desc{color:var(--tinta2);margin:0 0 14px;max-width:80ch;font-size:13.5px}
+.tela{position:relative;background:var(--painel);border:1px solid var(--linha);border-radius:12px;overflow:hidden;height:330px}
+#tB{height:450px}
+.barra{position:absolute;left:0;right:0;top:0;height:46px;border-bottom:1px solid var(--linha);display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 14px;background:#1b1b1b}
+.bt{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:5px;border:1px solid transparent;background:none;color:var(--tinta);font:500 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.bt:hover{background:#2d2d2d}
+.bt[disabled]{opacity:.5;cursor:default}
+.bt svg{width:15px;height:15px}
+.bt.off{color:var(--tinta3)}
+.bt .gira{animation:gira .9s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.fundo{position:absolute;left:14px;right:14px;top:62px;display:grid;gap:9px}
+.fundo i{display:block;height:9px;border-radius:4px;background:#2a2a2a}
+.fundo i:nth-child(1){width:42%}.fundo i:nth-child(2){width:88%}.fundo i:nth-child(3){width:70%}.fundo i:nth-child(4){width:80%}.fundo i:nth-child(5){width:55%}.fundo i:nth-child(6){width:76%}
+
+/* logo desenhada */
+.logo{display:block}
+.logo .tr{fill:none;stroke:var(--azul);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--p,0) * 100);transition:stroke-dashoffset .35s linear}
+.logo .fundo-q{fill:#0f6cbd;opacity:0;transition:opacity .4s}
+.logo.pronta .fundo-q{opacity:1}
+.logo.pronta .tr{stroke:#fff}
+.logo .ok{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:30;stroke-dashoffset:30;transition:stroke-dashoffset .35s .15s}
+.logo.pronta .ok{stroke-dashoffset:0}
+.logo.pronta .nf{opacity:0;transition:opacity .2s}
+.logo.erro .tr{stroke:var(--ambar)}
+
+/* opção A: pílula no canto */
+.pil{position:absolute;left:14px;bottom:14px;width:300px;border-radius:12px;background:var(--card2);border:1px solid #4a4a4a;box-shadow:0 12px 32px rgba(0,0,0,.5);overflow:hidden;animation:sobe .25s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sobe{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.pil .cab{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 14px}
+.pil b{font-size:13.5px;display:block}
+.pil small{font-size:12px;color:var(--tinta2)}
+.pil .eta{font:600 12px "Segoe UI";color:var(--tinta3);font-variant-numeric:tabular-nums}
+.fio{height:3px;background:#3a3a3a}.fio i{display:block;height:100%;width:calc(var(--p,0) * 100%);background:var(--azul);transition:width .35s linear}
+.pil.ok .fio i{background:var(--verde)}
+.pcs{display:grid;gap:0;padding:4px 0 6px;border-top:1px solid var(--linha)}
+.pc{display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:6px 14px;font-size:12.5px}
+.pc .st{width:14px;height:14px;border-radius:50%;border:2px solid #555;position:relative}
+.pc.andando .st{border-color:var(--azul);border-right-color:transparent;animation:gira .8s linear infinite}
+.pc.feito .st{background:var(--verde);border-color:var(--verde)}
+.pc.feito .st::after{content:"";position:absolute;left:3px;top:0;width:3px;height:7px;border:solid #06220f;border-width:0 2px 2px 0;transform:rotate(40deg)}
+.pc.falha .st{background:var(--ambar);border-color:var(--ambar)}
+.pc .res{color:var(--tinta3);font-variant-numeric:tabular-nums}
+.pc.falha .res{color:var(--ambar)}
+
+/* opção B: cartão no centro */
+.veu{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;animation:aparece .18s both}
+@keyframes aparece{from{opacity:0}to{opacity:1}}
+.cartao{width:340px;background:var(--card2);border:1px solid #4a4a4a;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55);padding:22px 22px 16px;display:grid;justify-items:center;gap:6px;text-align:center;animation:entra .24s cubic-bezier(.16,1,.3,1) both}
+@keyframes entra{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+.cartao h3{margin:6px 0 0;font-size:16px}
+.cartao p{margin:0;color:var(--tinta2);font-size:13px}
+.cartao .pcs{width:100%;margin-top:10px;text-align:left}
+.cartao .fio{width:100%;border-radius:2px;margin-top:8px}
+.cartao .acoes{margin-top:8px}
+
+/* opção C: no botão */
+.bt.anel{position:relative;padding-left:12px}
+.anel-svg{width:18px;height:18px;transform:rotate(-90deg)}
+.anel-svg circle{fill:none;stroke-width:2.6}
+.anel-svg .fd{stroke:#444}.anel-svg .pr{stroke:var(--azul);stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--p,0) * 100);transition:stroke-dashoffset .35s linear}
+.dica{position:absolute;top:50px;right:14px;background:var(--card2);border:1px solid #4a4a4a;border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--tinta2);box-shadow:0 10px 26px rgba(0,0,0,.45);max-width:260px}
+
+.lado{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.ctl button{height:30px;padding:0 12px;border-radius:6px;border:1px solid var(--linha2);background:var(--card);color:var(--tinta2);font:600 12.5px "Segoe UI";cursor:pointer}
+.ctl button[aria-pressed="true"]{background:#16324d;border-color:var(--azul);color:#cfe6ff}
+.regras{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px}
+.regras table{width:100%;border-collapse:collapse;font-size:13.5px}
+.regras td{padding:7px 8px;border-bottom:1px solid var(--linha);vertical-align:top}
+.regras td:first-child{color:var(--tinta3);width:190px}
+.regras tr:last-child td{border-bottom:0}
+.reco{border:1px solid #2d4a6e;background:#16233a;border-radius:10px;padding:14px 18px;color:#cfe0f5;max-width:90ch}
+.reco b{color:#fff}
+.perg{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:14px 18px}
+.perg ol{margin:6px 0 0;padding-left:20px;color:var(--tinta2);display:grid;gap:6px}
+.perg b{color:var(--tinta)}
+.nota{font-size:12px;color:var(--tinta3);margin-top:24px}
+button:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+@media (max-width:520px){.regras td:first-child{width:120px}.pil{width:calc(100% - 28px)}}
+@media (prefers-reduced-motion:reduce){.logo .tr,.fio i,.anel-svg .pr{transition:none}.pil,.cartao,.veu{animation:none}.gira,.pc.andando .st{animation-duration:2.5s}}
+</style>
+
+<main>
+  <h1>Enviar/Receber todas: pede aos 4 PCs e mostra o andamento</h1>
+  <p class="lead">Hoje o botão só recarrega a tela do seu PC. Proposta: ele manda um pedido assinado aos 4 PCs; cada um roda o <b>Enviar/Receber</b> (a tecla F9) no próprio Outlook e atualiza o espelho. Enquanto isso, a logo do Painel é <b>desenhada na proporção do andamento</b> e some quando termina. Clique em <b>Enviar/Receber todas</b> nas três opções para ver rodando. Dados inventados.</p>
+
+  <div class="ctl" role="group" aria-label="Cenário da demonstração">
+    <span style="align-self:center;color:var(--tinta3);font-size:12.5px">Cenário:</span>
+    <button type="button" data-cen="ok" aria-pressed="true">Tudo certo</button>
+    <button type="button" data-cen="off" aria-pressed="false">Um PC desligado</button>
+    <button type="button" data-cen="out" aria-pressed="false">Outlook de um PC travado</button>
+  </div>
+
+  <section>
+    <h2><span>Opção A</span>Cartão no canto, que sobe e some sozinho</h2>
+    <p class="desc">Igual à pílula de envio que você aprovou: aparece embaixo à esquerda, não bloqueia a tela. A logo ao lado vai sendo desenhada; embaixo, cada PC com o seu resultado e o tempo que falta.</p>
+    <div class="tela" id="tA"><div class="barra"><button class="bt off" disabled>Enviar NF</button><button class="bt" data-ir="A">↻ Enviar/Receber todas</button></div><div class="fundo"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+  </section>
+
+  <section>
+    <h2><span>Opção B</span>Janela no centro, com a logo grande <em style="font-size:12px;color:var(--tinta3);font-style:normal">(a que você descreveu)</em></h2>
+    <p class="desc">A logo grande se desenha no centro enquanto os PCs trabalham. Mais bonita e mais "marca", mas cobre a tela. Pode ter "Continuar trabalhando", que vira a opção A.</p>
+    <div class="tela" id="tB"><div class="barra"><button class="bt off" disabled>Enviar NF</button><button class="bt" data-ir="B">↻ Enviar/Receber todas</button></div><div class="fundo"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+  </section>
+
+  <section>
+    <h2><span>Opção C</span>Só um anel no próprio botão</h2>
+    <p class="desc">O mais discreto: o botão vira um anel que enche. Passando o mouse mostra o texto. Não diz qual PC ainda falta.</p>
+    <div class="tela" id="tC"><div class="barra"><button class="bt off" disabled>Enviar NF</button><button class="bt" data-ir="C">↻ Enviar/Receber todas</button></div><div class="fundo"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+  </section>
+
+  <section>
+    <div class="reco"><b>Minha recomendação: A como padrão, e B só quando o João quiser ver a logo grande</b> (um botão "Ver em tela cheia" dentro do cartão). A mesma peça serve para todas as ações demoradas do Painel: Enviar NF, a rodada do robô, atualizar PCs e a cópia dos formulários. Um carregamento só, igual em tudo (padrão fixo).</div>
+  </section>
+
+  <section>
+    <h2>Como funciona por baixo</h2>
+    <div class="regras"><table>
+      <tr><td>O pedido</td><td>Um comando novo, assinado, pela rede dos PCs (a mesma do envio direto). Não usa a planilha, então não gasta cota do Google.</td></tr>
+      <tr><td>O que cada PC faz</td><td>Roda o Enviar/Receber do Outlook dele e atualiza o espelho dos e-mails. É exatamente o F9: <b>também manda o que estiver preso na Caixa de Saída</b> (o caso do Cristian).</td></tr>
+      <tr><td>Quanto tempo leva</td><td>O Painel guarda quanto cada PC demorou nas últimas vezes e usa a mediana como estimativa ("uns 14 s"). A logo e a barra andam com o que realmente terminou, não com um relógio falso: se um PC demora mais, a barra espera.</td></tr>
+      <tr><td>O que o Painel mostra</td><td>O espelho dos e-mails se atualiza sozinho assim que cada PC termina (o aviso rápido que já existe).</td></tr>
+      <tr><td>Se algo falhar</td><td>PC desligado ou sem resposta em 30 s: aparece "sem resposta", a logo fica âmbar, e o resto segue. Nunca trava o botão.</td></tr>
+      <tr><td>Quem aperta</td><td>Qualquer um dos 4 agentes. Um clique a cada 10 s (evita apertar sem querer três vezes).</td></tr>
+      <tr><td>Tecnologia</td><td>O Painel é feito sem React, então a animação é em SVG puro (a logo "desenhada" pela borda). Fica igual ao que o Framer Motion faria, sem biblioteca nem mudança grande. React/Framer Motion só valem a pena se um dia o Painel inteiro for reescrito.</td></tr>
+      <tr><td>Quem tem menos movimento</td><td>Quem desligou animações no Windows vê a barra sem desenho e a logo já pronta.</td></tr>
+    </table></div>
+  </section>
+
+  <div class="perg"><b>Para eu fazer, 3 respostas:</b>
+    <ol>
+      <li>Qual opção: <b>A</b> (recomendo), <b>B</b> ou <b>C</b>?</li>
+      <li>O botão pode mandar o Enviar/Receber para <b>os 4 PCs</b> sempre (e mandar sair o que estiver preso), ou prefere escolher quais?</li>
+      <li>Essa animação com a logo fica só aqui, ou vira o carregamento padrão de todas as ações demoradas do Painel (envio de NF, robô, atualizar PCs)?</li>
+    </ol></div>
+  <p class="nota">Desenho de 27/10/2026. Os tempos e nomes são de exemplo.</p>
+</main>
+
+<script>
+(() => {
+  const PCS = ["João", "Clara", "Cristian", "Bernardo"];
+  let cen = "ok";
+  const LOGO = (id) => `<svg class="logo" id="${id}" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
+    <rect class="fundo-q" x="2" y="2" width="44" height="44" rx="10"/>
+    <rect class="tr" x="2" y="2" width="44" height="44" rx="10" pathLength="100" style="--p:var(--q)"/>
+    <path class="tr nf" d="M13 35V13l8 22V13" pathLength="100" style="--p:var(--n)"/>
+    <path class="tr nf" d="M28 35V13h8M28 24h7" pathLength="100" style="--p:var(--f)"/>
+    <path class="ok" d="M14 25l7 7 14-15" pathLength="30"/></svg>`;
+  document.querySelectorAll(".ctl button").forEach(b => b.onclick = () => {
+    cen = b.dataset.cen; document.querySelectorAll(".ctl button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  });
+  // andamento: cada PC leva um tempo; "p" total = média dos PCs; a logo desenha: moldura 0-40%, N 40-70%, F 70-100%
+  function roda(tela, modo) {
+    const tempos = { João: 3.2, Clara: 5.5, Cristian: 9, Bernardo: 6.5 };
+    const est = Math.round(Math.max(...Object.values(tempos)) + 1);
+    const est_pc = {}; PCS.forEach(p => est_pc[p] = { t: tempos[p], ini: null, fim: null, estado: "andando", res: "" });
+    if (cen === "off") est_pc.Clara = { t: 30, ini: null, fim: null, estado: "andando", res: "", falha: "sem resposta" };
+    if (cen === "out") est_pc.Cristian = { t: 12, ini: null, fim: null, estado: "andando", res: "", falha: "Outlook travado" };
+    const t0 = performance.now(); let parar = false;
+    const caixa = document.createElement("div");
+    const prog = () => PCS.reduce((s, p) => { const x = est_pc[p]; return s + (x.estado === "andando" ? Math.min(.95, (performance.now() - t0) / 1000 / x.t) : 1); }, 0) / PCS.length;
+    const sets = (el, p) => { el.style.setProperty("--q", Math.min(1, p / .4)); el.style.setProperty("--n", Math.min(1, Math.max(0, (p - .4) / .3))); el.style.setProperty("--f", Math.min(1, Math.max(0, (p - .7) / .3))); };
+    const pcsHtml = () => PCS.map(p => { const x = est_pc[p]; return `<div class="pc ${x.estado}"><span class="st"></span><span>${p}</span><span class="res">${x.res}</span></div>`; }).join("");
+    let botao = tela.querySelector("[data-ir]");
+    botao.disabled = true;
+    if (modo === "C") botao.innerHTML = `<svg class="anel-svg" viewBox="0 0 36 36"><circle class="fd" cx="18" cy="18" r="15.5"/><circle class="pr" cx="18" cy="18" r="15.5" pathLength="100" style="--p:0"/></svg> Enviando/recebendo…`;
+    else botao.innerHTML = `<svg class="gira" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15m0 5v-5h-5"/></svg> Enviando/recebendo…`;
+    let el = null;
+    if (modo === "A") { el = document.createElement("div"); el.className = "pil"; el.setAttribute("role", "status"); tela.appendChild(el); }
+    if (modo === "B") { el = document.createElement("div"); el.className = "veu"; tela.appendChild(el); }
+    let dica = null;
+    if (modo === "C") { dica = document.createElement("div"); dica.className = "dica"; tela.appendChild(dica); }
+    const pinta = (fim) => {
+      const p = fim ? 1 : prog(), falt = Math.max(0, est - (performance.now() - t0) / 1000);
+      const feitos = PCS.filter(x => est_pc[x].estado !== "andando").length;
+      const falhou = PCS.some(x => est_pc[x].estado === "falha");
+      if (modo === "A") {
+        el.className = "pil" + (fim && !falhou ? " ok" : "");
+        el.style.setProperty("--p", p);
+        el.innerHTML = `<div class="cab">${LOGO("lg")}<div><b>${fim ? (falhou ? "Terminou, mas com aviso" : "Todos os PCs atualizados") : "Atualizando os e-mails dos 4 PCs"}</b><small>${fim ? (falhou ? "um PC não respondeu" : "38 e-mails novos no espelho") : `${feitos} de 4 PCs`}</small></div><span class="eta">${fim ? "" : "~" + Math.ceil(falt) + " s"}</span></div><div class="fio"><i></i></div><div class="pcs">${pcsHtml()}</div>`;
+        const lg = el.querySelector("#lg"); sets(lg, p); if (fim) lg.classList.add(falhou ? "erro" : "pronta");
+      } else if (modo === "B") {
+        el.innerHTML = `<div class="cartao">${LOGO("lg2").replace('width="44" height="44"', 'width="92" height="92"')}<h3>${fim ? (falhou ? "Terminou, mas com aviso" : "Tudo atualizado") : "Atualizando os 4 PCs…"}</h3><p>${fim ? (falhou ? "Um PC não respondeu. O resto está em dia." : "38 e-mails novos nas 4 caixas.") : `Faltam uns ${Math.ceil(falt)} s · ${feitos} de 4 PCs`}</p><div class="fio" style="--p:${p}"><i></i></div><div class="pcs">${pcsHtml()}</div><div class="acoes"><button class="bt" style="border-color:#555" data-fecha>${fim ? "Fechar" : "Continuar trabalhando"}</button></div></div>`;
+        const lg = el.querySelector("#lg2"); sets(lg, p); if (fim) lg.classList.add(falhou ? "erro" : "pronta");
+        el.querySelector("[data-fecha]").onclick = () => { parar = true; fecha(); };
+      } else {
+        const c = botao.querySelector(".pr"); if (c) c.style.setProperty("--p", p);
+        dica.textContent = fim ? (falhou ? "Terminou, um PC não respondeu." : "Pronto: 4 PCs atualizados.") : `${feitos} de 4 PCs · uns ${Math.ceil(falt)} s`;
+      }
+    };
+    const fecha = () => { el?.remove(); dica?.remove(); botao.disabled = false;
+      botao.innerHTML = modo === "C" ? "↻ Enviar/Receber todas" : "↻ Enviar/Receber todas"; };
+    const passo = () => {
+      if (parar) return;
+      const agora = (performance.now() - t0) / 1000;
+      PCS.forEach(p => { const x = est_pc[p];
+        if (x.estado === "andando" && agora >= x.t) {
+          if (x.falha) { x.estado = "falha"; x.res = x.falha; } else { x.estado = "feito"; x.res = x.t.toFixed(1).replace(".", ",") + " s"; } } });
+      // falhas (sem resposta) valem só depois do limite de 30 s: no demo, 12 s
+      PCS.forEach(p => { const x = est_pc[p]; if (x.falha && x.estado === "andando" && agora >= Math.min(x.t, 12)) { x.estado = "falha"; x.res = x.falha; } });
+      const fim = PCS.every(p => est_pc[p].estado !== "andando");
+      pinta(fim);
+      if (fim) { botao.innerHTML = "✓ Atualizado"; botao.disabled = false; setTimeout(() => { if (!parar) fecha(); }, modo === "A" ? 3800 : modo === "B" ? 4500 : 2200); return; }
+      requestAnimationFrame(() => setTimeout(passo, 120));
+    };
+    pinta(false); passo();
+  }
+  document.querySelectorAll("[data-ir]").forEach(b => b.onclick = () => roda(b.closest(".tela"), b.dataset.ir));
+})();
+</script>
