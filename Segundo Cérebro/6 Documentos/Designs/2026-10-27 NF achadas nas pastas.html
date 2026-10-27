@@ -1,0 +1,107 @@
+<title>NF achadas nas pastas</title>
+<style>
+:root{--bg:#f6f7f8;--folha:#fff;--linha:#e2e5e9;--tinta:#1b1f24;--t2:#4b5560;--t3:#6b7580;--azul:#0f6cbd;--azul-f:#e7f1fb;--ambar:#9a6700;--ambar-f:#fdf3dc;--verm:#c4314b;--verm-f:#fbe9ec;--chip:#eef1f4;--sobre:#fff;--sombra:0 6px 24px rgba(0,0,0,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--t2:#b4b4b4;--t3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;--sobre:#0b1d2e;--sombra:0 10px 28px rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--t2:#b4b4b4;--t3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;--sobre:#0b1d2e;--sombra:0 10px 28px rgba(0,0,0,.5);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--tinta);font:14px/1.5 "Segoe UI",system-ui,sans-serif;padding-inline:16px;padding-block:20px}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;text-wrap:balance}.sub{color:var(--t2);margin:0 0 14px;max-width:74ch}
+.fluxo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 14px;font-size:12.5px;color:var(--t2)}
+.fluxo span{border:1px solid var(--linha);background:var(--folha);border-radius:999px;padding:3px 10px}.fluxo i{color:var(--t3);font-style:normal}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+button{font:inherit;cursor:pointer}
+.ctl button{border:1px solid var(--linha);background:var(--folha);color:var(--tinta);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500}
+.ctl button:hover{border-color:var(--azul)}.ctl .p{background:var(--azul);border-color:var(--azul);color:var(--sobre)}
+.dica{color:var(--t3);font-size:12.5px;margin:0 0 12px;min-height:20px}
+.jan{max-width:640px;border:1px solid var(--linha);border-radius:14px;background:var(--folha);box-shadow:var(--sombra);overflow:hidden}
+.jan-cab{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--linha)}.jan-cab b{flex:1}.jan-cab span{color:var(--t3);font-size:18px}
+.ped{padding:12px 16px;border-bottom:1px solid var(--linha);background:var(--bg)}
+.ped b{font-size:14px}.ped .l{color:var(--t2);font-size:12.5px;margin-top:2px}
+.sec{padding:12px 16px;border-bottom:1px solid var(--linha)}
+.sec h4{margin:0 0 8px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--t3)}
+.achada{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;margin-top:8px;animation:entra .3s ease}
+.achada.dest{border-color:var(--azul)}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}}
+.ac-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pdf{font:600 11px Consolas,monospace;border:1px solid var(--linha);background:var(--chip);border-radius:6px;padding:2px 6px;color:var(--t2)}
+.tag{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--azul-f);color:var(--azul)}
+.tag.am{background:var(--ambar-f);color:var(--ambar)}.tag.ln{background:var(--chip);color:var(--t2)}
+.quando{margin-left:auto;color:var(--t3);font-size:12px}
+.provas{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.prova{font-size:12px;border-radius:999px;padding:2px 9px;background:var(--azul-f);color:var(--azul);font-weight:600}
+.prova.am{background:var(--ambar-f);color:var(--ambar)}
+.aviso{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--ambar-f);color:var(--ambar);font-size:12.5px;font-weight:500}
+.opt{display:flex;gap:9px;align-items:flex-start;margin-top:8px;cursor:pointer}.opt input{margin-top:5px;accent-color:var(--azul)}
+.gira{width:13px;height:13px;border-radius:50%;border:2px solid var(--linha);border-top-color:var(--azul);display:inline-block;animation:g .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes g{to{transform:rotate(360deg)}}
+.campos{display:grid;grid-template-columns:70px 1fr;gap:4px 8px;font-size:13px;margin:0}.campos dt{color:var(--t3)}.campos dd{margin:0;color:var(--tinta)}
+.rod{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px}
+.rod button{border:1px solid var(--linha);background:var(--folha);color:var(--tinta);border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px}
+.rod .p{background:var(--azul);border-color:var(--azul);color:var(--sobre)}.rod button:disabled{opacity:.45;cursor:default}
+.nada{color:var(--t3);font-size:13px}
+.feito{margin:12px 16px;padding:9px 11px;border-radius:8px;background:var(--azul-f);color:var(--azul);font-weight:600;font-size:13px}
+.notas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
+.nota{border:1px solid var(--linha);background:var(--folha);border-radius:12px;padding:13px 15px}
+.nota h3{margin:0 0 6px;font-size:14px}.nota ul{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--t2);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<div class="wrap">
+  <h1>NF achadas nas pastas, dentro do Enviar NF</h1>
+  <p class="sub">O Painel vigia as pastas das notas no Dropbox, lê o CPF ou CNPJ dentro do PDF e cruza com os pedidos. O resultado aparece só aqui: ao abrir o Enviar NF de um pedido, as notas achadas já vêm anexadas e o e-mail pronto. Nunca envia sozinho.</p>
+  <div class="fluxo"><span>PDF novo na pasta</span><i>→</i><span>lê o CPF/CNPJ no PDF</span><i>→</i><span>cruza com o pedido</span><i>→</i><span>aparece no Enviar NF do pedido</span><i>→</i><span>a pessoa confere e envia</span></div>
+  <div class="ctl">
+    <button class="p" data-c="um">Pedido esperando NF: uma nota bate</button>
+    <button data-c="duas">Duas notas no mesmo pedido</button>
+    <button data-c="outra">Pedido já com ✅: outra nota</button>
+    <button data-c="semenvio">Tag ✅ sem envio de verdade</button>
+    <button data-c="varios">Mesmo CNPJ, vários pedidos</button>
+    <button data-c="scan">PDF escaneado</button>
+    <button data-c="igual">Pedido com ✅: mesma nota (nada aparece)</button>
+  </div>
+  <p class="dica" id="dica"></p>
+  <div class="jan" id="jan"></div>
+  <div class="notas">
+    <div class="nota"><h3>Regras de cuidado</h3><ul><li>A tag ✅ não é prova: o Painel confere se o envio existe nos Itens Enviados.</li><li>Resposta do hóspede com a nota anexada não conta como NF enviada nem como nota nova.</li><li>Cada PDF liga a um pedido só uma vez; um pedido pode ter várias notas (estadia, consumo, estacionamento).</li></ul></div>
+    <div class="nota"><h3>Quando mostra "outra nota"</h3><ul><li>Pedido já com NF: só quando as datas ou o valor da nota forem diferentes.</li><li>Nunca vem marcada: a pessoa escolhe qual anexar.</li><li>Nota igual à já enviada não aparece.</li></ul></div>
+    <div class="nota"><h3>Alcance</h3><ul><li>Pastas do Dropbox (PC 1, 2 e 3), notas novas e as dos últimos 30 dias.</li><li>PDF escaneado é lido por imagem em segundo plano, sem travar.</li><li>Nota sem pedido não aparece: fica só no log.</li></ul></div>
+  </div>
+</div>
+<script>
+(function(){
+var jan=document.getElementById('jan'),dica=document.getElementById('dica'),t1;
+function $(i){return document.getElementById(i)}
+function ped(p){return '<div class="jan-cab"><b>Enviar NF</b><span>×</span></div><div class="ped"><b>'+p.nome+'</b> · '+p.hotel+'<div class="l">Estadia '+p.datas+' · '+p.valor+' · tomador '+p.doc+(p.ok?' · <b>✅ NF '+p.ok+'</b>':'')+'</div></div>'}
+function nota(n,dest,sel){return '<div class="achada'+(dest?' dest':'')+'"><div class="ac-cab"><input type="'+(sel?'radio':'checkbox')+'" name="n" '+(dest?'checked':'')+' aria-label="Anexar"><b>NF '+n.nf+'</b><span class="pdf">'+n.pdf+'</span>'+(n.tag||'')+'<span class="quando">'+n.quando+'</span></div><div class="provas">'+n.provas.map(function(x){return '<span class="prova'+(x[1]?' am':'')+'">'+x[0]+'</span>'}).join('')+'</div></div>'}
+function email(p,nf){return '<div class="sec"><h4>E-mail pronto</h4><dl class="campos"><dt>Para</dt><dd>'+p.para+'</dd><dt>Assunto</dt><dd>NF '+nf+' - '+p.nome+'</dd><dt>Caixa</dt><dd>'+p.caixa+'</dd></dl></div>'}
+var P={nome:'HÓSPEDE EXEMPLO',hotel:'CENTER PREMIUM',datas:'30/09 a 02/10',valor:'R$ 1.480,00',doc:'CNPJ 12.345.678/0001-90',para:'hospede.exemplo@email.com',caixa:'notafiscal@redeandradecenterpremium.com.br'};
+function montar(html,botao){jan.innerHTML=html+'<div class="rod"><button>Cancelar</button><button class="p" id="env" '+(botao?'':'disabled')+'>Enviar</button></div>';
+  var b=$('env');if(b)b.onclick=function(){jan.innerHTML+='<div class="feito">Enviado pela caixa do CENTER PREMIUM. A nota fica ligada ao pedido ✅.</div>';b.disabled=true}}
+function cen(c){
+  clearTimeout(t1);
+  if(c==='um'){dica.textContent='Pedido sem NF, uma nota nova bate: vem anexada e o e-mail pronto.';
+    montar(ped(P)+'<div class="sec"><h4>Nota achada nas pastas</h4>'+nota({nf:'2186',pdf:'NF 2186 - Hóspede Exemplo.pdf',quando:'hoje 10:41 · pasta da Clara',tag:'<span class="tag">Anexada</span>',provas:[['CNPJ confere'],['datas conferem'],['valor confere']]},true)+'</div>'+email(P,'2186'),true)}
+  if(c==='duas'){dica.textContent='Duas notas para o mesmo pedido (uma foi corrigida): as duas aparecem, a mais nova em destaque.';
+    montar(ped(P)+'<div class="sec"><h4>Notas achadas nas pastas (escolha uma)</h4>'+nota({nf:'2201',pdf:'NF 2201 - Hóspede Exemplo.pdf',quando:'hoje 11:20',tag:'<span class="tag">Mais nova</span>',provas:[['CNPJ confere'],['datas conferem'],['valor confere']]},true,true)+nota({nf:'2186',pdf:'NF 2186 - Hóspede Exemplo.pdf',quando:'hoje 10:41',tag:'<span class="tag ln">Anterior</span>',provas:[['CNPJ confere'],['datas conferem'],['valor diferente',1]]},false,true)+'</div>'+email(P,'2201'),true)}
+  if(c==='outra'){dica.textContent='Pedido já tem a NF 2186, mas esta nota tem outras datas e outro valor: aparece como "outra nota", sem vir marcada.';
+    var q=Object.assign({},P,{ok:'2186'});
+    montar(ped(q)+'<div class="sec"><h4>Outra nota achada nas pastas</h4>'+nota({nf:'2230',pdf:'NF 2230 - Hóspede Exemplo.pdf',quando:'hoje 14:05 · pasta de Cristian',tag:'<span class="tag am">Outra nota</span>',provas:[['CNPJ confere'],['datas diferentes',1],['valor diferente',1]]},false)+'<div class="aviso">Este pedido já tem a NF 2186. Esta nota é de outras datas (12/10 a 14/10): consumo ou outra estadia? Marque para anexar.</div></div>',false);
+    jan.querySelector('input').onchange=function(){$('env').disabled=!this.checked}}
+  if(c==='semenvio'){dica.textContent='Tag ✅ no pedido, mas nenhum envio nos Itens Enviados: o Painel avisa em vez de confiar na tag.';
+    var r=Object.assign({},P,{ok:'2186'});
+    montar(ped(r)+'<div class="sec"><div class="aviso">Marcado como enviado, mas não achei o envio da NF 2186 nos Itens Enviados. A resposta do hóspede com a nota anexada não conta como envio.</div><h4 style="margin-top:12px">Nota achada nas pastas</h4>'+nota({nf:'2186',pdf:'NF 2186 - Hóspede Exemplo.pdf',quando:'hoje 10:41 · pasta da Clara',tag:'<span class="tag">Mesma nota</span>',provas:[['CNPJ confere'],['datas conferem'],['valor confere']]},true)+'</div>'+email(P,'2186'),true)}
+  if(c==='varios'){dica.textContent='O mesmo CNPJ tem 3 pedidos: em cada um a nota aparece como "possível", com o que confere. Este é o pedido da Maria.';
+    var m=Object.assign({},P,{nome:'MARIA EXEMPLO'});
+    montar(ped(m)+'<div class="sec"><h4>Nota possível, achada nas pastas</h4>'+nota({nf:'2190',pdf:'NF 2190 - Empresa Exemplo.pdf',quando:'hoje 09:12',tag:'<span class="tag am">Possível</span>',provas:[['CNPJ confere'],['datas conferem'],['valor confere'],['2 outros pedidos têm este CNPJ',1]]},false)+'<div class="aviso">Outros 2 pedidos deste CNPJ também podem ser desta nota, mas as datas e o valor batem melhor com este.</div></div>',false);
+    jan.querySelector('input').onchange=function(){$('env').disabled=!this.checked}}
+  if(c==='scan'){dica.textContent='PDF escaneado: leitura por imagem em segundo plano; o pedido atualiza sozinho quando termina.';
+    montar(ped(P)+'<div class="sec"><h4>Nota achada nas pastas</h4><div class="achada"><span class="gira"></span>Lendo uma nota escaneada que pode ser deste pedido… (uns 10 a 20 s)</div></div>',false);
+    t1=setTimeout(function(){cen('um');dica.textContent='Terminou a leitura: a nota apareceu no pedido.'},4200)}
+  if(c==='igual'){dica.textContent='Pedido com a NF 2186 já enviada de verdade e a nota nova é a mesma: nada aparece, para não repetir.';
+    var s=Object.assign({},P,{ok:'2186'});
+    montar(ped(s)+'<div class="sec"><div class="nada">Nenhuma nota nova para este pedido. A NF 2186 já foi enviada em 02/10, 14:32 (confirmada nos Itens Enviados).</div></div>',false)}
+}
+document.querySelectorAll('.ctl button').forEach(function(b){b.addEventListener('click',function(){cen(b.dataset.c)})});
+cen('um');
+})();
+</script>

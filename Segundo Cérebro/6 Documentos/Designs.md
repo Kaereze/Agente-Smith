@@ -25,6 +25,21 @@ em React do João). Esperando a escolha.
 
 ![[2026-10-27 Carregamento das acoes.png|700]]
 
+### NF achadas nas pastas, dentro do Enviar NF · 27/10/2026
+Pedido do João: quando entrar nota nova numa pasta, o Painel cruza pelo CPF/CNPJ dentro do PDF com os pedidos e deixa o
+e-mail pronto no Enviar NF. **Decisões dele:** e-mail pronto (nunca envia sozinho, nem nas notas antigas); só pastas do
+Dropbox (as "pastas dos documentos"); reconhece só pelo CPF/CNPJ dentro do PDF; só pedidos do formulário; tomador
+primeiro, depois CPF do titular; aparece só dentro do Enviar NF do pedido; vigia em segundo plano; também os últimos 30
+dias; duas notas no mesmo pedido: mostra todas, a mais nova em destaque; PDF escaneado: lê por imagem em segundo plano;
+vários pedidos no mesmo CNPJ: o usuário escolhe (aparece como "possível"). **Cuidado dele:** a tag "NF enviada" às vezes
+está errada (não foi enviada) e o hóspede às vezes responde com a nota anexada pedindo outra (outro dia, consumo,
+estacionamento): a tag não vale como prova, cada PDF liga a um pedido uma vez, um pedido pode ter várias notas, e pedido
+já com ✅ só ganha a sugestão "outra nota" quando datas ou valor forem diferentes (recomendação aceita). **Aguardando OK
+do desenho; nada mexido no código.**
+- **Abrir a página:** [[2026-10-27 NF achadas nas pastas.html|NF achadas nas pastas]]
+
+![[2026-10-27 NF achadas nas pastas.png|700]]
+
 ### Botão de caixas com problema · 27/10/2026
 Pedido do João: botãozinho (caixa de entrada com sinal de perigo) logo abaixo da bolha de avisos; clique abre quadro do
 tamanho do de avisos com as caixas que não enviam/recebem e botão "Reiniciar o Outlook" (o que ele fazia à mão); o X deixa
