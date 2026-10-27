@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27] — 2026-10-27
+
+### Mudou
+
+- **Canal de teste:** a atualização automática dos PCs (a cada 15 min) agora só vai até a **última versão com etiqueta**
+  (`2026.10.27`…). Commit sem etiqueta fica no GitHub e não chega sozinho: o que espera o OK do João não derruba ninguém
+  por engano (foi o tropeço de 23/10). O botão "Atualizar" / "Atualizar todos os PCs" continua indo até o último commit.
+- **E-mail de hóspede mascarado nos registros** (`logs/*.log`): `maria@gmail.com` vira `m***@gmail.com`. Ficam inteiros
+  os da empresa (caixas dos hotéis, agentes). LGPD: registro técnico não precisa do dado.
+
 ## [2026.10.26] — 2026-10-26
 
 ### Adicionado

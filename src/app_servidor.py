@@ -618,14 +618,14 @@ class Estado:
             avisos_windows.mostrar(titulo, texto)
 
     def _verificar_atualizacao(self, automatica, pedido_por=""):
-        s = atualizador.situacao()
+        s = atualizador.situacao(so_etiquetadas=automatica)   # automática: só versão com etiqueta (canal de teste, 27/10/2026)
         motivo = atualizador.motivo_para_nao(s)
         self.atualizacao = {"verificado_em": datetime.datetime.now().isoformat(timespec="seconds"),
                             "motivo": motivo, "atras": s["atras"]}
         if atualizador.pode_atualizar(s):
             quem = "automática" if automatica else f"pedida por {pedido_por}"
             na_pasta_antes = envio_nf.versao_do_codigo()
-            ok, texto, reiniciou = atualizador.atualizar()
+            ok, texto, reiniciou = atualizador.atualizar(so_etiquetadas=automatica)
             if ok and not reiniciou:   # só documentação: o código que roda é o mesmo da versão nova
                 self._adotar_versao_sem_reiniciar(na_pasta_antes)
             atividade.registrar(self.backend, self.central, [atividade.linha(

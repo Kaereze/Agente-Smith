@@ -13,6 +13,10 @@ baixaram o código novo e ficaram com o velho na memória, e o log dizia "reinic
 vai pro Agendador, o script registra começo e fim em logs/atualizacao.log e o Painel avisa se não reiniciou.
 
 21/10/2026: atualização só de documentação (cofre, README, CHANGELOG) baixa sem reiniciar — o código é o mesmo.
+
+27/10/2026 (canal de teste): a atualização AUTOMÁTICA (a cada 15 min) só vai até a versão com etiqueta (2026.10.26,
+2026.10.26.1…). Commit sem etiqueta fica no GitHub e não chega sozinho aos PCs: o que espera o OK do João não derruba
+ninguém por engano. O botão "Atualizar" / "Atualizar todos os PCs" (pedido por uma pessoa) vai até o último commit.
 """
 import subprocess
 import sys
@@ -75,12 +79,28 @@ def versao():
         return "?"
 
 
-def situacao():
-    """-> {"atras": n, "frente": n, "limpo": bool, "erro": ""} em relação ao GitHub (faz git fetch)."""
+def ultima_etiqueta(ramo):
+    """Última versão com etiqueta dentro do que o GitHub tem neste ramo ('' se não houver nenhuma)."""
     try:
-        _git("fetch", "--quiet", "origin", timeout=120)
+        return _git("describe", "--tags", "--abbrev=0", f"origin/{ramo}")
+    except Exception:
+        return ""
+
+
+def alvo_do_canal(ramo, so_etiquetadas):
+    """Até onde esta atualização pode ir: a última etiqueta (automática) ou o último commit (pedida por uma pessoa)."""
+    return (ultima_etiqueta(ramo) or f"origin/{ramo}") if so_etiquetadas else f"origin/{ramo}"
+
+
+def situacao(so_etiquetadas=False):
+    """-> {"atras": n, "frente": n, "limpo": bool, "erro": ""} em relação ao GitHub (faz git fetch).
+    so_etiquetadas: "atras" conta só até a última etiqueta (canal automático)."""
+    try:
+        _git("fetch", "--quiet", "--tags", "origin", timeout=120)
         ramo = _git("rev-parse", "--abbrev-ref", "HEAD")
-        frente, atras = (int(x) for x in _git("rev-list", "--left-right", "--count", f"{ramo}...origin/{ramo}").split())
+        frente = int(_git("rev-list", "--count", f"origin/{ramo}..{ramo}"))
+        alvo = alvo_do_canal(ramo, so_etiquetadas)
+        atras = int(_git("rev-list", "--count", f"{ramo}..{alvo}"))
         limpo = not _git("status", "--porcelain", "--untracked-files=no")
         return {"atras": atras, "frente": frente, "limpo": limpo, "erro": ""}
     except Exception as e:
@@ -124,24 +144,26 @@ def so_reiniciar():
         return _reinicio_solto()
 
 
-def atualizar():
+def atualizar(so_etiquetadas=False):
     """git pull só pra frente + bibliotecas, e reinício dos serviços. -> (ok, texto pra quem pediu, reiniciou)
-    Só documentação: baixa exatamente os commits conferidos e não reinicia (reiniciou=False)."""
+    Só documentação: baixa exatamente os commits conferidos e não reinicia (reiniciou=False).
+    so_etiquetadas: vai só até a última versão com etiqueta (atualização automática)."""
     antes = versao()
     try:
         # fetch + merge só pra frente, em vez de "git pull": o pull lê o FETCH_HEAD, que no PC do Bernardo saiu com a
         # lista de branches duplicada (provável autofetch do VS Code em paralelo) e falhava com "Cannot fast-forward to
         # multiple branches" (13/10/2026). O merge pela origin/<ramo> não depende do FETCH_HEAD.
         ramo = _git("rev-parse", "--abbrev-ref", "HEAD")
-        _git("fetch", "--quiet", "origin", timeout=300)
-        alvo = _git("rev-parse", f"origin/{ramo}")
+        _git("fetch", "--quiet", "--tags", "origin", timeout=300)
+        ref = alvo_do_canal(ramo, so_etiquetadas)
+        alvo = _git("rev-parse", f"{ref}^{{commit}}")
         try:
             arquivos = _git("-c", "core.quotepath=false", "diff", "--name-only", "HEAD", alvo).splitlines()
         except Exception:
             arquivos = []   # não deu pra ver o que mudou: atualiza como sempre (com reinício)
         so_docs = bool(alvo) and so_documentos([a.strip() for a in arquivos if a.strip()])
         # só documentação: o merge vai até o commit conferido (um fetch no meio não traz código sem reiniciar)
-        _git("merge", "--ff-only", alvo if so_docs else f"origin/{ramo}", timeout=300)
+        _git("merge", "--ff-only", alvo if so_docs else ref, timeout=300)
     except Exception as e:
         logger.warning(f"⚠️ git pull falhou: {e}")
         return False, f"git pull falhou: {e}", False
