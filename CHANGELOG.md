@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.15] — 2026-10-27
+
+### Mudou
+
+- **Logo K desenhada como aquarela** (pedido do João: mais fluida, leve e limpa, mesma animação): antes o desenho riscava o contorno dos dois
+  lados de cada traço, o que dava linhas duplas "sujas" durante o desenho. Agora a tinta cheia do K aparece por uma máscara que corre
+  pelos mesmos contornos, no mesmo ritmo; a borda começa suave e levemente desfocada e vai ficando nítida, com curva de movimento mais
+  macia. Sem movimento se o computador pedir menos animação. Código: `app_ui/pecas/carregando.js` e `carregando.css`.
+- **A tela de carregamento trava a tela inteira enquanto a ação roda** (pedido do João): não dá para clicar em mensagem, lista, botões
+  flutuantes (avisos, caixas) nem usar atalhos até a ação terminar, certa ou com erro; só o cartãozinho do canto continua clicável. Libera
+  na hora ao terminar. Segurança: se a ação não responder em 90 s, a tela deixa de travar (não prende ninguém para sempre).
+
 ## [2026.10.27.14] — 2026-10-27
 
 ### Adicionado

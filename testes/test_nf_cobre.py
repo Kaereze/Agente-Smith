@@ -126,3 +126,12 @@ def test_botao_direito_tirar_da_entrada_vale_ate_para_respondido_e_nunca_apaga()
     assert 'data-ctx="tirar"' in js and "function tirarDaEntrada" in js and 'if (acao === "tirar") return tirarDaEntrada(id);' in js
     assert "if (!e || cx.resolvendo[id]) return;" not in js          # a linha cinza (já respondida) abre o menu
     assert 'mostrarDesfazer("E-mail movido para' in js                # Desfazer de 10 s, nada é apagado
+
+
+def test_tela_de_carregamento_trava_a_tela_ate_terminar_e_nao_prende_para_sempre():
+    js = (RAIZ / "app_ui" / "pecas" / "carregando.js").read_text(encoding="utf-8")
+    css = (RAIZ / "app_ui" / "pecas" / "carregando.css").read_text(encoding="utf-8")
+    assert ".cg-veu.trava{pointer-events:auto" in css and "z-index:100" in css and "z-index:101" in css   # acima de avisos, caixas e janelas
+    assert 'veu.classList.add("on", "trava")' in js and 'veu.classList.remove("trava");   // terminou: destrava' in js
+    assert "e.stopImmediatePropagation(); e.preventDefault();" in js and "DESTRAVA_MS = 90000" in js   # atalhos travam; 90 s de segurança
+    assert "mask" in js and 'url(#cg-mascara)' in js and ".cg-k .tr" not in css                       # aquarela: tinta cheia por máscara, sem linhas duplas

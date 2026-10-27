@@ -1,30 +1,36 @@
 /* Tela de carregamento (27/10/2026, desenho aprovado pelo João): só o K sendo desenhado no meio; o cartão do canto
    (barra, tempo, PCs) só aparece quando a ação tem o que contar. Cores: a paleta da Auditoria (--cp-*, definidas em caixas.css), sem verde (pedido do João, 27/10/2026). */
-.cg-veu{position:fixed;inset:0;z-index:60;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;
+.cg-veu{position:fixed;inset:0;z-index:100;display:grid;place-items:center;pointer-events:none;opacity:0;visibility:hidden;
   background:rgba(20,20,20,.38);backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);
   transition:opacity .28s ease,visibility 0s linear .28s}
 :root[data-theme="dark"] .cg-veu{background:rgba(0,0,0,.55)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-veu{background:rgba(0,0,0,.55)}}
 .cg-veu.on{opacity:1;visibility:visible;transition:opacity .28s ease}
+.cg-veu.trava{pointer-events:auto;cursor:progress}   /* a tela toda trava enquanto a ação roda */
 .cg-k{width:min(240px,50vmin);height:auto;aspect-ratio:1;display:block;overflow:visible;transform:scale(.96);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .cg-veu.on .cg-k{transform:none}
-.cg-k .tr path{fill:none;stroke:var(--cp-tinta);stroke-width:5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
-.cg-k .pr{fill:var(--cp-tinta);opacity:0}
-.cg-k.desenha .tr path{animation:cg-traco var(--dur) cubic-bezier(.45,.05,.3,1) var(--ini) forwards}
-.cg-k.desenha .pr{animation:cg-enche .55s ease calc(var(--fim) - .5s) forwards}
-.cg-k.desenha .tr{animation:cg-some .4s ease calc(var(--fim) + .05s) forwards}
-.cg-k.apaga .pr{animation:cg-apaga .5s ease forwards}
-.cg-k.ok .pr{fill:var(--cp-azul);opacity:1;transition:fill .3s}
-.cg-k.erro .pr{fill:var(--cp-verm);opacity:1;transition:fill .3s}
+.cg-k .pr{fill:var(--cp-tinta)}
+.cg-k .mk path{fill:none;stroke:#fff;stroke-width:9;stroke-linejoin:round;stroke-linecap:butt;stroke-dasharray:1;stroke-dashoffset:1;opacity:0}
+.cg-k .mk-cheio{fill:#fff;opacity:0}
+/* Aquarela: a tinta corre pelos contornos (suave no começo e no fim) e a borda vai de levemente borrada a nítida */
+.cg-k.desenha .mk path{animation:cg-traco var(--dur) cubic-bezier(.55,.1,.25,1) var(--ini) forwards}
+.cg-k.desenha .mk-cheio{animation:cg-enche .7s ease-out calc(var(--fim) - .6s) forwards}
+.cg-k.desenha{animation:cg-aquarela calc(var(--fim) + .3s) ease-out forwards}
+.cg-k.apaga .mk path,.cg-k.ok .mk path,.cg-k.erro .mk path{stroke-dashoffset:0;opacity:1}
+.cg-k.apaga .mk-cheio,.cg-k.ok .mk-cheio,.cg-k.erro .mk-cheio{opacity:1}
+.cg-k.apaga .pr{animation:cg-apaga .6s ease forwards}
+.cg-k.ok .pr{fill:var(--cp-azul);transition:fill .3s}
+.cg-k.erro .pr{fill:var(--cp-verm);transition:fill .3s}
 .cg-k.ok{animation:cg-pulo .5s ease}
 .cg-k.erro,.cg-k.treme{animation:cg-treme .55s cubic-bezier(.36,.07,.19,.97)}
 @keyframes cg-traco{0%{stroke-dashoffset:1;opacity:1}100%{stroke-dashoffset:0;opacity:1}}
 @keyframes cg-enche{to{opacity:1}}
+@keyframes cg-aquarela{0%{filter:blur(1.6px);opacity:.78}65%{filter:blur(.7px);opacity:.94}100%{filter:blur(0);opacity:1}}
 @keyframes cg-some{to{opacity:0}}
 @keyframes cg-apaga{from{opacity:1}to{opacity:0}}
 @keyframes cg-pulo{40%{transform:scale(1.06)}}
 @keyframes cg-treme{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
-.cg-info{position:fixed;right:16px;bottom:88px;z-index:61;width:min(320px,calc(100vw - 32px));background:var(--cp-folha);color:var(--cp-tinta);
+.cg-info{position:fixed;right:16px;bottom:88px;z-index:101;width:min(320px,calc(100vw - 32px));background:var(--cp-folha);color:var(--cp-tinta);
   border:1px solid var(--cp-linha);border-radius:14px;box-shadow:var(--sombra);padding:14px 16px 12px;font:13px/1.45 var(--f-texto);
   opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s,transform .3s,visibility 0s linear .3s}
 .cg-info.on{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .3s}
@@ -54,5 +60,5 @@
 .cg-rod{display:flex;justify-content:flex-end;margin-top:10px}
 .cg-rod button{font:500 12.5px var(--f-texto);border:1px solid var(--cp-linha);background:transparent;color:var(--cp-tinta);border-radius:8px;padding:6px 12px;cursor:pointer}
 .cg-rod button:hover{border-color:var(--cp-azul)}
-@media (prefers-reduced-motion:reduce){.cg-k .tr{display:none}.cg-k .pr{opacity:1!important;animation:none!important}
+@media (prefers-reduced-motion:reduce){.cg-k .mk path{stroke-dashoffset:0!important;opacity:1!important;animation:none!important}.cg-k .mk-cheio{opacity:1!important;animation:none!important}.cg-k .pr{animation:none!important}
   .cg-k,.cg-k.erro,.cg-k.treme,.cg-k.ok,.cg-pcs li,.cg-pcs .pt{animation:none!important}.cg-veu,.cg-info,.cg-k{transition:none}}
