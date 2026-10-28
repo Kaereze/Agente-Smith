@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulação · chega um e-mail novo (opção C)</title>
+<style>
+:root{--bg:#171717;--tela:#1f1f1f;--painel:#262626;--linha:#3a3a3a;--linha2:#4a4a4a;--tx:#f0f0f0;--mut:#a8a8a8;
+--azul:#479ef5;--azul-tx:#9ccbf7;--azul-bg:#172b42;--azul-bd:#2a4f78;--am:#f0c46a;--am-bg:#33290f;--am-bd:#5c4a1d;--verm:#ff8d95;--barra:#1a1a1a;
+--f:"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.pagina{max-width:1240px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:14px}
+h1.t{margin:0;font-size:20px;font-weight:600}
+.sub{margin:0;color:var(--mut);font-size:13px;line-height:1.5;max-width:90ch}
+.cmd{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--linha);border-radius:10px;background:#1c1c1c}
+.cmd .rot{font-size:13px;color:var(--mut);margin-right:4px}
+.cmd button{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px;transition:background .15s,transform .1s}
+.cmd button:hover{background:#2c2c2c}.cmd button:active{transform:scale(.97)}
+.cmd button.p{border:0;background:var(--azul);color:#0b1b2e;font-weight:600}.cmd button.p:hover{background:#6bb2f8}
+.cmd .esp{flex-grow:1}
+.nota{font-size:12.5px;color:var(--mut)}
+
+/* a tela inteira */
+.tela{position:relative;height:720px;background:var(--tela);border:1px solid var(--linha);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.corpo{flex:1;min-height:0;display:grid;grid-template-columns:52px 350px minmax(0,1fr)}
+.rolagem{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#555 transparent}
+
+/* barra da esquerda */
+.rail{background:#1a1a1a;border-right:1px solid var(--linha);display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0}
+.rb{position:relative;width:36px;height:36px;border-radius:8px;border:0;background:transparent;color:#bdbdbd;display:flex;align-items:center;justify-content:center}
+.rb:hover{background:#2a2a2a;color:#fff}.rb.at{background:#2b2b2b;color:#fff;box-shadow:inset 3px 0 0 var(--azul)}
+.rb svg,.ib-bt svg,.conta svg{width:18px;height:18px}
+.badge{position:absolute;top:1px;right:0;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--azul);color:#0b1b2e;font:700 10px/15px var(--f);text-align:center}
+.bump{animation:bump .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.5)}100%{transform:scale(1)}}
+
+/* lista */
+.lista{border-right:1px solid var(--linha);display:flex;flex-direction:column;min-height:0;background:#202020}
+.lh{padding:12px 14px 8px;display:flex;flex-direction:column;gap:8px}
+.lh b{font-size:14px}.lh .lin{display:flex;align-items:center;gap:8px}
+.tabs{display:flex;gap:14px;font-size:13px}
+.tabs button{background:none;border:0;color:var(--mut);padding:2px 0;border-bottom:2px solid transparent}
+.tabs button[aria-pressed=true]{color:#fff;border-bottom-color:var(--azul)}
+.ul{list-style:none;margin:0;padding:0;flex:1;min-height:0}
+.ul.so-nl .it-w.lido{display:none}
+.it-w{display:grid;grid-template-rows:1fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1)}
+.it-w.entra{grid-template-rows:0fr}
+.it-w>.in{overflow:hidden;min-height:0}
+.it{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid #2c2c2c;color:var(--tx);padding:10px 14px 10px 16px;position:relative;transition:background .15s}
+.it:hover{background:#262626}.it.sel{background:#2b2b2b}
+.it::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .3s}
+.it.nl::before{background:var(--azul)}
+.it .l1{display:flex;gap:8px;align-items:baseline}.it .de{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.it.nl .de{font-weight:600;color:#fff}.it .hora{font-size:12px;color:var(--azul-tx)}
+.it .l2{font-size:13px;color:#d6d6d6;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .l3{font-size:12.5px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .tags{display:flex;gap:6px;margin-top:6px;min-height:22px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-block;font-size:12px;border-radius:6px;padding:2px 7px;border:1px solid var(--linha2);background:#2b2b2b;animation:sobe .35s cubic-bezier(.2,.8,.2,1)}
+.chip.am{color:var(--am);background:var(--am-bg);border-color:var(--am-bd)}.chip.az{color:var(--azul-tx);background:var(--azul-bg);border-color:var(--azul-bd)}
+.lendo-l{height:8px;width:46%;border-radius:4px;background:linear-gradient(90deg,#333 0%,#4a4a4a 50%,#333 100%);background-size:200% 100%;animation:brilho 1s linear infinite}
+@keyframes brilho{from{background-position:200% 0}to{background-position:-200% 0}}
+.it.novo{animation:brilhoNovo 2.4s ease-out}
+@keyframes brilhoNovo{0%{background:#1d3a5c}100%{background:transparent}}
+@keyframes sobe{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.revela{animation:sobe .4s cubic-bezier(.2,.8,.2,1)}
+
+/* painel de leitura (opção C) */
+.leit{display:flex;flex-direction:column;min-height:0;min-width:0}
+.top{background:var(--painel);border-bottom:1px solid var(--linha);padding:16px 22px 14px;display:flex;flex-direction:column;gap:14px;flex:none}
+.top h2{margin:0;font-size:19px;font-weight:600;color:#f5f5f5}
+.lin{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.esp{flex-grow:1}.mut{color:var(--mut)}.small{font-size:13px}
+.pil{font-size:13px;color:var(--am);background:var(--am-bg);border:1px solid var(--am-bd);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.bt{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px;white-space:nowrap;transition:background .15s,transform .1s}
+.bt:hover{background:#303030}.bt:active{transform:scale(.97)}
+.bt.p{border:0;background:var(--azul);color:#0b1b2e;font-weight:600}.bt.p:hover{background:#6bb2f8}
+.bt[aria-disabled=true]{background:#2b2b2b;color:#8a8a8a;border:1px dashed var(--linha2);font-weight:400;cursor:default}
+.bt[aria-disabled=true]:hover{background:#2b2b2b}
+.etapas{display:grid;grid-template-columns:repeat(4,1fr)}
+.et{position:relative;padding-top:16px;font-size:12.5px;color:var(--mut)}
+.et::before{content:"";position:absolute;top:4px;left:0;right:0;height:3px;background:#3a3a3a;border-radius:2px}
+.et::after{content:"";position:absolute;top:4px;left:0;height:3px;width:0;background:var(--azul);border-radius:2px;transition:width .55s cubic-bezier(.2,.8,.2,1)}
+.et.feita::after{width:100%}.et.atual::after{width:100%;background:var(--am)}.et.atual.azul::after{background:var(--azul)}
+.et b{display:block;color:var(--tx);font-weight:600;font-size:13.5px}
+.lista-c{margin:16px 22px 0;border:1px solid var(--linha);border-radius:10px;background:var(--painel);display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.item{display:flex;gap:10px;align-items:flex-start;padding:9px 14px;border-bottom:1px solid var(--linha);min-height:48px}
+.item:nth-child(odd){border-right:1px solid var(--linha)}.item:nth-last-child(-n+2){border-bottom:0}
+.item .ic{width:17px;height:17px;flex:none;margin-top:1px}
+.item .t{display:flex;flex-direction:column;gap:1px;min-width:0}.item .t span:first-child{font-size:12px;color:var(--mut)}
+.item.ok .ic{color:var(--azul)}.item.at .ic{color:var(--am)}.item.na .ic{color:#777}.item.at .t span:last-child{color:var(--am)}
+.leitura{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);min-height:18px;padding:8px 22px 0}
+.leitura .barra{width:90px;height:3px;border-radius:2px;background:#3a3a3a;overflow:hidden}
+.leitura .barra i{display:block;height:100%;width:0;background:var(--azul);transition:width .9s ease}
+.msg{padding:14px 22px 24px;display:flex;flex-direction:column;gap:10px}
+.msg h1{margin:0;font-size:17px;font-weight:600;color:#f5f5f5}
+.txt{display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.55;margin-top:6px}
+.vazio{margin:auto;color:var(--mut)}
+
+/* barra de baixo (ícones pequenos) */
+.barra-b{height:36px;border-top:1px solid var(--linha);background:var(--barra);padding:0 14px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);position:relative;flex:none}
+.conta{display:inline-flex;align-items:center;gap:5px;padding:0 6px;position:relative}.conta svg{width:15px;height:15px}
+.ib-bt{position:relative;width:28px;height:28px;border-radius:6px;border:0;background:transparent;color:#cfcfcf;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.ib-bt svg{width:15px;height:15px}.ib-bt:hover{background:#303030;color:#fff}
+.ib-bt .num{position:absolute;top:0;right:-2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#5a2328;color:var(--verm);border:1px solid #7a343a;font:600 10px/12px var(--f);text-align:center}
+.ib-bt .pt-am{position:absolute;top:4px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--am);border:1.5px solid var(--barra)}
+.ib-bt.trab svg{animation:pulsa 1s ease-in-out infinite;color:var(--azul)}
+@keyframes pulsa{50%{transform:scale(1.25)}}
+[data-t]{position:relative}
+[data-t]::after{content:attr(data-t);position:absolute;white-space:nowrap;font-size:12px;padding:2px 8px;border-radius:5px;background:#2b2b2b;border:1px solid var(--linha2);color:var(--tx);opacity:0;pointer-events:none;transition:opacity .15s;z-index:8}
+.ib-bt[data-t]::after,.conta[data-t]::after{bottom:34px;left:50%;transform:translateX(-50%)}
+.rb[data-t]::after{left:44px;top:50%;transform:translateY(-50%)}
+[data-t]:hover::after,[data-t]:focus-visible::after{opacity:1}
+.pop{position:absolute;right:14px;bottom:44px;width:340px;background:#2b2b2b;border:1px solid var(--linha2);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);transform-origin:bottom right;transform:scale(.96) translateY(6px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);z-index:9}
+.pop.aberto{opacity:1;transform:none;pointer-events:auto}
+.pop div{display:flex;gap:10px;align-items:flex-start;padding:8px;font-size:13px}.pt{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+
+/* avisos que sobem */
+.avisos{position:absolute;left:0;right:0;bottom:48px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:7}
+.toast{pointer-events:auto;background:#2b2b2b;border:1px solid var(--linha2);border-radius:999px;padding:7px 8px 7px 14px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.4);animation:entra .28s cubic-bezier(.2,.8,.2,1)}
+.toast.sai{animation:saiu .25s ease forwards}
+@keyframes entra{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes saiu{to{opacity:0;transform:translateY(6px) scale(.97)}}
+.toast .bt{height:24px;border:0;color:var(--azul-tx);padding:0 8px}
+.toast .ponto{width:8px;height:8px;border-radius:50%;background:var(--azul)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:1000px){.corpo{grid-template-columns:52px 300px minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<main class="pagina">
+  <h1 class="t">Simulação · chega um e-mail novo (opção C)</h1>
+  <p class="sub">A tela inteira junta: barra da esquerda, caixa de entrada, a leitura da opção C e a barra de baixo em ícones. Clique nos botões para ver o que acontece quando chega um e-mail: ele entra no topo da lista, os contadores sobem, o robô lê e coloca as etiquetas, e ao abrir aparece a ficha de etapas. Dados inventados, nada mexe no Painel.</p>
+  <div class="cmd" role="group" aria-label="Simular chegadas">
+    <span class="rot">Chega agora:</span>
+    <button type="button" class="p" data-chega="completo">Pedido com tudo certo</button>
+    <button type="button" data-chega="falta">Pedido com dado faltando</button>
+    <button type="button" data-chega="resposta">Resposta de quem já recebeu a NF</button>
+    <span class="esp"></span>
+    <button type="button" id="bt-nf">A NF aparece na pasta</button>
+    <button type="button" id="bt-reset">Recomeçar</button>
+  </div>
+
+  <div class="tela" id="tela">
+    <div class="corpo">
+      <nav class="rail" aria-label="Menu">
+        <button type="button" class="rb" aria-label="Visão geral" data-t="Visão geral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
+        <button type="button" class="rb" aria-label="Notas fiscais" data-t="Notas fiscais"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg></button>
+        <button type="button" class="rb at" aria-label="E-mails" aria-current="page" data-t="E-mails"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span class="badge" id="b-rail">22</span></button>
+        <button type="button" class="rb" aria-label="Máquinas" data-t="Máquinas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
+      </nav>
+
+      <section class="lista" aria-label="Caixa de entrada">
+        <div class="lh">
+          <div class="lin"><b>Caixa de Entrada (todas)</b><span class="mut small" id="l-cont"></span></div>
+          <div class="tabs"><button type="button" id="tab-t" aria-pressed="true">Todos</button><button type="button" id="tab-nl" aria-pressed="false">Não lidos</button></div>
+        </div>
+        <ul class="ul rolagem" id="ul"></ul>
+      </section>
+
+      <section class="leit" id="leit" aria-label="Leitura"></section>
+    </div>
+
+    <div class="avisos" id="avisos" aria-live="polite"></div>
+    <div class="pop" id="pop" role="dialog" aria-label="Avisos do Painel">
+      <div><span class="pt" style="background:var(--verm)"></span><span><b>Robô · 4 problemas</b><br><span class="mut">Ver o registro do robô</span></span></div>
+      <div><span class="pt" style="background:var(--am)"></span><span><b>Conferência parada</b><br><span class="mut">Clara, Cristian, João</span></span></div>
+      <div><span class="pt" style="background:var(--azul)"></span><span><b>Central sincronizada 23:07</b><br><span class="mut">Tudo certo</span></span></div>
+    </div>
+    <div class="barra-b">
+      <span class="conta" data-t="Itens na caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-7h14l2 7v5H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg><span id="c-total">24</span></span>
+      <span class="conta" data-t="Não lidos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span id="c-nl">22</span></span>
+      <span class="esp" style="flex-grow:1"></span>
+      <button type="button" class="ib-bt" id="bt-robo" aria-label="Robô: 4 problemas" data-t="Robô · 4 problemas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5M12 5h.01"/><path d="M9.5 13v.5M14.5 13v.5"/><path d="M9.5 16.5h5"/></svg><i class="num" aria-hidden="true">4</i></button>
+      <button type="button" class="ib-bt" aria-label="Central sincronizada 23:07" data-t="Central sincronizada 23:07"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/><path d="M9.5 13.5l2 2 3.5-4"/></svg></button>
+      <button type="button" class="ib-bt" id="bt-avisos" aria-expanded="false" aria-controls="pop" aria-label="Avisos: 2" data-t="Avisos (2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="pt-am" aria-hidden="true"></i></button>
+      <button type="button" class="ib-bt" aria-label="Atualizar agora" data-t="Atualizar agora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4M4 5v3h3"/><path d="M4 13a8 8 0 0 0 14 4M20 19v-3h-3"/></svg></button>
+      <button type="button" class="ib-bt" aria-label="Tema escuro" data-t="Tema escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    </div>
+  </div>
+  <p class="nota">Dados inventados. Paleta da Auditoria (azul e âmbar, vermelho só no robô). Com “reduzir movimento” ligado no Windows as animações ficam paradas.</p>
+</main>
+
+<script>
+(function () {
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const espera = (ms) => new Promise((r) => setTimeout(r, reduz ? 0 : ms));
+  const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+  /* ---------- dados inventados ---------- */
+  const SEED = [
+    { id: "s1", nome: "Ricardo Rocha Pereira", hotel: "LAGOA", hora: "21:17", assunto: "Re: Solicitação NF", lido: false, falta: "Dividir em 2 notas?", nf: null, enviada: false,
+      emp: "Transportes Rota Sul Ltda", doc: "27.598.834/0001-20", ci: "23/10", co: "24/10/2026", valor: "R$ 190,00", dias: "1 diária", serv: "Hospedagem + estacionamento R$ 120,00", res: "45154", vou: "Porto Seguro",
+      texto: ["Obrigado pelo retorno! Fico no aguardo da nota.", "Ricardo Rocha Pereira"] },
+    { id: "s2", nome: "Ana Rocha Silva", hotel: "COIMBRA", hora: "20:42", assunto: "Dados para emissão da NF", lido: false, falta: "", nf: "1548", enviada: false,
+      emp: "Ana Rocha Silva", doc: "111.444.777-35", ci: "21/10", co: "22/10/2026", valor: "R$ 412,00", dias: "1 diária", serv: "Hospedagem", res: "45120", vou: "",
+      texto: ["Olá! Seguem os dados para a nota fiscal, em meu nome.", "Ana Rocha Silva"] },
+    { id: "s3", nome: "Sérgio Lima Araújo", hotel: "BOA VIAGEM", hora: "20:10", assunto: "Obrigado pela nota", lido: false, falta: "", nf: "1530", enviada: true, enviadaEm: "27/10 17:45",
+      emp: "Sérgio Lima Araújo", doc: "529.982.247-25", ci: "19/10", co: "21/10/2026", valor: "R$ 640,00", dias: "2 diárias", serv: "Hospedagem", res: "45090", vou: "",
+      texto: ["Recebi a nota, tudo certo. Obrigado!", "Sérgio Lima Araújo"] },
+    { id: "s4", nome: "Patrícia Oliveira Rodrigues", hotel: "BOA VIAGEM", hora: "19:09", assunto: "Re: Solicitação NF", lido: true, falta: "", nf: null, enviada: false,
+      emp: "Patrícia Oliveira Rodrigues", doc: "111.444.777-35", ci: "22/10", co: "23/10/2026", valor: "R$ 235,00", dias: "1 diária", serv: "Hospedagem", res: "45140", vou: "",
+      texto: ["Boa tarde, preciso da nota da minha estadia.", "Patrícia Oliveira Rodrigues"] },
+    { id: "s5", nome: "Lucas Teixeira Almeida", hotel: "BAHIA", hora: "18:26", assunto: "Nota fiscal da hospedagem", lido: true, falta: "CPF ou CNPJ", nf: null, enviada: false,
+      emp: "Lucas Teixeira Almeida", doc: "", ci: "21/10", co: "22/10/2026", valor: "R$ 300,00", dias: "1 diária", serv: "Hospedagem", res: "45101", vou: "",
+      texto: ["Preciso da nota da hospedagem, por favor.", "Lucas Teixeira Almeida"] },
+    { id: "s6", nome: "Carla Silva Lima", hotel: "CASA BLANCA", hora: "17:50", assunto: "Re: Nota fiscal", lido: true, falta: "", nf: "1522", enviada: false,
+      emp: "Carla Silva Lima", doc: "529.982.247-25", ci: "20/10", co: "21/10/2026", valor: "R$ 280,00", dias: "1 diária", serv: "Hospedagem", res: "45077", vou: "",
+      texto: ["Bom dia! Aguardo a nota da hospedagem.", "Carla Silva Lima"] },
+  ];
+  const NOVOS = {
+    completo: [
+      { nome: "Marta Souza Lima", hotel: "LAGOA", assunto: "Solicitação NF - LAGOA - Marta Souza Lima", falta: "", nf: null, enviada: false,
+        emp: "Souza & Lima Consultoria Ltda", doc: "11.222.333/0001-81", ci: "26/10", co: "27/10/2026", valor: "R$ 380,00", dias: "2 diárias", serv: "Hospedagem", res: "45201", vou: "",
+        texto: ["Formulário preenchido pelo hóspede, com os dados da empresa para a nota.", "Marta Souza Lima"] },
+      { nome: "Henrique Dantas Neto", hotel: "BAHIA", assunto: "Solicitação NF - BAHIA - Henrique Dantas Neto", falta: "", nf: null, enviada: false,
+        emp: "Henrique Dantas Neto", doc: "111.444.777-35", ci: "25/10", co: "27/10/2026", valor: "R$ 590,00", dias: "2 diárias", serv: "Hospedagem + estacionamento R$ 60,00", res: "45215", vou: "",
+        texto: ["Formulário preenchido pelo hóspede, com CPF e datas.", "Henrique Dantas Neto"] }],
+    falta: [
+      { nome: "Paulo Henrique Dias", hotel: "COIMBRA", assunto: "Preciso da nota fiscal", falta: "CPF ou CNPJ", nf: null, enviada: false,
+        emp: "Paulo Henrique Dias", doc: "", ci: "26/10", co: "27/10/2026", valor: "R$ 275,00", dias: "1 diária", serv: "Hospedagem", res: "45207", vou: "",
+        texto: ["Boa noite! Fiquei hospedado e preciso da nota fiscal, por favor.", "Paulo Henrique Dias"] },
+      { nome: "Fernanda Gomes Pires", hotel: "BOA VIAGEM", assunto: "NF do estacionamento", falta: "O que entra na nota", nf: null, enviada: false,
+        emp: "Fernanda Gomes Pires", doc: "529.982.247-25", ci: "26/10", co: "27/10/2026", valor: "R$ 310,00", dias: "1 diária", serv: "", res: "45209", vou: "",
+        texto: ["Preciso da nota da minha estadia. Podem incluir o que foi pago na recepção?", "Fernanda Gomes Pires"] }],
+    resposta: [
+      { nome: "Beatriz Nogueira Costa", hotel: "CASA BLANCA", assunto: "Re: Nota fiscal enviada", falta: "", nf: "1561", enviada: true, enviadaEm: "27/10 22:05",
+        emp: "Beatriz Nogueira Costa", doc: "111.444.777-35", ci: "24/10", co: "26/10/2026", valor: "R$ 520,00", dias: "2 diárias", serv: "Hospedagem", res: "45160", vou: "",
+        texto: ["Recebi a nota, muito obrigada! Está tudo certo.", "Beatriz Nogueira Costa"] }],
+  };
+  const idx = { completo: 0, falta: 0, resposta: 0 };
+
+  let emails = [], total = 24, naoLidos = 22, sel = null, n = 0, corrida = 0, ultimoCompleto = null;
+
+  /* ---------- derivação (igual à opção C) ---------- */
+  function tagsDe(e) {
+    if (e.enviada) return [["az", "NF enviada"]];
+    const t = [];
+    if (e.falta) t.push(["am", "Falta dado"]);
+    else if (e.nf) t.push(["az", "NF pronta"]);
+    else t.push(["", "Dados completos"]);
+    if (!e.nf) t.push(["az", "Sem NF"]);
+    return t;
+  }
+  function etapasDe(e) {
+    const ok = !e.falta;
+    return [
+      ["Recebido", e.hora, "feita"],
+      ["Dados completos", ok ? "tudo certo" : "falta 1 dado", ok ? "feita" : "atual"],
+      ["NF pronta", e.enviada ? "NF " + e.nf : e.nf ? "pasta da Clara" : ok ? "esperando a nota" : "ainda não", e.enviada ? "feita" : e.nf ? "atual azul" : ok ? "atual azul" : ""],
+      ["NF enviada", e.enviada ? e.enviadaEm : e.nf ? "falta enviar" : "", e.enviada ? "feita" : ""],
+    ];
+  }
+  function itensDe(e) {
+    const na = (r, v) => ["na", r, v];
+    return [
+      e.doc ? ["ok", "Nota no nome de", e.emp] : ["at", "Falta", "Nome e CPF ou CNPJ para a nota"],
+      e.doc ? ["ok", "CPF / CNPJ", e.doc] : na("CPF / CNPJ", "Não informado"),
+      ["ok", "Check-in → check-out", e.ci + " → " + e.co],
+      ["ok", "Diárias e valor", e.dias + " · " + e.valor],
+      e.serv ? ["ok", "O que entra", e.serv] : ["at", "Falta", "O que deve entrar na nota"],
+      e.falta === "Dividir em 2 notas?" ? ["at", "Falta confirmar", "Dividir em 2 notas?"] : ["ok", "Divisão", "1 nota só"],
+      ["ok", "Reserva" + (e.vou ? " e voucher" : ""), e.res + (e.vou ? " · " + e.vou : "")],
+      e.enviada ? ["ok", "NF enviada", "NF " + e.nf + ".pdf · conferida no Outlook"] : e.nf ? ["ok", "NF " + e.nf + " na pasta", "Confere com o pedido"] : na("NF nas pastas", "Ainda não emitida"),
+    ];
+  }
+  function principalDe(e) {
+    if (e.enviada) return ["Concluir", "p", false];
+    if (e.falta) return ["Pedir o que falta", "p", false];
+    if (e.nf) return ["Enviar NF", "p", false];
+    return ["Aguardando a NF", "", true];
+  }
+  const IC = {
+    ok: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
+    at: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 17v.5"/></svg>',
+    na: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10"/></svg>' };
+
+  /* ---------- lista ---------- */
+  function chipsHtml(e) { return tagsDe(e).map(([c, t]) => '<span class="chip ' + c + '">' + t + "</span>").join(""); }
+  function itemHtml(e) {
+    return '<button type="button" class="it' + (e.lido ? "" : " nl") + (sel === e.id ? " sel" : "") + '" data-id="' + e.id + '">' +
+      '<div class="l1"><span class="de">' + esc(e.nome) + '</span><span class="hora">' + e.hora + "</span></div>" +
+      '<div class="l2">' + esc(e.assunto) + '</div><div class="l3">' + e.hotel + " · " + esc((e.texto[0] || "").slice(0, 60)) + "</div>" +
+      '<div class="tags">' + (e.lendo ? '<span class="lendo-l"></span>' : chipsHtml(e)) + "</div></button>";
+  }
+  function liDe(e) {
+    const li = document.createElement("li"); li.className = "it-w" + (e.lido ? " lido" : ""); li.dataset.wid = e.id;
+    li.innerHTML = '<div class="in">' + itemHtml(e) + "</div>"; return li;
+  }
+  function redesenhaItem(e) {
+    const li = $('[data-wid="' + e.id + '"]'); if (!li) return;
+    li.className = "it-w" + (e.lido ? " lido" : ""); li.firstElementChild.innerHTML = itemHtml(e);
+  }
+  function contadores(bump) {
+    $("#c-total").textContent = total; $("#c-nl").textContent = naoLidos; $("#b-rail").textContent = naoLidos;
+    $("#l-cont").textContent = total + " itens · " + naoLidos + " não lidos";
+    if (bump) ["#c-nl", "#b-rail", "#c-total"].forEach((s) => { const x = $(s); x.classList.remove("bump"); void x.offsetWidth; x.classList.add("bump"); });
+  }
+
+  /* ---------- painel de leitura ---------- */
+  async function abrir(id, opc = {}) {
+    const e = emails.find((x) => x.id === id); if (!e) return;
+    const minha = ++corrida; sel = id;
+    if (!e.lido) { e.lido = true; naoLidos = Math.max(0, naoLidos - 1); contadores(true); }
+    $$(".it").forEach((b) => b.classList.toggle("sel", b.dataset.id === id)); redesenhaItem(e);
+    const [txt, cls, off] = principalDe(e), et = etapasDe(e), it = itensDe(e);
+    $("#leit").innerHTML =
+      '<div class="top"><div class="lin"><h2>' + esc(e.nome) + '</h2><span class="pil">Vence em ' + (e.enviada ? "—" : "46 h") + '</span><span class="mut small">' + e.hotel + ' · PC de João</span><span class="esp"></span>' +
+      '<button type="button" class="bt">' + (e.enviada ? "Enviar outra NF" : "Marcar tratativa") + '</button>' +
+      '<button type="button" class="bt ' + cls + '"' + (off ? ' aria-disabled="true" title="Quando a nota aparecer na pasta, o robô avisa"' : "") + ">" + txt + "</button></div>" +
+      '<div class="etapas" id="etapas">' + et.map((x) => '<div class="et"><b>' + x[0] + '</b><span>' + x[1] + "</span></div>").join("") + "</div></div>" +
+      '<div class="rolagem" style="flex:1;min-height:0"><div class="lista-c" id="lc">' +
+      it.map((i) => '<div class="item ' + i[0] + '" style="opacity:0">' + IC[i[0]] + '<div class="t"><span>' + esc(i[1]) + "</span><span>" + esc(i[2]) + "</span></div></div>").join("") + "</div>" +
+      '<div class="leitura"><span id="lt">Robô conferindo o pedido…</span><span class="barra"><i id="lb"></i></span></div>' +
+      '<div class="msg"><h1>' + esc(e.assunto) + '</h1><div class="mut small">' + esc(e.nome) + " · " + e.hotel + " · hoje " + e.hora + '</div><div class="txt">' + e.texto.map((l) => "<span>" + esc(l) + "</span>").join("") + "</div></div></div>";
+    if (opc.rapido) { $$(".et").forEach((x, k) => (x.className = "et " + et[k][2])); $$(".item").forEach((x) => (x.style.opacity = "")); $("#lt").textContent = "Robô conferiu " + it.length + " pontos"; $("#lb").style.width = "100%"; return; }
+    const ets = $$(".et"); const b = $("#lb"); await espera(30); b.style.width = "100%";
+    for (let k = 0; k < ets.length; k++) { if (minha !== corrida) return; ets[k].className = "et " + et[k][2]; await espera(150); }
+    for (const x of $$(".item")) { if (minha !== corrida) return; x.style.opacity = ""; x.classList.add("revela"); await espera(100); }
+    if (minha === corrida) $("#lt").textContent = "Robô conferiu " + it.length + " pontos · em âmbar o que pede você";
+  }
+
+  /* ---------- avisos e chegada ---------- */
+  function toast(html, ms) {
+    const t = document.createElement("div"); t.className = "toast"; t.innerHTML = html; $("#avisos").appendChild(t);
+    const some = () => { t.classList.add("sai"); setTimeout(() => t.remove(), reduz ? 0 : 250); }; if (ms) setTimeout(some, ms); return { el: t, some };
+  }
+  async function chega(tipo) {
+    const lista = NOVOS[tipo], base = lista[idx[tipo]++ % lista.length]; n++;
+    const agora = new Date(), hora = agora.toTimeString().slice(0, 5);
+    const e = Object.assign({}, base, { id: "n" + n, hora, lido: false, lendo: true });
+    emails.unshift(e); total++; naoLidos++;
+    if (tipo === "completo") ultimoCompleto = e.id;
+    const li = liDe(e); li.classList.add("entra"); $("#ul").prepend(li);
+    $("#ul").scrollTo({ top: 0, behavior: reduz ? "auto" : "smooth" });
+    void li.offsetWidth; li.classList.remove("entra"); li.firstElementChild.firstElementChild.classList.add("novo");
+    contadores(true);
+    const tz = toast('<span class="ponto" aria-hidden="true"></span><span><b>Novo e-mail</b> · ' + esc(e.nome) + " · " + e.hotel + '</span><button type="button" class="bt">Abrir</button>', 6000);
+    tz.el.querySelector("button").addEventListener("click", () => { tz.some(); abrir(e.id); });
+    // o robô lê o e-mail: ícone pulsa, depois as etiquetas aparecem
+    const robo = $("#bt-robo"); robo.classList.add("trab"); await espera(1500);
+    e.lendo = false; redesenhaItem(e); robo.classList.remove("trab");
+  }
+  async function achaNF() {
+    const e = emails.find((x) => x.id === ultimoCompleto && !x.nf && !x.falta) || emails.find((x) => !x.nf && !x.falta && !x.enviada);
+    if (!e) { toast("<span>Nenhum pedido completo esperando nota. Chegue um “Pedido com tudo certo” primeiro.</span>", 3500); return; }
+    e.nf = String(1600 + (++n)); const robo = $("#bt-robo"); robo.classList.add("trab"); await espera(900); robo.classList.remove("trab");
+    redesenhaItem(e);
+    const tz = toast('<span class="ponto" aria-hidden="true"></span><span><b>Robô achou a NF ' + e.nf + '</b> na pasta da Clara · ' + esc(e.nome) + '</span><button type="button" class="bt">Abrir</button>', 6000);
+    tz.el.querySelector("button").addEventListener("click", () => { tz.some(); abrir(e.id); });
+    if (sel === e.id) abrir(e.id);   // se já está aberto, a etapa "NF pronta" acende na hora
+  }
+  function recomeca() {
+    emails = SEED.map((e) => Object.assign({}, e)); total = 24; naoLidos = 22; sel = null; n = 0; corrida++;
+    Object.keys(idx).forEach((k) => (idx[k] = 0)); $("#avisos").innerHTML = "";
+    $("#ul").innerHTML = ""; emails.forEach((e) => $("#ul").appendChild(liDe(e))); contadores(false);
+    abrir("s1", { rapido: false });
+  }
+
+  /* ---------- ligações ---------- */
+  $("#ul").addEventListener("click", (ev) => { const b = ev.target.closest(".it"); if (b) abrir(b.dataset.id); });
+  $$("[data-chega]").forEach((b) => b.addEventListener("click", () => chega(b.dataset.chega)));
+  $("#bt-nf").addEventListener("click", achaNF); $("#bt-reset").addEventListener("click", recomeca);
+  const tabT = $("#tab-t"), tabN = $("#tab-nl");
+  function aba(nl) { $("#ul").classList.toggle("so-nl", nl); tabT.setAttribute("aria-pressed", String(!nl)); tabN.setAttribute("aria-pressed", String(nl)); }
+  tabT.addEventListener("click", () => aba(false)); tabN.addEventListener("click", () => aba(true));
+  const pop = $("#pop"), btA = $("#bt-avisos");
+  const fecha = () => { pop.classList.remove("aberto"); btA.setAttribute("aria-expanded", "false"); };
+  const alterna = (ev) => { ev.stopPropagation(); const a = !pop.classList.contains("aberto"); pop.classList.toggle("aberto", a); btA.setAttribute("aria-expanded", String(a)); };
+  btA.addEventListener("click", alterna); $("#bt-robo").addEventListener("click", alterna);
+  document.addEventListener("click", (ev) => { if (!pop.contains(ev.target)) fecha(); });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecha(); });
+  recomeca();
+})();
+</script>
+</body>
+</html>
