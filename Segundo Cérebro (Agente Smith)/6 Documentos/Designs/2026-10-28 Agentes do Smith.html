@@ -68,6 +68,21 @@ button { font: inherit; color: inherit; }
 :root[data-theme="light"] .seg button[aria-pressed="true"], :root:not([data-theme="dark"]) .seg button[aria-pressed="true"] { }
 .pv .dica-pv { margin-left: auto; color: var(--muted); }
 
+/* agentes: painel flutuante minimalista sobre o mapa */
+.ag { position: absolute; left: 12px; top: 62px; z-index: 6; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.ag-bt { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 9px; cursor: pointer; font-size: 12.5px; box-shadow: var(--shadow); }
+.ag-bt:hover { border-color: var(--sel-line); }
+.ag-bt .g, .ag-l .g { width: 16px; height: 16px; display: grid; place-items: center; flex: none; }
+.ag-bt svg, .ag-l svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.g.ok { color: var(--ok-fg); } .g.atencao { color: var(--at-fg); } .g.parado { color: var(--pa-fg); } .g.desligado { color: var(--of-fg); }
+.ag-bt .cv { transition: transform .2s; width: 12px; height: 12px; fill: none; stroke: var(--muted); stroke-width: 2; }
+.ag-bt[aria-expanded="true"] .cv { transform: rotate(180deg); }
+.ag-lista { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; width: 250px; max-height: min(440px, 55vh); overflow-y: auto; }
+.ag-l { display: flex; align-items: flex-start; gap: 8px; width: 100%; border: 0; background: transparent; border-radius: 5px; padding: 5px 8px; cursor: pointer; text-align: left; font-size: 12.5px; color: var(--text2); }
+.ag-l .g { margin-top: 1px; }
+.ag-l:hover, .ag-l.on { background: var(--sel); color: var(--text); }
+.ag-l .t { display: flex; flex-direction: column; min-width: 0; }
+.ag-l small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
 /* janela do Painel */
 .win { display: grid; grid-template-columns: auto 1fr; height: calc(100% - 44px); min-height: 640px; }
 .rail { background: var(--rail); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 10px 8px; gap: 2px; width: 56px; transition: width .22s ease; overflow: hidden; }
@@ -116,7 +131,8 @@ button { font: inherit; color: inherit; }
 .kp strong em { font-style: normal; font-size: 12px; color: var(--muted); font-weight: 400; }
 .kp.at strong { color: var(--at-fg); } .kp.pa strong { color: var(--pa-fg); }
 
-.grade { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 10px; height: clamp(520px, calc(100vh - 270px), 860px); min-height: 520px; }
+.grade { display: flex; flex-direction: column; flex: 1; min-height: 480px; }
+.cartao.mapa { flex: 1; position: relative; }
 .cartao { background: var(--card); border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .cartao > header { display: flex; flex-wrap: nowrap; gap: 8px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
 .cartao h2 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; }
@@ -156,7 +172,7 @@ button { font: inherit; color: inherit; }
 .st.parado { background: var(--pa-bg); color: var(--pa-fg); border-radius: 4px; } .st.desligado { background: var(--of-bg); color: var(--of-fg); }
 .agora-pc { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px; }
 .agora-pc small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
-@media (max-width: 1180px) { .grade { grid-template-columns: 1fr; height: auto; } .grade .cartao.mapa { height: 560px; } .grade .lista { max-height: 460px; } .kps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1180px) { .ag { max-width: 230px; } }
 @media (max-width: 760px) { .win { grid-template-columns: 1fr; } .rail { display: none; } }
 @media (prefers-reduced-motion: reduce) { .cab .ao i { animation: none; } .rail { transition: none; } }
 
@@ -278,7 +294,6 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
         <span class="ao"><i></i><span id="ao-txt">Atualizado há 4 s</span></span>
       </div>
       <div class="faixa" id="faixa" role="status"></div>
-      <div class="kps" id="kps"></div>
       <div class="grade">
         <section class="cartao mapa" aria-label="Mapa do sistema">
           <header>
@@ -297,11 +312,10 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     <div class="dica">Arraste para mover, role para dar zoom. Clique num bloco para ver o que ele faz. Escolha um caminho em cima para acender só ele.</div>
     <aside class="painel" id="painel" aria-live="polite"></aside>
   </main>
-        </section>
-        <section class="cartao lista" aria-label="Agentes agora">
-          <header><h2>Agentes agora</h2><span class="sub" id="sub-lista"></span></header>
-          <div class="rolagem"><table class="tb"><thead><tr><th>Agente</th><th>Onde</th><th>Situação</th></tr></thead><tbody id="tb"></tbody></table></div>
-          <div class="rod"><span>Clique numa linha para achar o agente no mapa.</span></div>
+        <div class="ag" id="ag">
+          <button class="ag-bt" id="ag-bt" type="button" aria-expanded="false" aria-controls="ag-lista"></button>
+          <div class="ag-lista" id="ag-lista" hidden></div>
+        </div>
         </section>
       </div>
     </div>
@@ -411,12 +425,10 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     var pcsOff = {}; linhas.forEach(function (l) { l.a.pcs.forEach(function (x) { if (x.est === "desligado") pcsOff[x.pc] = 1; }); });
     var nOff = Object.keys(pcsOff).length;
 
+    var ligados = (4 - nOff) + " de 4 PCs ligados.";
     $("resumo").textContent = c.parado + c.atencao === 0
-      ? "Tudo em dia: " + ids.length + " agentes, em 4 PCs."
-      : (c.atencao ? c.atencao + (c.atencao > 1 ? " pedem" : " pede") + " atenção" : "") + (c.atencao && c.parado ? " e " : "") + (c.parado ? c.parado + (c.parado > 1 ? " estão parados" : " está parado") : "") + ".";
-    function kp(rot, val, de, cls, dica) { return '<div class="kp' + (cls ? " " + cls : "") + '" title="' + dica + '"><small>' + rot + "</small><strong>" + val + (de ? "<em> de " + de + "</em>" : "") + "</strong></div>"; }
-    $("kps").innerHTML = kp("Em dia", c.ok, ids.length, "", "Agentes no ritmo esperado") + kp("Atenção", c.atencao, 0, c.atencao ? "at" : "", "Fora do ritmo esperado") +
-      kp("Parados", c.parado, 0, c.parado ? "pa" : "", "Sem sinal fora do ritmo") + kp("PCs ligados", 4 - nOff, 4, "", nOff ? Object.keys(pcsOff).join(", ") + " fora" : "João, Clara, Cristian e Bernardo");
+      ? "Tudo em dia: " + ids.length + " agentes. " + ligados
+      : (c.atencao ? c.atencao + (c.atencao > 1 ? " pedem" : " pede") + " atenção" : "") + (c.atencao && c.parado ? " e " : "") + (c.parado ? c.parado + (c.parado > 1 ? " estão parados" : " está parado") : "") + ". " + ligados;
 
     var f = $("faixa"), itens = linhas.filter(function (l) { return l.g.est !== "ok"; });
     f.className = "faixa" + (itens.length ? " on " + (c.parado ? "vermelha" : "ambar") : "");
@@ -432,24 +444,26 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
 
     var ordem = { parado: 0, atencao: 1, ok: 2 };
     linhas.sort(function (x, y) { return ordem[x.g.est] - ordem[y.g.est] || x.a.nome.localeCompare(y.a.nome, "pt"); });
-    var tb = $("tb"); tb.innerHTML = "";
+    var lista = $("ag-lista"); lista.innerHTML = "";
     linhas.forEach(function (l) {
-      var tr = document.createElement("tr"); tr.className = "l" + (l.id === selecionado ? " on" : ""); tr.dataset.id = l.id; tr.tabIndex = 0;
-      var onde = l.a.onde === "4 PCs" && l.g.off ? (4 - l.g.off) + " de 4 PCs" : l.a.onde;
-      tr.innerHTML = '<td><span class="nome"></span><small></small></td><td></td><td><span class="pil ' + l.g.est + '">' + glifo(l.g.est) + NOMES[l.g.est] + "</span></td>";
-      tr.children[0].children[0].textContent = l.a.nome; tr.children[0].children[1].textContent = l.g.est === "ok" ? "" : l.g.resumo; tr.title = l.g.resumo; tr.children[1].textContent = onde;
-      tr.onclick = function () { window.mapaEscolher(l.id); };
-      tr.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.mapaEscolher(l.id); } };
-      tb.appendChild(tr);
+      var bt = document.createElement("button"); bt.type = "button"; bt.className = "ag-l" + (l.id === selecionado ? " on" : ""); bt.dataset.id = l.id; bt.title = l.g.resumo;
+      bt.innerHTML = '<span class="g ' + l.g.est + '">' + glifo(l.g.est) + '</span><span class="t"><span></span><small></small></span>';
+      bt.querySelector(".t span").textContent = l.a.nome;
+      var sm = bt.querySelector("small"); if (l.g.est === "ok") sm.remove(); else sm.textContent = l.g.resumo;
+      bt.onclick = function () { window.mapaEscolher(l.id); };
+      lista.appendChild(bt);
     });
-    $("sub-lista").textContent = ids.length + " agentes";
+    var pior = c.parado ? "parado" : (c.atencao ? "atencao" : "ok");
+    var rot = c.parado + c.atencao === 0 ? "Agentes · " + c.ok + " em dia" : "Agentes · " + (c.parado ? c.parado + " parado" + (c.parado > 1 ? "s" : "") : "") + (c.parado && c.atencao ? ", " : "") + (c.atencao ? c.atencao + " em atenção" : "");
+    var abt = $("ag-bt"); abt.innerHTML = '<span class="g ' + pior + '">' + glifo(pior) + "</span><span>" + rot + '</span><svg class="cv" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    lista.hidden = abt.getAttribute("aria-expanded") !== "true";
     var pc = document.querySelector("#pc-aviso"); if (pc) pc.remove();
   }
   window.aoEscolherNo = function (id) {
     selecionado = id;
-    document.querySelectorAll("#tb tr").forEach(function (tr) { tr.classList.toggle("on", tr.dataset.id === id); });
-    var ln = id && document.querySelector('#tb tr[data-id="' + id + '"]'); if (ln && ln.scrollIntoView) ln.scrollIntoView({ block: "nearest" });
+    document.querySelectorAll("#ag-lista .ag-l").forEach(function (b) { b.classList.toggle("on", b.dataset.id === id); });
   };
+  $("ag-bt").onclick = function () { var b = $("ag-bt"), ab = b.getAttribute("aria-expanded") === "true"; b.setAttribute("aria-expanded", String(!ab)); $("ag-lista").hidden = ab; };
 
   /* menu */
   function menu() {
@@ -1128,6 +1142,7 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
   if (t.indexOf("problemas") >= 0) q('#s-cen button[data-v="problemas"]');
   if (t.indexOf("claro") >= 0) q('#s-tema button[data-v="light"]');
   if (t.indexOf("aberto") >= 0) q('#s-menu button[data-v="aberto"]');
+  if (t.indexOf("agentes") >= 0) q("#ag-bt");
   var i = t.indexOf("no"); if (i >= 0 && t[i + 1] && window.mapaEscolher) setTimeout(function () { window.mapaEscolher(t[i + 1]); }, 150);
 })();
 </script>
