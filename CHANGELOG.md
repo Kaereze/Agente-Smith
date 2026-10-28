@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.28.3] — 2026-10-28
+
+### Adicionado
+
+- **Medidor de desempenho** (`src/desempenho.py`), primeiro passo de "deixar o Painel mais otimizado e fluido" (pedido do João): só MEDE,
+  não muda o comportamento de nada. Cronometra cada etapa da volta de leitura do Painel (atualizar, notas e e-mails, Fiscal Intelligence,
+  canceladas, salvar o cache), cada resposta do servidor à tela e cada etapa da volta do conferente (varrer Enviados, confirmar NFs,
+  espelho de e-mails, vigia do Outlook, cota de envio). Volta que passa de 30 s ou resposta que passa de 1 s vira aviso no log (no
+  máximo 1 por minuto por etapa); o conferente escreve no `conferente.log` as etapas mais pesadas a cada 10 min.
+- Rota `/api/desempenho` (só o administrador, no PC principal): média, p95 e máximo de cada etapa do servidor. Só nome da etapa e
+  milissegundos; nenhum dado de hóspede.
+- 10 testes novos; o mapa de Agentes do Smith ganhou os blocos novos.
+
 ## [2026.10.28.2] — 2026-10-28
 
 ### Adicionado

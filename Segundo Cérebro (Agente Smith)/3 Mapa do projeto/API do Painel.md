@@ -22,6 +22,7 @@ Tudo em `src/app_servidor.py` → `criar_handler`. `POST` exige o cabeçalho `X-
 | `/api/cadastro/faltando` | Hotéis sem cadastro |
 | `/api/atividade` | Log da equipe |
 | `/api/agentes` | Aba Agentes do Smith: estado ao vivo dos agentes (só o administrador no PC principal; 403 para os outros) |
+| `/api/desempenho` | Tempo de cada etapa do servidor (média, p95, máximo); só o administrador no PC principal |
 | `/agentes/mapa` | Página do mapa da aba (HTML), com a mesma regra de acesso |
 | `/fontes/...` | Fontes IBM Plex (cache longo) |
 

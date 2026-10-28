@@ -26,6 +26,7 @@ from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro,
                          ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
                          trocar_paragrafo_status)
 from log_util import configurar_logging
+import desempenho
 import outlook_vivo
 
 logger = configurar_logging("conferente")
@@ -734,7 +735,8 @@ def main():
                 if not categorias_ok:
                     garantir_categorias(namespace)
                     categorias_ok = True
-                uma_volta(outlook, namespace, cfg)
+                with desempenho.MEDIDOR.medir("conferente.uma_volta", logger=logger):
+                    uma_volta(outlook, namespace, cfg)
                 if agora >= proxima_dividida:
                     marcar_notas_divididas(namespace, cfg)
                     proxima_dividida = agora + NOTAS_DIVIDIDAS_SEGUNDOS
@@ -742,14 +744,16 @@ def main():
                 logger.warning(f"⚠️ Volta do conferente falhou ({e}) — tento de novo em {intervalo}s.")
             try:
                 if e_principal(cfg):
-                    publicar_cota(backend, namespace, cfg)
+                    with desempenho.MEDIDOR.medir("conferente.publicar_cota", logger=logger):
+                        publicar_cota(backend, namespace, cfg)
             except Exception as e:
                 logger.warning(f"⚠️ Não consegui medir a cota de envio ({e}).")
             proxima_conferencia = time.monotonic() + intervalo
 
         try:   # a cada volta (10 s): aviso de certificado do Outlook (nome do servidor diferente) trava a fila de envio
             import aviso_certificado
-            aviso_certificado.responder_avisos()
+            with desempenho.MEDIDOR.medir("conferente.aviso_certificado", logger=logger):
+                aviso_certificado.responder_avisos()
         except Exception as erro:
             logger.debug(f"aviso de certificado: {erro}")
 
@@ -760,7 +764,8 @@ def main():
                 namespace = outlook_vivo.aplicativo().GetNamespace("MAPI")
                 import vigia_outlook
                 vigia = vigia or vigia_outlook.Vigia()
-                novos = vigia.novidades(namespace)
+                with desempenho.MEDIDOR.medir("conferente.vigia_outlook", logger=logger):
+                    novos = vigia.novidades(namespace)
                 import envio_nf
                 marca = envio_nf.marca_das_pastas(cfg)
                 if dropbox_antes is not None and marca != dropbox_antes:
@@ -796,7 +801,9 @@ def main():
                 # Cada PC confere o próprio Outlook; o Dropbox é compartilhado, então só o principal lê.
                 try:
                     import confirmar_nfs
-                    if confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg)):
+                    with desempenho.MEDIDOR.medir("conferente.confirmar_nfs", logger=logger):
+                        registrou_nf = confirmar_nfs.rodar(namespace, cfg, usar_dropbox=e_principal(cfg))
+                    if registrou_nf:
                         avisar_paineis(cfg, "nf")   # NF registrada na Tratamento: as telas releem já
                 except Exception as e:
                     logger.warning(f"⚠️ Confirmação de NFs falhou ({e}) — tento de novo em 10 min.")
@@ -809,7 +816,8 @@ def main():
                     if espelho is None:
                         espelho = espelho_emails.Espelho(BackendGoogle(caminho_chave_google(cfg)), cfg)
                     antes = _publicado(espelho)
-                    espelho.volta(namespace)
+                    with desempenho.MEDIDOR.medir("conferente.espelho_emails", logger=logger):
+                        espelho.volta(namespace)
                     if _publicado(espelho) != antes:
                         avisar_paineis(cfg, "emails")   # a aba de e-mails deste PC mudou: as telas releem já
                 except Exception as e:
@@ -825,6 +833,7 @@ def main():
                     logger.warning(f"⚠️ Contagem do fim de semana falhou ({e})")
                 proximo_espelho = time.monotonic() + ESPELHO_EMAILS_SEGUNDOS
 
+        desempenho.MEDIDOR.talvez_resumir(logger)   # a cada 10 min, as etapas mais pesadas, no conferente.log
         if uma_vez:
             return 0
         time.sleep(TICK_SEGUNDOS)

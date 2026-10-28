@@ -114,3 +114,10 @@ tags: [cerebro/trabalho]
 | **Quem pode ver** | `e_admin_aqui` em `src/app_servidor.py`; as rotas `/agentes/mapa` e `/api/agentes` ficam antes dos arquivos públicos (`ESTATICOS`) |
 | O botão no menu e o quadro | `app_ui/index.html` (`#nav-agentes`, `#v-agentes`, `#agentes-quadro`) e `agentesQuadro` em `app_ui/painel.js` |
 | Regras que seguram tudo | `testes/test_agentes_smith.py` (todo módulo de `src/` precisa de bloco no mapa) |
+
+## Desempenho (medir antes de otimizar)
+| Quero… | Onde |
+|---|---|
+| Ver quanto cada etapa demora | `/api/desempenho` (só o administrador) e os avisos `⏱️ Lento` em `logs/painel.log` e `logs/conferente.log`; nota [[Otimização e desempenho]] |
+| Cronometrar uma etapa nova | `with desempenho.MEDIDOR.medir("nome.da.etapa", logger=logger):` (`src/desempenho.py`); só o nome da etapa, nunca dado de hóspede |
+| Mudar os limites de aviso | `LIMITE_LACO_S` (30 s) e `LIMITE_HTTP_S` (1 s) em `src/desempenho.py` |

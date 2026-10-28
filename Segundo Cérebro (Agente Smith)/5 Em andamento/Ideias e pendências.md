@@ -119,3 +119,5 @@ tags: [cerebro/andamento]
     formulário novo do hotel (cópia a cada 10 min pelo Agendador; leva 2 s), abrir e-mail sem texto guardado (rede da
     Clara 10.80.x bloqueada no firewall). Novo item: **vigiar a pasta do Dropbox** (aviso do Windows na hora) e **cópia
     dos formulários a cada 1-2 min** (olhar a cota do Google).
+
+- **Otimização e desempenho (28/10/2026):** medidor no ar; ganhos seguros aguardam o OK do João. Ver [[Otimização e desempenho]].

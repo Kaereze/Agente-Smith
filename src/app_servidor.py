@@ -54,6 +54,7 @@ import saude
 import fiscal_intelligence
 import painel_metricas as metricas
 import agentes_smith
+import desempenho
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
 from app_envio import Envio
@@ -2079,6 +2080,18 @@ def e_admin_aqui(cfg, nome, liberado=False):
     return bool(liberado) or (nome in admins_do_painel(cfg) and e_principal(cfg))
 
 
+def _cronometrado(metodo, verbo):
+    """Embrulha do_GET/do_POST: registra quanto a resposta demorou (desempenho.py). Não muda nada do que o método faz."""
+    def interno(self, *args, **kwargs):
+        inicio = time.perf_counter()
+        try:
+            return metodo(self, *args, **kwargs)
+        finally:
+            desempenho.MEDIDOR.registrar(desempenho.rota_curta(getattr(self, "path", ""), verbo), time.perf_counter() - inicio,
+                                         desempenho.LIMITE_HTTP_S, logger)
+    return interno
+
+
 def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     pc = socket.gethostname()
     hosts_ok = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
@@ -2140,11 +2153,13 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)
-            if url.path in ("/agentes/mapa", "/api/agentes"):   # aba Agentes do Smith (28/10/2026): só o administrador, no PC dele
+            if url.path in ("/agentes/mapa", "/api/agentes", "/api/desempenho"):   # aba Agentes do Smith (28/10/2026): só o administrador, no PC dele
                 if not e_admin_aqui(estado.cfg, nome_do_agente(), liberado()):
                     return self._json({"erro": "Só o administrador vê esta aba, no PC dele."}, 403)
                 if url.path == "/api/agentes":
                     return self._json(agentes_smith.estado(estado.pcs()))
+                if url.path == "/api/desempenho":   # quanto cada etapa do servidor demora (desempenho.py); só nomes e milissegundos
+                    return self._json({"servidor": desempenho.MEDIDOR.resumo(), "versao": estado.versao})
                 corpo, gz = comprimir_se_vale((PASTA_UI / "agentes" / "mapa.html").read_bytes(), self.headers.get("Accept-Encoding"))
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -2338,6 +2353,8 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self._json({"ok": False, "motivo": f"Erro ao gravar na planilha: {e}"}, 500)
             return self._json({"erro": "não encontrado"}, 404)
 
+    for verbo in ("do_GET", "do_POST"):   # tempo de cada resposta à tela (só a rota, sem o que vem depois do "?")
+        setattr(Handler, verbo, _cronometrado(getattr(Handler, verbo), verbo[3:]))
     return Handler
 
 
@@ -2492,11 +2509,18 @@ def main():
         """Fica rodando enquanto o PC estiver ligado. Janela aberta: relê rápido; fechada: devagar (cota da API)."""
         while True:
             estado.acordar.clear()   # novidade que chegar durante a leitura vale para a próxima volta
-            estado.atualizar()
-            estado.atualizar_notas_emails()
-            estado.atualizar_fi()
-            estado.atualizar_canceladas()
-            estado.salvar_cache()
+            medir = desempenho.MEDIDOR.medir   # só cronometra (28/10/2026): o que passa de 30 s vai para o log
+            with medir("painel.volta_completa", logger=logger):
+                with medir("painel.atualizar", logger=logger):
+                    estado.atualizar()
+                with medir("painel.notas_emails", logger=logger):
+                    estado.atualizar_notas_emails()
+                with medir("painel.fiscal_intelligence", logger=logger):
+                    estado.atualizar_fi()
+                with medir("painel.canceladas", logger=logger):
+                    estado.atualizar_canceladas()
+                with medir("painel.salvar_cache", logger=logger):
+                    estado.salvar_cache()
             estado.versao_tela += 1
             esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)
 
