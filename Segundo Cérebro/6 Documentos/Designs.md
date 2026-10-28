@@ -205,6 +205,15 @@ log, máquinas e a janela de processamento do robô. Todos os nomes e documentos
 
 ![[2026-10-07 Prototipo Painel Notas Fiscais.png|700]]
 
+## Tela do e-mail 2.0 (27/10/2026, animado, arquivo no PC)
+
+João: o e-mail está com informação demais junta; quer uma ficha só com o resumo que o robô leu. Respostas dele: ficha única no topo; resumo com
+quem, quando e quanto, o que entra na nota e situação; histórico só desta conversa; tirar o modo Professor e enxugar a barra de baixo.
+Arquivo que abre com dois cliques (sem internet): [[2026-10-27 Tela do e-mail 2.0 (animado).html|Tela do e-mail 2.0 animado]] com Hoje x Depois,
+a leitura do robô campo a campo, 3 situações (falta dado, NF já enviada, NF pronta), "Ver detalhes", Concluir com Desfazer de 10 s, pílula de envio e
+a barra de baixo com um botão de avisos. **Aguardando o OK do João** (e 6 perguntas em aberto) antes de mexer no Painel. Cópia parada no canvas:
+https://claude.ai/artifact/DZfLKiootmf4ivhaSGDqPM (tem uma prancheta em branco "Artboard 1" para apagar).
+
 ## Só no claude.ai (apresentações e canvas)
 
 Estes são de um tipo de página que só abre dentro do claude.ai (slides e canvas de design), então ficam aqui só com o link.

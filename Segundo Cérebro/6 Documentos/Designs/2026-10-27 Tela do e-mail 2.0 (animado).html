@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tela do e-mail 2.0 · animado</title>
+<style>
+:root{
+  --bg:#171717; --tela:#1f1f1f; --painel:#262626; --linha:#3a3a3a; --linha2:#4a4a4a;
+  --tx:#f0f0f0; --mut:#a8a8a8; --azul:#479ef5; --azul-tx:#9ccbf7; --azul-bg:#172b42; --azul-bd:#2a4f78;
+  --am:#f0c46a; --am-bg:#33290f; --am-bd:#5c4a1d; --verm:#ff8d95; --barra:#1a1a1a;
+  --f:"Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.pagina{max-width:1160px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px}
+h1.t{margin:0;font-size:20px;font-weight:600}
+.sub{margin:0;color:var(--mut);font-size:13px;line-height:1.5;max-width:80ch}
+
+/* comandos da demonstração (fora da tela desenhada) */
+.cmd{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:12px 14px;border:1px solid var(--linha);border-radius:10px;background:#1c1c1c}
+.grupo{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut)}
+.seg{display:inline-flex;border:1px solid var(--linha2);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;border:0;background:transparent;color:var(--tx);font-size:13px;border-right:1px solid var(--linha2)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--azul);color:#0b1b2e;font-weight:600}
+.cmd label{display:flex;align-items:center;gap:8px;color:var(--tx);font-size:13px}
+.cmd .rep{height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px}
+
+/* a tela */
+.tela{position:relative;height:700px;background:var(--tela);border:1px solid var(--linha);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.rolagem{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#555 transparent}
+
+/* abre e fecha blocos com animação (altura automática) */
+.col{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1)}
+.col>.in{overflow:hidden;min-height:0;opacity:0;transition:opacity .22s ease}
+.col.aberto{grid-template-rows:1fr}
+.col.aberto>.in{opacity:1;transition:opacity .3s ease .12s}
+.m-hoje .so-hoje, .m-depois .so-depois{}
+.m-hoje .so-hoje, .m-depois .so-depois,
+.m-depois[data-estado=falta] .e-falta, .m-depois[data-estado=enviada] .e-enviada, .m-depois[data-estado=pronta] .e-pronta{}
+/* quem abre: */
+.m-hoje .so-hoje{grid-template-rows:1fr}.m-hoje .so-hoje>.in{opacity:1;transition:opacity .3s ease .12s}
+.m-depois .so-depois{grid-template-rows:1fr}.m-depois .so-depois>.in{opacity:1;transition:opacity .3s ease .12s}
+.m-depois[data-estado=falta] .estr-enviada,.m-depois[data-estado=pronta] .estr-enviada,
+.m-depois[data-estado=enviada] .estr-pronta,.m-depois[data-estado=falta] .estr-pronta{grid-template-rows:0fr}
+.m-depois[data-estado=falta] .estr-enviada>.in,.m-depois[data-estado=pronta] .estr-enviada>.in,
+.m-depois[data-estado=enviada] .estr-pronta>.in,.m-depois[data-estado=falta] .estr-pronta>.in{opacity:0}
+.m-depois[data-estado=enviada] .estr-enviada,.m-depois[data-estado=pronta] .estr-pronta{grid-template-rows:1fr}
+.m-depois[data-estado=enviada] .estr-enviada>.in,.m-depois[data-estado=pronta] .estr-pronta>.in{opacity:1;transition:opacity .3s ease .12s}
+.m-hoje .estr-enviada,.m-hoje .estr-pronta{grid-template-rows:0fr}
+
+/* botões da tela */
+.bt{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.bt:hover{background:#303030;border-color:#5a5a5a}
+.bt:active{transform:scale(.97)}
+.bt.p{border:0;background:var(--azul);color:#0b1b2e;font-weight:600}
+.bt.p:hover{background:#6bb2f8}
+.bt.m{height:28px;padding:0 10px}
+
+/* ficha antiga (hoje) */
+.fh{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 24px;display:flex;flex-direction:column;gap:10px}
+.lin{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.av{width:32px;height:32px;border-radius:50%;background:#7a5fc4;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex:none}
+.chip{font-size:12.5px;border-radius:6px;padding:3px 8px;border:1px solid var(--linha2);background:#2b2b2b}
+.chip.am{color:var(--am);background:var(--am-bg);border-color:var(--am-bd)}
+.chip.az{color:var(--azul-tx);background:var(--azul-bg);border-color:var(--azul-bd)}
+.pil{font-size:13px;color:var(--am);background:var(--am-bg);border:1px solid var(--am-bd);border-radius:999px;padding:2px 10px}
+.mut{color:var(--mut)}
+.esp{flex-grow:1}
+
+/* ficha nova */
+.fn{background:var(--painel);border-bottom:1px solid var(--linha);padding:18px 24px;display:flex;flex-direction:column;gap:14px;position:relative}
+.fn h2{margin:0;font-size:20px;font-weight:600;color:#f5f5f5}
+.grade{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:28px}
+.campo{display:flex;flex-direction:column;gap:4px;min-width:0}
+.campo .r{font-size:12px;color:var(--mut)}
+.campo .v{overflow-wrap:anywhere}
+.campo .v.b{font-weight:600}
+.campo .v.s{font-size:13px;color:var(--mut)}
+.orig{display:none;font-size:12px;color:var(--azul-tx)}
+.mostra-origem .orig{display:block}
+.val{transition:opacity .35s ease,transform .35s cubic-bezier(.2,.8,.2,1),background-color .3s}
+.val.lendo-i{color:transparent!important;border-radius:4px;background:linear-gradient(90deg,#333 0%,#444 50%,#333 100%);background-size:200% 100%;animation:brilho 1s linear infinite;user-select:none}
+.val.lendo-i .orig{visibility:hidden}
+@keyframes brilho{from{background-position:200% 0}to{background-position:-200% 0}}
+.revela{animation:sobe .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes sobe{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.leitura{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);min-height:18px}
+.leitura .barra{width:90px;height:3px;border-radius:2px;background:#3a3a3a;overflow:hidden}
+.leitura .barra i{display:block;height:100%;width:0;background:var(--azul);transition:width .9s ease}
+.sit{display:none;align-items:flex-start}
+.m-depois[data-estado=falta] .sit.falta,.m-depois[data-estado=enviada] .sit.enviada,.m-depois[data-estado=pronta] .sit.pronta{display:flex;flex-direction:column;gap:6px;animation:sobe .4s cubic-bezier(.2,.8,.2,1)}
+.btn-falta{display:none}
+.m-depois[data-estado=falta] .btn-falta{display:inline-block}
+
+/* mensagem */
+.msg{padding:18px 24px 0;display:flex;flex-direction:column;gap:12px}
+.msg h1{margin:0;font-size:18px;font-weight:600;color:#f5f5f5}
+.corpo{padding:16px 24px 0;display:flex;flex-direction:column;gap:16px;font-size:15px;line-height:1.55}
+.ant{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;width:max-content}
+.ant:hover{color:var(--tx)}
+.ant svg{transition:transform .2s}
+.ant[aria-expanded=true] svg{transform:rotate(90deg)}
+.citado{font-size:13.5px;color:#c8c8c8;border-left:2px solid var(--linha2);padding-left:12px;line-height:1.5}
+
+/* blocos antigos de NF (hoje) */
+.cx{margin:12px 24px 0;border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.cx.az{background:var(--azul-bg);border:1px solid var(--azul-bd);border-left:4px solid var(--azul)}
+.cx.am{background:var(--painel);border:1px solid var(--am-bd);border-radius:10px}
+.cx .fa{background:var(--am-bg);color:var(--am);border-radius:8px;padding:8px 10px;font-weight:600}
+.hist{margin:18px 24px 0;border-top:1px solid var(--linha);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.hist div{display:flex;gap:24px}
+
+/* faixa nova de NF */
+.strip{margin:16px 24px 0;border:1px solid var(--azul-bd);background:var(--azul-bg);border-radius:8px;overflow:hidden}
+.strip .topo{padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:14px;flex-wrap:wrap}
+.strip .topo b{color:var(--azul-tx)}
+.strip .det{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s cubic-bezier(.2,.8,.2,1)}
+.strip .det.aberto{grid-template-rows:1fr}
+.strip .det>div{overflow:hidden;min-height:0}
+.strip .det .conteudo{padding:10px 14px;border-top:1px solid var(--azul-bd);background:#1c2837;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.bt.ln{border:0;color:var(--azul-tx);display:inline-flex;align-items:center;gap:6px;padding:0 8px}
+.bt.ln svg{transition:transform .25s}
+.bt.ln[aria-expanded=true] svg{transform:rotate(180deg)}
+
+/* barra de baixo */
+.barra-b{height:38px;border-top:1px solid var(--linha);background:var(--barra);padding:0 16px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--mut);position:relative;flex:none}
+.b-extra{display:flex;gap:14px;align-items:center;white-space:nowrap;overflow:hidden;max-width:900px;opacity:1;transition:max-width .4s ease,opacity .25s ease}
+.m-depois .b-extra{max-width:0;opacity:0}
+.b-avisos{max-width:0;opacity:0;overflow:hidden;transition:max-width .4s ease .1s,opacity .3s ease .2s}
+.m-depois .b-avisos{max-width:140px;opacity:1}
+.m-hoje .b-avisos{pointer-events:none}
+.pop{position:absolute;right:16px;bottom:46px;width:340px;background:#2b2b2b;border:1px solid var(--linha2);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);transform-origin:bottom right;transform:scale(.96) translateY(6px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);z-index:5}
+.pop.aberto{opacity:1;transform:none;pointer-events:auto}
+.pop button{display:flex;width:100%;text-align:left;gap:10px;align-items:flex-start;background:transparent;border:0;border-radius:6px;color:var(--tx);padding:8px;font-size:13px}
+.pop button:hover{background:#363636}
+.pt{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+
+/* avisos que sobem (pílula e desfazer) */
+.avisos{position:absolute;left:0;right:0;bottom:50px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:6}
+.toast{pointer-events:auto;background:#2b2b2b;border:1px solid var(--linha2);border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.4);animation:entra .28s cubic-bezier(.2,.8,.2,1)}
+.toast.sai{animation:saiu .25s ease forwards}
+@keyframes entra{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes saiu{to{opacity:0;transform:translateY(6px) scale(.97)}}
+.gira{width:14px;height:14px;border-radius:50%;border:2px solid #555;border-top-color:var(--azul);animation:g .8s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.toast .tempo{width:60px;height:3px;border-radius:2px;background:#444;overflow:hidden}
+.toast .tempo i{display:block;height:100%;width:100%;background:var(--azul);transform-origin:left;animation:tempo 10s linear forwards}
+@keyframes tempo{to{transform:scaleX(0)}}
+.toast .bt.m{height:24px;border:0;color:var(--azul-tx);padding:0 6px}
+.nota{font-size:12.5px;color:var(--mut)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+@media (max-width:900px){.grade{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}}
+</style>
+</head>
+<body>
+<main class="pagina">
+  <h1 class="t">Tela do e-mail 2.0 · animado</h1>
+  <p class="sub">Desenho para aprovar, com dados inventados. Troque entre <b>Hoje</b> e <b>Depois</b> para ver a tela se reorganizar, mude a situação do pedido, clique em <b>Ver detalhes</b>, <b>Concluir</b>, <b>Enviar NF</b> e no botão de avisos da barra de baixo. Nada aqui mexe no Painel.</p>
+
+  <div class="cmd" role="group" aria-label="Controles da demonstração">
+    <div class="grupo">Tela
+      <div class="seg" id="seg-tela">
+        <button type="button" data-v="hoje" aria-pressed="false">Hoje</button>
+        <button type="button" data-v="depois" aria-pressed="true">Depois</button>
+      </div>
+    </div>
+    <div class="grupo" id="g-sit">Situação do pedido
+      <div class="seg" id="seg-sit">
+        <button type="button" data-v="falta" aria-pressed="true">Falta dado</button>
+        <button type="button" data-v="enviada" aria-pressed="false">NF já enviada</button>
+        <button type="button" data-v="pronta" aria-pressed="false">NF pronta</button>
+      </div>
+    </div>
+    <label><input type="checkbox" id="ck-orig"> Mostrar de onde o robô leu cada dado</label>
+    <button type="button" class="rep" id="bt-rep">Repetir a leitura do robô</button>
+  </div>
+
+  <div class="tela m-depois" id="tela" data-estado="falta">
+    <div class="rolagem" id="rolagem">
+
+      <!-- HOJE: ficha em linhas -->
+      <div class="col so-hoje"><div class="in">
+        <div class="fh">
+          <div class="lin">
+            <span class="av" aria-hidden="true">RR</span>
+            <b style="font-size:16px">Ricardo Rocha Pereira</b>
+            <span class="chip am">Falta dado: o que pede</span>
+            <span class="mut" style="font-size:13px">prazo: vence em 20 h</span>
+            <span class="esp"></span>
+            <button type="button" class="bt m">Pedir o que falta</button>
+            <button type="button" class="bt m">Marcar tratativa</button>
+            <button type="button" class="bt m p">Enviar NF</button>
+          </div>
+          <div class="lin" style="font-size:13px;gap:10px">
+            <span class="mut">QUER</span>
+            <span class="chip">Nota no nome de Transportes Rota Sul Ltda · CNPJ 27.598.834/0001-20</span>
+            <span class="chip am">Falta: o que entra na nota</span>
+            <span class="chip">LAGOA · 23/10/2026 → 24/10/2026 · 1 diária</span>
+            <span class="esp"></span><span style="color:var(--azul-tx)">Ver ficha completa</span>
+          </div>
+        </div>
+      </div></div>
+
+      <!-- DEPOIS: ficha única -->
+      <div class="col so-depois"><div class="in">
+        <div class="fn" id="ficha">
+          <div class="lin">
+            <h2>Ricardo Rocha Pereira</h2>
+            <span class="pil">Vence em 20 h</span>
+            <span class="mut" style="font-size:13px">LAGOA · PC de João</span>
+            <span class="esp"></span>
+            <button type="button" class="bt btn-falta">Pedir o que falta</button>
+            <button type="button" class="bt">Marcar tratativa</button>
+            <button type="button" class="bt p" id="bt-enviar">Enviar NF</button>
+          </div>
+          <div class="grade" id="grade">
+            <div class="campo">
+              <span class="r">Quem</span>
+              <span class="v b val">Transportes Rota Sul Ltda<span class="orig">do formulário</span></span>
+              <span class="v val">CNPJ 27.598.834/0001-20<span class="orig">do texto do e-mail</span></span>
+              <span class="v s val">ricardo@exemplo.com.br<span class="orig">do e-mail recebido</span></span>
+            </div>
+            <div class="campo">
+              <span class="r">Quando e quanto</span>
+              <span class="v b val">23/10 → 24/10/2026<span class="orig">do formulário</span></span>
+              <span class="v val">1 diária · R$ 190,00<span class="orig">do formulário</span></span>
+              <span class="v s val">Reserva 45154<span class="orig">do assunto do e-mail</span></span>
+            </div>
+            <div class="campo">
+              <span class="r">O que entra na nota</span>
+              <span class="v b val">Hospedagem<span class="orig">do formulário</span></span>
+              <span class="v val">Estacionamento R$ 120,00<span class="orig">do texto do e-mail</span></span>
+              <span class="v s val">Voucher Porto Seguro<span class="orig">do texto do e-mail</span></span>
+            </div>
+            <div class="campo">
+              <span class="r">Situação</span>
+              <div class="sit falta">
+                <span class="chip am">Falta: dividir em 2 notas?</span>
+                <span class="chip az">Sem NF pronta nas pastas</span>
+              </div>
+              <div class="sit enviada">
+                <span class="chip az">NF 1552 já enviada</span>
+                <span class="chip am">Ele pode estar pedindo outra nota</span>
+              </div>
+              <div class="sit pronta">
+                <span class="chip az">NF 1552 pronta na pasta da Clara</span>
+                <span class="chip az">Tudo confere com o pedido</span>
+              </div>
+            </div>
+          </div>
+          <div class="leitura" id="leitura" aria-live="polite"><span id="leitura-t">Robô lendo o e-mail e o formulário…</span><span class="barra"><i id="leitura-b"></i></span></div>
+        </div>
+      </div></div>
+
+      <!-- cabeçalho da mensagem -->
+      <div class="msg">
+        <h1>Re: Solicitação NF</h1>
+        <div class="col so-hoje"><div class="in">
+          <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:4px">
+            <span class="av" style="width:40px;height:40px;font-size:14px" aria-hidden="true">RR</span>
+            <div style="display:flex;flex-direction:column;gap:3px;flex-grow:1">
+              <span style="font-weight:600">Ricardo Rocha Pereira <span class="mut" style="font-weight:400;font-size:13px">&lt;ricardo@exemplo.com.br&gt;</span></span>
+              <span class="mut" style="font-size:13px">Para notafiscal@redeandradelagoa.com.br</span>
+              <span style="font-size:13px;color:var(--azul-tx)">● Pedido de NF</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <div style="display:flex;gap:6px"><button type="button" class="bt m">Responder</button><button type="button" class="bt m">Responder a todos</button><button type="button" class="bt m">Encaminhar</button></div>
+              <span class="mut" style="font-size:12px">ter., 27/10/2026, 21:17</span>
+              <span style="font-size:12px;color:var(--azul-tx)">fechar ✕</span>
+            </div>
+          </div>
+          <div class="mut" style="font-size:13px;padding-bottom:4px">LAGOA · PC de João</div>
+        </div></div>
+        <div class="col so-depois"><div class="in">
+          <div class="mut" style="font-size:13px;padding-bottom:2px">Ricardo Rocha Pereira &lt;ricardo@exemplo.com.br&gt; · para notafiscal@redeandradelagoa.com.br · ter., 27/10/2026 21:17</div>
+        </div></div>
+      </div>
+
+      <!-- HOJE: caixas empilhadas -->
+      <div class="col so-hoje"><div class="in">
+        <div class="cx az">
+          <b style="color:var(--azul-tx)">NF já enviada para este e-mail</b>
+          <span>NF 2115 · enviada para ricardo@exemplo.com.br em 27/10/2026 17:45 · LAGOA</span>
+          <span class="mut">Conferido pelo robô no Outlook e no PDF da nota. Veja se o hóspede pede outra nota antes de reenviar.</span>
+        </div>
+        <div class="cx am">
+          <div class="lin" style="font-size:13px;gap:10px"><b>NF enviada</b><span>NF 1552 · NF 1552.pdf</span></div>
+          <span style="color:#d0d0d0">• Nota não consegui ler a NF enviada: confira</span>
+          <div class="fa">Marcado como enviado, mas não achei o envio da NF 1552 nos Itens Enviados. A resposta do hóspede com a nota anexada não conta como envio.</div>
+          <div class="fa">Não consegui ler a nota enviada: confira antes de concluir.</div>
+          <div class="lin"><button type="button" class="bt m" style="font-weight:600">Concluir</button><span class="mut" style="font-size:12px">Move a conversa inteira para a pasta “NF enviada”. Nada é apagado.</span></div>
+        </div>
+      </div></div>
+
+      <!-- DEPOIS: faixa de NF -->
+      <div class="col so-depois estr-enviada"><div class="in">
+        <div class="strip" id="strip-enviada">
+          <div class="topo">
+            <b>NF 1552 enviada em 27/10 17:45</b>
+            <span style="color:#d0d0d0">Datas, valor e CNPJ conferem com o pedido.</span>
+            <span class="esp"></span>
+            <button type="button" class="bt m ln" id="bt-det" aria-expanded="false" aria-controls="det">Ver detalhes
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+            <button type="button" class="bt m" id="bt-concluir" style="font-weight:600">Concluir</button>
+          </div>
+          <div class="det" id="det"><div><div class="conteudo">
+            <span><b>NF 1552.pdf</b> · enviada para ricardo@exemplo.com.br · conferida no Outlook e no PDF</span>
+            <span class="mut">Datas 23/10 → 24/10 · valor R$ 190,00 · CNPJ 27.598.834/0001-20: tudo igual ao pedido.</span>
+            <span class="mut">Concluir move a conversa para a pasta “NF enviada”. Nada é apagado e dá para desfazer em 10 s.</span>
+          </div></div></div>
+        </div>
+      </div></div>
+      <div class="col so-depois estr-pronta"><div class="in">
+        <div class="strip">
+          <div class="topo">
+            <b>NF 1552 pronta na pasta da Clara</b>
+            <span style="color:#d0d0d0">Datas, valor e CNPJ conferem com o pedido. É só enviar.</span>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="corpo">
+        <span>Obrigado pelo retorno! Fico no aguardo da nota.</span>
+        <span>Ricardo Rocha Pereira</span>
+        <button type="button" class="ant" id="bt-ant" aria-expanded="false" aria-controls="ant">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Mostrar mensagens anteriores</button>
+        <div class="col" id="ant"><div class="in">
+          <div class="citado">Em 26/10/2026, equipe fiscal escreveu: Olá! Para emitir a nota, confirme o CNPJ e o que deve entrar (hospedagem e estacionamento).</div>
+        </div></div>
+      </div>
+
+      <!-- HOJE: histórico do hóspede -->
+      <div class="col so-hoje"><div class="in">
+        <div class="hist">
+          <span class="mut">HISTÓRICO DESTE HÓSPEDE NO OUTLOOK · 3</span>
+          <div><b style="width:90px">Formulário</b><span style="width:90px">26/10/2026</span><span style="flex-grow:1">LAGOA · Falta dado</span><span style="color:var(--azul-tx)">abrir pedido</span></div>
+          <div><b style="width:90px">Enviado</b><span style="width:90px">25/10/2026</span><span style="flex-grow:1">BAHIA · NF enviada · 1210</span><span style="color:var(--azul-tx)">abrir</span></div>
+          <div><b style="width:90px">Recebido</b><span style="width:90px">21/10/2026</span><span style="flex-grow:1">COIMBRA · Pedido de NF</span><span style="color:var(--azul-tx)">abrir</span></div>
+          <span class="mut">Sem resposta de: Bernardo (desligado).</span>
+        </div>
+      </div></div>
+      <div style="height:20px"></div>
+    </div>
+
+    <div class="avisos" id="avisos" aria-live="polite"></div>
+
+    <div class="pop" id="pop" role="dialog" aria-label="Avisos do Painel">
+      <button type="button"><span class="pt" style="background:var(--verm)"></span><span><b>Robô · 4 problemas</b><br><span class="mut">Ver o registro do robô</span></span></button>
+      <button type="button"><span class="pt" style="background:var(--am)"></span><span><b>Conferência parada</b><br><span class="mut">Clara, Cristian, João</span></span></button>
+      <button type="button"><span class="pt" style="background:var(--azul)"></span><span><b>Central sincronizada 23:07</b><br><span class="mut">Tudo certo</span></span></button>
+    </div>
+
+    <div class="barra-b">
+      <span>Itens: 24</span><span>Não lidos: 22</span>
+      <div class="b-extra">
+        <span style="color:var(--am)">Modo demonstração · dados fictícios</span>
+        <span>Central sincronizada 23:07</span>
+        <span style="color:var(--verm)">Robô · 4 problemas</span>
+        <span style="color:var(--am)">conferência parada: Clara, Cristian, João</span>
+      </div>
+      <span class="esp"></span>
+      <button type="button" class="bt m b-avisos" id="bt-avisos" aria-expanded="false" aria-controls="pop" style="display:inline-flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--am)"></span>2 avisos</button>
+      <button type="button" class="bt m">Escuro</button>
+      <button type="button" class="bt m b-extra">Professor</button>
+    </div>
+  </div>
+  <p class="nota">Dados inventados. A cor azul e o âmbar seguem a paleta da Auditoria (sem verde). Com “reduzir movimento” ligado no Windows, as animações ficam paradas.</p>
+</main>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const tela = $("#tela"), reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const espera = (ms) => new Promise((r) => setTimeout(r, reduz ? 0 : ms));
+  let corrida = 0;
+
+  function marcar(seg, valor) {
+    seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === valor)));
+  }
+
+  // o robô "lê": cada dado aparece em sequência, com a barrinha andando
+  async function ler() {
+    const minha = ++corrida;
+    const campos = [...document.querySelectorAll("#grade .val")];
+    const t = $("#leitura-t"), b = $("#leitura-b");
+    campos.forEach((c) => { c.classList.remove("revela"); c.classList.add("lendo-i"); });
+    t.textContent = "Robô lendo o e-mail e o formulário…";
+    b.style.transition = "none"; b.style.width = "0";
+    await espera(30);
+    b.style.transition = ""; b.style.width = "100%";
+    await espera(350);
+    for (const c of campos) {
+      if (minha !== corrida) return;
+      c.classList.remove("lendo-i");
+      c.classList.add("revela");
+      await espera(110);
+    }
+    if (minha !== corrida) return;
+    t.textContent = "Robô leu " + campos.length + " dados · confira o que estiver em âmbar";
+  }
+
+  function irPara(v) {
+    tela.classList.toggle("m-hoje", v === "hoje");
+    tela.classList.toggle("m-depois", v === "depois");
+    marcar($("#seg-tela"), v);
+    $("#g-sit").style.opacity = v === "depois" ? "1" : ".4";
+    $("#seg-sit").querySelectorAll("button").forEach((x) => { x.disabled = v !== "depois"; });
+    $("#rolagem").scrollTo({ top: 0, behavior: reduz ? "auto" : "smooth" });
+    if (v === "depois") ler();
+  }
+  $("#seg-tela").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) irPara(b.dataset.v); });
+  $("#seg-sit").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    tela.dataset.estado = b.dataset.v; marcar($("#seg-sit"), b.dataset.v); ler();
+  });
+  $("#bt-rep").addEventListener("click", () => { if (tela.classList.contains("m-hoje")) irPara("depois"); else ler(); });
+  $("#ck-orig").addEventListener("change", (e) => tela.classList.toggle("mostra-origem", e.target.checked));
+
+  // ver detalhes e mensagens anteriores
+  function alterna(btn, alvo) {
+    const abre = btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", String(abre)); alvo.classList.toggle("aberto", abre);
+  }
+  $("#bt-det").addEventListener("click", (e) => alterna(e.currentTarget, $("#det")));
+  $("#bt-ant").addEventListener("click", (e) => alterna(e.currentTarget, $("#ant")));
+
+  // avisos da barra de baixo
+  const pop = $("#pop"), btA = $("#bt-avisos");
+  function fechaPop() { pop.classList.remove("aberto"); btA.setAttribute("aria-expanded", "false"); }
+  btA.addEventListener("click", (e) => { e.stopPropagation(); const abre = !pop.classList.contains("aberto"); pop.classList.toggle("aberto", abre); btA.setAttribute("aria-expanded", String(abre)); });
+  document.addEventListener("click", (e) => { if (!pop.contains(e.target)) fechaPop(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fechaPop(); });
+
+  // pílulas que sobem: envio e desfazer
+  function toast(html, ms) {
+    const t = document.createElement("div"); t.className = "toast"; t.innerHTML = html;
+    $("#avisos").appendChild(t);
+    const some = () => { t.classList.add("sai"); setTimeout(() => t.remove(), reduz ? 0 : 250); };
+    if (ms) setTimeout(some, ms);
+    return { el: t, some };
+  }
+  $("#bt-enviar").addEventListener("click", async () => {
+    const t = toast('<span class="gira" aria-hidden="true"></span><span>Enviando NF · PC de João</span>');
+    await espera(1800);
+    const h = new Date().toTimeString().slice(0, 5);
+    t.el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ccbf7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Enviado ' + h + '</span>';
+    setTimeout(t.some, reduz ? 0 : 3500);
+  });
+  $("#bt-concluir").addEventListener("click", () => {
+    const antes = tela.dataset.estado;
+    tela.dataset.estado = "falta"; // a faixa se recolhe: a conversa saiu da entrada
+    marcar($("#seg-sit"), "falta");
+    const t = toast('<span>Conversa movida para “NF enviada”</span><span class="tempo" aria-hidden="true"><i></i></span><button type="button" class="bt m">Desfazer</button>');
+    const fim = setTimeout(t.some, 10000);
+    t.el.querySelector("button").addEventListener("click", () => {
+      clearTimeout(fim); t.some(); tela.dataset.estado = antes; marcar($("#seg-sit"), antes);
+    });
+  });
+
+  irPara("depois");
+})();
+</script>
+</body>
+</html>
