@@ -64,6 +64,7 @@ Faça em **lote**, fora do horário de pico, e avise o João antes ([[ADR-01 PCs
 - [ ] CHANGELOG e diário do dia.
 - [ ] **Onde paramos** em [[00 Início]] (data de hoje) e **Pendências** em [[Ideias e pendências]].
 - [ ] [[Onde mexer]] e [[Pastas e arquivos]] se arquivo ou função mudou.
+- [ ] [[Mapa visual do sistema]] (`Mapa do sistema.drawio`) se o fluxo mudou: nova rota, robô, fila ou ligação entre PCs.
 - [ ] Decisão do João → nota em `Decisões (uma por nota)` e linha em [[Decisões]]. Falha séria → [[Incidentes]]. Erro pequeno → [[Problemas resolvidos]].
 - [ ] Mostrar ao João **o que foi testado e o que não foi** (sem esconder).
 

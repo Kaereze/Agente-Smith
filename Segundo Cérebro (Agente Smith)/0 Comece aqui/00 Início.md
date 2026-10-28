@@ -68,7 +68,7 @@ r# Segundo Cérebro — Projeto Notas Fiscais
 > [[Manual do Claude (receitas)]] · [[Armadilhas conhecidas]] · [[Onde mexer]] · [[Como entregar]] · [[Painel em casa]] · [[Dia do administrador]]
 
 > [!cat-mapa] 3 Mapa do projeto — como o sistema é
-> [[Visão geral do projeto]] · [[Pastas e arquivos]] (+ uma nota por pasta) · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
+> [[Visão geral do projeto]] · [[Mapa visual do sistema]] · [[Pastas e arquivos]] (+ uma nota por pasta) · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
 
 > [!cat-historico] 4 Histórico — por que é assim
 > [[Marcos do projeto]] · [[Decisões]] (+ uma nota por decisão) · [[Incidentes]] · [[Problemas resolvidos]] · `Diário/` (um arquivo por dia)
