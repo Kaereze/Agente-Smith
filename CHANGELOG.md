@@ -9,6 +9,26 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.28] — 2026-10-28
+
+Inclui tudo da 2026.10.27.16 (compressão, limpeza do cache, travas de teste), que não chegou a ser etiquetada.
+
+### Mudou
+
+- **Tela do e-mail nova, opção C** (desenho animado aprovado pelo João em 27/10): uma ficha só no topo, em vez de várias caixas empilhadas antes da
+  mensagem. Cabeçalho (nome, prazo, hotel e PC, 2 botões), 4 etapas (Recebido, Dados completos, NF pronta, NF enviada) e uma lista de conferência
+  (certo, falta, ainda não existe) com o que o robô leu. O botão azul principal muda com a situação: **Pedir o que falta**, **Enviar NF** ou
+  **Concluir**. Peça nova `app_ui/pecas/etapas.js` e `etapas.css` (regras em `etapasModelo`, testadas); `resumoFixoHtml` e `desenharLeituraCorreio`
+  em `correio.js` passaram a usá-la. Saíram da leitura: o remetente e os botões Responder repetidos, "Pedido de NF", as caixas "NF já enviada" e
+  "NF enviada" e o **histórico do hóspede** (só a conversa do e-mail fica; "Mostrar mensagens anteriores"). Os avisos da NF enviada viraram linhas
+  da lista (âmbar quando algo não bate). "Ver o formulário completo" continua. E-mails enviados mantêm o cabeçalho antigo.
+- **Barra de baixo só com ícones pequenos:** caixa e não lidos, robô (com o número de problemas), Central, PCs, atualizar, tema e ajuda; o texto
+  virou dica ao passar o mouse. Sem verde (robô com problema em vermelho, rodando em azul).
+
+### Removido
+
+- **Modo Professor** (botão, dicas sob os botões, regras de estilo e a rota `/api/professor`).
+
 ## [2026.10.27.16] — 2026-10-27
 
 ### Mudou

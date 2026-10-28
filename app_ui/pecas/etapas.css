@@ -1,0 +1,55 @@
+/* Peça única: etapas do pedido (27/10/2026, opção C). Paleta da Auditoria: cinzas, azul e âmbar; vermelho só para prazo vencido.
+   Sem verde. Mesmas cores do desenho "Tela do e-mail 2.0". */
+.c-top,.c-lista,.c-fichalin,.c-ficha-tab{--c-azul:#479ef5;--c-azul-tx:#9ccbf7;--c-am:#f0c46a;--c-verm:#ff8d95;--c-mut:#a8a8a8;--c-linha:#3a3a3a;--c-painel:#262626}
+.c-top{position:sticky;top:0;z-index:6;background:var(--c-painel);border-bottom:1px solid var(--c-linha);padding:16px 22px 14px;display:flex;flex-direction:column;gap:14px}
+.c-lin{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.c-lin h2{margin:0;font-size:19px;font-weight:600;color:#f5f5f5}
+.c-onde{font-size:13px;color:var(--c-mut)}
+.c-esp{flex-grow:1}
+.c-prazo{font-size:13px;border-radius:999px;padding:2px 10px;white-space:nowrap;color:#d0d0d0;background:#2f2f2f;border:1px solid #4a4a4a}
+.c-prazo.perto{color:var(--c-am);background:#33290f;border-color:#5c4a1d}
+.c-prazo.vencido{color:var(--c-verm);background:#3a1f22;border-color:#7a343a}
+.c-bt{height:32px;padding:0 14px;border-radius:6px;border:1px solid #4a4a4a;background:transparent;color:#f0f0f0;font-size:13px;white-space:nowrap;cursor:pointer;transition:background .15s,transform .1s}
+.c-bt:hover{background:#303030}.c-bt:active{transform:scale(.97)}
+.c-bt.p{border:0;background:var(--c-azul);color:#0b1b2e;font-weight:600}.c-bt.p:hover{background:#6bb2f8}
+.c-etapas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.c-et{position:relative;padding-top:16px;font-size:12.5px;color:var(--c-mut)}
+.c-et b{display:block;color:#e6e6e6;font-weight:600;font-size:13.5px}
+.c-et.feita b,.c-et.atual b{color:#fff}
+.c-et::before{content:"";position:absolute;top:4px;left:0;right:0;height:3px;border-radius:2px;background:#3a3a3a}
+.c-et::after{content:"";position:absolute;top:4px;left:0;height:3px;width:0;border-radius:2px;background:var(--c-azul)}
+.c-et.feita::after{width:100%}
+.c-et.atual::after{width:100%;background:var(--c-am)}
+.c-et.atual.azul::after{background:var(--c-azul)}
+.c-et.feita.atencao::after{background:var(--c-am)}
+.c-lista{margin:16px 22px 0;border:1px solid var(--c-linha);border-radius:10px;background:var(--c-painel);display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.c-item{display:flex;gap:10px;align-items:flex-start;padding:9px 14px;border-bottom:1px solid var(--c-linha);min-height:48px}
+.c-item:nth-child(odd){border-right:1px solid var(--c-linha)}
+.c-item:nth-last-child(-n+2){border-bottom:0}
+.c-item svg{width:17px;height:17px;flex:none;margin-top:1px}
+.c-item>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.c-item>div span:first-child{font-size:12px;color:var(--c-mut)}
+.c-item>div span:last-child{overflow-wrap:anywhere;color:#f0f0f0}
+.c-item.ok svg{color:var(--c-azul)}.c-item.at svg{color:var(--c-am)}.c-item.na svg{color:#777}
+.c-item.at>div span:last-child{color:var(--c-am)}
+.c-sem{grid-column:1/-1;padding:12px 14px;color:var(--c-mut);font-size:13px}
+.c-fichalin{margin:6px 22px 0;display:flex;justify-content:flex-end}
+.c-ficha{background:none;border:0;color:var(--c-azul-tx);font-size:12.5px;cursor:pointer;padding:4px 0}
+.c-ficha:hover{text-decoration:underline}
+.c-ficha-tab{margin:4px 22px 0;max-height:46vh;overflow:auto}
+.c-ficha-tab .por,.c-ficha-tab h3,.c-ficha-tab .fg-pe{display:none!important}
+/* a conversa logo abaixo */
+.c-msg{padding:18px 22px 0;display:flex;flex-direction:column;gap:6px}
+.c-msg h1{margin:0;font-size:18px;font-weight:600;color:#f5f5f5;letter-spacing:0}
+.c-de{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--c-mut)}
+.c-de .c-fechar{margin-left:auto;background:none;border:0;color:var(--c-azul-tx);font-size:12px;cursor:pointer}
+.c-sit{font-size:12.5px;color:var(--c-mut)}
+.modo-ol .ol-leitura .ol-corpo{padding-left:22px}
+/* animação ao abrir o e-mail: as etapas se enchem e a lista aparece item por item */
+@media (prefers-reduced-motion:no-preference){
+  .c-anim .c-et::after{animation:cEtapa .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.14s + .05s)}
+  .c-anim .c-item{animation:cSobe .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i)*.07s + .35s)}
+}
+@keyframes cEtapa{from{width:0}}
+@keyframes cSobe{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:900px){.c-lista{grid-template-columns:1fr}.c-item:nth-child(odd){border-right:0}.c-item:nth-last-child(-n+2){border-bottom:1px solid var(--c-linha)}.c-item:last-child{border-bottom:0}}

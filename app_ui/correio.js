@@ -126,7 +126,7 @@ function desenharCorreio() {
     (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
     filtroDaListaHtml() + `<span class="ol-ord">Por Data ↓</span>`) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${cx.filtroL ? " · " + esc(FILTROS_LISTA[cx.filtroL][0]) : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
     (naoLidos ? ` · ${naoLidos.toLocaleString("pt-BR")} não lidos` : "") + `</div>`;
-  if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span>Itens: ${lista.length.toLocaleString("pt-BR")}</span><span>Não lidos: ${naoLidos.toLocaleString("pt-BR")}</span>`;
+  if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span title="Itens na caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-7h14l2 7v5H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>${lista.length.toLocaleString("pt-BR")}<i class="so-leitor"> itens</i></span><span title="Não lidos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>${naoLidos.toLocaleString("pt-BR")}<i class="so-leitor"> não lidos</i></span>`;
   $("v-correio").classList.toggle("sem-pastas", !!cx.semPastas);
   // a lista é refeita a cada 15 s: quem estava com o foco numa linha continua nela
   const focada = document.activeElement?.closest?.("#cx-lista .cx-l");
@@ -605,30 +605,28 @@ function dadosDoResumo(e) {
            doc: c(/documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/), pede: c(/informac/, /o que.*nota/, /itens/),
            tit: c(/nome.*titular/, /nome do hospede/, /^hospede/), ci: c(/check.?in/), co: c(/check.?out/) };
 }
-function resumoFixoHtml(e) {
+function resumoFixoHtml(e, entra = false) {
+  // Etapas do pedido (27/10/2026, opção C): ficha única no topo; as regras estão em pecas/etapas.js
   if (e.pasta === "enviado") return "";
-  const r = dadosDoResumo(e), ehForm = (e.classes || []).includes("formulario");
+  const r = dadosDoResumo(e), ehForm = (e.classes || []).includes("formulario"), ped = r.ped;
   const nome = r.tit || (soDigitos(r.doc || "").length === 11 ? r.tom : "") || (ehForm ? r.tom || "Hóspede do formulário" : e.nome || e.de || "");
-  const prazo = prazoInfo(r.ped?.prazo || e.prazo);
+  const c = cx.cobre?.[e.id] && !cx.cobre[e.id].carregando ? cx.cobre[e.id] : null;
+  const alvoH = alvoHistorico(e), h = alvoH ? cx.hist[alvoH.de] : null;
+  const enviadas = (c?.nfs || []).length ? c.nfs.map(n => ({ nf: n.nf, quando: "" })) : (h?.conv?.nfs_enviadas || []).map(v => ({ nf: (v.nfs || []).join(", "), quando: v.quando || "" }));
   const [docF, docT] = r.doc ? valorDoForm("CPF/CNPJ", r.doc) : ["", ""];
   const [datas, diarias] = r.ci && r.co ? valorDoForm("Datas", `${r.ci} → ${r.co}`) : ["", ""];
-  const falta = r.ped && typeof faltaDados === "function" ? faltaDados(r.ped) : [];
-  const chip = (html, cls = "") => `<span class="rf-chip ${cls}">${html}</span>`;
-  const quem = [r.tom, docF ? `${docT || "documento"} ${docF}` : ""].filter(Boolean).join(" · ");
-  const lugar = [e.hotel || r.ped?.hotel || "", datas ? `<b>${esc(datas)}</b>${diarias ? " · " + esc(diarias) : ""}` : ""].filter(Boolean);
-  const chips = r.dados ? (quem ? chip(`Nota no nome de <b>${esc(quem)}</b>`) : chip("Falta: nome e CPF/CNPJ", "falta"))
-      + (r.pede ? chip(`<b>${esc(r.pede)}</b>`) : chip("Falta: o que entra na nota", "falta"))
-      + (lugar.length ? chip(lugar.map((x, i) => i ? x : esc(x)).join(" · ")) : "")
-    : chip("Sem formulário: os dados estão no texto do e-mail", "neutro");
+  const campo = (...t) => r.dados ? campoDoPedido(r.dados, ...t) : "";
+  const partes = ped?.partes > 1 ? ped.partes : campo(/dividida em|quantas vezes/);
+  const m = etapasModelo({
+    hora: e.quando ? String(e.quando).slice(11, 16) : "", falta: ped && typeof faltaDados === "function" ? faltaDados(ped) : [], semFormulario: !r.dados,
+    tom: r.tom, doc: docF, docRot: docT || "CPF / CNPJ", datas, diarias, valor: campo(/valor.*nota/), pede: r.pede,
+    divisao: ped?.dividida || ped?.partes > 1 || (e.quartos?.[0] || e.quartos || 0) >= 2 ? `Dividir em ${partes || 2} notas` : "",
+    reserva: campo(/estada|reserva/), titular: r.tit, notas: e.notas || [], nfsEnviadas: enviadas,
+    situacaoPedido: ped ? situacaoDoPedido(ped) : "", cobre: c, temPedido: !!ped });
+  const onde = [e.hotel || ped?.hotel || "", e.pc ? "PC de " + nomeAgente(e.pc) + (pcOnline(e.pc) ? "" : " (desligado)") : ""].filter(Boolean).join(" · ");
   const podeAbrir = !!r.dados && !ehForm, aberta = podeAbrir && !!cx.fichaAberta;
-  return `<section class="ol-resumo" aria-label="Resumo do hóspede">
-    <div class="rf1"><span class="rf-av" aria-hidden="true">${esc(iniciais(nome))}</span><b class="rf-nome">${esc(nome)}</b>
-      <span class="rf-etq">${etiquetasDoEmail(e)}</span>${prazo ? `<span class="rf-prazo ${prazo.nivel}">prazo: ${esc(prazo.texto)}</span>` : ""}
-      <span class="rf-bts">${falta.length ? `<button type="button" data-pedir-dados="${esc(r.ped.chave)}">Pedir o que falta</button>` : ""}${
-        r.ped ? `<button type="button" data-abrir-ficha="${esc(r.ped.chave)}">Marcar tratativa</button>` : ""}<button type="button" class="p" data-cx-faixa="nf">Enviar NF</button></span></div>
-    <div class="rf2"><span class="rf-rot">Quer</span>${chips}${podeAbrir
-      ? `<button type="button" class="rf-ficha" data-resumo-ficha aria-expanded="${aberta}">${aberta ? "Fechar ficha ▴" : "Ver ficha completa ▾"}</button>` : ""}</div>
-    ${aberta ? `<div class="rf-tab">${formularioHtml(r.dados, e)}</div>` : ""}</section>`;
+  return etapasTelaHtml(m, e, { nome, prazo: prazoInfo(ped?.prazo || e.prazo), onde, chave: ped?.chave || "", entra, podeAbrir, aberta,
+    fichaHtml: aberta ? formularioHtml(r.dados, e) : "" });
 }
 try { cx.fichaAberta = localStorage.getItem("painel.fichaAberta") === "1"; } catch (e) { cx.fichaAberta = false; }
 document.addEventListener("click", ev => {
@@ -800,20 +798,24 @@ function desenharLeituraCorreio() {
   if (!enviado && !robo && !(cx.cobre && cx.cobre[e.id])) setTimeout(() => carregarCobre(e.id), 0);   // NF enviada x o que ele pede
   const entra = cx.animou !== e.id ? " ol-entra" : "";
   cx.animou = e.id;
-  el.innerHTML = `<div class="ol-leitura${entra}">${enviado ? "" : resumoFixoHtml(e) + avisoRepetidoHtml(e)}<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
-      <div class="ol-rem"><span class="ol-av ${robo || enviado ? "robo" : ""}" aria-hidden="true">${esc(enviado ? "↗" : iniciais(nome))}</span>
+  const cab = enviado ? `<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+      <div class="ol-rem"><span class="ol-av robo" aria-hidden="true">↗</span>
         <div class="ol-q"><b>${esc(nome)} ${ender && ender !== nome ? `<small>&lt;${esc(ender)}&gt;</small>` : ""}</b><span><span class="rot-para">Para</span><i>${esc(para)}</i></span>
           ${(e.classes || []).filter(c => CLASSES[c]).length ? `<span>${e.classes.map(etiqueta).join(" ")}</span>` : ""}</div>
         <div class="ol-acoes">${botoes}<time>${esc(dataLonga(e.quando))}</time>
-          <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div>
-      </div>
-    ${onde ? `<p class="ol-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>${esc(onde)}</p>` : ""}
+          <button type="button" class="link" id="cx-fechar" title="Fechar (Esc)" style="font-size:12px">fechar ✕</button></div></div></div>
+    ${onde ? `<p class="ol-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>${esc(onde)}</p>` : ""}`
+    // opção C (27/10/2026): o remetente, "Pedido de NF", PC e os botões repetidos saíram; Responder fica na faixa do topo e no Outlook
+    : `${resumoFixoHtml(e, !!entra)}${avisoRepetidoHtml(e)}<div class="c-msg"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
+      <div class="c-de"><span>${esc(nome)}${ender && ender !== nome ? ` &lt;${esc(ender)}&gt;` : ""} · para ${esc(para)} · ${esc(dataLonga(e.quando))}</span>
+        ${noEspelho && !cinza ? "" : `<span class="c-sit">${cinza ? "Respondido · sai da caixa quando o Outlook do PC dono confirmar" : (PASTAS[e.pasta] || "") + " no Outlook · só leitura"}</span>`}
+        <button type="button" class="c-fechar" id="cx-fechar" title="Fechar (Esc)">fechar ✕</button></div></div>`;
+  el.innerHTML = `<div class="ol-leitura${entra}">${cab}
     ${anexos ? `<div class="ol-anexos">${anexos}</div>` : ""}
     ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
-    ${verificacaoHtml(e)}${avisoNfJaEnviada(h)}${nfCobreHtml(e)}
-    <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div>
-    ${h ? historicoHtml(h, e, alvoH) : ""}</div>`;
+    ${verificacaoHtml(e)}${enviado ? "" : (cx.cobre?.[e.id]?.historico?.itens?.length && !cx.cobre[e.id].nfs?.length ? historicoNfHtml(cx.cobre[e.id]) : "")}
+    <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div></div>`;
 }
 
 // NF já enviada x o que o hóspede pede agora (27/10/2026): nunca tira o e-mail da entrada sozinha; o Concluir é um clique da pessoa

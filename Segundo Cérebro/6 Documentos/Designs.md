@@ -224,6 +224,8 @@ João pediu 4 opções bem diferentes da primeira. Pasta `Opcoes tela do e-mail/
 
 **Escolha do João (27/10/2026): opção C**, com a barra de baixo só em ícones pequenos (caixa 24, não lidos 22, robô com o número de problemas, central, avisos, atualizar, tema; tudo com dica ao passar o mouse e a lista dos avisos num balão). Próximo passo: montar no Painel de demonstração.
 
+**No ar (28/10/2026, versão 2026.10.28):** a opção C virou a tela do e-mail do Painel, com a barra de baixo em ícones; o modo Professor e o histórico do hóspede saíram.
+
 **Simulação junta (27/10/2026):** [[2026-10-27 Simulacao e-mail novo (opcao C).html|Simulação · chega um e-mail novo]]: barra da esquerda, caixa de entrada, leitura da C e barra de ícones; botões para chegar pedido completo, com dado faltando ou resposta de quem já recebeu a NF, e para a NF aparecer na pasta (a etapa acende e o aviso sobe).
 
 ## Só no claude.ai (apresentações e canvas)

@@ -84,6 +84,7 @@ ESPREMIDOS = """() => {
   for (const el of document.querySelectorAll('body *')) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
+    if (el.closest('.so-leitor')) continue;   // texto só para leitor de tela: 1 px de propósito
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || cs.position === 'fixed' && r.width === 0) continue;
     const proprio = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join(' ');
@@ -111,24 +112,28 @@ def test_cada_tela_abre_sem_erro_sem_rolagem_lateral_e_sem_texto_espremido(paine
     confere_a_tela(pagina)
 
 
-def test_e_mail_aberto_com_a_ficha_e_o_bloco_nf_enviada_ocupa_a_largura(painel_demo, pagina):
+def test_e_mail_aberto_mostra_a_ficha_de_etapas_e_nao_as_caixas_antigas(painel_demo, pagina):
     abrir(pagina, painel_demo, "correio")
     pagina.locator(".cx-l").first.click()
-    pagina.wait_for_selector(".ol-leitura", timeout=10000)
-    # os 3 estados do bloco (atenção, tudo bate, pede nova nota), com dados inventados
+    pagina.wait_for_selector(".c-top", timeout=10000)
+    # os 3 estados da NF enviada (dados inventados): tudo confere, não consegui ler, pede nova nota
     casos = {
-        "cb-at": {"nfs": [{"nf": "1552", "pdf": "NF 1552.pdf"}], "avisos_envio": ["1552"], "cobre": None,
-                  "linhas": [{"ok": None, "rotulo": "Nota", "texto": "não consegui ler a NF enviada: confira"}]},
-        "cb-ok": {"nfs": [{"nf": "1552"}], "sugere_concluir": True, "linhas": [{"ok": True, "rotulo": "Datas", "texto": "conferem"}]},
-        "cb-no": {"nfs": [{"nf": "1552"}], "pede_nova": True, "motivos": ["pede estacionamento"], "linhas": []},
+        "ok": {"nfs": [{"nf": "1552", "pdf": "NF 1552.pdf"}], "sugere_concluir": True, "cobre": True, "linhas": []},
+        "ler": {"nfs": [{"nf": "1552"}], "avisos_envio": ["1552"], "cobre": None, "linhas": []},
+        "nova": {"nfs": [{"nf": "1552"}], "pede_nova": True, "cobre": False, "motivos": ["pede estacionamento"], "linhas": []},
     }
-    for classe, cobre in casos.items():
+    for nome, cobre in casos.items():
         pagina.evaluate("c => { const e = (cx.dados.emails || []).find(x => x.id === cx.sel); cx.cobre = {[e.id]: c}; desenharLeituraCorreio(); }", cobre)
-        bloco = pagina.locator(".cx-cobre").first
-        bloco.wait_for(timeout=5000)
-        largura = bloco.evaluate("el => el.getBoundingClientRect().width")
-        pai = bloco.evaluate("el => el.parentElement.getBoundingClientRect().width")
-        assert largura > pai * 0.8, f"bloco {classe} espremido: {largura:.0f} px de {pai:.0f}"
+        pagina.wait_for_selector(".c-lista .c-item", timeout=5000)
+        topo = pagina.locator(".c-top").first
+        largura = topo.evaluate("el => el.getBoundingClientRect().width")
+        pai = topo.evaluate("el => el.parentElement.getBoundingClientRect().width")
+        assert largura > pai * 0.9, f"ficha {nome} espremida: {largura:.0f} px de {pai:.0f}"
+        assert pagina.locator(".c-etapas .c-et").count() == 4 and pagina.locator(".c-lista .c-item").count() == 8
+        assert pagina.locator(".c-top .c-bt.p").inner_text() == "Concluir"   # NF já enviada: o botão principal é Concluir
+    # as caixas e o histórico antigos saíram da leitura
+    for antigo in (".cx-cobre", ".cx-aviso-nf", ".cx-hist", ".ol-resumo"):
+        assert pagina.locator(antigo).count() == 0, f"sobrou {antigo}"
     confere_a_tela(pagina)
 
 

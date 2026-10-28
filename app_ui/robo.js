@@ -285,8 +285,10 @@ function rbChip() {
     : m.avisos.length ? `Robô · ${m.avisos.length} ${m.avisos.length === 1 ? "problema" : "problemas"}` : m.esperando.length ? `Robô · ${m.esperando.length} esperando` : "Robô · tudo certo";
   el.className = "pill rb-chip " + (ruim ? "vm" : m.rodando ? "az" : "ok");
   el.setAttribute("role", "button"); el.tabIndex = 0;
-  el.title = (s.resumo || "") + (s.resposta ? "\n" + s.resposta : "") + "\nClique para ver o que o robô está fazendo";
-  const html = `${m.rodando ? rbGira(11) : ruim ? rbIc("al", 12) : rbIc("ok", 12)}${esc(txt)}`;
+  el.setAttribute("aria-label", txt);
+  el.title = txt + "\n" + (s.resumo || "") + "\nClique para ver o que o robô está fazendo";
+  const robo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5M12 5h.01"/><path d="M9.5 13v.5M14.5 13v.5"/><path d="M9.5 16.5h5"/></svg>';
+  const html = `${m.rodando ? rbGira(13) : robo}${m.avisos.length || !m.ligado ? `<i class="num" aria-hidden="true">${m.ligado ? m.avisos.length : "!"}</i>` : ""}`;
   if (el._html !== html) { el.innerHTML = html; el._html = html; }
 }
 function rbRenderGaveta() {

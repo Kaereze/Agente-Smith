@@ -2171,7 +2171,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     "hoteis": estado.hoteis_por_agente(), "ligacoes": estado.resumo_ligacoes(),
                     "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
                     "admin": e_admin_aqui(estado.cfg, nome_do_agente(), liberado()),
-                    "tema": ler_prefs().get("tema", ""), "professor": ler_prefs().get("professor", True),
+                    "tema": ler_prefs().get("tema", ""),
                 }, comparar=True)
             if url.path == "/api/envio":
                 def ler_status():
@@ -2243,15 +2243,12 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             except ValueError:
                 return self._json({"erro": "JSON inválido"}, 400)
             path = urlparse(self.path).path
-            if getattr(estado, "so_ver", False) and path not in ("/api/professor", "/api/agente", "/api/atualizar"):
+            if getattr(estado, "so_ver", False) and path not in ("/api/agente", "/api/atualizar"):
                 return self._json({"ok": False, "motivo": "Modo casa: só visualização. Faça isso no PC do trabalho."})
             try:
                 if path == "/api/acao":
                     r = estado.registrar(nome_do_agente(), pc, corpo["chave"], corpo["acao"], corpo.get("valor", ""))
                     return self._json(r)
-                if path == "/api/professor":   # modo professor (dicas na tela) ligado/desligado, por PC
-                    salvar_pref("professor", bool(corpo.get("ligado")))
-                    return self._json({"ok": True})
                 if path == "/api/tema":   # tema por PC (claro, escuro ou o do Windows), lembrado depois de reiniciar
                     tema = str(corpo.get("tema", ""))
                     if tema not in TEMAS_OK:

@@ -13,7 +13,7 @@ JS = (UI / "correio.js").read_text(encoding="utf-8")
 
 
 def test_o_aviso_entra_embaixo_do_resumo_e_nao_grava_nada():
-    assert 'resumoFixoHtml(e) + avisoRepetidoHtml(e)' in JS
+    assert 'resumoFixoHtml(e, !!entra)}${avisoRepetidoHtml(e)}' in JS
     corpo = JS.split("function avisoRepetidoHtml(e) {")[1].split("\n}\n")[0]
     assert "data-ver-pedido" in corpo and "data-repetido-comparar" in corpo
     assert "api(" not in corpo   # só tela

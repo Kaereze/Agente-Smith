@@ -11,7 +11,8 @@ PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
 
 
 def test_enviar_nf_azul_no_topo_do_email():
-    assert ".ol-resumo .rf-bts button.p{background:#479ef5!important" in HTML and "#2e7d57" not in HTML
+    ETAPAS = (UI / "pecas" / "etapas.css").read_text(encoding="utf-8")
+    assert ".c-bt.p{border:0;background:var(--c-azul)" in ETAPAS and "#2e7d57" not in HTML
 
 
 def test_ficha_usa_os_formatos_unicos():
