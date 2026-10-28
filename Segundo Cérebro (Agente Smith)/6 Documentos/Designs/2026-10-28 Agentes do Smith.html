@@ -93,7 +93,7 @@ button { font: inherit; color: inherit; }
 .topo { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
 .busca { display: flex; align-items: center; gap: 8px; width: min(340px, 100%); height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--muted); font-size: 13px; }
 .busca svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-.pag { padding: 6px 24px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+.pag { padding: 6px 24px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
 .cab { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
 .cab h1 { margin: 0; font-size: 22px; font-weight: 600; }
 .cab p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -109,14 +109,14 @@ button { font: inherit; color: inherit; }
 .faixa button { background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 12.5px; }
 .faixa button:hover { background: rgba(255,255,255,.08); }
 
-.kps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.kp { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; min-width: 0; }
-.kp small { display: block; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.kp strong { display: block; font-size: 26px; font-weight: 600; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
-.kp span { font-size: 12.5px; color: var(--muted); }
+.kps { display: flex; flex-wrap: wrap; gap: 8px; }
+.kp { display: inline-flex; align-items: baseline; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 14px; }
+.kp small { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.kp strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kp strong em { font-style: normal; font-size: 12px; color: var(--muted); font-weight: 400; }
 .kp.at strong { color: var(--at-fg); } .kp.pa strong { color: var(--pa-fg); }
 
-.grade { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 10px; height: clamp(520px, calc(100vh - 360px), 780px); min-height: 520px; }
+.grade { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 10px; height: clamp(520px, calc(100vh - 270px), 860px); min-height: 520px; }
 .cartao { background: var(--card); border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 .cartao > header { display: flex; flex-wrap: nowrap; gap: 8px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
 .cartao h2 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; }
@@ -134,14 +134,17 @@ button { font: inherit; color: inherit; }
 
 .lista .rolagem { overflow-y: auto; min-height: 0; flex: 1; }
 .tb { width: 100%; border-collapse: collapse; }
-.tb th { position: sticky; top: 0; background: var(--card); text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 9px 14px; border-bottom: 1px solid var(--line); z-index: 1; }
-.tb td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+.tb th { position: sticky; top: 0; background: var(--card); text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 7px 14px; border-bottom: 1px solid var(--line); z-index: 1; }
+.tb td { padding: 6px 14px; line-height: 1.3; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
 .tb tr.l { cursor: pointer; }
 .tb tr.l:hover td { background: var(--sel); }
 .tb tr.l.on td { background: var(--sel); box-shadow: inset 0 1px 0 var(--sel-line), inset 0 -1px 0 var(--sel-line); }
-.tb td small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; line-height: 1.35; }
+.tb td small { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; line-height: 1.3; }
+.tb td small:empty { display: none; }
+.tb td:nth-child(2) { white-space: nowrap; }
+.tb td { vertical-align: middle; }
 .tb .nome { font-weight: 600; }
-.pil { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pil { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 .pil svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .pil.ok { background: var(--ok-bg); color: var(--ok-fg); } .pil.atencao { background: var(--at-bg); color: var(--at-fg); }
 .pil.parado { background: var(--pa-bg); color: var(--pa-fg); } .pil.desligado { background: var(--of-bg); color: var(--of-fg); }
@@ -411,11 +414,9 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     $("resumo").textContent = c.parado + c.atencao === 0
       ? "Tudo em dia: " + ids.length + " agentes, em 4 PCs."
       : (c.atencao ? c.atencao + (c.atencao > 1 ? " pedem" : " pede") + " atenção" : "") + (c.atencao && c.parado ? " e " : "") + (c.parado ? c.parado + (c.parado > 1 ? " estão parados" : " está parado") : "") + ".";
-    $("kps").innerHTML =
-      '<div class="kp"><small>Agentes em dia</small><strong>' + c.ok + '<span style="font-size:14px;color:var(--muted);font-weight:400"> de ' + ids.length + "</span></strong><span>no ritmo esperado</span></div>" +
-      '<div class="kp' + (c.atencao ? " at" : "") + '"><small>Pedem atenção</small><strong>' + c.atencao + "</strong><span>" + (c.atencao ? "fora do ritmo esperado" : "nenhum agora") + "</span></div>" +
-      '<div class="kp' + (c.parado ? " pa" : "") + '"><small>Parados</small><strong>' + c.parado + "</strong><span>" + (c.parado ? "sem sinal fora do ritmo" : "nenhum agora") + "</span></div>" +
-      '<div class="kp"><small>PCs ligados</small><strong>' + (4 - nOff) + '<span style="font-size:14px;color:var(--muted);font-weight:400"> de 4</span></strong><span>' + (nOff ? Object.keys(pcsOff).join(", ") + " fora" : "João, Clara, Cristian, Bernardo") + "</span></div>";
+    function kp(rot, val, de, cls, dica) { return '<div class="kp' + (cls ? " " + cls : "") + '" title="' + dica + '"><small>' + rot + "</small><strong>" + val + (de ? "<em> de " + de + "</em>" : "") + "</strong></div>"; }
+    $("kps").innerHTML = kp("Em dia", c.ok, ids.length, "", "Agentes no ritmo esperado") + kp("Atenção", c.atencao, 0, c.atencao ? "at" : "", "Fora do ritmo esperado") +
+      kp("Parados", c.parado, 0, c.parado ? "pa" : "", "Sem sinal fora do ritmo") + kp("PCs ligados", 4 - nOff, 4, "", nOff ? Object.keys(pcsOff).join(", ") + " fora" : "João, Clara, Cristian e Bernardo");
 
     var f = $("faixa"), itens = linhas.filter(function (l) { return l.g.est !== "ok"; });
     f.className = "faixa" + (itens.length ? " on " + (c.parado ? "vermelha" : "ambar") : "");
@@ -436,7 +437,7 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
       var tr = document.createElement("tr"); tr.className = "l" + (l.id === selecionado ? " on" : ""); tr.dataset.id = l.id; tr.tabIndex = 0;
       var onde = l.a.onde === "4 PCs" && l.g.off ? (4 - l.g.off) + " de 4 PCs" : l.a.onde;
       tr.innerHTML = '<td><span class="nome"></span><small></small></td><td></td><td><span class="pil ' + l.g.est + '">' + glifo(l.g.est) + NOMES[l.g.est] + "</span></td>";
-      tr.children[0].children[0].textContent = l.a.nome; tr.children[0].children[1].textContent = l.g.resumo; tr.children[1].textContent = onde;
+      tr.children[0].children[0].textContent = l.a.nome; tr.children[0].children[1].textContent = l.g.est === "ok" ? "" : l.g.resumo; tr.title = l.g.resumo; tr.children[1].textContent = onde;
       tr.onclick = function () { window.mapaEscolher(l.id); };
       tr.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.mapaEscolher(l.id); } };
       tb.appendChild(tr);
