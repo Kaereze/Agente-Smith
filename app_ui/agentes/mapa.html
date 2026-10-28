@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentes do Smith</title>
+<style>
+/* Layout: janela do Painel (menu de ícones + cartões #242424) com a aba nova; barra de cima só da prévia. */
+:root {
+  --bg: #1f1f1f; --rail: #191919; --card: #242424; --canvas: #1c1c1c; --dot: #303030;
+  --node: #282828; --node-line: #3d3d3d; --node-hover: #313131; --tile: #353535;
+  --text: #f0f0f0; --text2: #d0d0d0; --muted: #a8a8a8; --accent: #479ef5; --accent-t: #6cb8f6;
+  --line: #333333; --panel: #242424; --sel: #3a3a3a; --sel-line: #6b6b6b; --frame: rgba(255,255,255,.04);
+  --f-p: #5aa9ff; --f-m: #ffb454; --f-n: #b69cff; --f-c: #ff7ab6; --f-g: #9aa8ba; --f-ge: #46d3e6; --f-mt: #ff6b6b;
+  --t1: #9aa8ba; --t2: #6f9bff; --t3: #e6b25c; --t4: #a98bf0; --t5: #46d3e6; --t6: #9aa8ba; --t7: #ff7ab6;
+  --note: #3b3321; --note-line: #6e5c2b; --note-text: #f2dfaa; --shadow: 0 4px 12px rgba(0,0,0,.35);
+  --ok-bg: #16324d; --ok-fg: #8cc8fa; --at-bg: #3d3212; --at-fg: #f2c76b; --pa-bg: #3a2326; --pa-fg: #ff8d95; --of-bg: #333333; --of-fg: #b4b4b4;
+  --bar: #0f0f0f; --bar-line: #2c2c2c;
+  --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f3f3f3; --rail: #ececec; --card: #ffffff; --canvas: #f6f7f9; --dot: #d6d9de;
+    --node: #ffffff; --node-line: #cfd3d9; --node-hover: #f4f6f9; --tile: #eceff3;
+    --text: #1f1f1f; --text2: #3a3a3a; --muted: #616161; --accent: #0f6cbd; --accent-t: #0f6cbd;
+    --line: #dcdcdc; --panel: #ffffff; --sel: #e4e8ee; --sel-line: #9aa3b0; --frame: rgba(0,0,0,.03);
+    --f-p: #1a62cc; --f-m: #b36a00; --f-n: #6f47d1; --f-c: #c4256f; --f-g: #5c6b80; --f-ge: #0a7f95; --f-mt: #c22f2f;
+    --t1: #5c6b80; --t2: #2f62d0; --t3: #a8680a; --t4: #6f47d1; --t5: #0a7f95; --t6: #5c6b80; --t7: #c4256f;
+    --note: #fff4cc; --note-line: #d9bd5a; --note-text: #4a3b0c; --shadow: 0 3px 10px rgba(30,40,60,.12);
+    --ok-bg: #dcebfb; --ok-fg: #0b4a8f; --at-bg: #fbeec2; --at-fg: #6b4e00; --pa-bg: #fde0e3; --pa-fg: #9c1c28; --of-bg: #e6e6e6; --of-fg: #555555;
+    --bar: #dedede; --bar-line: #c8c8c8; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f3f3f3; --rail: #ececec; --card: #ffffff; --canvas: #f6f7f9; --dot: #d6d9de;
+  --node: #ffffff; --node-line: #cfd3d9; --node-hover: #f4f6f9; --tile: #eceff3;
+  --text: #1f1f1f; --text2: #3a3a3a; --muted: #616161; --accent: #0f6cbd; --accent-t: #0f6cbd;
+  --line: #dcdcdc; --panel: #ffffff; --sel: #e4e8ee; --sel-line: #9aa3b0; --frame: rgba(0,0,0,.03);
+  --f-p: #1a62cc; --f-m: #b36a00; --f-n: #6f47d1; --f-c: #c4256f; --f-g: #5c6b80; --f-ge: #0a7f95; --f-mt: #c22f2f;
+  --t1: #5c6b80; --t2: #2f62d0; --t3: #a8680a; --t4: #6f47d1; --t5: #0a7f95; --t6: #5c6b80; --t7: #c4256f;
+  --note: #fff4cc; --note-line: #d9bd5a; --note-text: #4a3b0c; --shadow: 0 3px 10px rgba(30,40,60,.12);
+  --ok-bg: #dcebfb; --ok-fg: #0b4a8f; --at-bg: #fbeec2; --at-fg: #6b4e00; --pa-bg: #fde0e3; --pa-fg: #9c1c28; --of-bg: #e6e6e6; --of-fg: #555555;
+  --bar: #dedede; --bar-line: #c8c8c8; color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1f1f1f; --rail: #191919; --card: #242424; --canvas: #1c1c1c; --dot: #303030;
+  --node: #282828; --node-line: #3d3d3d; --node-hover: #313131; --tile: #353535;
+  --text: #f0f0f0; --text2: #d0d0d0; --muted: #a8a8a8; --accent: #479ef5; --accent-t: #6cb8f6;
+  --line: #333333; --panel: #242424; --sel: #3a3a3a; --sel-line: #6b6b6b; --frame: rgba(255,255,255,.04);
+  --f-p: #5aa9ff; --f-m: #ffb454; --f-n: #b69cff; --f-c: #ff7ab6; --f-g: #9aa8ba; --f-ge: #46d3e6; --f-mt: #ff6b6b;
+  --t1: #9aa8ba; --t2: #6f9bff; --t3: #e6b25c; --t4: #a98bf0; --t5: #46d3e6; --t6: #9aa8ba; --t7: #ff7ab6;
+  --note: #3b3321; --note-line: #6e5c2b; --note-text: #f2dfaa; --shadow: 0 4px 12px rgba(0,0,0,.35);
+  --ok-bg: #16324d; --ok-fg: #8cc8fa; --at-bg: #3d3212; --at-fg: #f2c76b; --pa-bg: #3a2326; --pa-fg: #ff8d95; --of-bg: #333333; --of-fg: #b4b4b4;
+  --bar: #0f0f0f; --bar-line: #2c2c2c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* barra só da prévia */
+.pv { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 8px 16px; background: var(--bar); border-bottom: 1px solid var(--bar-line); font-size: 12.5px; }
+.pv b { font-weight: 600; }
+.pv .grp { display: flex; align-items: center; gap: 6px; }
+.pv .grp > span { color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--card); border: 0; padding: 5px 11px; cursor: pointer; font-size: 12.5px; color: var(--text2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: #173b63; color: #fff; }
+:root[data-theme="light"] .seg button[aria-pressed="true"], :root:not([data-theme="dark"]) .seg button[aria-pressed="true"] { }
+.pv .dica-pv { margin-left: auto; color: var(--muted); }
+
+/* agentes: painel flutuante minimalista sobre o mapa */
+.ag { position: absolute; left: 12px; top: 62px; bottom: 64px; z-index: 6; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; pointer-events: none; }
+.ag > * { pointer-events: auto; }
+.ag:not(.aberto) .ag-lista { display: none; }
+.ag .ag-dock { display: none; }   /* em espera: só o botão; os agentes aparecem ao clicar nele */
+.ag:not(.aberto) .ag-bt .lb { display: none; }
+.ag-bt { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 9px; cursor: pointer; font-size: 12.5px; box-shadow: var(--shadow); }
+.ag-bt:hover { border-color: var(--sel-line); }
+.ag-bt .g, .ag-l .g { width: 16px; height: 16px; display: grid; place-items: center; flex: none; }
+.ag-bt svg, .ag-l svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.g.ok { color: var(--ok-fg); } .g.atencao { color: var(--at-fg); } .g.parado { color: var(--pa-fg); } .g.desligado { color: var(--of-fg); }
+.ag-bt .cv { transition: transform .2s; width: 12px; height: 12px; fill: none; stroke: var(--muted); stroke-width: 2; }
+.ag-bt[aria-expanded="true"] .cv { transform: rotate(180deg); }
+.ag-lista { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; width: 250px; max-height: 100%; min-height: 0; overflow-y: auto; }
+.ag-l { display: flex; align-items: flex-start; gap: 8px; width: 100%; border: 0; background: transparent; border-radius: 5px; padding: 5px 8px; cursor: pointer; text-align: left; font-size: 12.5px; color: var(--text2); }
+.ag-l .g { margin-top: 1px; }
+.ag-l:hover, .ag-l.on { background: var(--sel); color: var(--text); }
+.ag-l .t { display: flex; flex-direction: column; min-width: 0; }
+.ag-l small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
+.em { display: grid; place-items: center; line-height: 1; }
+.em svg { fill: none; }
+.ag-l .em { width: 20px; flex: none; margin-top: 0; color: var(--text2); }
+.ag-l .em svg { width: 17px; height: 17px; }
+.ag-l:hover .em, .ag-l.on .em { color: var(--text); }
+.ag-l .g { margin-left: auto; }
+.ag-dock { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 100%; }
+.dk { position: relative; width: 38px; height: 38px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; color: var(--text2); cursor: pointer; box-shadow: var(--shadow); opacity: .95; padding: 0; transition: opacity .15s, border-color .15s, transform .15s; }
+.dk .em svg { width: 20px; height: 20px; }
+.dk:hover, .dk:focus-visible, .dk.on { opacity: 1; color: var(--text); border-color: var(--accent); transform: translateX(2px); }
+.dk.on { background: var(--sel); }
+.dk .s { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--canvas); }
+.dk .s svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.dk .s.atencao { background: var(--at-bg); color: var(--at-fg); border-radius: 5px; } .dk .s.parado { background: var(--pa-bg); color: var(--pa-fg); border-radius: 4px; animation: pisca 1.6s ease-in-out infinite; }
+@keyframes pisca { 50% { opacity: .45; } }
+.dk::after { content: attr(data-tip); position: absolute; left: 46px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: var(--card); color: var(--text); border: 1px solid var(--sel-line); border-radius: 6px; padding: 4px 9px; font-size: 12px; font-family: var(--sans); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 7; }
+.dk:hover::after, .dk:focus-visible::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .dk, .dk .s.parado { animation: none; transition: none; } }
+/* janela do Painel */
+.win { display: grid; grid-template-columns: auto 1fr; height: calc(100% - 44px); min-height: 640px; }
+.rail { background: var(--rail); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 10px 8px; gap: 2px; width: 56px; transition: width .22s ease; overflow: hidden; }
+.rail.aberto { width: 232px; }
+.logo { width: 30px; height: 30px; border-radius: 6px; background: #0f6cbd; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 12px; margin: 2px 3px 12px; flex: none; }
+.rot { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 12px 10px 4px; white-space: nowrap; display: none; }
+.rail.aberto .rot { display: block; }
+.sep { height: 1px; background: var(--line); margin: 8px 6px; }
+.rail.aberto .sep { display: none; }
+.it { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--text2); white-space: nowrap; text-align: left; position: relative; }
+.it:hover { background: var(--sel); }
+.it svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.it span { display: none; font-size: 13.5px; }
+.rail.aberto .it span { display: inline; }
+.it.on { background: var(--sel); color: var(--text); box-shadow: inset 0 0 0 1px var(--sel-line); }
+.it.on::before { content: ""; position: absolute; left: -8px; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--accent); }
+.it .nu { margin-left: auto; font-size: 11px; background: #c4314b; color: #fff; border-radius: 9px; padding: 1px 6px; }
+.rail:not(.aberto) .it .nu { display: none; }
+.fim { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+.ava { width: 32px; height: 32px; border-radius: 50%; background: #555; color: #fff; display: grid; place-items: center; font-size: 12px; margin: 6px 2px; flex: none; }
+
+.principal { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.topo { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
+.busca { display: flex; align-items: center; gap: 8px; width: min(340px, 100%); height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--muted); font-size: 13px; }
+.busca svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.pag { padding: 6px 24px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.cab { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.cab h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.cab p { margin: 0; color: var(--muted); font-size: 13px; }
+.cab .ao { margin-left: auto; color: var(--muted); font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
+.cab .ao i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; animation: bate 2s ease-in-out infinite; }
+@keyframes bate { 50% { opacity: .35; } }
+
+.faixa { display: none; border: 1px solid; border-radius: 8px; padding: 10px 14px; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.faixa.on { display: flex; }
+.faixa.vermelha { background: var(--pa-bg); color: var(--pa-fg); border-color: color-mix(in srgb, var(--pa-fg) 40%, transparent); }
+.faixa.ambar { background: var(--at-bg); color: var(--at-fg); border-color: color-mix(in srgb, var(--at-fg) 40%, transparent); }
+.faixa b { font-weight: 600; }
+.faixa button { background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 12.5px; }
+.faixa button:hover { background: rgba(255,255,255,.08); }
+
+.kps { display: flex; flex-wrap: wrap; gap: 8px; }
+.kp { display: inline-flex; align-items: baseline; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px 14px; }
+.kp small { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.kp strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kp strong em { font-style: normal; font-size: 12px; color: var(--muted); font-weight: 400; }
+.kp.at strong { color: var(--at-fg); } .kp.pa strong { color: var(--pa-fg); }
+
+.grade { display: flex; flex-direction: column; flex: 1; min-height: 480px; }
+.cartao.mapa { flex: 1; position: relative; }
+.cartao { background: var(--card); border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.cartao > header { display: flex; flex-wrap: nowrap; gap: 8px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.cartao h2 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.zoom button { white-space: nowrap; }
+.cartao .sub { color: var(--muted); font-size: 12.5px; }
+.chips { display: flex; gap: 5px; flex-wrap: nowrap; margin-left: auto; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.chip { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer; background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--text2); }
+.chip i { width: 14px; height: 3px; border-radius: 2px; background: var(--c, var(--muted)); display: block; }
+.chip:hover { border-color: var(--sel-line); }
+.chip[aria-pressed="true"] { background: #173b63; color: #fff; border-color: #173b63; }
+.zoom { display: flex; gap: 4px; }
+.zoom button { background: var(--card); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; padding: 4px 10px; font-size: 12.5px; min-width: 30px; }
+.zoom button:hover { background: var(--sel); }
+.cartao .stage { flex: 1; min-height: 0; }
+
+.lista .rolagem { overflow-y: auto; min-height: 0; flex: 1; }
+.tb { width: 100%; border-collapse: collapse; }
+.tb th { position: sticky; top: 0; background: var(--card); text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 7px 14px; border-bottom: 1px solid var(--line); z-index: 1; }
+.tb td { padding: 6px 14px; line-height: 1.3; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+.tb tr.l { cursor: pointer; }
+.tb tr.l:hover td { background: var(--sel); }
+.tb tr.l.on td { background: var(--sel); box-shadow: inset 0 1px 0 var(--sel-line), inset 0 -1px 0 var(--sel-line); }
+.tb td small { display: block; color: var(--muted); font-size: 12px; margin-top: 1px; line-height: 1.3; }
+.tb td small:empty { display: none; }
+.tb td:nth-child(2) { white-space: nowrap; }
+.tb td { vertical-align: middle; }
+.tb .nome { font-weight: 600; }
+.pil { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pil svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.pil.ok { background: var(--ok-bg); color: var(--ok-fg); } .pil.atencao { background: var(--at-bg); color: var(--at-fg); }
+.pil.parado { background: var(--pa-bg); color: var(--pa-fg); } .pil.desligado { background: var(--of-bg); color: var(--of-fg); }
+.rod { display: flex; align-items: center; gap: 10px; padding: 7px 16px; border-top: 1px solid var(--line); background: var(--rail); font-size: 12px; color: var(--muted); }
+.rod .sel-ro { margin-left: auto; }
+.st { position: absolute; right: -8px; top: -8px; width: 22px; height: 22px; transform: scale(clamp(1, calc(1 / var(--z, 1)), 2.8)); transform-origin: 100% 0; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--canvas); z-index: 3; }
+.st svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.st.ok { background: var(--ok-bg); color: var(--ok-fg); } .st.atencao { background: var(--at-bg); color: var(--at-fg); border-radius: 6px; }
+.st.parado { background: var(--pa-bg); color: var(--pa-fg); border-radius: 4px; } .st.desligado { background: var(--of-bg); color: var(--of-fg); }
+.agora-pc { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px; }
+.agora-pc small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+@media (max-width: 1180px) { .ag { max-width: 230px; } }
+@media (max-width: 760px) { .win { grid-template-columns: 1fr; } .rail { display: none; } }
+@media (prefers-reduced-motion: reduce) { .cab .ao i { animation: none; } .rail { transition: none; } }
+
+/* área de trabalho */
+.stage { position: relative; overflow: hidden; background-color: var(--canvas); touch-action: none; cursor: grab; min-height: 0; }
+.stage.pan { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; width: 6000px; height: 5000px; transform-origin: 0 0; }
+.world.anim { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+.frame {
+  position: absolute; border: 1px dashed color-mix(in srgb, var(--t) 38%, transparent); background: color-mix(in srgb, var(--t) 7%, transparent); border-radius: 14px; pointer-events: none;
+}
+.frame b {
+  position: absolute; left: 18px; top: 14px; font-weight: 600; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: color-mix(in srgb, var(--t) 70%, var(--text));
+}
+svg.edges { position: absolute; left: 0; top: 0; width: 6000px; height: 5000px; overflow: visible; pointer-events: none; }
+.base { fill: none; stroke: var(--c); stroke-width: 1.8; opacity: .26; }
+.flow { display: none; fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1 12; opacity: .55; animation: corre 1.2s linear infinite; }
+@keyframes corre { to { stroke-dashoffset: -14; } }
+.edge.dim .base { opacity: .05; }
+.edge.ap { display: none; }
+.edge.ap.hot { display: inline; }
+.edge.ap .base { stroke-dasharray: 4 5; stroke-width: 1.5; opacity: .75; }
+.edge.ap .flow, .edge.ap .pk { display: none; }
+.edge.dim .flow { opacity: 0; }
+.pk { fill: var(--c); stroke: var(--node); stroke-width: 1.5; }
+.edge.dim .pk { opacity: 0; }
+.edge.hot .pk { filter: drop-shadow(0 0 4px var(--c)); }
+.edge.hot .base { opacity: .8; stroke-width: 2.6; }
+.edge.hot .flow { display: inline; stroke-width: 4; }
+.lbl {
+  position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 13px; padding: 3px 9px; border-radius: 11px;
+  background: var(--node); border: 1px solid var(--c); color: var(--text); pointer-events: none; display: none;
+}
+.world.zoomed .lbl { display: block; }
+.lbl.dim { opacity: .15; }
+.world:not(.zoomed) .lbl.show { display: block; }
+.node {
+  position: absolute; width: 240px; height: 92px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: start;
+  padding: 10px 11px; background: var(--node); border: 1px solid var(--node-line); border-radius: 10px; box-shadow: var(--shadow);
+  cursor: pointer; text-align: left;
+}
+.node:hover { background: var(--node-hover); border-color: var(--accent); }
+.node.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.node.dim { opacity: .28; }
+.tile { width: 44px; height: 44px; border-radius: 10px; background: var(--tile); display: grid; place-items: center; margin-top: 12px; }
+.tile svg { width: 24px; height: 24px; fill: none; stroke: var(--text); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kind { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; display: flex; justify-content: space-between; gap: 6px; }
+.kind em { font-style: normal; font-family: var(--mono); letter-spacing: 0; text-transform: none; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt { font-weight: 600; font-size: 13.5px; line-height: 1.22; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ss { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--canvas); border: 2px solid var(--node-line); }
+.node.sel .port, .node:hover .port { border-color: var(--accent); }
+.nota {
+  position: absolute; width: 270px; padding: 12px 14px; background: var(--note); border: 1px solid var(--note-line); color: var(--note-text);
+  border-radius: 4px; box-shadow: var(--shadow); font-size: 12.5px; line-height: 1.45;
+}
+.nota b { display: block; margin-bottom: 4px; font-size: 13px; }
+
+/* menus flutuantes */
+.zonas {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: calc(100% - 24px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; z-index: 5;
+}
+.zonas span { color: var(--muted); font-size: 12px; margin-right: 2px; }
+.dica {
+  position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 12px; color: var(--muted); font-size: 12px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; z-index: 5; max-width: 330px;
+}
+.stage.com-painel .dica { display: none; }
+
+/* painel de detalhes */
+.painel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(360px, 100%); background: var(--panel); border-left: 1px solid var(--line);
+  transform: translateX(105%); transition: transform .25s ease; z-index: 8; display: flex; flex-direction: column; min-height: 0;
+}
+.painel.on { transform: none; }
+.painel header { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.painel header .tile { margin: 0; flex: none; }
+.painel h2 { margin: 0; font-size: 16px; font-weight: 600; text-wrap: balance; }
+.painel header p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+.fechar { margin-left: auto; background: transparent; border: 1px solid var(--line); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; flex: none; }
+.corpo { overflow-y: auto; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.corpo h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.corpo p { margin: 0; line-height: 1.5; font-size: 13.5px; max-width: 62ch; }
+.corpo ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; }
+.mono { font-family: var(--mono); font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
+.liga { display: flex; flex-direction: column; gap: 5px; }
+.liga button {
+  display: grid; grid-template-columns: 22px 1fr; gap: 6px; text-align: left; background: var(--node); border: 1px solid var(--node-line); border-radius: 6px; padding: 7px 9px;
+  cursor: pointer; font-size: 12.5px;
+}
+.liga button:hover { border-color: var(--accent); }
+.liga small { display: block; color: var(--muted); font-size: 11.5px; }
+.liga i { font-style: normal; color: var(--c); font-weight: 600; }
+@media (max-width: 760px) {
+  .painel { top: auto; width: 100%; height: 62%; border-left: 0; border-top: 1px solid var(--line); transform: translateY(105%); border-radius: 12px 12px 0 0; }
+  .painel.on { transform: none; }
+  .zonas { bottom: 8px; }
+  .dica { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow { animation: none; stroke-dasharray: 5 7; }
+  .world.anim, .painel { transition: none; }
+}
+
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; overflow: hidden; }
+.pag { flex: 1; min-height: 0; padding-top: 14px; }
+.pil.semdado { background: var(--of-bg); color: var(--of-fg); }
+.g.semdado { color: var(--muted); }
+.ag-l small, .faixa { max-width: 100%; }
+</style>
+</head>
+<body>
+<div class="pag" id="pag">
+      <div class="cab">
+        <h1>Agentes do Smith</h1>
+        <p id="resumo"></p>
+        <span class="ao"><i></i><span id="ao-txt">Atualizado há 4 s</span></span>
+      </div>
+      <div class="faixa" id="faixa" role="status"></div>
+      <div class="grade">
+        <section class="cartao mapa" aria-label="Mapa do sistema">
+          <header>
+            <h2>Mapa do sistema</h2>
+            <div class="chips" id="chips" role="group" aria-label="Destacar um caminho"></div>
+            <div class="zoom" role="group" aria-label="Zoom"><button id="zmenos" aria-label="Afastar">−</button><button id="zmais" aria-label="Aproximar">+</button><button id="zfit">Ver tudo</button></div>
+          </header>
+          <main class="stage" id="stage" aria-label="Diagrama do sistema, arraste para mover">
+    <div class="world" id="world">
+      <div id="frames"></div>
+      <svg class="edges" id="edges" aria-hidden="true"><defs id="defs"></defs></svg>
+      <div id="labels"></div>
+      <div id="nodes"></div>
+    </div>
+    <div class="zonas" id="zonas"><span>Ir para:</span></div>
+    <div class="dica">Arraste para mover, role para dar zoom. Clique num bloco para ver o que ele faz. Escolha um caminho em cima para acender só ele.</div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </main>
+        <div class="ag" id="ag">
+          <button class="ag-bt" id="ag-bt" type="button" aria-expanded="false" aria-controls="ag-lista"></button>
+          <div class="ag-dock" id="ag-dock" role="group" aria-label="Agentes em espera"></div>
+          <div class="ag-lista" id="ag-lista"></div>
+        </div>
+        </section>
+      </div>
+    </div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var NOMES = { ok: "Em dia", atencao: "Atenção", parado: "Parado", desligado: "PC desligado", semdado: "Sem sinal ao vivo" };
+  var GLIFO = {
+    ok: '<path d="m5 12 4.5 4.5L19 7"/>',
+    atencao: '<path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17.5h.01"/>',
+    parado: '<path d="m6 6 12 12M18 6 6 18"/>',
+    desligado: '<path d="M12 3v8M7 6.5a8 8 0 1 0 10 0"/>',
+    semdado: '<path d="M6 12h12"/>'
+  };
+  var glifo = function (e) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + GLIFO[e] + "</svg>"; };
+  var ICONE = {"vigia_formularios": "i-form", "sincronizar": "i-copiar", "main": "i-enviar", "envio_pc_dono": "i-enc", "vigia_outlook": "i-olho", "outlook_vivo": "i-caixa", "conferente": "i-nf", "confirmar_nfs": "i-busca", "espelho_emails": "i-log", "indice_emails": "i-cal", "nf_achadas": "i-busca", "aviso_certificado": "i-mao", "rede_local": "i-gente", "rede_pcs": "i-resp", "saude": "i-cadeado", "atualizador": "i-sync", "faxina": "i-lixo", "app_servidor": "i-painel", "painel_metricas": "i-hotel"};   // ícones do próprio Painel (app_ui/index.html, símbolos i-*)
+  var ICONES_PAINEL = {"i-form": "<path d=\"M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/>", "i-mao": "<circle cx=\"12\" cy=\"8\" r=\"3.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/><path d=\"M5 20c1-4 4-6 7-6s6 2 7 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>", "i-copiar": "<path d=\"M8 8h11v12H8zM5 16V4h11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-nf": "<path d=\"M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-busca": "<circle cx=\"11\" cy=\"11\" r=\"6.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"m16 16 4.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>", "i-lixo": "<path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-enc": "<path d=\"M14 7l6 5-6 5M20 12H10a6 6 0 0 0-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-cadeado": "<path d=\"M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-resp": "<path d=\"M10 7 4 12l6 5M4 12h10a6 6 0 0 1 6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-hotel": "<path d=\"M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2M2 21h20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-caixa": "<path d=\"M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-enviar": "<path d=\"M4 12 20 4l-6 16-3-7z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-cal": "<path d=\"M4 6h16v14H4zM4 10h16M8 3v4M16 3v4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-painel": "<path d=\"M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-gente": "<circle cx=\"9\" cy=\"8\" r=\"3.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/><path d=\"M3.5 19c.8-3.3 3-5 5.5-5s4.7 1.7 5.5 5M15.5 5.2a3 3 0 0 1 0 5.6M17.5 14c1.6.6 2.7 2.2 3 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>", "i-olho": "<path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/>", "i-sync": "<path d=\"M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15m0 5v-5h-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-log": "<path d=\"M4 6h16M4 12h10M4 18h13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>"};
+  var icoP = function (id) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES_PAINEL[ICONE[id]] || "") + "</svg>"; };
+
+  /* Os agentes que rodam sozinhos (id = nome do módulo em src/). O estado de cada um vem de /api/agentes; quem o Painel ainda não
+     consegue medir aparece como "sem sinal ao vivo", nunca com um estado inventado. */
+  var AG = [
+    ["vigia_formularios", "Vigia de formulários", "a cada 10 s", "João"],
+    ["sincronizar", "Cópia para a Central", "a cada 10 min", "João"],
+    ["main", "Robô de envio", "a cada 10 min", "João"],
+    ["envio_pc_dono", "Envio pelo PC dono", "quando há pedido", "João"],
+    ["vigia_outlook", "Vigia do Outlook", "a cada 20 s", "4 PCs"],
+    ["outlook_vivo", "Guardião do Outlook", "a cada 60 s", "4 PCs"],
+    ["conferente", "Conferente", "a cada 1 a 2 min", "4 PCs"],
+    ["confirmar_nfs", "Confirmação de NFs", "a cada volta", "4 PCs"],
+    ["espelho_emails", "Espelho de e-mails", "quando muda", "4 PCs"],
+    ["indice_emails", "Índice local de e-mails", "contínuo", "4 PCs"],
+    ["nf_achadas", "Notas achadas", "a cada 45 s", "4 PCs"],
+    ["aviso_certificado", "Aviso de segurança do Outlook", "automático", "4 PCs"],
+    ["rede_local", "Rede local do escritório", "sempre ligada", "4 PCs"],
+    ["rede_pcs", "Recados entre PCs", "a cada 1 min", "4 PCs"],
+    ["saude", "Saúde do sistema", "contínuo", "4 PCs"],
+    ["atualizador", "Atualizador de versão", "a cada poucos min", "4 PCs"],
+    ["faxina", "Faxina diária", "1 vez por dia", "João"],
+    ["app_servidor", "Servidor do Painel", "a cada 15 s", "4 PCs"],
+    ["painel_metricas", "Números da Gerência", "a cada 5 min", "4 PCs"]
+  ];
+  var LIVE = {}, selecionado = null, resposta = null, quando = 0, falhou = false;
+  var PESO = { semdado: -1, ok: 0, desligado: 0, atencao: 2, parado: 3 };
+
+  function montar(dados) {
+    LIVE = {};
+    AG.forEach(function (a) {
+      var s = dados && dados.agentes ? dados.agentes[a[0]] : null;
+      LIVE[a[0]] = { nome: a[1], cada: a[2], onde: a[3],
+        pcs: s && s.length ? s : [{ pc: a[3] === "4 PCs" ? "Todos os PCs" : a[3], est: "semdado", texto: "O Painel ainda não recebe sinal ao vivo deste agente." }] };
+    });
+  }
+  function agregado(a) {
+    var pior = "semdado", off = 0;
+    a.pcs.forEach(function (x) {
+      if (x.est === "desligado") off++;
+      if (PESO[x.est] > PESO[pior]) pior = x.est;
+    });
+    var resumo;
+    if (pior === "ok") {
+      var fora = a.pcs.filter(function (x) { return x.est === "desligado"; }).map(function (x) { return x.pc; });
+      resumo = a.pcs.length > 1 ? "Em dia em " + (a.pcs.length - off) + " de " + a.pcs.length + " PCs" + (fora.length ? " (" + fora.join(", ") + " desligado)" : "") + ". " + a.cada + "." : a.pcs[0].texto;
+    } else if (pior === "semdado") resumo = a.pcs[0].texto;
+    else resumo = a.pcs.filter(function (x) { return x.est !== "ok" && x.est !== "semdado"; }).map(function (x) { return x.pc + ": " + x.texto; }).join(" · ");
+    return { est: pior, resumo: resumo };
+  }
+
+  window.AGORA_NO = function (n, sec, el) {
+    var a = LIVE[n.id]; if (!a) return;
+    var box = el("div");
+    a.pcs.forEach(function (x) {
+      var d = el("div", "agora-pc");
+      d.appendChild(el("strong", null, a.pcs.length > 1 ? x.pc : (x.est === "semdado" ? "Agora" : "Neste PC (" + x.pc + ")")));
+      var pl = el("span", "pil " + x.est); pl.innerHTML = glifo(x.est) + NOMES[x.est]; d.appendChild(pl);
+      d.appendChild(el("small", null, x.texto));
+      box.appendChild(d);
+    });
+    box.appendChild(el("p", null, "Ritmo esperado: " + a.cada + "."));
+    sec("Agora", box);
+  };
+  window.APLICAR_ESTADO = function () {
+    var nos = window.mapaNos; if (!nos) return;
+    Object.keys(LIVE).forEach(function (id) {
+      var n = nos[id]; if (!n) return;
+      var antigo = n.el.querySelector(".st"); if (antigo) antigo.remove();
+      var g = agregado(LIVE[id]);
+      if (g.est !== "semdado") {
+        var s = document.createElement("span");
+        s.className = "st " + g.est; s.title = NOMES[g.est] + ": " + g.resumo; s.innerHTML = glifo(g.est); n.el.appendChild(s);
+      }
+      var tile = n.el.querySelector(".tile"); if (tile && ICONE[id]) tile.innerHTML = icoP(id);
+    });
+  };
+
+  function desenhar() {
+    var ids = Object.keys(LIVE);
+    var linhas = ids.map(function (id) { return { id: id, a: LIVE[id], g: agregado(LIVE[id]) }; });
+    var c = { ok: 0, atencao: 0, parado: 0, semdado: 0 };
+    linhas.forEach(function (l) { c[l.g.est]++; });
+    var com = c.ok + c.atencao + c.parado;
+    var ligados = resposta ? resposta.pcs_ligados + " de " + resposta.pcs_total + " PCs ligados." : "";
+    var txt;
+    if (!resposta) txt = falhou ? "Não consegui ler o estado dos PCs agora." : "Lendo o estado dos PCs…";
+    else if (c.atencao + c.parado === 0) txt = (com ? "Tudo em dia: " + com + " agentes com sinal ao vivo. " : "") + c.semdado + " ainda sem sinal. " + ligados;
+    else txt = (c.atencao ? c.atencao + (c.atencao > 1 ? " pedem" : " pede") + " atenção" : "") + (c.atencao && c.parado ? " e " : "") + (c.parado ? c.parado + (c.parado > 1 ? " estão parados" : " está parado") : "") + ". " + c.semdado + " ainda sem sinal. " + ligados;
+    $("resumo").textContent = txt;
+
+    var f = $("faixa"), itens = linhas.filter(function (l) { return l.g.est === "atencao" || l.g.est === "parado"; });
+    f.className = "faixa" + (itens.length ? " on " + (c.parado ? "vermelha" : "ambar") : "");
+    f.innerHTML = "";
+    if (itens.length) {
+      var b = document.createElement("b"); b.textContent = c.parado ? "Precisa de você:" : "Atenção:"; f.appendChild(b);
+      itens.slice(0, 3).forEach(function (l) {
+        var bt = document.createElement("button"); bt.type = "button"; bt.textContent = l.a.nome + " (ver no mapa)";
+        bt.onclick = function () { window.mapaEscolher(l.id); }; f.appendChild(bt);
+      });
+    }
+
+    var ordem = { parado: 0, atencao: 1, ok: 2, semdado: 3 };
+    linhas.sort(function (x, y) { return ordem[x.g.est] - ordem[y.g.est] || x.a.nome.localeCompare(y.a.nome, "pt"); });
+    var lista = $("ag-lista"); lista.innerHTML = "";
+    linhas.forEach(function (l) {
+      var bt = document.createElement("button"); bt.type = "button"; bt.className = "ag-l" + (l.id === selecionado ? " on" : ""); bt.dataset.id = l.id; bt.title = l.g.resumo;
+      bt.innerHTML = '<span class="em"></span><span class="t"><span></span><small></small></span><span class="g ' + l.g.est + '">' + glifo(l.g.est) + "</span>";
+      bt.querySelector(".em").innerHTML = icoP(l.id); bt.querySelector(".t span").textContent = l.a.nome;
+      var sm = bt.querySelector("small"); if (l.g.est === "ok" || l.g.est === "semdado") sm.remove(); else sm.textContent = l.g.resumo;
+      bt.onclick = function () { window.mapaEscolher(l.id); };
+      lista.appendChild(bt);
+    });
+    var pior = c.parado ? "parado" : (c.atencao ? "atencao" : (com ? "ok" : "semdado"));
+    var rot = !resposta ? "Agentes" : (c.parado + c.atencao === 0 ? "Agentes · " + c.ok + " em dia" + (c.semdado ? ", " + c.semdado + " sem sinal" : "")
+      : "Agentes · " + (c.parado ? c.parado + " parado" + (c.parado > 1 ? "s" : "") : "") + (c.parado && c.atencao ? ", " : "") + (c.atencao ? c.atencao + " em atenção" : ""));
+    var abt = $("ag-bt"); abt.title = rot; abt.setAttribute("aria-label", rot);
+    abt.innerHTML = '<span class="g ' + pior + '">' + glifo(pior) + '</span><span class="lb">' + rot + '</span><svg class="cv" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  }
+  window.aoEscolherNo = function (id) {
+    selecionado = id;
+    document.querySelectorAll("#ag-lista .ag-l").forEach(function (b) { b.classList.toggle("on", b.dataset.id === id); });
+  };
+  $("ag-bt").onclick = function () { var b = $("ag-bt"), ab = b.getAttribute("aria-expanded") === "true"; b.setAttribute("aria-expanded", String(!ab)); $("ag").classList.toggle("aberto", !ab); };
+
+  function relogio() {
+    $("ao-txt").textContent = !quando ? "Lendo…" : "Atualizado há " + Math.max(0, Math.round((Date.now() - quando) / 1000)) + " s";
+  }
+  function carregar() {
+    if (document.hidden) return;
+    fetch("/api/agentes", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (d) {
+      resposta = d; quando = Date.now(); falhou = false; montar(d); desenhar();
+      if (window.APLICAR_ESTADO) window.APLICAR_ESTADO();
+      if (selecionado && window.mapaEscolher) window.mapaEscolher(selecionado);
+    }).catch(function () { falhou = true; desenhar(); });
+  }
+  /* o quadro herda o tema do Painel (o Painel marca data-theme na página dele) */
+  try {
+    var raiz = parent.document.documentElement, tema = function () {
+      var v = raiz.getAttribute("data-theme");
+      if (v) document.documentElement.setAttribute("data-theme", v); else document.documentElement.removeAttribute("data-theme");
+    };
+    tema(); new MutationObserver(tema).observe(raiz, { attributes: true, attributeFilter: ["data-theme"] });
+  } catch (e) { /* sem acesso à página de fora: segue o tema do Windows */ }
+
+  montar(null); desenhar(); relogio();
+  setInterval(relogio, 1000); setInterval(carregar, 15000);
+  window.addEventListener("load", function () { if (window.APLICAR_ESTADO) window.APLICAR_ESTADO(); carregar(); });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var PROD = ["hospede>form","form>planhot","planhot>vigia_formularios","planhot>sincronizar","vigia_formularios>c_hot","sincronizar>c_hot","c_hot>main","c_cad>main","main>montar_email","montar_email>outlook","main>outlook","outlook>outlook_app","outlook_app>kinghost","kinghost>outlook_app","outlook_app>itens","itens>main","main>planhot","outlook_app>espelho_emails","espelho_emails>c_cor","c_cor>correio","correio>app_servidor","app_servidor>edge_win","edge_win>index_html","index_html>correio_js","correio_js>acoes","acoes>app_servidor","dropbox>nf_achadas","nf_achadas>app_servidor","outlook_app>conferente","conferente>confirmar_nfs","dropbox>confirmar_nfs","confirmar_nfs>c_trat","c_trat>app_dados","app_dados>app_servidor","acoes>envio_nf","envio_nf>outlook","kinghost>hospdest"], PRODSET = {};
+  PROD.forEach(function (p) { PRODSET[p] = 1; });
+  var W = 240, H = 92;
+  var X = function (k) { return 60 + k * 470; };
+  var Y = function (r) { return 60 + r * 150; };
+
+  var FLOWS = [{"id":"prod","nome":"Produção de ponta a ponta"},{"id":"p","nome":"Pedido do hóspede até o e-mail ao hotel"},{"id":"m","nome":"E-mails, Outlook e telas"},{"id":"n","nome":"Nota fiscal e envio ao hóspede"},{"id":"c","nome":"Os 4 PCs entre si"},{"id":"g","nome":"Código, testes e atualização"},{"id":"ge","nome":"Números da Gerência"},{"id":"mt","nome":"Faxina e saúde"},{"id":"ins","nome":"Instalar e manter os PCs"},{"id":"ap","nome":"Quem usa quem (dependências)"}];
+
+  var ICONS = {
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+    form: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    sheet: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/>',
+    eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    bot: '<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4M9 13h.01M15 13h.01M9 16.5h6"/>',
+    route: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/>',
+    mirror: '<rect x="3" y="5" width="8" height="14" rx="1.5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/>',
+    db: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/>',
+    code: '<path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+    git: '<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 8v8M18 11c0 4-6 3-12 5"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',
+    broom: '<path d="M14 3l7 7M13 8l3 3-7 8c-2 2-5 2-6 1 1-1 2-3 3-5z"/>',
+    server: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+    pulse: '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    hand: '<path d="M8 13V6a1.5 1.5 0 0 1 3 0v6M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6.5a1.5 1.5 0 0 1 3 0V15c0 4-2 6-5 6-3 0-4.500-1.500-6-4.500L4 13.500a1.500 1.500 0 0 1 2.500-1.500L8 14"/>',
+    send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    download: '<path d="M12 4v11M7 11l5 5 5-5M4 20h16"/>'
+  };
+
+  /* ---------------------------------------------------------------- blocos */
+  var N = [{"id":"hospede","k":0,"r":0,"kind":"Gatilho","icon":"user","t":"Hóspede pede a nota","s":"Preenche o formulário do hotel","tag":"início","roda":"Fora do sistema","det":"Tudo começa quando o hóspede, ou o hotel por ele, preenche o formulário de nota fiscal. O pedido também pode vir por e-mail ou por ligação; a ligação o agente marca à mão no Painel.","code":"","regras":["Para emitir é preciso nome, CPF ou CNPJ e o que entra na nota: diárias, consumo ou estacionamento."]},{"id":"form","k":0,"r":1,"kind":"Fonte","icon":"form","t":"Formulário de NF (Google Forms)","s":"Antigo (36 col.) e novo (18 col.)","tag":"2 versões","roda":"Google","det":"Cada hotel tem o seu formulário. O antigo tem 36 colunas; o novo tem 18, com documento do tomador, check-in e check-out e valor. A resposta cai numa planilha do hotel no Drive.","code":"src/sincronizar.py (juntar_planilhas)","regras":["A cópia junta as duas versões na mesma aba da Central do hotel."]},{"id":"emailh","k":0,"r":2.5,"kind":"Gatilho","icon":"inbox","t":"E-mail do hóspede","s":"Respostas, cobranças, correções","tag":"a qualquer hora","roda":"Fora do sistema","det":"O hóspede responde o e-mail do pedido ou escreve para a caixa do hotel: pede correção, cobra a nota, manda documento.","code":"","regras":["Mais de 7 dias sem resposta, ou pedido de correção, vira Urgência no Painel."]},{"id":"robo_antigo_ext","k":0,"r":3.7,"kind":"Fonte","icon":"bot","t":"Robô antigo (Apps Script via Gmail)","s":"Ainda atende alguns hotéis","tag":"convivência","roda":"Google","det":"O robô antigo ainda manda e-mail de pedido para alguns hotéis. O sistema novo reconhece o que ele já atendeu para não mandar em dobro.","code":"src/robo_antigo.py","regras":[]},{"id":"dropbox","k":0,"r":5.0,"kind":"Fonte","icon":"folder","t":"Dropbox das notas","s":"PDFs das NFs emitidas","tag":"varre a cada 5 min","roda":"Cada PC lê o seu Dropbox","det":"Quatro pastas, uma por agente, onde o PDF da nota emitida é salvo. O sistema só lê: confere o nome (NF 123 - NOME), lê o CPF ou CNPJ de dentro do PDF (OCR quando é escaneado) e compara com o pedido.","code":"src/confirmar_nfs.py, nf_achadas.py, canceladas.py","regras":["Canceladas e substituídas são arquivos renomeados na pasta, lidos como só leitura.","Arquivos só online no Dropbox são pulados."]},{"id":"dev","k":0,"r":7.0,"kind":"Gatilho","icon":"code","t":"Quem programa","s":"João e o Claude","tag":"commit + etiqueta","roda":"Cópia de trabalho, nunca a pasta do Painel do João","det":"Mudança de código vai para a main com uma etiqueta de versão (AAAA.MM.DD.N) e as 3 branches dos PCs ficam iguais à main. Só documentação sobe sem etiqueta.","code":"Cofre: Como entregar","regras":["Nunca force push nem mexer em etiqueta publicada.","Desenho primeiro, código só depois do OK do João."]},{"id":"github","k":0,"r":8.2,"kind":"Armazena","icon":"git","t":"GitHub (privado)","s":"Kaereze/Notas-Fiscais","tag":"main + 3 branches","roda":"GitHub","det":"Guarda o código e o cofre Segundo Cérebro. As branches Bernardo, Christian e clara espelham a main; os PCs só atualizam quando há versão etiquetada.","code":"","regras":["Nunca guardar senhas, chaves ou dados reais de hóspedes."]},{"id":"planhot","k":1,"r":1,"kind":"Armazena","icon":"sheet","t":"Planilhas dos hotéis (Drive)","s":"Uma por hotel, só leitura","tag":"só leitura","roda":"Google Drive","det":"Onde o Google grava as respostas. O sistema só lê, com uma exceção autorizada em 15/10/2026: depois que o e-mail do pedido aparece em Itens Enviados, o robô marca TRUE na coluna Enviado.","code":"src/sincronizar.py, sheets.py","regras":["As respostas nunca são alteradas pelo sistema."]},{"id":"kinghost","k":1,"r":2.5,"kind":"Fonte","icon":"mail","t":"Servidor de e-mail (KingHost)","s":"POP3 recebe, SMTP envia","tag":"250 envios por hora","roda":"Internet","det":"É o servidor que entrega e recebe os e-mails das caixas dos hotéis. As contas são POP3: o Outlook só recebe e envia de verdade com a janela aberta.","code":"src/cota_envio.py","regras":["Limite do servidor: 250 envios por hora.","Quando o servidor recusa a conexão, o Outlook pede senha mesmo com a senha certa."]},{"id":"outlook_app","k":1,"r":4.0,"kind":"Armazena","icon":"mail","t":"Outlook de cada PC","s":"Caixas dos hotéis","tag":"4 PCs","roda":"Cada PC tem só as caixas dos hotéis dele","det":"É onde chegam os pedidos do robô e as respostas dos hóspedes, e de onde saem as notas. O Painel é espelho do Outlook: quem guarda o histórico é o Outlook, não o Painel.","code":"src/outlook.py, outlook_vivo.py","regras":["O Outlook precisa estar aberto com janela: aberto só pelo COM (escondido) não recebe e-mail.","O Painel nunca tira nem apaga e-mail da entrada sozinho."]},{"id":"vigia_formularios","k":2,"r":0,"kind":"Processo","icon":"eye","t":"Vigia de formulários","s":"Pergunta ao Drive o que mudou","tag":"10–20 s · principal","roda":"PC principal","det":"Cópia rápida dos formulários (23/10/2026, OK do João): pedido do hóspede no Painel em ~10-20 s, e não 6-12 min.","code":"src/vigia_formularios.py","regras":["Espera enquanto a rodada de 10 em 10 minutos está copiando.","Usa uma fatia própria da cota do Google."]},{"id":"sincronizar","k":2,"r":1,"kind":"Processo","icon":"copy","t":"Cópia para a Central","s":"Copia respostas dos hotéis","tag":"10 min · principal","roda":"PC principal, pelo Agendador do Windows","det":"Copia as respostas das planilhas dos hotéis (pasta do Drive) para as abas da Central.","code":"src/sincronizar.py","regras":["Se a cópia parar, a Saúde acende a faixa vermelha (já ficou 2,5 dias parada em outubro)."]},{"id":"conferir_copia","k":2,"r":2,"kind":"Processo","icon":"check","t":"Conferência da cópia","s":"Compara cada hotel com a Central","tag":"sob pedido","roda":"PC principal","det":"Auditoria da cópia: compara a planilha de cada hotel com a aba correspondente na Central.","code":"src/conferir_copia.py","regras":[]},{"id":"main","k":2,"r":3,"kind":"Processo","icon":"bot","t":"Robô de envio","s":"Um e-mail por pedido, ao hotel","tag":"10 min · principal","roda":"PC principal","det":"Envio: lê pendentes, envia, confirma em Itens Enviados e só então marca TRUE.","code":"src/main.py","regras":["Antes de enviar confere se o código NF-… já está em Itens Enviados ou na Caixa de Saída: não duplica.","Só marca TRUE depois de ver o e-mail em Itens Enviados."]},{"id":"montar_email","k":2,"r":4,"kind":"Módulo","icon":"form","t":"Montador do e-mail","s":"Assunto e HTML do pedido","tag":"","roda":"PC principal","det":"Assunto e HTML dos e-mails de solicitação. HTML com estilo inline: é o que o Outlook respeita.","code":"src/montar_email.py","regras":[]},{"id":"diario_envios","k":2,"r":5,"kind":"Módulo","icon":"db","t":"Diário de envios","s":"Anota antes de enviar","tag":"evita reenvio","roda":"PC principal","det":"Write-ahead log dos envios: anotado antes do Send, resolvido na execução seguinte.","code":"src/diario_envios.py","regras":[]},{"id":"robo_antigo","k":2,"r":6,"kind":"Módulo","icon":"route","t":"Convivência com o robô antigo","s":"Reconhece pedido já atendido","tag":"","roda":"PC principal","det":"Convivência com o robô antigo (Apps Script via Gmail), que ainda atende alguns hotéis.","code":"src/robo_antigo.py","regras":[]},{"id":"envio_pc_dono","k":2,"r":7,"kind":"Processo","icon":"route","t":"Envio pelo PC dono da caixa","s":"A caixa do hotel envia por si","tag":"automático","roda":"PC principal pede; o PC dono envia","det":"Envio pelo PC dono da caixa do hotel (usuário, 15/10/2026: \"por que está sendo utilizado meu e-mail do Ondina? preciso que mande uma requisição para o PC dono daquele hotel e ele mesmo envia\").","code":"src/envio_pc_dono.py","regras":["Nunca sai pela conta do Ondina.","PC dono desligado: o e-mail espera sem TRUE; passou de 2 h, o alarme de pedido parado avisa no Painel."]},{"id":"outlook","k":2,"r":8,"kind":"Módulo","icon":"send","t":"Envio pelo Outlook (COM)","s":"Envia e confirma em Itens Enviados","tag":"","roda":"Cada PC","det":"Envio pelo Outlook (COM) e confirmação em Itens Enviados.","code":"src/outlook.py","regras":[]},{"id":"outlook_vivo","k":3,"r":0,"kind":"Processo","icon":"pulse","t":"Guardião do Outlook","s":"Mantém o Outlook aberto","tag":"60 s · cada PC","roda":"Cada PC","det":"Guardião do Outlook (usuário, 13/10/2026: \"deixa o Outlook obrigatoriamente aberto enquanto o PC estiver ativo\").","code":"src/outlook_vivo.py","regras":[]},{"id":"vigia_outlook","k":3,"r":1,"kind":"Processo","icon":"eye","t":"Vigia do Outlook","s":"Só olha, não grava","tag":"20 s · cada PC","roda":"Cada PC","det":"Vigia do Outlook: a cada 20 s só OLHA as caixas deste PC (pedido do usuário, 07/10/2026).","code":"src/vigia_outlook.py","regras":[]},{"id":"identidade","k":3,"r":2,"kind":"Módulo","icon":"user","t":"Identidade do PC","s":"Descobre qual agente é este PC","tag":"na partida","roda":"Cada PC","det":"Descobre de qual agente é este PC votando com as contas do Outlook contra o Cadastro_Hoteis.","code":"src/identidade.py","regras":[]},{"id":"aviso_certificado","k":3,"r":3,"kind":"Processo","icon":"check","t":"Aviso de segurança do Outlook","s":"Responde Sim sozinho","tag":"automático","roda":"Cada PC","det":"Outlook: responde \"Sim\" sozinho ao \"Aviso de Segurança da Internet\" do nome do certificado (usuário, 09/10/2026).","code":"src/aviso_certificado.py","regras":[]},{"id":"conferente","k":3,"r":4,"kind":"Processo","icon":"check","t":"Conferente","s":"Liga e-mail, pedido e nota","tag":"1–2 min · cada PC","roda":"Cada PC","det":"Processo contínuo de cada PC.","code":"src/conferente.py","regras":["Só nota confirmada vira evento; as ilegíveis ficam de fora.","No PC principal também atende os comandos do menu da planilha e publica o sinal de vida."]},{"id":"confirmar_nfs","k":3,"r":5,"kind":"Processo","icon":"search","t":"Confirmação de NFs","s":"Acha a nota certa de cada pedido","tag":"a cada volta","roda":"Cada PC","det":"Confirma NFs já emitidas para todas as solicitações da Central e publica na aba Tratamento.","code":"src/confirmar_nfs.py","regras":[]},{"id":"espelho_emails","k":3,"r":6,"kind":"Processo","icon":"mirror","t":"Espelho de e-mails","s":"Caixa de entrada para a Central","tag":"só quando muda","roda":"Cada PC","det":"Espelho do Outlook de cada PC: Caixa de Entrada e Itens Enviados das caixas dos hotéis.","code":"src/espelho_emails.py","regras":["Lido no Outlook só vale depois de 5 minutos; não lido vale na hora.","Itens Enviados: últimas 72 horas."]},{"id":"indice_emails","k":3,"r":7,"kind":"Processo","icon":"db","t":"Índice local de e-mails","s":"Banco SQLite neste PC","tag":"12 meses","roda":"Cada PC","det":"Índice local dos e-mails das caixas dos hotéis DESTE PC (usuário, 20/10/2026: pesquisa instantânea; muda a regra de 08/10 \"busca sempre ao vivo no Outlook\").","code":"src/indice_emails.py","regras":["Montado aos poucos, cerca de 1 s de Outlook por vez.","O que passa de 12 meses sai na faxina diária."]},{"id":"busca_outlook","k":3,"r":8,"kind":"Módulo","icon":"search","t":"Busca ao vivo no Outlook","s":"Pergunta ao Outlook deste PC","tag":"sob pedido","roda":"Cada PC","det":"Busca ao vivo no Outlook DESTE PC (pedido do usuário, 08/10/2026): o Painel não guarda histórico; quando alguém pesquisa um hóspede, CPF, sobrenome ou frase, cada PC procura no próprio Outlook e devolve o que achou.","code":"src/busca_outlook.py","regras":[]},{"id":"enviar_receber","k":3,"r":9,"kind":"Processo","icon":"refresh","t":"Enviar/Receber todas","s":"Roda o F9 nos 4 Outlooks","tag":"sob pedido","roda":"Cada PC","det":"Botão \"Enviar/Receber todas\" (27/10/2026, desenho aprovado: opção C, anel no botão).","code":"src/enviar_receber.py","regras":[]},{"id":"organizador_emails","k":3,"r":10,"kind":"Ferramenta","icon":"mail","t":"Organizador de e-mails","s":"Aplica categorias do Outlook","tag":"linha de comando","roda":"Cada PC","det":"Classifica as solicitacoes de NF da caixa de entrada e aplica as categorias do Outlook.","code":"src/organizador_emails.py","regras":["Só escreve nas categorias do próprio robô; não cria, move nem apaga pasta."]},{"id":"classificador","k":3,"r":11,"kind":"Ferramenta","icon":"check","t":"Classificador de solicitações","s":"O que falta para emitir","tag":"linha de comando","roda":"Cada PC","det":"Classifica as solicitações de um agente: o que falta para emitir, duplicadas e NF já emitida.","code":"src/classificador.py","regras":["Só leitura: não grava na Central, não envia e-mail, não marca nada."]},{"id":"contagem_painel","k":3,"r":12,"kind":"Processo","icon":"chart","t":"Contagem do fim de semana","s":"Conta sexta, sábado e domingo","tag":"João e Cristian","roda":"Cada PC","det":"Contagem do fim de semana pelo Painel (usuário, 11/10/2026).","code":"src/contagem_painel.py","regras":[]},{"id":"c_hot","k":4,"r":0.9,"kind":"Armazena","icon":"sheet","t":"Abas por hotel","s":"Respostas copiadas","tag":"Central","roda":"Planilha Central (Google)","det":"Uma aba por hotel com as respostas do formulário antigo e do novo juntas. Gravada pela cópia do PC principal; lida pelo robô e pelo Painel.","code":"src/sheets.py","regras":[]},{"id":"c_cad","k":4,"r":1.9,"kind":"Armazena","icon":"sheet","t":"Cadastro_Hoteis e Status","s":"Hotel, e-mail, agente","tag":"Central","roda":"Planilha Central (Google)","det":"O cadastro diz qual e-mail e qual agente cuidam de cada hotel (sem linha de cabeçalho). Status guarda o liga e desliga do robô.","code":"src/sheets.py, hoteis.py","regras":[]},{"id":"c_env","k":4,"r":2.9,"kind":"Armazena","icon":"sheet","t":"Envios_NF e Anexos","s":"Fila de envio entre PCs","tag":"Central","roda":"Planilha Central (Google)","det":"Fila que só cresce no fim, com os estados PEDIDO, ASSUMIDO, ENVIADO e FALHOU. Anexos do computador viajam em partes e são apagados depois do envio.","code":"src/envio_nf.py","regras":["Faxina de 3 dias."]},{"id":"c_log","k":4,"r":3.9,"kind":"Armazena","icon":"sheet","t":"Log de Envios","s":"Histórico dos envios","tag":"Central","roda":"Planilha Central (Google)","det":"Registro de cada envio do robô, para conferir depois o que saiu, quando e para quem.","code":"src/historico.py","regras":[]},{"id":"c_trat","k":4,"r":4.9,"kind":"Armazena","icon":"sheet","t":"Tratamento","s":"Uma linha por fato (A:H)","tag":"Central","roda":"Planilha Central (Google)","det":"Registro que só cresce no fim: tudo o que acontece com cada solicitação (nota confirmada, para quem foi, tratativa, nota única ou dividida, quem está com ela).","code":"src/sheets.py","regras":["A faxina resume o que tem mais de 3 dias e tira solicitações com mais de 150 dias, depois de conferir que o estado de cada uma fica idêntico."]},{"id":"c_cor","k":4,"r":5.9,"kind":"Armazena","icon":"sheet","t":"Correio_<PC>, CorreioTexto, CaixaPedidos","s":"Espelho das caixas","tag":"Central","roda":"Planilha Central (Google)","det":"Abas de passagem, uma de cada tipo por PC: a Caixa de Entrada espelhada, o texto dos e-mails e as solicitações do robô que estão na Caixa de Entrada.","code":"src/espelho_emails.py","regras":[]},{"id":"c_evt","k":4,"r":6.9,"kind":"Armazena","icon":"sheet","t":"Eventos, Ligações e Atividade","s":"Lido, excluído, urgência","tag":"Central","roda":"Planilha Central (Google)","det":"Eventos_Correio guarda lido, excluído e urgência; Ligacoes guarda a marca do agente; Atividade_Robo é o registro de todos os PCs.","code":"src/correio.py, ligacoes.py, atividade.py","regras":["Eventos: 3 dias. Atividade: 7 dias. Ligações: 400 dias."]},{"id":"c_pcs","k":4,"r":7.9,"kind":"Armazena","icon":"sheet","t":"PCs_Painel e Comandos_PC","s":"Quem está ligado e recados","tag":"Central","roda":"Planilha Central (Google)","det":"Cada Painel publica a cada minuto quem é, quais caixas tem, se o Outlook está aberto, a versão do código e a saúde. Comandos_PC é o quadro de recados.","code":"src/rede_pcs.py","regras":[]},{"id":"c_conf","k":4,"r":8.9,"kind":"Armazena","icon":"sheet","t":"Conferência da Cópia","s":"Auditoria da cópia","tag":"Central","roda":"Planilha Central (Google)","det":"Aba onde a conferência escreve se cada hotel da Central bate com a planilha original.","code":"src/conferir_copia.py","regras":[]},{"id":"c_cont","k":4,"r":9.9,"kind":"Armazena","icon":"sheet","t":"ContagemPainel_<PC>","s":"Contagem do fim de semana","tag":"Central","roda":"Planilha Central (Google)","det":"Contagem feita pelo Painel enquanto o Mail Analytics ainda não gravou o domingo.","code":"src/contagem_painel.py","regras":[]},{"id":"f_cfg","k":5,"r":0.9,"kind":"Armazena","icon":"folder","t":"config.json e config.local.json","s":"Configuração deste PC","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"config.json vale para todos; config.local.json define o papel (principal ou conferente) e o agente de cada PC e nunca sobe ao GitHub.","code":"src/config.py","regras":[]},{"id":"f_chave","k":5,"r":1.9,"kind":"Armazena","icon":"folder","t":"Chave do Google","s":"Fora do projeto","tag":"fora do git","roda":"Pasta do projeto deste PC, fora do git","det":"Arquivo de acesso ao Google guardado na pasta de dados do usuário do Windows. Nunca vai ao GitHub nem ao cofre.","code":"caminho em config.json","regras":["O segredo da rede local (HMAC) é derivado dela."]},{"id":"f_idx","k":5,"r":2.9,"kind":"Armazena","icon":"folder","t":"indice_emails.sqlite","s":"Índice de e-mails","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Banco local com 12 meses de e-mails das caixas deste PC.","code":"src/indice_emails.py","regras":["Contém dado de hóspede: fica só neste PC."]},{"id":"f_nf","k":5,"r":3.9,"kind":"Armazena","icon":"folder","t":"Índices de notas (estado/)","s":"nf_achadas, indice_notas, canceladas","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Arquivos JSON com as notas achadas no Dropbox, o cache do texto dos PDFs e as notas canceladas.","code":"src/nf_achadas.py, canceladas.py","regras":[]},{"id":"f_ctl","k":5,"r":4.9,"kind":"Armazena","icon":"folder","t":"Memória do robô e do conferente","s":"controle_nf, ja_enviadas…","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Registros locais do que já foi confirmado, enviado e pendente: controle_nf.json, confirmar_nfs.json, ja_enviadas.json, envios_pendentes.json.","code":"src/controle_nf.py, diario_envios.py","regras":[]},{"id":"f_esp","k":5,"r":5.9,"kind":"Armazena","icon":"folder","t":"Espelho e lido aplicado","s":"espelho_emails.json…","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Cópia local do espelho de e-mails e do que já foi aplicado como lido no Outlook.","code":"src/espelho_emails.py","regras":[]},{"id":"f_bkp","k":5,"r":6.9,"kind":"Armazena","icon":"folder","t":"Cópias de segurança","s":"backup_central e backup_tratamento","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Antes de mexer no Tratamento, a faxina guarda uma cópia aqui. Ficam só neste PC.","code":"src/faxina.py","regras":["Contêm dado de hóspede: fora do git."]},{"id":"f_app","k":5,"r":7.9,"kind":"Armazena","icon":"folder","t":"app.json e cache da janela","s":"Preferências deste PC","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Tema, agente escolhido e o cache da janela do Painel (app_edge, app_webview).","code":"src/limpeza.py, app_janela.py","regras":[]},{"id":"f_hist","k":5,"r":8.9,"kind":"Armazena","icon":"folder","t":"Histórico de envios (CSV)","s":"Historico_de_Envios.csv","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Cópia local do Log de Envios, para o caso de a Central estar fora.","code":"src/historico.py","regras":[]},{"id":"f_logs","k":5,"r":9.9,"kind":"Armazena","icon":"folder","t":"Registros (logs/)","s":"solicitacoes_nf, conferente, painel, atualizacao","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Um arquivo de registro por programa, com rodízio.","code":"src/log_util.py","regras":[]},{"id":"f_lock","k":5,"r":10.9,"kind":"Armazena","icon":"folder","t":"Travas e cota","s":"_*.lock e cota_google/","tag":"neste PC","roda":"Pasta do projeto deste PC, fora do git","det":"Arquivos que impedem dois processos de rodar ao mesmo tempo e controlam a fatia da cota do Google.","code":"src/lock_execucao.py, cota_google.py","regras":[]},{"id":"app_dados","k":6,"r":0,"kind":"Módulo","icon":"sheet","t":"Fila de solicitações","s":"Monta a fila a partir da Central","tag":"","roda":"Cada PC","det":"Dados do app: monta a fila de solicitações a partir da Central e da aba Tratamento.","code":"src/app_dados.py","regras":[]},{"id":"controle_nf","k":6,"r":1,"kind":"Módulo","icon":"check","t":"Reconhecimento da NF","s":"Regras de qual e-mail é nota","tag":"","roda":"Cada PC","det":"Registro das solicitações enviadas e reconhecimento da NF que sai para o hóspede.","code":"src/controle_nf.py","regras":[]},{"id":"analise_nf","k":6,"r":2,"kind":"Módulo","icon":"pulse","t":"Urgência e correção","s":"Hóspede diz que a NF está errada","tag":"","roda":"Cada PC","det":"Urgência: o hóspede diz que a NF está errada (valor, data, mês, nome, CPF/CNPJ, descrição) ou pede pra cancelar / reemitir.","code":"src/analise_nf.py","regras":[]},{"id":"nf_cobre","k":6,"r":3,"kind":"Módulo","icon":"check","t":"A NF enviada cobre o pedido?","s":"Compara a nota com o que pede","tag":"","roda":"Cada PC","det":"A NF já enviada cobre o que o hóspede pede agora? (27/10/2026, desenho aprovado pelo João).","code":"src/nf_cobre.py","regras":[]},{"id":"hospedes","k":6,"r":4,"kind":"Módulo","icon":"user","t":"Hóspede único e repetido","s":"Junta pedidos repetidos","tag":"","roda":"Cada PC","det":"Hóspede único e pedido repetido — Etapa 2 (usuário, 09/10/2026).","code":"src/hospedes.py","regras":[]},{"id":"app_servidor","k":6,"r":5.2,"kind":"Processo","icon":"server","t":"Servidor do Painel","s":"127.0.0.1:8765 em cada PC","tag":"relê a cada 15 s","roda":"Cada PC, ligado com o Windows","det":"Painel Notas Fiscais: servidor HTTP só em 127.0.0.1 + janela do Edge em modo aplicativo.","code":"src/app_servidor.py","regras":["Só aceita conexão do próprio PC e exige token nas ações.","Janela fechada relê a cada 60 s, para poupar a cota do Google.","Fechar a janela só esconde; o servidor continua."]},{"id":"ligacoes","k":6,"r":6.5,"kind":"Módulo","icon":"hand","t":"Marcar ligação","s":"Pedido que veio por telefone","tag":"","roda":"Cada PC","det":"Pedido que veio por ligação (usuário, 22/10/2026): os telefones não ligam no PC, então quem marca é o agente, no botão \"Ligação\" da tela de escrever ou depois, no botão direito de um e-mail enviado. Cada marca é uma linha na aba Ligacoes da Central (só se acrescenta; a última linha de cada chave vale).","code":"src/ligacoes.py","regras":[]},{"id":"correio","k":6,"r":7.5,"kind":"Módulo","icon":"inbox","t":"Caixa de correio","s":"Junta os 4 espelhos","tag":"","roda":"Cada PC","det":"Caixa de correio do Painel: junta os espelhos dos 4 PCs (abas Correio_<PC>) com o lido/excluído da equipe.","code":"src/correio.py","regras":[]},{"id":"envio_nf","k":6,"r":8.5,"kind":"Processo","icon":"send","t":"Enviar NF","s":"Envia da caixa do hotel","tag":"com conferência","roda":"PC que pede; o PC dono envia","det":"Envio da NF ao hóspede pelo Painel, saindo da caixa do próprio hotel.","code":"src/envio_nf.py","regras":[]},{"id":"app_envio","k":6,"r":9.5,"kind":"Módulo","icon":"send","t":"Enviar pendentes","s":"Botão com andamento ao vivo","tag":"","roda":"Cada PC","det":"Botão \"Enviar pendentes\" do Painel, com o andamento ao vivo.","code":"src/app_envio.py","regras":[]},{"id":"historico","k":6,"r":10.5,"kind":"Módulo","icon":"db","t":"Histórico de envios","s":"Log de Envios e CSV","tag":"","roda":"Cada PC","det":"Log de Envios (aba da Central + CSV local) e registro das solicitações já confirmadas.","code":"src/historico.py","regras":[]},{"id":"canceladas","k":6,"r":11.5,"kind":"Módulo","icon":"folder","t":"Notas canceladas","s":"Arquivos renomeados no Dropbox","tag":"","roda":"Cada PC","det":"NFs canceladas e substituídas = arquivos renomeados no Dropbox (só leitura):","code":"src/canceladas.py","regras":[]},{"id":"nf_achadas","k":6,"r":12.5,"kind":"Processo","icon":"search","t":"Notas achadas","s":"Acha a nota pelo CPF no PDF","tag":"45 s · 12 PDFs","roda":"Cada PC","det":"NF achadas nas pastas do Dropbox pelo CPF/CNPJ de dentro do PDF (27/10/2026, desenho aprovado pelo João).","code":"src/nf_achadas.py","regras":[]},{"id":"painel_metricas","k":7,"r":0,"kind":"Módulo","icon":"chart","t":"Números da Gerência","s":"Junta Central e Mail Analytics","tag":"a cada 5 min","roda":"Cada PC","det":"Números das telas Visão geral e Hotéis, juntando a Central (solicitações), o Mail Analytics e as NFs canceladas/substituídas renomeadas no Dropbox (canceladas.py — substituem a coluna do Mail Analytics).","code":"src/painel_metricas.py","regras":[]},{"id":"relatorio_semana","k":7,"r":1,"kind":"Módulo","icon":"chart","t":"Relatório do dia e da semana","s":"Lê o Mail Analytics","tag":"","roda":"Cada PC","det":"Relatório do dia e da semana na Gerência (usuário, 11/10/2026): os números que o Mail Analytics já grava na planilha dele (e-mails recebidos e enviados, ligações, substituições/cancelamentos e NFs emitidas, por operador, dia e hotel) mais os pedidos de formulário do Painel.","code":"src/relatorio_semana.py","regras":[]},{"id":"fiscal_intelligence","k":7,"r":2,"kind":"Módulo","icon":"sheet","t":"Leitura do Fiscal Intelligence","s":"Somente leitura","tag":"a cada 5 min","roda":"Cada PC","det":"Leitura (somente) da planilha Fiscal Intelligence, gravada pelo Mail Analytics.","code":"src/fiscal_intelligence.py","regras":[]},{"id":"atividade","k":7,"r":3,"kind":"Módulo","icon":"pulse","t":"Atividade da equipe","s":"Registro de todos os PCs","tag":"","roda":"Cada PC","det":"O que os robôs de TODOS os PCs fizeram, numa aba só da Planilha Central (Atividade_Robo).","code":"src/atividade.py","regras":[]},{"id":"rede_pcs","k":7,"r":4,"kind":"Processo","icon":"network","t":"Recados entre PCs","s":"PCs_Painel e Comandos_PC","tag":"a cada 1 min","roda":"Cada PC","det":"Os PCs da equipe conversando pela Planilha Central (pedido do usuário, 06/10/2026: \"mexer nos outros PCs sem precisar ficar trocando de máquina\").","code":"src/rede_pcs.py","regras":[]},{"id":"rede_local","k":7,"r":5,"kind":"Processo","icon":"network","t":"Rede local do escritório","s":"Porta 8766, pedidos assinados","tag":"sem gastar cota","roda":"Cada PC","det":"Conversa direta entre os Painéis dos 4 PCs pela rede do escritório (os 4 ficam na mesma rede — usuário, 08/10/2026).","code":"src/rede_local.py","regras":["Só aceita IP da rede local; todo pedido vem assinado (HMAC) e vale 2 minutos.","Só e-mail de caixa de hotel sai, nunca de caixa pessoal.","Melhoria combinada, aguardando OK: pedido de uso único e validade de 30 s."]},{"id":"saude","k":7,"r":6,"kind":"Processo","icon":"pulse","t":"Saúde do sistema","s":"Faixa vermelha quando algo foge","tag":"contínuo","roda":"Cada PC","det":"Saúde do sistema — uma faixa vermelha no topo do Painel quando algo sai do normal (usuário, 11/10/2026).","code":"src/saude.py","regras":[]},{"id":"avisos_windows","k":7,"r":7,"kind":"Módulo","icon":"pulse","t":"Avisos do Windows","s":"Notificação no canto da tela","tag":"","roda":"Cada PC","det":"Aviso do Windows (notificação no canto da tela) quando um PC da equipe sai do normal (pedido do usuário, 07/10/2026): PC desligou, Outlook fechou ou a conferência parou, e quando ele volta.","code":"src/avisos_windows.py","regras":[]},{"id":"atualizador","k":7,"r":8,"kind":"Processo","icon":"refresh","t":"Atualizador de versão","s":"Puxa a versão nova do GitHub","tag":"só com etiqueta","roda":"Cada PC","det":"Mantém o código de cada PC igual ao do GitHub (pedido do usuário, 06/10/2026: alterar num PC, dar push, e os outros ficarem em sincronia).","code":"src/atualizador.py","regras":[]},{"id":"faxina","k":7,"r":9,"kind":"Processo","icon":"broom","t":"Faxina diária","s":"Nada vira bola de neve","tag":"1 vez por dia · principal","roda":"PC principal","det":"Faxina diária da Central (só no PC principal) — pra nada virar bola de neve (usuário, 08/10/2026).","code":"src/faxina.py","regras":["Fila, anexos, comandos, lido e excluído: 3 dias. Atividade do robô: 7 dias.","Antes de gravar, confere que o estado de cada solicitação fica idêntico."]},{"id":"limpeza","k":7,"r":10,"kind":"Módulo","icon":"broom","t":"Limpeza local","s":"Cache da janela e sobras","tag":"","roda":"Cada PC","det":"Limpeza do que cresce sozinho (27/10/2026, auditoria): cache da janela do Painel e sobra de registros.","code":"src/limpeza.py","regras":[]},{"id":"agentes_smith","k":7,"r":12,"kind":"Módulo","icon":"pulse","t":"Estado ao vivo dos agentes","s":"Só o que o Painel já sabe dos PCs","tag":"só o administrador","roda":"Cada PC","det":"Aba \"Agentes do Smith\" (28/10/2026, desenho aprovado pelo João): o estado ao vivo dos agentes no mapa do sistema.","code":"src/agentes_smith.py","regras":["Só diz o que é sinal real; o resto aparece como sem sinal ao vivo.","Só lê: não grava nada nem pede nada a nenhum PC."]},{"id":"demo","k":7,"r":11,"kind":"Módulo","icon":"monitor","t":"Modo demonstração","s":"Painel com dados fictícios","tag":"casa","roda":"Cada PC","det":"Modo demonstração: o Painel inteiro com dados FICTÍCIOS — pra abrir no PC de casa, sem Google, sem Outlook, sem chave e sem Dropbox (pedido do usuário, 08/10/2026).","code":"src/demo.py","regras":[]},{"id":"app_janela","k":8,"r":0,"kind":"Processo","icon":"monitor","t":"Janela do Painel","s":"pywebview + WebView2","tag":"ao abrir","roda":"Cada PC","det":"Janela do Painel Notas Fiscais: aplicativo próprio (pywebview + WebView2), sem navegador.","code":"src/app_janela.py","regras":[]},{"id":"index_html","k":8,"r":1,"kind":"Tela","icon":"monitor","t":"index.html","s":"A página do Painel","tag":"","roda":"Cada PC","det":"O arquivo único que monta a página: menu, telas, estilos e as janelas. Carrega os scripts abaixo.","code":"app_ui/index.html","regras":["Tema escuro primeiro, claro disponível.","Nada de React: JavaScript puro."]},{"id":"painel_js","k":8,"r":2,"kind":"Tela","icon":"chart","t":"painel.js","s":"Visão geral, Hotéis, Máquinas","tag":"","roda":"Cada PC","det":"Visão geral, Log, Máquinas e as janelas de envio.","code":"app_ui/painel.js","regras":[]},{"id":"correio_js","k":8,"r":3,"kind":"Tela","icon":"inbox","t":"correio.js","s":"Caixa de entrada e e-mails","tag":"","roda":"Cada PC","det":"E-mails: espelho do Outlook dos 4 PCs no formato do Outlook, com o e-mail aberto à direita e o histórico do hóspede ao vivo.","code":"app_ui/correio.js","regras":[]},{"id":"robo_js","k":8,"r":4,"kind":"Tela","icon":"bot","t":"robo.js","s":"Tela do robô","tag":"","roda":"Cada PC","det":"Janela grande do robô: Agora (frase, barra da rodada, avisos, pedidos por situação) e Registro (o log em frases).","code":"app_ui/robo.js","regras":[]},{"id":"graficos_js","k":8,"r":5,"kind":"Tela","icon":"chart","t":"graficos.js","s":"Gráficos em SVG puro","tag":"","roda":"Cada PC","det":"Gráficos de linhas e barras desenhados em SVG, sem biblioteca, com as cores do tema.","code":"app_ui/graficos.js","regras":[]},{"id":"p_etiqueta","k":8,"r":6,"kind":"Tela","icon":"form","t":"Peça: etiquetas","s":"Cor, ícone e palavra","tag":"peça única","roda":"Cada PC","det":"Etiquetas e situações únicas, iguais em todas as telas. Aqui ficam também as regras de qual situação e quais alertas cada pedido recebe.","code":"app_ui/pecas/etiqueta.js","regras":[]},{"id":"p_filtro","k":8,"r":7,"kind":"Tela","icon":"form","t":"Peça: filtro","s":"Pílula com menu","tag":"peça única","roda":"Cada PC","det":"A pílula 'Rótulo: valor' com menu, usada em todas as telas.","code":"app_ui/pecas/filtro.js","regras":[]},{"id":"p_janela","k":8,"r":8,"kind":"Tela","icon":"form","t":"Peça: janela por cima","s":"Entrada e saída animadas","tag":"peça única","roda":"Cada PC","det":"Toda janela que abre por cima ganha a saída animada.","code":"app_ui/pecas/janela.js","regras":[]},{"id":"p_etapas","k":8,"r":9,"kind":"Tela","icon":"form","t":"Peça: etapas do pedido","s":"Ficha no topo do e-mail","tag":"peça única","roda":"Cada PC","det":"Recebido, Dados completos, NF pronta e NF enviada, mais a lista de conferência.","code":"app_ui/pecas/etapas.js","regras":[]},{"id":"p_caixas","k":8,"r":10,"kind":"Tela","icon":"form","t":"Peça: caixas com problema","s":"Botão do Outlook sem enviar","tag":"peça única","roda":"Cada PC","det":"Mostra e-mails presos por caixa e o botão de reiniciar o Outlook.","code":"app_ui/pecas/caixas.js","regras":[]},{"id":"p_carregando","k":8,"r":11,"kind":"Tela","icon":"form","t":"Peça: carregamento","s":"A logo K desenhada","tag":"peça única","roda":"Cada PC","det":"Tela de carregamento para qualquer ação que passe de 3 s.","code":"app_ui/pecas/carregando.js","regras":[]},{"id":"p_busca","k":8,"r":12,"kind":"Tela","icon":"form","t":"Peça: histórico da busca","s":"Últimas 24 h, só no navegador","tag":"peça única","roda":"Cada PC","det":"Guarda as pesquisas das últimas 24 horas só neste navegador, sem CPF ou CNPJ.","code":"app_ui/pecas/busca_recente.js","regras":[]},{"id":"assinaturas","k":8,"r":13,"kind":"Armazena","icon":"user","t":"Assinaturas e fontes","s":"Imagens dos 4 agentes e IBM Plex","tag":"","roda":"Cada PC","det":"As imagens de assinatura de cada agente (usadas no Painel e para trocar a assinatura do Outlook) e as fontes do Painel.","code":"app_ui/assinaturas/, fontes/","regras":[]},{"id":"aba_agentes","k":8,"r":14,"kind":"Tela","icon":"network","t":"Aba Agentes do Smith (nova)","s":"Mapa do sistema só para o administrador","tag":"no ar em 28/10","roda":"Só o PC principal, usuário João","det":"A aba que mostra este mapa dentro do Painel, com o estado ao vivo dos agentes que o Painel consegue medir. Aparece no grupo Admin, abaixo de Monitoramento, e carrega só ao abrir.","code":"app_ui/agentes/mapa.html, src/agentes_smith.py","regras":["Só o administrador no PC principal vê; o servidor também recusa quem tentar por fora."]},{"id":"acoes","k":9,"r":3.5,"kind":"Ação","icon":"hand","t":"Ações do agente","s":"O que a equipe faz na tela","tag":"com token","roda":"Cada PC","det":"Marcar lido ou não lido, urgência, excluir (com Desfazer por 10 s), responder, encaminhar, tratativa, nota dividida, Ligação, concluir a conversa e mover para a pasta NF enviada.","code":"src/app_servidor.py (rotas /api/...)","regras":["O Painel nunca tira nem apaga e-mail da entrada sozinho.","Abrir um e-mail no Painel marca como lido no Outlook."]},{"id":"itens","k":9,"r":6,"kind":"Processo","icon":"check","t":"Itens Enviados","s":"A prova de que saiu","tag":"confirma","roda":"Outlook do PC dono","det":"O envio só conta como feito depois que o e-mail aparece em Itens Enviados. Só então o robô marca TRUE e o conferente reconhece a nota.","code":"","regras":["Resposta do hóspede com a nota anexada não conta como envio."]},{"id":"hospdest","k":9,"r":7.2,"kind":"Saída","icon":"user","t":"Hóspede recebe a nota","s":"Por e-mail","tag":"fim da produção","roda":"Fora do sistema","det":"A nota fiscal chega na caixa do hóspede, enviada pela caixa do hotel. Se ele responder, a conversa volta para a Caixa de Entrada do PC dono.","code":"","regras":[]},{"id":"mailan","k":9,"r":0,"kind":"Fonte","icon":"sheet","t":"Mail Analytics","s":"Planilha de números, só leitura","tag":"produção","roda":"Google Sheets","det":"Planilha em produção que conta recebidos, enviados, ligações, substituições e cancelamentos e notas por agente e dia. Este sistema só lê e nunca altera.","code":"src/relatorio_semana.py","regras":["No fim de semana, vira uma linha de domingo gravada na segunda de manhã."]},{"id":"fi","k":9,"r":1,"kind":"Fonte","icon":"sheet","t":"Fiscal Intelligence","s":"Gravada pelo Mail Analytics","tag":"só leitura","roda":"Google Sheets","det":"Planilha de apoio gravada pelo Mail Analytics. O Painel lê a cada 5 minutos para a Gerência.","code":"src/fiscal_intelligence.py","regras":[]},{"id":"edge_win","k":9,"r":2.2,"kind":"Fonte","icon":"monitor","t":"Edge / WebView2","s":"O navegador da janela","tag":"","roda":"Cada PC","det":"A janela do aplicativo usa o WebView2 do Windows (Edge). Fica fora do projeto; o Painel só abre o endereço local.","code":"","regras":[]},{"id":"arquivos","k":0,"r":16,"kind":"Apoio","icon":"folder","t":"Gravação segura de arquivos","s":"JSON sem corromper","tag":"","roda":"Todos os programas","det":"Gravação atômica de JSON.","code":"src/arquivos.py","regras":[]},{"id":"config","k":1,"r":16,"kind":"Apoio","icon":"server","t":"Configuração","s":"Lê config.json e config.local.json","tag":"","roda":"Todos os programas","det":"Leitura e validação do config.json (+ config.local.json por PC).","code":"src/config.py","regras":[]},{"id":"console_utf8","k":2,"r":16,"kind":"Apoio","icon":"code","t":"Console em UTF-8","s":"Acentos no Windows","tag":"","roda":"Todos os programas","det":"Console em UTF-8 (acentos e emojis no Windows).","code":"src/console_utf8.py","regras":[]},{"id":"log_util","k":3,"r":16,"kind":"Apoio","icon":"form","t":"Registro (logs)","s":"Um log por programa","tag":"","roda":"Todos os programas","det":"Log de cada programa em logs/ (20/10/2026): robô = solicitacoes_nf.log, conferente.log, painel.log.","code":"src/log_util.py","regras":[]},{"id":"modelos","k":4,"r":16,"kind":"Apoio","icon":"db","t":"Modelos de dados","s":"Hotel e Solicitação","tag":"","roda":"Todos os programas","det":"","code":"src/modelos.py","regras":[]},{"id":"tratamento","k":5,"r":16,"kind":"Apoio","icon":"form","t":"Tratamento dos campos","s":"Datas, CPF/CNPJ, CEP","tag":"","roda":"Todos os programas","det":"Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP.","code":"src/tratamento.py","regras":[]},{"id":"sheets","k":6,"r":16,"kind":"Apoio","icon":"sheet","t":"Acesso à Planilha Central","s":"Lê e grava as abas","tag":"","roda":"Todos os programas","det":"Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log.","code":"src/sheets.py","regras":[]},{"id":"prazos","k":0,"r":17,"kind":"Apoio","icon":"check","t":"Prazos (SLA)","s":"Prazo por tipo de pedido","tag":"","roda":"Todos os programas","det":"Prazo de resposta (SLA) por tipo de pedido — Etapa 2 (usuário, 09/10/2026).","code":"src/prazos.py","regras":[]},{"id":"hoteis","k":1,"r":17,"kind":"Apoio","icon":"sheet","t":"Cadastro de hotéis","s":"Casa os nomes de cada fonte","tag":"","roda":"Todos os programas","det":"Cadastro único de hotéis: casa os nomes que cada fonte usa com o nome do Cadastro_Hoteis.","code":"src/hoteis.py","regras":[]},{"id":"rede_util","k":2,"r":17,"kind":"Apoio","icon":"refresh","t":"Tentativas com espera","s":"Retry da API do Google","tag":"","roda":"Todos os programas","det":"Retry com backoff exponencial para erros passageiros da API do Google.","code":"src/rede_util.py","regras":[]},{"id":"cota_google","k":3,"r":17,"kind":"Apoio","icon":"pulse","t":"Cota do Google","s":"60 leituras por minuto","tag":"","roda":"Todos os programas","det":"Orçamento da cota do Google Sheets, dividido entre os programas dos 4 PCs.","code":"src/cota_google.py","regras":[]},{"id":"cota_envio","k":4,"r":17,"kind":"Apoio","icon":"pulse","t":"Cota de envio por hora","s":"Servidor de e-mail","tag":"","roda":"Todos os programas","det":"Cota por hora do servidor de e-mail, medida pelos Itens Enviados.","code":"src/cota_envio.py","regras":[]},{"id":"lock_execucao","k":5,"r":17,"kind":"Apoio","icon":"check","t":"Trava entre processos","s":"Cópia, envio e conferência","tag":"","roda":"Todos os programas","det":"Trava entre processos: cópia, envio e conferência nunca rodam juntos.","code":"src/lock_execucao.py","regras":[]},{"id":"coracao","k":0,"r":19,"kind":"Instalação","icon":"download","t":"INSTALAR_OU_ATUALIZAR.bat","s":"Instala ou atualiza tudo neste PC","tag":"","roda":"Cada PC","det":"O coração: baixa Python e Git se faltar, põe o projeto na Área de Trabalho, cria o .venv, pede a chave, descobre a identidade do PC e agenda o conferente (todo PC) e a cópia com o envio (só o principal). Os atalhos atualizar.bat e configurar_este_pc.bat chamam o mesmo.","code":"Automacoes/coracao.ps1","regras":[]},{"id":"instalar_bat","k":1,"r":19,"kind":"Instalação","icon":"download","t":"Bat/instalar.bat","s":"Cria o ambiente Python","tag":"","roda":"Cada PC","det":"Cria o ambiente Python (.venv) e instala as bibliotecas.","code":"Bat/instalar.bat","regras":[]},{"id":"atualizar_painel_bat","k":2,"r":19,"kind":"Instalação","icon":"refresh","t":"ATUALIZAR_PAINEL.bat","s":"Deixa o PC igual ao GitHub","tag":"","roda":"Cada PC","det":"Deixa este PC igual ao GitHub (branch main) e reinicia o Painel. Nunca apaga o que foi alterado à mão: se der conflito, para e avisa.","code":"ATUALIZAR_PAINEL.bat","regras":[]},{"id":"atualizar_sozinho","k":3,"r":19,"kind":"Instalação","icon":"refresh","t":"atualizar_sozinho.ps1","s":"git pull sem ninguém clicar","tag":"","roda":"Cada PC","det":"Chamado pelo Painel: git pull só para frente, bibliotecas, e reinicia conferente e Painel. Resultado em logs/atualizacao.log.","code":"Automacoes/atualizar_sozinho.ps1","regras":[]},{"id":"reiniciar_servicos","k":4,"r":19,"kind":"Instalação","icon":"refresh","t":"reiniciar_servicos.ps1","s":"Reinicia conferente e Painel","tag":"","roda":"Cada PC","det":"Roda pela tarefa SolicitacoesNF_Reiniciar do Agendador: para as tarefas, encerra o que sobrou, religa e confere que os processos voltaram.","code":"Automacoes/reiniciar_servicos.ps1","regras":[]},{"id":"agendador","k":5,"r":19,"kind":"Instalação","icon":"pulse","t":"Agendador de Tarefas do Windows","s":"As tarefas que mantêm tudo ligado","tag":"","roda":"Windows","det":"É o Windows que liga os programas: SolicitacoesNF_Painel e _Conferente no logon e a cada 10 min, a cópia a cada 10 min e a _Reiniciar sob pedido. Roda sem administrador, só do usuário.","code":"","regras":[]},{"id":"criar_atalho","k":6,"r":19,"kind":"Instalação","icon":"monitor","t":"criar_atalho_app.ps1","s":"Atalho na Área de Trabalho","tag":"","roda":"Cada PC","det":"Cria o atalho Painel Notas Fiscais na Área de Trabalho.","code":"Automacoes/criar_atalho_app.ps1","regras":[]},{"id":"gerar_pacote","k":7,"r":19,"kind":"Instalação","icon":"download","t":"gerar_pacote.ps1","s":"Cópia limpa para o pen drive","tag":"","roda":"Cada PC","det":"Copia o projeto sem estado/, logs/ e .venv deste PC, para instalar nos outros.","code":"Automacoes/gerar_pacote.ps1 e Bat/gerar_pacote_pendrive.bat","regras":[]},{"id":"agendar_painel","k":0,"r":20,"kind":"Instalação","icon":"pulse","t":"agendar_painel.ps1","s":"Tarefa do Painel","tag":"","roda":"Cada PC","det":"Mantém o Painel rodando escondido: a tarefa SolicitacoesNF_Painel, no logon e a cada 10 min.","code":"Automacoes/agendar_painel.ps1","regras":[]},{"id":"agendar_conferente","k":1,"r":20,"kind":"Instalação","icon":"pulse","t":"agendar_conferente.ps1","s":"Tarefa do conferente","tag":"","roda":"Cada PC","det":"Liga o conferente sozinho, escondido: a tarefa SolicitacoesNF_Conferente.","code":"Automacoes/agendar_conferente.ps1","regras":[]},{"id":"agendar_sincronizacao","k":2,"r":20,"kind":"Instalação","icon":"pulse","t":"agendar_sincronizacao.ps1","s":"Tarefa da cópia (10 min)","tag":"","roda":"Cada PC","det":"Agenda a cópia das planilhas dos hotéis para a Central. Pedido do João em 15/10/2026: a cada 10 minutos, era 30.","code":"Automacoes/agendar_sincronizacao.ps1","regras":[]},{"id":"rodar_oculto","k":3,"r":20,"kind":"Instalação","icon":"eye","t":"Bat/_rodar_oculto.vbs","s":"Roda um .bat sem janela","tag":"","roda":"Cada PC","det":"Roda um .bat sem nenhuma janela aparecer na tela.","code":"Bat/_rodar_oculto.vbs","regras":[]},{"id":"sincronizar_agendado_bat","k":4,"r":20,"kind":"Instalação","icon":"copy","t":"Bat/sincronizar_agendado.bat","s":"Cópia e envio a cada 10 min","tag":"","roda":"Cada PC","det":"O que o Agendador roda: cópia dos hotéis e envio.","code":"Bat/sincronizar_agendado.bat","regras":[]},{"id":"executar_robo_bat","k":5,"r":20,"kind":"Instalação","icon":"bot","t":"Bat/executar_robo.bat","s":"Roda o robô de envio","tag":"","roda":"Cada PC","det":"Roda o robô de envio em janela.","code":"Bat/executar_robo.bat","regras":[]},{"id":"conferente_bat","k":6,"r":20,"kind":"Instalação","icon":"check","t":"Bat/conferente.bat","s":"Conferente em janela","tag":"","roda":"Cada PC","det":"Roda o conferente em janela (normalmente roda escondido pela tarefa).","code":"Bat/conferente.bat","regras":[]},{"id":"abrir_app_bat","k":7,"r":20,"kind":"Instalação","icon":"monitor","t":"Bat/abrir_app.bat","s":"Abre a janela do Painel","tag":"","roda":"Cada PC","det":"Abre o Painel Notas Fiscais em janela própria. O servidor fica rodando em segundo plano.","code":"Bat/abrir_app.bat","regras":[]},{"id":"conferir_nfs_ano","k":0,"r":21,"kind":"Instalação","icon":"search","t":"Bat/conferir_nfs_do_ano.bat","s":"Confere todas as NFs do ano","tag":"","roda":"Cada PC","det":"Confere todas as NFs do ano pelos e-mails enviados das caixas deste PC (o conferente sozinho só olha os últimos 45 dias). Rode uma vez em cada PC depois de atualizar.","code":"Bat/conferir_nfs_do_ano.bat","regras":[]},{"id":"testar_config_bat","k":1,"r":21,"kind":"Instalação","icon":"check","t":"Bat/TESTAR_CONFIG.bat","s":"Confere a configuração","tag":"","roda":"Cada PC","det":"Valida o config.json deste PC.","code":"Bat/TESTAR_CONFIG.bat","regras":[]},{"id":"rodar_testes_bat","k":2,"r":21,"kind":"Instalação","icon":"check","t":"Bat/rodar_testes.bat","s":"Roda os testes automáticos","tag":"","roda":"Cada PC","det":"Roda os testes sem usar Google nem Outlook de verdade.","code":"Bat/rodar_testes.bat","regras":[]},{"id":"painel_demo_casa","k":3,"r":21,"kind":"Instalação","icon":"monitor","t":"PAINEL_DEMO_EM_CASA.bat","s":"Painel no PC de casa","tag":"","roda":"Cada PC","det":"Abre o Painel no PC de casa: com a chave do Google de casa, dados reais só para ver; sem a chave, dados fictícios. Não precisa de Outlook nem Dropbox.","code":"PAINEL_DEMO_EM_CASA.bat","regras":[]},{"id":"liberar_rede","k":4,"r":21,"kind":"Instalação","icon":"network","t":"liberar_rede.ps1","s":"Firewall da porta 8766","tag":"","roda":"Cada PC","det":"Libera no firewall do Windows a conversa entre os Painéis dos 4 PCs, só para a rede local. Precisa de administrador uma vez por PC.","code":"Automacoes/liberar_rede.ps1","regras":[]},{"id":"preparar_dia_admin","k":5,"r":21,"kind":"Instalação","icon":"network","t":"preparar_dia_admin.ps1","s":"Dia do administrador","tag":"","roda":"Cada PC","det":"Abre o PowerShell com o comando do firewall já digitado, sem executar. Quem tem a senha só aperta Enter.","code":"Automacoes/preparar_dia_admin.ps1","regras":[]},{"id":"ler_pdf_ocr","k":6,"r":21,"kind":"Instalação","icon":"search","t":"ler_pdf_ocr.ps1","s":"Lê PDF que é imagem","tag":"","roda":"Cada PC","det":"Lê o texto de um PDF escaneado (OCR do Windows).","code":"Automacoes/ler_pdf_ocr.ps1","regras":[]},{"id":"trocar_assinatura","k":7,"r":21,"kind":"Instalação","icon":"user","t":"trocar_assinatura_outlook.py","s":"Troca a imagem da assinatura","tag":"","roda":"Cada PC","det":"Troca a imagem das assinaturas do Outlook deste PC pela assinatura do agente, mantendo o texto. Guarda uma cópia antes.","code":"Automacoes/trocar_assinatura_outlook.py","regras":[]},{"id":"diag_espelho","k":0,"r":22,"kind":"Instalação","icon":"search","t":"diagnostico_espelho.py","s":"Só lê o Outlook e explica","tag":"","roda":"Cada PC","det":"Mostra, para cada conta do Outlook, quantos e-mails o Painel mostra e por que os outros ficaram de fora. Não marca lido nem move nada.","code":"Automacoes/diagnostico_espelho.py","regras":[]},{"id":"gerar_exemplo_email","k":1,"r":22,"kind":"Instalação","icon":"mail","t":"gerar_exemplo_email.py","s":"E-mail de exemplo sem enviar","tag":"","roda":"Cada PC","det":"Gera um e-mail de exemplo com dados inventados, sem enviar.","code":"Automacoes/gerar_exemplo_email.py","regras":[]},{"id":"robo_py","k":2,"r":22,"kind":"Instalação","icon":"bot","t":"robo.py","s":"Entrada do robô","tag":"","roda":"Cada PC","det":"Arquivo de entrada do robô de envio (chamado por executar_robo.bat). Se o robô nem iniciar, grava FALHA_CRITICA.txt.","code":"robo.py","regras":[]},{"id":"venv","k":3,"r":22,"kind":"Instalação","icon":"code","t":"Ambiente Python (.venv)","s":"Bibliotecas do projeto","tag":"","roda":"Cada PC","det":"O ambiente Python do projeto e as bibliotecas de requirements.txt.","code":"requirements.txt","regras":[]},{"id":"pre_commit","k":0,"r":24,"kind":"Ferramenta","icon":"check","t":"Gancho pre-commit","s":"Barra o commit ruim","tag":"","roda":"Cópia de trabalho / GitHub","det":"Antes de cada commit: bloqueia credenciais, arquivos do robô que nunca sobem, CPF de hóspede de verdade (LGPD) e erro do ruff.","code":".githooks/pre-commit e ferramentas/checar_commit.py","regras":["Sem estado/ (PC de casa), a parte do CPF não roda."]},{"id":"guarda_git","k":1,"r":24,"kind":"Ferramenta","icon":"check","t":"Trava de git do Claude","s":"Bloqueia comando que apaga trabalho","tag":"","roda":"Cópia de trabalho / GitHub","det":"Impede o Claude de rodar push forçado, apagar branch, reset --hard, clean e checkout/restore de tudo. O push normal continua liberado.","code":"ferramentas/guarda_git.py","regras":[]},{"id":"testes","k":2,"r":24,"kind":"Ferramenta","icon":"check","t":"Testes automáticos","s":"625 testes em 89 arquivos","tag":"","roda":"Cópia de trabalho / GitHub","det":"Os testes usam dados inventados e não tocam em Google nem Outlook. Há também testes de tela com o Edge, que são pulados sem requirements-dev.txt.","code":"testes/","regras":[]},{"id":"ci_testes","k":3,"r":24,"kind":"Ferramenta","icon":"git","t":"GitHub Actions: Testes","s":"Roda os testes a cada push","tag":"","roda":"Cópia de trabalho / GitHub","det":"A cada push nas 4 branches e em pull request na main, o GitHub roda os testes. Permissão só de leitura.","code":".github/workflows/testes.yml","regras":[]},{"id":"ruff_cfg","k":4,"r":24,"kind":"Ferramenta","icon":"code","t":"ruff.toml e requirements-dev.txt","s":"Checagem de código","tag":"","roda":"Cópia de trabalho / GitHub","det":"Configuração do ruff (só erro real) e das ferramentas de desenvolvimento: ruff e playwright.","code":"ruff.toml, requirements-dev.txt","regras":[]},{"id":"aviso_endereco","k":5,"r":24,"kind":"Ferramenta","icon":"mail","t":"outlook_aviso_endereco","s":"Aviso do endereço do Outlook","tag":"","roda":"Cópia de trabalho / GitHub","det":"Arquivos .reg e um script para liberar o aviso de endereço do Outlook. Está preparado e NÃO foi aplicado: o valor precisa ser testado em um PC antes.","code":"ferramentas/outlook_aviso_endereco/","regras":["Não aplicar nos outros PCs antes de testar em um."]},{"id":"apps_script","k":0,"r":25,"kind":"Ferramenta","icon":"code","t":"Apps Script da Planilha Central","s":"Menu dentro da planilha","tag":"","roda":"Cópia de trabalho / GitHub","det":"Menu da Planilha Central (buscar hotel, verificar pendências, ativar o Claudio, envio separado, log, cota, conferir cópia). Roda dentro do Google, só lê e grava pedidos na aba Status; quem envia e-mail é o robô.","code":"apps_script/menu_planilha_central.gs","regras":[]},{"id":"saida_sim","k":1,"r":25,"kind":"Ferramenta","icon":"mail","t":"saida_simulacao/","s":"E-mail de exemplo gerado","tag":"","roda":"Cópia de trabalho / GitHub","det":"Pasta com o e-mail de exemplo que a simulação gera. Fora do git.","code":"saida_simulacao/","regras":[]},{"id":"cofre","k":2,"r":25,"kind":"Ferramenta","icon":"db","t":"Cofre Segundo Cérebro (Obsidian)","s":"A memória do projeto","tag":"","roda":"Cópia de trabalho / GitHub","det":"Regras, decisões, incidentes, diário, mapa do projeto e este diagrama. Fica dentro do repositório, então chega aos 4 PCs.","code":"Segundo Cérebro (Agente Smith)/","regras":["Nunca guardar senhas, chaves nem dado real de hóspede."]},{"id":"docs","k":3,"r":25,"kind":"Ferramenta","icon":"form","t":"CLAUDE.md, DESIGN.md, PRODUCT.md, CHANGELOG.md","s":"Instruções e histórico","tag":"","roda":"Cópia de trabalho / GitHub","det":"Os arquivos que dizem ao Claude como trabalhar, o design, o produto e o que mudou em cada versão.","code":"CLAUDE.md, DESIGN.md, PRODUCT.md, CHANGELOG.md, README.md","regras":[]},{"id":"pc_joao","k":2,"r":27,"kind":"Computador","icon":"monitor","t":"João","s":"PC principal","tag":"","roda":"Trabalho","det":"Além do que todos os PCs rodam, este faz a cópia dos hotéis (a cada 10 min), a vigia de formulários, o robô de envio, a conferência diária e a faxina. Fim de semana trabalham João e Cristian.","code":"","regras":["Todos os PCs rodam: Painel (tarefa no logon), conferente, guardião e vigia do Outlook."]},{"id":"pc_clara","k":3,"r":27,"kind":"Computador","icon":"monitor","t":"Clara","s":"Painel, conferente e Outlook","tag":"","roda":"Trabalho","det":"Roda o Painel e o conferente e tem no Outlook as caixas dos hotéis dela. Sem permissão de administrador: liberar a porta 8766 no firewall exige alguém com administrador.","code":"","regras":[]},{"id":"pc_cris","k":4,"r":27,"kind":"Computador","icon":"monitor","t":"Cristian","s":"Painel, conferente e Outlook","tag":"","roda":"Trabalho","det":"Roda o Painel e o conferente. Trabalha no fim de semana junto com o João, e esse fim de semana conta para ele na Gerência.","code":"","regras":[]},{"id":"pc_bern","k":5,"r":27,"kind":"Computador","icon":"monitor","t":"Bernardo","s":"Painel, conferente e Outlook","tag":"","roda":"Trabalho","det":"Roda o Painel e o conferente e tem no Outlook as caixas dos hotéis dele.","code":"","regras":[]}];
+
+  /* ligações: [de, para, caminho, texto, lado de saída, lado de entrada, desvio saída, desvio entrada, duas pontas] */
+  var E = [["hospede","form","p","preenche o formulário",null,null,0,0,0],["form","planhot","p","grava a resposta",null,null,0,0,0],["planhot","vigia_formularios","p","Drive avisa em 1–2 s",null,null,0,0,0],["planhot","sincronizar","p","lê a cada 10 min",null,null,0,0,0],["vigia_formularios","c_hot","p","copia só o que mudou",null,null,0,0,0],["sincronizar","c_hot","p","copia as planilhas",null,null,0,0,0],["sincronizar","main","p","em seguida roda o robô",null,null,0,0,0],["c_hot","main","p","pedidos sem TRUE",null,null,0,0,0],["c_cad","main","p","hotel, e-mail e agente",null,null,0,0,0],["main","montar_email","p","monta o e-mail",null,null,0,0,0],["montar_email","outlook","p","assunto e HTML","r","l",0,0,0],["main","diario_envios","p","anota antes de enviar",null,null,0,0,0],["main","outlook","p","envia pelo Outlook",null,null,0,0,0],["outlook","outlook_app","p","COM do Outlook","l","r",0,0,0],["outlook_app","kinghost","p","SMTP e POP3","t","b",0,0,1],["itens","main","p","só então marca TRUE",null,null,0,0,0],["main","planhot","p","marca TRUE na planilha","t","b",0,0,0],["main","c_log","p","registra o envio",null,null,0,0,0],["main","historico","p","Log de Envios",null,null,0,0,0],["historico","c_log","p","aba da Central",null,null,0,0,0],["historico","f_hist","p","CSV local",null,null,0,0,0],["main","envio_pc_dono","p","caixa em outro PC?","b","t",0,0,0],["envio_pc_dono","c_env","p","reserva: fila Envios_NF",null,null,0,0,0],["envio_pc_dono","rede_local","c","pedido assinado pela rede",null,null,0,0,0],["robo_antigo_ext","robo_antigo","p","e-mails do robô antigo",null,null,0,0,0],["robo_antigo","main","p","pula o que já foi atendido",null,null,0,0,0],["vigia_formularios","rede_local","c","avisa os Painéis",null,null,0,0,0],["conferir_copia","c_conf","p","audita a cópia",null,null,0,0,0],["planhot","conferir_copia","p","compara com a Central",null,null,0,0,0],["c_hot","conferir_copia","p","compara com a original",null,null,0,0,0],["emailh","kinghost","m","e-mail do hóspede",null,null,0,0,0],["kinghost","outlook_app","m","POP3 entrega na caixa",null,null,0,0,0],["outlook_vivo","outlook_app","m","mantém aberto",null,null,0,0,0],["outlook_app","vigia_outlook","m","olhada a cada 20 s",null,null,0,0,0],["vigia_outlook","conferente","m","chegou algo novo",null,null,0,0,0],["outlook_app","conferente","m","lê Entrada e Enviados",null,null,0,0,0],["outlook_app","espelho_emails","m","reflete as caixas",null,null,0,0,0],["outlook_app","indice_emails","m","indexa 12 meses",null,null,0,0,0],["outlook_app","busca_outlook","m","busca ao vivo",null,null,0,0,0],["outlook_app","itens","n","cópia fica em Itens Enviados",null,null,0,0,0],["organizador_emails","outlook_app","m","aplica categorias","l","r",0,0,0],["aviso_certificado","outlook_app","m","responde Sim ao aviso","l","r",0,0,0],["outlook_app","identidade","m","contas do Outlook",null,null,0,0,0],["c_cad","identidade","m","cadastro dos hotéis",null,null,0,0,0],["identidade","conferente","m","qual agente é este PC",null,null,0,0,0],["c_hot","classificador","m","pedidos para classificar",null,null,0,0,0],["c_trat","classificador","m","situação das notas",null,null,0,0,0],["conferente","confirmar_nfs","n","a cada volta",null,null,0,0,0],["controle_nf","confirmar_nfs","n","regras de reconhecimento",null,null,0,0,0],["confirmar_nfs","c_trat","n","nota confirmada",null,null,0,0,0],["confirmar_nfs","f_ctl","n","guarda o que já confirmou",null,null,0,0,0],["conferente","faxina","mt","1 vez por dia (principal)",null,null,0,0,0],["conferente","vigia_formularios","p","linha própria (principal)",null,null,0,0,0],["conferente","rede_local","c","avisa os Painéis",null,null,0,0,0],["conferente","contagem_painel","ge","conta o fim de semana",null,null,0,0,0],["contagem_painel","c_cont","ge","grava a contagem",null,null,0,0,0],["espelho_emails","c_cor","m","grava Correio_<PC>",null,null,0,0,0],["espelho_emails","f_esp","m","cópia local",null,null,0,0,0],["indice_emails","f_idx","m","grava o SQLite",null,null,0,0,0],["busca_outlook","indice_emails","m","mesma leitura do Outlook",null,null,0,0,0],["enviar_receber","outlook_app","m","F9 do Outlook",null,null,0,0,0],["rede_local","enviar_receber","c","pede o F9 a este PC",null,null,0,0,0],["c_hot","app_dados","m","pedidos dos hotéis",null,null,0,0,0],["c_trat","app_dados","m","situação de cada pedido",null,null,0,0,0],["app_dados","app_servidor","m","fila de solicitações",null,null,0,0,0],["c_cor","correio","m","lê a cada 15 s",null,null,0,0,0],["correio","app_servidor","m","caixa de entrada",null,null,0,0,0],["c_evt","app_servidor","m","lido, excluído, urgência",null,null,0,0,0],["app_servidor","c_evt","m","grava o evento",null,null,0,0,0],["hospedes","app_servidor","m","hóspede único",null,null,0,0,0],["analise_nf","app_servidor","m","urgência e correção",null,null,0,0,0],["nf_cobre","app_servidor","m","a nota cobre o pedido?",null,null,0,0,0],["controle_nf","app_servidor","m","regras de nota",null,null,0,0,0],["ligacoes","app_servidor","m","marca de ligação",null,null,0,0,0],["ligacoes","c_evt","m","aba Ligacoes",null,null,0,0,0],["nf_achadas","app_servidor","n","esta nota já existe?","l","r",0,0,0],["app_servidor","indice_emails","m","pesquisa local",null,null,0,0,0],["app_servidor","busca_outlook","m","busca ao vivo",null,null,0,0,0],["busca_outlook","rede_local","c","pergunta aos 4 Outlooks",null,null,0,0,0],["app_servidor","edge_win","m","API local :8765",null,null,0,0,0],["app_janela","edge_win","m","abre a janela",null,null,0,0,0],["edge_win","index_html","m","carrega a página",null,null,0,0,0],["index_html","painel_js","m","usa",null,null,0,0,0],["index_html","correio_js","m","usa",null,null,0,0,0],["index_html","robo_js","m","usa",null,null,0,0,0],["painel_js","graficos_js","m","gráficos",null,null,0,0,0],["p_etiqueta","painel_js","m","etiquetas e regras","l","r",0,0,0],["p_filtro","correio_js","m","filtros","l","r",0,0,0],["p_janela","painel_js","m","janelas","l","r",0,0,0],["p_etapas","correio_js","m","etapas do pedido","l","r",0,0,0],["p_caixas","index_html","m","caixas com problema","l","r",0,0,0],["p_carregando","index_html","m","carregamento","l","r",0,0,0],["p_busca","index_html","m","busca recente","l","r",0,0,0],["assinaturas","correio_js","m","assinatura do agente","l","r",0,0,0],["aba_agentes","index_html","m","nova aba","l","r",0,0,0],["correio_js","acoes","m","o agente age",null,null,0,0,0],["painel_js","acoes","m","o agente age",null,null,0,0,0],["acoes","app_servidor","m","ação com token","l","r",0,0,0],["app_dados","painel_js","m","números da Visão geral","r","l",0,0,0],["dropbox","confirmar_nfs","n","confere o PDF",null,null,0,0,0],["dropbox","nf_achadas","n","CPF/CNPJ do PDF",null,null,0,0,0],["dropbox","canceladas","n","arquivos renomeados",null,null,0,0,0],["nf_achadas","f_nf","n","índice de notas",null,null,0,0,0],["canceladas","f_nf","n","notas canceladas",null,null,0,0,0],["acoes","envio_nf","n","Enviar NF",null,null,0,0,0],["acoes","app_envio","n","Enviar pendentes",null,null,0,0,0],["app_envio","main","n","pede ao robô","l","r",0,0,0],["envio_nf","outlook","n","caixa neste PC: envia na hora","l","r",0,0,0],["envio_nf","envio_pc_dono","n","caixa em outro PC","l","r",0,0,0],["envio_nf","c_env","n","grava o pedido na fila","l","r",0,0,0],["envio_nf","rede_local","c","avisa pela rede","l","r",0,0,0],["rede_local","envio_pc_dono","n","o PC dono recebe o pedido","l","r",0,0,0],["c_env","envio_pc_dono","n","reserva: lê a fila","r","l",0,0,0],["envio_pc_dono","outlook","n","envia da própria caixa","t","b",0,0,0],["kinghost","hospdest","n","a nota chega ao hóspede","r","l",0,0,0],["itens","conferente","n","prova de que saiu","l","r",0,0,0],["rede_pcs","c_pcs","c","publica a cada minuto",null,null,0,0,0],["c_pcs","rede_pcs","c","lê quem está ligado","r","r",0,0,0],["rede_pcs","app_servidor","c","estado dos PCs","l","r",0,0,0],["atividade","c_evt","c","Atividade_Robo",null,null,0,0,0],["c_pcs","pc_joao","c","PCs_Painel e Comandos_PC","b","t",-75,-45,1],["rede_local","pc_joao","c","rede local assinada","b","t",-75,45,1],["c_pcs","pc_clara","c","","b","t",-25,-45,1],["rede_local","pc_clara","c","","b","t",-25,45,1],["c_pcs","pc_cris","c","","b","t",25,-45,1],["rede_local","pc_cris","c","","b","t",25,45,1],["c_pcs","pc_bern","c","","b","t",75,-45,1],["rede_local","pc_bern","c","","b","t",75,45,1],["dev","github","g","push da main + etiqueta",null,null,0,0,0],["dev","pre_commit","g","git commit","b","t",0,0,0],["pre_commit","github","g","só sobe se passar","r","b",0,0,0],["guarda_git","dev","g","trava comandos perigosos","t","b",0,0,0],["github","ci_testes","g","roda os testes a cada push",null,null,0,0,0],["testes","ci_testes","g","arquivos de teste",null,null,0,0,0],["ruff_cfg","pre_commit","g","regras do ruff",null,null,0,0,0],["github","atualizador","g","fetch --tags + merge",null,null,0,0,0],["atualizador","atualizar_sozinho","g","pede a atualização",null,null,0,0,0],["atualizar_sozinho","reiniciar_servicos","g","baixou o código",null,null,0,0,0],["reiniciar_servicos","agendador","g","religa as tarefas",null,null,0,0,0],["rede_pcs","atualizador","c","comando atualizar","r","r",0,0,0],["dev","cofre","g","registra no cofre",null,null,0,0,0],["cofre","docs","g","instruções ao Claude",null,null,0,0,0],["mailan","relatorio_semana","ge","lê, só leitura","l","r",0,0,0],["fi","fiscal_intelligence","ge","lê, só leitura","l","r",0,0,0],["fiscal_intelligence","painel_metricas","ge","números do Fiscal",null,null,0,0,0],["relatorio_semana","painel_metricas","ge","dia e semana",null,null,0,0,0],["canceladas","painel_metricas","ge","cancelamentos",null,null,0,0,0],["c_cont","relatorio_semana","ge","fim de semana",null,null,0,0,0],["painel_metricas","app_servidor","ge","Visão geral e Gerência","l","r",0,0,0],["faxina","c_trat","mt","resume o que passou de 3 dias","l","r",0,0,0],["faxina","c_env","mt","limpa a fila (3 dias)","l","r",0,0,0],["faxina","c_evt","mt","eventos 3 dias, robô 7","l","r",0,0,0],["faxina","f_bkp","mt","cópia antes de mexer","r","l",0,0,0],["limpeza","f_app","mt","limpa o cache da janela","r","l",0,0,0],["saude","rede_pcs","mt","publica a saúde","l","r",0,0,0],["saude","avisos_windows","mt","aviso no canto",null,null,0,0,0],["saude","app_servidor","mt","faixa vermelha no topo","l","r",0,0,0],["rede_pcs","agentes_smith","c","linhas de PCs_Painel",null,null,0,0,0],["agentes_smith","app_servidor","c","/api/agentes","l","r",0,0,0],["app_servidor","aba_agentes","m","mapa e estado ao vivo",null,null,0,0,0],["coracao","venv","ins","cria o ambiente",null,null,0,0,0],["coracao","agendar_painel","ins","agenda o Painel",null,null,0,0,0],["coracao","agendar_conferente","ins","agenda o conferente",null,null,0,0,0],["coracao","agendar_sincronizacao","ins","agenda a cópia",null,null,0,0,0],["instalar_bat","venv","ins","instala as bibliotecas",null,null,0,0,0],["agendar_painel","agendador","ins","tarefa do Painel",null,null,0,0,0],["agendar_conferente","agendador","ins","tarefa do conferente",null,null,0,0,0],["agendar_sincronizacao","agendador","ins","tarefa da cópia",null,null,0,0,0],["agendador","app_servidor","ins","liga no logon",null,null,0,0,0],["agendador","conferente","ins","liga no logon e a cada 10 min",null,null,0,0,0],["agendador","sincronizar_agendado_bat","ins","a cada 10 min",null,null,0,0,0],["sincronizar_agendado_bat","rodar_oculto","ins","sem janela",null,null,0,0,0],["rodar_oculto","sincronizar","ins","roda a cópia",null,null,0,0,0],["atualizar_painel_bat","reiniciar_servicos","ins","baixa e reinicia",null,null,0,0,0],["criar_atalho","abrir_app_bat","ins","atalho abre",null,null,0,0,0],["abrir_app_bat","app_janela","ins","abre a janela",null,null,0,0,0],["executar_robo_bat","robo_py","ins","roda o robô",null,null,0,0,0],["robo_py","main","ins","chama main.py",null,null,0,0,0],["conferente_bat","conferente","ins","em janela",null,null,0,0,0],["conferir_nfs_ano","confirmar_nfs","ins","confere o ano todo",null,null,0,0,0],["testar_config_bat","config","ins","valida a configuração",null,null,0,0,0],["rodar_testes_bat","testes","ins","roda os testes",null,null,0,0,0],["painel_demo_casa","demo","ins","abre com dados fictícios",null,null,0,0,0],["liberar_rede","rede_local","ins","libera a porta 8766",null,null,0,0,0],["preparar_dia_admin","liberar_rede","ins","prepara o comando",null,null,0,0,0],["ler_pdf_ocr","nf_achadas","ins","OCR de PDF escaneado",null,null,0,0,0],["trocar_assinatura","outlook_app","ins","troca a imagem",null,null,0,0,0],["assinaturas","trocar_assinatura","ins","imagem do agente",null,null,0,0,0],["diag_espelho","espelho_emails","ins","diagnóstico",null,null,0,0,0],["gerar_exemplo_email","montar_email","ins","e-mail de exemplo",null,null,0,0,0],["montar_email","saida_sim","ins","grava o exemplo",null,null,0,0,0],["aviso_endereco","outlook_app","ins","libera o aviso do endereço",null,null,0,0,0],["gerar_pacote","coracao","ins","leva ao PC novo",null,null,0,0,0],["apps_script","c_cad","ins","menu lê e grava o Status","r","l",0,0,0],["rede_pcs","agentes_smith","ap","",null,null,0,0,0],["arquivos","analise_nf","ap","",null,null,0,0,0],["controle_nf","analise_nf","ap","",null,null,0,0,0],["log_util","analise_nf","ap","",null,null,0,0,0],["tratamento","analise_nf","ap","",null,null,0,0,0],["hospedes","app_dados","ap","",null,null,0,0,0],["sheets","app_dados","ap","",null,null,0,0,0],["tratamento","app_dados","ap","",null,null,0,0,0],["historico","app_envio","ap","",null,null,0,0,0],["log_util","app_envio","ap","",null,null,0,0,0],["main","app_envio","ap","",null,null,0,0,0],["config","app_janela","ap","",null,null,0,0,0],["limpeza","app_janela","ap","",null,null,0,0,0],["log_util","app_janela","ap","",null,null,0,0,0],["agentes_smith","app_servidor","ap","",null,null,0,0,0],["app_dados","app_servidor","ap","",null,null,0,0,0],["app_envio","app_servidor","ap","",null,null,0,0,0],["arquivos","app_servidor","ap","",null,null,0,0,0],["atividade","app_servidor","ap","",null,null,0,0,0],["atualizador","app_servidor","ap","",null,null,0,0,0],["avisos_windows","app_servidor","ap","",null,null,0,0,0],["busca_outlook","app_servidor","ap","",null,null,0,0,0],["canceladas","app_servidor","ap","",null,null,0,0,0],["conferente","app_servidor","ap","",null,null,0,0,0],["config","app_servidor","ap","",null,null,0,0,0],["console_utf8","app_servidor","ap","",null,null,0,0,0],["contagem_painel","app_servidor","ap","",null,null,0,0,0],["controle_nf","app_servidor","ap","",null,null,0,0,0],["correio","app_servidor","ap","",null,null,0,0,0],["cota_google","app_servidor","ap","",null,null,0,0,0],["demo","app_servidor","ap","",null,null,0,0,0],["enviar_receber","app_servidor","ap","",null,null,0,0,0],["envio_nf","app_servidor","ap","",null,null,0,0,0],["envio_pc_dono","app_servidor","ap","",null,null,0,0,0],["espelho_emails","app_servidor","ap","",null,null,0,0,0],["fiscal_intelligence","app_servidor","ap","",null,null,0,0,0],["hospedes","app_servidor","ap","",null,null,0,0,0],["hoteis","app_servidor","ap","",null,null,0,0,0],["identidade","app_servidor","ap","",null,null,0,0,0],["indice_emails","app_servidor","ap","",null,null,0,0,0],["ligacoes","app_servidor","ap","",null,null,0,0,0],["limpeza","app_servidor","ap","",null,null,0,0,0],["log_util","app_servidor","ap","",null,null,0,0,0],["nf_achadas","app_servidor","ap","",null,null,0,0,0],["nf_cobre","app_servidor","ap","",null,null,0,0,0],["outlook_vivo","app_servidor","ap","",null,null,0,0,0],["painel_metricas","app_servidor","ap","",null,null,0,0,0],["rede_local","app_servidor","ap","",null,null,0,0,0],["rede_pcs","app_servidor","ap","",null,null,0,0,0],["relatorio_semana","app_servidor","ap","",null,null,0,0,0],["saude","app_servidor","ap","",null,null,0,0,0],["sheets","app_servidor","ap","",null,null,0,0,0],["tratamento","app_servidor","ap","",null,null,0,0,0],["log_util","atividade","ap","",null,null,0,0,0],["log_util","atualizador","ap","",null,null,0,0,0],["log_util","aviso_certificado","ap","",null,null,0,0,0],["console_utf8","avisos_windows","ap","",null,null,0,0,0],["log_util","avisos_windows","ap","",null,null,0,0,0],["saude","avisos_windows","ap","",null,null,0,0,0],["espelho_emails","busca_outlook","ap","",null,null,0,0,0],["log_util","busca_outlook","ap","",null,null,0,0,0],["arquivos","canceladas","ap","",null,null,0,0,0],["tratamento","canceladas","ap","",null,null,0,0,0],["app_dados","classificador","ap","",null,null,0,0,0],["conferente","classificador","ap","",null,null,0,0,0],["config","classificador","ap","",null,null,0,0,0],["confirmar_nfs","classificador","ap","",null,null,0,0,0],["console_utf8","classificador","ap","",null,null,0,0,0],["controle_nf","classificador","ap","",null,null,0,0,0],["log_util","classificador","ap","",null,null,0,0,0],["outlook_vivo","classificador","ap","",null,null,0,0,0],["sheets","classificador","ap","",null,null,0,0,0],["tratamento","classificador","ap","",null,null,0,0,0],["aviso_certificado","conferente","ap","",null,null,0,0,0],["conferir_copia","conferente","ap","",null,null,0,0,0],["config","conferente","ap","",null,null,0,0,0],["confirmar_nfs","conferente","ap","",null,null,0,0,0],["console_utf8","conferente","ap","",null,null,0,0,0],["contagem_painel","conferente","ap","",null,null,0,0,0],["controle_nf","conferente","ap","",null,null,0,0,0],["cota_envio","conferente","ap","",null,null,0,0,0],["cota_google","conferente","ap","",null,null,0,0,0],["envio_nf","conferente","ap","",null,null,0,0,0],["espelho_emails","conferente","ap","",null,null,0,0,0],["faxina","conferente","ap","",null,null,0,0,0],["historico","conferente","ap","",null,null,0,0,0],["identidade","conferente","ap","",null,null,0,0,0],["log_util","conferente","ap","",null,null,0,0,0],["main","conferente","ap","",null,null,0,0,0],["outlook_vivo","conferente","ap","",null,null,0,0,0],["rede_local","conferente","ap","",null,null,0,0,0],["sheets","conferente","ap","",null,null,0,0,0],["vigia_formularios","conferente","ap","",null,null,0,0,0],["vigia_outlook","conferente","ap","",null,null,0,0,0],["config","conferir_copia","ap","",null,null,0,0,0],["console_utf8","conferir_copia","ap","",null,null,0,0,0],["lock_execucao","conferir_copia","ap","",null,null,0,0,0],["log_util","conferir_copia","ap","",null,null,0,0,0],["sheets","conferir_copia","ap","",null,null,0,0,0],["sincronizar","conferir_copia","ap","",null,null,0,0,0],["tratamento","conferir_copia","ap","",null,null,0,0,0],["app_dados","confirmar_nfs","ap","",null,null,0,0,0],["arquivos","confirmar_nfs","ap","",null,null,0,0,0],["atividade","confirmar_nfs","ap","",null,null,0,0,0],["conferente","confirmar_nfs","ap","",null,null,0,0,0],["config","confirmar_nfs","ap","",null,null,0,0,0],["console_utf8","confirmar_nfs","ap","",null,null,0,0,0],["controle_nf","confirmar_nfs","ap","",null,null,0,0,0],["identidade","confirmar_nfs","ap","",null,null,0,0,0],["log_util","confirmar_nfs","ap","",null,null,0,0,0],["outlook_vivo","confirmar_nfs","ap","",null,null,0,0,0],["sheets","confirmar_nfs","ap","",null,null,0,0,0],["arquivos","contagem_painel","ap","",null,null,0,0,0],["config","contagem_painel","ap","",null,null,0,0,0],["identidade","contagem_painel","ap","",null,null,0,0,0],["log_util","contagem_painel","ap","",null,null,0,0,0],["arquivos","controle_nf","ap","",null,null,0,0,0],["tratamento","controle_nf","ap","",null,null,0,0,0],["espelho_emails","correio","ap","",null,null,0,0,0],["prazos","correio","ap","",null,null,0,0,0],["config","cota_google","ap","",null,null,0,0,0],["analise_nf","demo","ap","",null,null,0,0,0],["app_dados","demo","ap","",null,null,0,0,0],["atividade","demo","ap","",null,null,0,0,0],["busca_outlook","demo","ap","",null,null,0,0,0],["envio_nf","demo","ap","",null,null,0,0,0],["espelho_emails","demo","ap","",null,null,0,0,0],["ligacoes","demo","ap","",null,null,0,0,0],["rede_pcs","demo","ap","",null,null,0,0,0],["sheets","demo","ap","",null,null,0,0,0],["arquivos","diario_envios","ap","",null,null,0,0,0],["modelos","diario_envios","ap","",null,null,0,0,0],["log_util","enviar_receber","ap","",null,null,0,0,0],["arquivos","envio_nf","ap","",null,null,0,0,0],["controle_nf","envio_nf","ap","",null,null,0,0,0],["envio_pc_dono","envio_nf","ap","",null,null,0,0,0],["espelho_emails","envio_nf","ap","",null,null,0,0,0],["log_util","envio_nf","ap","",null,null,0,0,0],["outlook_vivo","envio_nf","ap","",null,null,0,0,0],["rede_pcs","envio_nf","ap","",null,null,0,0,0],["sheets","envio_nf","ap","",null,null,0,0,0],["tratamento","envio_nf","ap","",null,null,0,0,0],["config","envio_pc_dono","ap","",null,null,0,0,0],["envio_nf","envio_pc_dono","ap","",null,null,0,0,0],["log_util","envio_pc_dono","ap","",null,null,0,0,0],["outlook_vivo","envio_pc_dono","ap","",null,null,0,0,0],["rede_local","envio_pc_dono","ap","",null,null,0,0,0],["rede_pcs","envio_pc_dono","ap","",null,null,0,0,0],["analise_nf","espelho_emails","ap","",null,null,0,0,0],["arquivos","espelho_emails","ap","",null,null,0,0,0],["conferente","espelho_emails","ap","",null,null,0,0,0],["config","espelho_emails","ap","",null,null,0,0,0],["controle_nf","espelho_emails","ap","",null,null,0,0,0],["envio_nf","espelho_emails","ap","",null,null,0,0,0],["log_util","espelho_emails","ap","",null,null,0,0,0],["tratamento","espelho_emails","ap","",null,null,0,0,0],["app_dados","faxina","ap","",null,null,0,0,0],["arquivos","faxina","ap","",null,null,0,0,0],["atividade","faxina","ap","",null,null,0,0,0],["config","faxina","ap","",null,null,0,0,0],["envio_nf","faxina","ap","",null,null,0,0,0],["espelho_emails","faxina","ap","",null,null,0,0,0],["ligacoes","faxina","ap","",null,null,0,0,0],["log_util","faxina","ap","",null,null,0,0,0],["rede_pcs","faxina","ap","",null,null,0,0,0],["sheets","faxina","ap","",null,null,0,0,0],["tratamento","fiscal_intelligence","ap","",null,null,0,0,0],["arquivos","historico","ap","",null,null,0,0,0],["log_util","historico","ap","",null,null,0,0,0],["controle_nf","hospedes","ap","",null,null,0,0,0],["prazos","hospedes","ap","",null,null,0,0,0],["tratamento","hoteis","ap","",null,null,0,0,0],["arquivos","identidade","ap","",null,null,0,0,0],["config","identidade","ap","",null,null,0,0,0],["log_util","identidade","ap","",null,null,0,0,0],["outlook_vivo","identidade","ap","",null,null,0,0,0],["sheets","identidade","ap","",null,null,0,0,0],["tratamento","identidade","ap","",null,null,0,0,0],["busca_outlook","indice_emails","ap","",null,null,0,0,0],["config","indice_emails","ap","",null,null,0,0,0],["espelho_emails","indice_emails","ap","",null,null,0,0,0],["log_util","indice_emails","ap","",null,null,0,0,0],["config","lock_execucao","ap","",null,null,0,0,0],["log_util","lock_execucao","ap","",null,null,0,0,0],["config","main","ap","",null,null,0,0,0],["console_utf8","main","ap","",null,null,0,0,0],["controle_nf","main","ap","",null,null,0,0,0],["diario_envios","main","ap","",null,null,0,0,0],["envio_pc_dono","main","ap","",null,null,0,0,0],["historico","main","ap","",null,null,0,0,0],["lock_execucao","main","ap","",null,null,0,0,0],["log_util","main","ap","",null,null,0,0,0],["montar_email","main","ap","",null,null,0,0,0],["outlook","main","ap","",null,null,0,0,0],["robo_antigo","main","ap","",null,null,0,0,0],["sheets","main","ap","",null,null,0,0,0],["sincronizar","main","ap","",null,null,0,0,0],["tratamento","main","ap","",null,null,0,0,0],["controle_nf","montar_email","ap","",null,null,0,0,0],["modelos","montar_email","ap","",null,null,0,0,0],["tratamento","montar_email","ap","",null,null,0,0,0],["arquivos","nf_achadas","ap","",null,null,0,0,0],["controle_nf","nf_achadas","ap","",null,null,0,0,0],["envio_nf","nf_achadas","ap","",null,null,0,0,0],["log_util","nf_achadas","ap","",null,null,0,0,0],["controle_nf","nf_cobre","ap","",null,null,0,0,0],["tratamento","nf_cobre","ap","",null,null,0,0,0],["config","organizador_emails","ap","",null,null,0,0,0],["controle_nf","organizador_emails","ap","",null,null,0,0,0],["outlook_vivo","organizador_emails","ap","",null,null,0,0,0],["sheets","organizador_emails","ap","",null,null,0,0,0],["tratamento","organizador_emails","ap","",null,null,0,0,0],["log_util","outlook","ap","",null,null,0,0,0],["outlook_vivo","outlook","ap","",null,null,0,0,0],["enviar_receber","outlook_vivo","ap","",null,null,0,0,0],["log_util","outlook_vivo","ap","",null,null,0,0,0],["app_dados","painel_metricas","ap","",null,null,0,0,0],["canceladas","painel_metricas","ap","",null,null,0,0,0],["fiscal_intelligence","painel_metricas","ap","",null,null,0,0,0],["log_util","rede_local","ap","",null,null,0,0,0],["config","rede_pcs","ap","",null,null,0,0,0],["outlook_vivo","rede_pcs","ap","",null,null,0,0,0],["saude","rede_pcs","ap","",null,null,0,0,0],["log_util","rede_util","ap","",null,null,0,0,0],["arquivos","robo_antigo","ap","",null,null,0,0,0],["log_util","robo_antigo","ap","",null,null,0,0,0],["tratamento","robo_antigo","ap","",null,null,0,0,0],["aviso_certificado","saude","ap","",null,null,0,0,0],["tratamento","saude","ap","",null,null,0,0,0],["cota_google","sheets","ap","",null,null,0,0,0],["log_util","sheets","ap","",null,null,0,0,0],["modelos","sheets","ap","",null,null,0,0,0],["rede_util","sheets","ap","",null,null,0,0,0],["tratamento","sheets","ap","",null,null,0,0,0],["arquivos","sincronizar","ap","",null,null,0,0,0],["config","sincronizar","ap","",null,null,0,0,0],["console_utf8","sincronizar","ap","",null,null,0,0,0],["cota_google","sincronizar","ap","",null,null,0,0,0],["historico","sincronizar","ap","",null,null,0,0,0],["lock_execucao","sincronizar","ap","",null,null,0,0,0],["log_util","sincronizar","ap","",null,null,0,0,0],["main","sincronizar","ap","",null,null,0,0,0],["robo_antigo","sincronizar","ap","",null,null,0,0,0],["sheets","sincronizar","ap","",null,null,0,0,0],["tratamento","sincronizar","ap","",null,null,0,0,0],["config","vigia_formularios","ap","",null,null,0,0,0],["cota_google","vigia_formularios","ap","",null,null,0,0,0],["lock_execucao","vigia_formularios","ap","",null,null,0,0,0],["log_util","vigia_formularios","ap","",null,null,0,0,0],["sheets","vigia_formularios","ap","",null,null,0,0,0],["sincronizar","vigia_formularios","ap","",null,null,0,0,0],["log_util","vigia_outlook","ap","",null,null,0,0,0]];
+
+  var NOTAS = [{"x":60,"y":4110,"t":"Cota do Google","s":"60 leituras por minuto somando os 4 PCs. Toda leitura nova entra na conta; por isso cada programa tem a sua fatia (cota_google.py)."},{"x":530,"y":4110,"t":"Nada acumula","s":"O Painel não é histórico: quem guarda é o Outlook e a planilha de cada hotel. As abas de registro têm faxina de 3 a 7 dias."},{"x":2880,"y":4110,"t":"Dado de hóspede","s":"Só no Outlook e no índice local de cada PC. Nunca em arquivo de teste, documento ou GitHub."},{"x":3350,"y":4110,"t":"Como ler este mapa","s":"Cada bloco é um programa, arquivo ou serviço. As linhas coloridas mostram por onde o dado anda. Clique num bloco para ver também quem ele usa e quem o usa (linhas cinza)."}];
+
+  var FR = [{"id":"f1","t":"1 · Fora do sistema","z":"Fontes","m":["hospede","form","emailh","robo_antigo_ext","dropbox","dev","github"]},{"id":"f2","t":"2 · Google, e-mail e Outlook","z":"Google e Outlook","m":["planhot","kinghost","outlook_app"]},{"id":"f3","t":"3 · Cópia e envio (robô)","z":"Cópia e envio","m":["vigia_formularios","sincronizar","conferir_copia","main","montar_email","diario_envios","robo_antigo","envio_pc_dono","outlook"]},{"id":"f4","t":"4 · Outlook e conferência de cada PC","z":"Conferência","m":["outlook_vivo","vigia_outlook","identidade","aviso_certificado","conferente","confirmar_nfs","espelho_emails","indice_emails","busca_outlook","enviar_receber","organizador_emails","classificador","contagem_painel"]},{"id":"f5","t":"5 · Planilha Central (Google)","z":"Central","m":["c_hot","c_cad","c_env","c_log","c_trat","c_cor","c_evt","c_pcs","c_conf","c_cont"]},{"id":"f6","t":"6 · Arquivos deste PC","z":"Arquivos","m":["f_cfg","f_chave","f_idx","f_nf","f_ctl","f_esp","f_bkp","f_app","f_hist","f_logs","f_lock"]},{"id":"f7","t":"7 · Painel: dados e regras","z":"Painel","m":["app_dados","controle_nf","analise_nf","nf_achadas","hospedes","app_servidor","ligacoes","correio","envio_nf","app_envio","historico","canceladas","nf_cobre"]},{"id":"f8","t":"8 · Painel: rede, saúde e manutenção","z":"Rede e saúde","m":["painel_metricas","relatorio_semana","fiscal_intelligence","atividade","rede_pcs","rede_local","saude","avisos_windows","atualizador","faxina","limpeza","demo","agentes_smith"]},{"id":"f9","t":"9 · Telas (app_ui)","z":"Telas","m":["app_janela","index_html","painel_js","correio_js","robo_js","graficos_js","p_etiqueta","p_filtro","p_janela","p_etapas","p_caixas","p_carregando","p_busca","assinaturas","aba_agentes"]},{"id":"f10","t":"10 · Ação e saída","z":"Saída","m":["acoes","itens","hospdest","edge_win"]},{"id":"f11","t":"Leitura da Gerência","z":null,"m":["mailan","fi"]},{"id":"f12","t":"Apoio comum (biblioteca)","z":"Apoio","m":["arquivos","config","console_utf8","log_util","modelos","tratamento","sheets","prazos","hoteis","rede_util","cota_google","cota_envio","lock_execucao"]},{"id":"f13","t":"Instalar e manter os PCs (Automacoes e Bat)","z":"Instalação","m":["coracao","instalar_bat","atualizar_painel_bat","atualizar_sozinho","reiniciar_servicos","agendador","criar_atalho","gerar_pacote","agendar_painel","agendar_conferente","agendar_sincronizacao","rodar_oculto","sincronizar_agendado_bat","executar_robo_bat","conferente_bat","abrir_app_bat","conferir_nfs_ano","testar_config_bat","rodar_testes_bat","painel_demo_casa","liberar_rede","preparar_dia_admin","ler_pdf_ocr","trocar_assinatura","diag_espelho","gerar_exemplo_email","robo_py","venv"]},{"id":"f14","t":"Qualidade, ferramentas e documentos","z":"Qualidade","m":["pre_commit","guarda_git","testes","ci_testes","ruff_cfg","aviso_endereco","apps_script","saida_sim","cofre","docs"]},{"id":"f15","t":"Os 4 computadores do financeiro","z":"4 PCs","m":["pc_joao","pc_clara","pc_cris","pc_bern"]}];
+
+  /* ---------------------------------------------------------------- montagem */
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+  var stage = $("stage"), world = $("world"), nodesEl = $("nodes"), framesEl = $("frames"), edgesEl = $("edges"), defs = $("defs"), labelsEl = $("labels"), painel = $("painel");
+
+  var REDUZ = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var byId = {};
+  N.forEach(function (n) { n.x = X(n.k); n.y = Y(n.r); byId[n.id] = n; });
+  var MAXX = 0, MAXY = 0;
+  N.forEach(function (n) { MAXX = Math.max(MAXX, n.x + W); MAXY = Math.max(MAXY, n.y + H); });
+  NOTAS.forEach(function (n) { MAXX = Math.max(MAXX, n.x + 310); MAXY = Math.max(MAXY, n.y + 130); });
+  [world, edgesEl].forEach(function (e) { e.style.width = (MAXX + 80) + "px"; e.style.height = (MAXY + 80) + "px"; });
+  NOTAS.forEach(function (n) { /* posições já em px */ });
+
+  function colorOf(f) { return "var(--f-" + f + ")"; }
+
+  function svg(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    for (var a in attrs) el.setAttribute(a, attrs[a]);
+    return el;
+  }
+
+  // pontas de seta, uma por caminho
+  FLOWS.forEach(function (f) {
+    ["end", "start"].forEach(function (pos) {
+      var m = svg("marker", { id: "seta-" + f.id + "-" + pos, viewBox: "0 0 10 10", refX: pos === "end" ? "8" : "2", refY: "5", markerWidth: "9", markerHeight: "9", markerUnits: "userSpaceOnUse", orient: "auto-start-reverse" });
+      var p = svg("path", { d: "M1 1 L9 5 L1 9 z", style: "fill:" + colorOf(f.id) });
+      m.appendChild(p); defs.appendChild(m);
+    });
+  });
+
+  // quadros de fundo
+  FR.forEach(function (fr) {
+    var xs = [], ys = [], xe = [], ye = [];
+    fr.m.forEach(function (id) { var n = byId[id]; xs.push(n.x); ys.push(n.y); xe.push(n.x + W); ye.push(n.y + H); });
+    var pad = 34, top = 58;
+    var minx = Math.min.apply(null, xs) - pad, miny = Math.min.apply(null, ys) - top, maxx = Math.max.apply(null, xe) + pad, maxy = Math.max.apply(null, ye) + pad;
+    fr.box = { x: minx, y: miny, w: maxx - minx, h: maxy - miny };
+    var d = document.createElement("div");
+    d.className = "frame"; d.style.setProperty("--t", "var(--t" + (FR.indexOf(fr) + 1) + ")");
+    d.style.cssText = "left:" + minx + "px;top:" + miny + "px;width:" + (maxx - minx) + "px;height:" + (maxy - miny) + "px";
+    var b = document.createElement("b"); b.textContent = fr.t; d.appendChild(b);
+    framesEl.appendChild(d);
+  });
+  var PRIN = null;   // enquadramento inicial: só o fluxo principal (quadros 1 a 10 e a leitura da Gerência)
+  FR.forEach(function (fr) {
+    if (["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11"].indexOf(fr.id) < 0) return;
+    var b = fr.box, u = PRIN || { x: b.x, y: b.y, w: b.w, h: b.h };
+    var x0 = Math.min(u.x, b.x), y0 = Math.min(u.y, b.y), x1 = Math.max(u.x + u.w, b.x + b.w), y1 = Math.max(u.y + u.h, b.y + b.h);
+    PRIN = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  });
+
+  // blocos
+  N.forEach(function (n) {
+    var el = document.createElement("button");
+    el.className = "node"; el.type = "button"; el.id = "n-" + n.id;
+    el.style.left = n.x + "px"; el.style.top = n.y + "px";
+    el.setAttribute("aria-label", n.t + ". " + n.s);
+    var tile = document.createElement("div"); tile.className = "tile";
+    tile.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n.icon] + "</svg>";
+    var txt = document.createElement("div"); txt.className = "txt";
+    var kind = document.createElement("div"); kind.className = "kind";
+    var ks = document.createElement("span"); ks.textContent = n.kind; kind.appendChild(ks);
+    if (n.tag) { var em = document.createElement("em"); em.textContent = n.tag; kind.appendChild(em); }
+    var tt = document.createElement("div"); tt.className = "tt"; tt.textContent = n.t;
+    var ss = document.createElement("div"); ss.className = "ss"; ss.textContent = n.s;
+    txt.appendChild(kind); txt.appendChild(tt); txt.appendChild(ss);
+    el.appendChild(tile); el.appendChild(txt);
+    n.el = el; nodesEl.appendChild(el);
+  });
+
+  // notas adesivas
+  NOTAS.forEach(function (n) {
+    var d = document.createElement("div"); d.className = "nota"; d.style.left = n.x + "px"; d.style.top = n.y + "px";
+    var b = document.createElement("b"); b.textContent = n.t; var p = document.createElement("div"); p.textContent = n.s;
+    d.appendChild(b); d.appendChild(p); nodesEl.appendChild(d);
+  });
+
+  // ligações
+  function port(n, side, off) {
+    off = off || 0;
+    if (side === "r") return { x: n.x + W, y: n.y + H / 2 + off, dx: 1, dy: 0 };
+    if (side === "l") return { x: n.x, y: n.y + H / 2 + off, dx: -1, dy: 0 };
+    if (side === "t") return { x: n.x + W / 2 + off, y: n.y, dx: 0, dy: -1 };
+    return { x: n.x + W / 2 + off, y: n.y + H, dx: 0, dy: 1 };
+  }
+  var usedPorts = {};
+  var edges = [];
+  E.forEach(function (e, i) {
+    var a = byId[e[0]], b = byId[e[1]], fs = e[4] || "r", ts = e[5] || "l";
+    var p0 = port(a, fs, e[6]), p1 = port(b, ts, e[7]);
+    var dist = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    var k = fs === ts ? 50 : Math.max(50, Math.min(dist * 0.45, 230));
+    var d = "M" + p0.x + " " + p0.y + " C" + (p0.x + p0.dx * k) + " " + (p0.y + p0.dy * k) + " " + (p1.x + p1.dx * k) + " " + (p1.y + p1.dy * k) + " " + p1.x + " " + p1.y;
+    var g = svg("g", { class: "edge", style: "--c:" + colorOf(e[2]) });
+    var base = svg("path", { d: d, class: "base", "marker-end": "url(#seta-" + e[2] + "-end)" });
+    if (e[8]) base.setAttribute("marker-start", "url(#seta-" + e[2] + "-start)");
+    var flow = svg("path", { d: d, class: "flow" });
+    g.appendChild(base); g.appendChild(flow); edgesEl.appendChild(g);
+    if (!REDUZ && e[2] !== "ap") {   // pacotes de dados andando no sentido da seta
+      var comp = base.getTotalLength(), qtd = 1;
+      for (var j = 0; j < qtd; j++) {
+        var pk = svg("circle", { r: "5", class: "pk" });
+        var am = svg("animateMotion", { dur: (comp / 95) + "s", repeatCount: "indefinite", begin: "-" + (j * comp / 95 / qtd) + "s", path: d });
+        pk.appendChild(am); g.appendChild(pk);
+      }
+    }
+    var ed = { i: i, from: e[0], to: e[1], f: e[2], text: e[3], g: g };
+    if (e[3]) {
+      var mid = base.getPointAtLength(base.getTotalLength() / 2);
+      var l = document.createElement("div"); l.className = "lbl"; l.textContent = e[3];
+      l.style.left = mid.x + "px"; l.style.top = mid.y + "px"; l.style.setProperty("--c", colorOf(e[2]));
+      labelsEl.appendChild(l); ed.lbl = l;
+    }
+    edges.push(ed);
+    if (!e[6] && !e[7]) { usedPorts[e[0] + ":" + fs] = [a, fs]; usedPorts[e[1] + ":" + ts] = [b, ts]; }
+  });
+  Object.keys(usedPorts).forEach(function (key) {
+    var n = usedPorts[key][0], s = usedPorts[key][1], p = document.createElement("i"); p.className = "port";
+    if (s === "r") p.style.cssText = "right:-6px;top:" + (H / 2 - 5) + "px";
+    if (s === "l") p.style.cssText = "left:-6px;top:" + (H / 2 - 5) + "px";
+    if (s === "t") p.style.cssText = "top:-6px;left:" + (W / 2 - 5) + "px";
+    if (s === "b") p.style.cssText = "bottom:-6px;left:" + (W / 2 - 5) + "px";
+    n.el.appendChild(p);
+  });
+
+  /* ---------------------------------------------------------------- zoom e movimento */
+  var tx = 0, ty = 0, sc = 1, MIN = 0.08, MAX = 2.2;
+  function aplicar() {
+    world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + sc + ")";
+    world.classList.toggle("zoomed", sc >= 0.5); world.style.setProperty("--z", sc);
+    var s = 26 * sc;
+    stage.style.backgroundImage = "radial-gradient(circle, var(--dot) " + Math.max(1, 1.3 * sc) + "px, transparent " + (Math.max(1, 1.3 * sc) + 0.5) + "px)";
+    stage.style.backgroundSize = s + "px " + s + "px";
+    stage.style.backgroundPosition = tx + "px " + ty + "px";
+  }
+  function espacoUtil() {
+    var r = stage.getBoundingClientRect();
+    var comPainel = painel.classList.contains("on") && window.innerWidth > 760;
+    return { w: r.width - (comPainel ? 360 : 0), h: r.height - (window.innerWidth <= 760 && painel.classList.contains("on") ? r.height * 0.62 : 0) };
+  }
+  function animar(fn) {
+    var reduz = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduz) { world.classList.add("anim"); setTimeout(function () { world.classList.remove("anim"); }, 480); }
+    fn();
+  }
+  var ultimoAlvo = null;
+  function enquadrar(box, margem) {
+    ultimoAlvo = box;
+    var u = espacoUtil(), m = margem == null ? 40 : margem;
+    var s = Math.min((u.w - m * 2) / box.w, (u.h - m * 2 - 50) / box.h);
+    sc = Math.max(MIN, Math.min(MAX, s));
+    tx = (u.w - box.w * sc) / 2 - box.x * sc;
+    ty = (u.h - box.h * sc) / 2 - box.y * sc + 10;
+    aplicar();
+  }
+  var TUDO = { x: 20, y: 10, w: MAXX + 60, h: MAXY + 60 };
+  var primeira = true;
+  function verTudo() { var alvo = primeira ? PRIN : TUDO; primeira = false; animar(function () { enquadrar(alvo, 16); }); }
+  function zoomEm(cx, cy, fator) {
+    var ns = Math.max(MIN, Math.min(MAX, sc * fator)); fator = ns / sc;
+    tx = cx - (cx - tx) * fator; ty = cy - (cy - ty) * fator; sc = ns; aplicar();
+  }
+  $("zmais").onclick = function () { var u = espacoUtil(); animar(function () { zoomEm(u.w / 2, u.h / 2, 1.3); }); };
+  $("zmenos").onclick = function () { var u = espacoUtil(); animar(function () { zoomEm(u.w / 2, u.h / 2, 1 / 1.3); }); };
+  $("zfit").onclick = verTudo;
+
+  stage.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var r = stage.getBoundingClientRect();
+    zoomEm(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0016)));
+  }, { passive: false });
+
+  var ptrs = {}, arrastou = false, ult = null, pinca = null, alvoClique = null;
+  stage.addEventListener("pointerdown", function (ev) {
+    if (ev.target.closest(".zonas, .painel, .dica")) return;
+    ptrs[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    alvoClique = ev.target.closest(".node");
+    arrastou = false; ult = { x: ev.clientX, y: ev.clientY };
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; pinca = Math.hypot(a.x - b.x, a.y - b.y); arrastou = true; }
+    try { stage.setPointerCapture(ev.pointerId); } catch (e) { /* sem captura */ }
+  });
+  stage.addEventListener("pointermove", function (ev) {
+    if (!ptrs[ev.pointerId]) return;
+    ptrs[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2 && pinca) {
+      var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), r = stage.getBoundingClientRect();
+      zoomEm((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, d / pinca); pinca = d; return;
+    }
+    var dx = ev.clientX - ult.x, dy = ev.clientY - ult.y;
+    if (!arrastou && Math.hypot(dx, dy) < 5) return;
+    if (!arrastou) { arrastou = true; stage.classList.add("pan"); }
+    tx += dx; ty += dy; ult = { x: ev.clientX, y: ev.clientY }; aplicar();
+  });
+  function soltar(ev) {
+    if (!ptrs[ev.pointerId]) return;
+    delete ptrs[ev.pointerId]; pinca = null; stage.classList.remove("pan");
+    if (!arrastou && alvoClique && ev.type === "pointerup") escolher(alvoClique.id.slice(2));
+    else if (!arrastou && !alvoClique && ev.type === "pointerup" && !ev.target.closest(".zonas, .painel, .dica")) limpar();
+    alvoClique = null;
+  }
+  stage.addEventListener("pointerup", soltar);
+  stage.addEventListener("pointercancel", soltar);
+
+  /* ---------------------------------------------------------------- escolha e destaque */
+  var selecionado = null, caminho = "prod";
+  function atualizar() {
+    var ativas = {}, nosAtivos = {}, filtro = !!(selecionado || caminho);
+    edges.forEach(function (e) {
+      var on = selecionado ? (e.from === selecionado || e.to === selecionado) : (caminho ? (caminho === "prod" ? !!PRODSET[e.from + ">" + e.to] : e.f === caminho) : false);
+      ativas[e.i] = on; if (on) { nosAtivos[e.from] = 1; nosAtivos[e.to] = 1; }
+    });
+    if (selecionado) nosAtivos[selecionado] = 1;
+    edges.forEach(function (e) {
+      e.g.classList.toggle("hot", !!ativas[e.i]);
+      e.g.classList.toggle("dim", filtro && !ativas[e.i]);
+      if (e.lbl) { e.lbl.classList.toggle("show", !!ativas[e.i]); e.lbl.classList.toggle("dim", filtro && !ativas[e.i]); }
+    });
+    N.forEach(function (n) {
+      n.el.classList.toggle("sel", n.id === selecionado);
+      n.el.classList.toggle("dim", filtro && !nosAtivos[n.id]);
+    });
+    document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String((c.dataset.f || "") === (caminho || ""))); });
+  }
+  function limpar() { selecionado = null; painel.classList.remove("on"); stage.classList.remove("com-painel"); atualizar(); if (window.aoEscolherNo) window.aoEscolherNo(null); }
+
+  function centralizar(n) {
+    var u = espacoUtil();
+    animar(function () { tx = u.w / 2 - (n.x + W / 2) * sc; ty = u.h / 2 - (n.y + H / 2) * sc; aplicar(); });
+  }
+
+  function escolher(id) {
+    var n = byId[id]; if (!n) return;
+    selecionado = id;
+    painel.classList.add("on"); stage.classList.add("com-painel");
+    desenharPainel(n); atualizar(); if (window.aoEscolherNo) window.aoEscolherNo(id);
+    if (sc < 0.7) { sc = 0.9; aplicar(); }
+    centralizar(n);
+  }
+
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  function desenharPainel(n) {
+    painel.textContent = "";
+    var h = el("header");
+    var tile = el("div", "tile"); tile.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n.icon] + "</svg>";
+    var box = el("div"); var h2 = el("h2", null, n.t); var p = el("p", null, n.kind + " · " + n.s); box.appendChild(h2); box.appendChild(p);
+    var x = el("button", "fechar", "×"); x.setAttribute("aria-label", "Fechar detalhes"); x.onclick = limpar;
+    h.appendChild(tile); h.appendChild(box); h.appendChild(x); painel.appendChild(h);
+    var c = el("div", "corpo");
+    function sec(titulo, filho) { var s = el("section"); s.appendChild(el("h3", null, titulo)); s.appendChild(filho); c.appendChild(s); }
+    if (window.AGORA_NO) window.AGORA_NO(n, sec, el);
+    sec("O que faz", el("p", null, n.det));
+    if (n.tag) sec("Quando", el("p", null, n.tag));
+    if (n.roda) sec("Onde roda", el("p", null, n.roda));
+    if (n.regras && n.regras.length) { var ul = el("ul"); n.regras.forEach(function (r) { ul.appendChild(el("li", null, r)); }); sec("Regras e limites", ul); }
+    if (n.code) sec("No código", el("div", "mono", n.code));
+    function lista(titulo, itens, seta) {
+      if (!itens.length) return;
+      var l = el("div", "liga");
+      itens.forEach(function (e) {
+        var outro = byId[seta === "←" ? e.from : e.to];
+        var b = el("button"); b.type = "button";
+        var i = el("i", null, seta); i.style.setProperty("--c", colorOf(e.f));
+        var t = el("span"); t.appendChild(document.createTextNode(outro.t));
+        if (e.text) { var sm = el("small", null, e.text + " · " + FLOWS.filter(function (f) { return f.id === e.f; })[0].nome); t.appendChild(sm); }
+        b.appendChild(i); b.appendChild(t); b.onclick = function () { escolher(outro.id); };
+        l.appendChild(b);
+      });
+      sec(titulo, l);
+    }
+    lista("Recebe de", edges.filter(function (e) { return e.to === n.id; }), "←");
+    lista("Entrega para", edges.filter(function (e) { return e.from === n.id; }), "→");
+    painel.appendChild(c);
+  }
+
+  /* ---------------------------------------------------------------- barras */
+  var chips = $("chips");
+  function chip(id, nome, cor) {
+    var b = el("button", "chip"); b.type = "button"; b.dataset.f = id || "";
+    if (cor) { var i = el("i"); i.style.setProperty("--c", cor); b.appendChild(i); b.style.setProperty("--c", cor); }
+    b.appendChild(document.createTextNode(nome));
+    b.onclick = function () { caminho = (caminho === id) ? null : id; if (id === null) caminho = null; atualizar(); };
+    chips.appendChild(b);
+  }
+  chip(null, "Tudo");
+  var CURTO = { prod: "Produção", p: "Pedido", m: "E-mails e telas", n: "Nota e envio", c: "4 PCs", g: "Código e testes", ge: "Gerência", mt: "Faxina e saúde", ins: "Instalação", ap: "Quem usa quem" };
+  FLOWS.forEach(function (f) { chip(f.id, CURTO[f.id] || f.nome, colorOf(f.id)); });
+
+  var zonas = $("zonas");
+  FR.forEach(function (fr) {
+    if (!fr.z) return;
+    var b = el("button", null, fr.z); b.type = "button";
+    b.onclick = function () { animar(function () { enquadrar(fr.box, 30); }); };
+    zonas.appendChild(b);
+  });
+
+  nodesEl.addEventListener("click", function (ev) {
+    if (ev.detail !== 0) return;   // clique do mouse já foi tratado no pointerup; aqui só Enter e Espaço
+    var b = ev.target.closest(".node"); if (b) escolher(b.id.slice(2));
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") limpar();
+    else if (ev.key === "+" || ev.key === "=") $("zmais").click();
+    else if (ev.key === "-") $("zmenos").click();
+    else if (ev.key === "0") verTudo();
+  });
+  window.addEventListener("resize", function () { if (!selecionado && ultimoAlvo) enquadrar(ultimoAlvo, 16); });
+
+  document.addEventListener("visibilitychange", function () { if (edgesEl.pauseAnimations) { if (document.hidden) edgesEl.pauseAnimations(); else edgesEl.unpauseAnimations(); } });
+  window.mapaEscolher = escolher; window.mapaNos = byId;
+  atualizar();
+  verTudo();
+  if (window.APLICAR_ESTADO) window.APLICAR_ESTADO();
+})();
+</script>
+</body>
+</html>

@@ -72,5 +72,6 @@ A partir de 27/10/2026 as decisões grandes ganham uma nota cada, na pasta `Deci
 - [[ADR-08 Ligar e pausar o robô só pelo usuário João, com confirmação]]
 - [[ADR-09 A tela de carregamento (K) trava a tela inteira enquanto a ação roda]]
 - [[ADR-10 O cofre se chama Segundo Cérebro (Agente Smith)]]
+- [[ADR-11 Aba Agentes do Smith - só o administrador, só sinal real]]
 
 Incidentes (o que deu errado e o que mudou): [[Incidentes]].

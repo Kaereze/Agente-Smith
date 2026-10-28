@@ -104,3 +104,13 @@ tags: [cerebro/trabalho]
 | **Categoria LIGAÇÃO no e-mail enviado (27/10)** | `app_servidor._kw_ligacao`; `envio_nf.pedir(ligacao=)`, `CATEGORIA_LIGACAO`, `aplicar_categoria_ligacao`, chamado em `enviar_pelo_outlook(ligacao=)` | `test_categoria_ligacao.py` |
 | **Ligação (22/10, 2026.10.22.7)** | `src/ligacoes.py` (aba `Ligacoes`, `dobrar`, `resumo`, `chave_do_enviado`); servidor: `_marcar_ligacao_do_envio`, `marcar_ligacao` (`/api/ligacao`), `_ligacoes_de_envios_falhos`, `resumo_ligacoes` (vai em `/api/estado`); espelho: `via_do_item`; tela: `alternarLigacao` e `#nf-lig` (`painel.js`), `cartaoLigacoes` (Visão geral), `tagsEmail`/`FILTROS_LISTA.ligacao`/`marcarLigacao` (`correio.js`), `pecaLigacao` (`pecas/etiqueta.js`) | `test_ligacoes.py` |
 | **Itens Enviados 72 h (22/10, 2026.10.22.1)** | `espelho_emails.RECENTE_HORAS` e `VERSAO_ESTADO`; pesquisa: `buscar_outlook` + `_enviados_rapido` (`ENVIADOS_RAPIDO_SEGUNDOS`), `busca_outlook.buscar(pastas=)` | `test_enviados_72h.py` |
+
+## Aba Agentes do Smith (só administrador)
+| Quero mexer em… | Onde |
+|---|---|
+| Os **blocos e as ligações** do mapa, os caminhos e os quadros | `app_ui/agentes/mapa.html`: `var N` (blocos), `var E` (ligações), `var FR` (quadros), `var PROD` (caminho de produção). Espelho editável: `3 Mapa do projeto/Mapa do sistema.drawio` |
+| **Quais agentes** aparecem na lista e como se chamam | `var AG` no script do `mapa.html` (o id é o nome do módulo em `src/`) |
+| O **estado ao vivo** (o que conta como ok, atenção, parado) | `src/agentes_smith.py` → `estado` (limites: `COPIA_ATENCAO_MIN`, `COPIA_PARADA_MIN`) |
+| **Quem pode ver** | `e_admin_aqui` em `src/app_servidor.py`; as rotas `/agentes/mapa` e `/api/agentes` ficam antes dos arquivos públicos (`ESTATICOS`) |
+| O botão no menu e o quadro | `app_ui/index.html` (`#nav-agentes`, `#v-agentes`, `#agentes-quadro`) e `agentesQuadro` em `app_ui/painel.js` |
+| Regras que seguram tudo | `testes/test_agentes_smith.py` (todo módulo de `src/` precisa de bloco no mapa) |

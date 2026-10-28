@@ -53,6 +53,7 @@ import relatorio_semana
 import saude
 import fiscal_intelligence
 import painel_metricas as metricas
+import agentes_smith
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
 from app_envio import Envio
@@ -2135,6 +2136,21 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 corpo = envio_nf.caminho_selo(selo.group(1)).read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "image/png")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Content-Length", str(len(corpo)))
+                self.end_headers()
+                return self.wfile.write(corpo)
+            if url.path in ("/agentes/mapa", "/api/agentes"):   # aba Agentes do Smith (28/10/2026): só o administrador, no PC dele
+                if not e_admin_aqui(estado.cfg, nome_do_agente(), liberado()):
+                    return self._json({"erro": "Só o administrador vê esta aba, no PC dele."}, 403)
+                if url.path == "/api/agentes":
+                    return self._json(agentes_smith.estado(estado.pcs()))
+                corpo, gz = comprimir_se_vale((PASTA_UI / "agentes" / "mapa.html").read_bytes(), self.headers.get("Accept-Encoding"))
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                if gz:
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
                 self.send_header("Cache-Control", "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()

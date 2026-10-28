@@ -4,7 +4,16 @@ let pn = { vista: "visao", janela: 30, rz: null, tabela: {}, resumo: "ontem" }; 
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
 const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
-                  gerencia: "Gerência (em teste)" };
+                  gerencia: "Gerência (em teste)", agentes: "Agentes do Smith" };
+// Aba Agentes do Smith (28/10/2026): o mapa do sistema roda num quadro à parte (/agentes/mapa, só o administrador no PC dele).
+// Só carrega quando a aba abre e descarrega ao sair: assim as animações não pesam quando ninguém está olhando.
+function agentesQuadro(aberto) {
+  const q = $("agentes-quadro");
+  if (!q) return;
+  const aqui = q.getAttribute("src") === "/agentes/mapa";
+  if (aberto && !aqui) q.setAttribute("src", "/agentes/mapa");
+  if (!aberto && aqui) q.setAttribute("src", "about:blank");
+}
 function trocarVista(v) {
   // o log do robô agora é a janela grande do robô (robo.js, 22/10/2026): quem pedia a tela de Log abre ela
   if (v === "log") { if (typeof rbAbrir === "function") rbAbrir("reg"); return; }
@@ -28,6 +37,7 @@ function trocarVista(v) {
   $("seletor-caixa")?.classList.toggle("oculta", !["fila", "correio"].includes(v));   // "Caixa de" só onde filtra (usuário, 14/10/2026)
   $("busca").placeholder = "Pesquisar no Outlook dos 4 PCs: hóspede, CPF/CNPJ, nº da NF, frase…";
   if (v !== "correio") $("topo-filtro").innerHTML = "";   // o filtro do topo é dos e-mails
+  agentesQuadro(v === "agentes");
   if (v === "correio") { desenharCorreio(); return; }
   desenhar();
   if (v === "visao") { pn.animar = true; desenharVisao(); }

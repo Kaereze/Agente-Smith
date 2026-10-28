@@ -28,3 +28,6 @@ tags: [cerebro/regras]
 - Só chega aos PCs a **versão com etiqueta** (ex.: `2026.10.27.14`) ou pelo "Atualizar todos os PCs". Commit sem etiqueta fica só no GitHub.
 - **Nunca mover nem apagar etiqueta já publicada, nunca forçar envio (`push --force`)**: os PCs atualizam com `fetch --tags` e `merge --ff-only` e parariam. Ver [[Como entregar]].
 - Cada etapa termina com testes passando, CHANGELOG, diário do dia e o cofre atualizado.
+
+## Ícones, não emojis (28/10/2026)
+Quando o João pede **ícones**, são os ícones de linha do próprio Painel (os do menu: caixa de entrada, nota, enviar, olho…), nunca emojis. Um engano com emojis foi corrigido no mesmo dia. O padrão do Painel segue **sem emojis** ([[Padrão de design]]).

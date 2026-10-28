@@ -9,6 +9,21 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.28.2] — 2026-10-28
+
+### Adicionado
+
+- **Aba "Agentes do Smith"** (pedido do João; só o administrador, no PC principal): no grupo Admin, abaixo de Monitoramento. Mostra o
+  **mapa de todo o sistema** (155 blocos: os 62 módulos de `src/`, `Automacoes/`, `Bat/`, a interface, os testes e os arquivos de cada
+  PC, ligados pelo caminho que o dado percorre, do pedido do hóspede até a nota chegar nele) e a lista dos agentes que rodam sozinhos.
+  Abre com o caminho de produção de ponta a ponta aceso; os outros caminhos e as dependências entre módulos aparecem ao escolher.
+- **Estado ao vivo só com sinal de verdade** (`src/agentes_smith.py`): PC ligado ou desligado, versão do código, Outlook aberto, última
+  conferência, rede local, e-mails presos na Caixa de Saída, e a cópia dos hotéis e o robô de envio do PC principal. O que o Painel
+  ainda não consegue medir aparece como "sem sinal ao vivo", nunca com um estado inventado.
+- Rotas novas `/agentes/mapa` e `/api/agentes`: o servidor recusa (403) quem não é o administrador no PC principal, e o mapa não sai pela
+  lista pública de arquivos. O quadro só carrega quando a aba abre e descarrega ao sair (as animações não pesam quando ninguém olha).
+- Teste que exige **todo módulo novo de `src/` no mapa** (`testes/test_agentes_smith.py`): módulo sem bloco no mapa falha os testes.
+
 ## [2026.10.28.1] — 2026-10-28
 
 ### Adicionado

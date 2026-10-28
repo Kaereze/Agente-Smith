@@ -1243,6 +1243,8 @@ h3{font:600 14px/1.3 var(--f-texto)!important}
 /* abas do Monitoramento */
 .vista.monit:not(.oculta){display:flex;flex-direction:column}
 .vista.monit .rolagem{flex:1;min-height:0}
+#v-agentes:not(.oculta){display:flex}
+#agentes-quadro{flex:1;width:100%;height:100%;min-height:0;border:0;background:var(--bg)}
 .abas-monit{display:flex;gap:4px;padding:16px 26px 0;border-bottom:1px solid var(--linha);flex:none}
 .abas-monit button{border:0;background:transparent;padding:9px 14px;font:inherit;font-size:13.5px;color:var(--tinta-2);
   border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
@@ -2168,6 +2170,7 @@ html,body{background:#1f1f1f}
   <symbol id="i-caixa" viewBox="0 0 24 24"><path d="M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
   <symbol id="i-nf" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
   <symbol id="i-gente" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.8-3.3 3-5 5.5-5s4.7 1.7 5.5 5M15.5 5.2a3 3 0 0 1 0 5.6M17.5 14c1.6.6 2.7 2.2 3 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-rede" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/></g></symbol>
   <symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
   <symbol id="i-form" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
@@ -2208,6 +2211,7 @@ html,body{background:#1f1f1f}
     </div>
     <div class="nav-grupo so-admin" role="group" aria-labelledby="rot-admin"><span class="rot-nav" id="rot-admin">Admin</span>
       <button class="ln raiz" data-vista="maquinas" id="nav-maquinas" title="Máquinas e log do robô (só o administrador vê)"><svg class="ic"><use href="#i-log"/></svg>Monitoramento</button>
+      <button class="ln raiz" data-vista="agentes" id="nav-agentes" title="O mapa do sistema e os agentes (só o administrador vê)"><svg class="ic"><use href="#i-rede"/></svg>Agentes do Smith</button>
     </div>
     </nav>
     <div class="rodape">
@@ -2246,6 +2250,7 @@ html,body{background:#1f1f1f}
     <section class="vista oculta monit" id="v-log"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="log"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
+    <section class="vista oculta" id="v-agentes"><iframe id="agentes-quadro" title="Agentes do Smith: mapa do sistema" referrerpolicy="no-referrer"></iframe></section>
     <section class="vista oculta ol" id="v-correio" aria-label="E-mails">
       <!-- Igual ao Outlook (usuário, 15/10/2026): faixa de comandos, caixas de entrada à esquerda, lista no meio, leitura à direita -->
       <div class="cx-faixa" id="cx-faixa" role="toolbar" aria-label="Comandos do e-mail"></div>
