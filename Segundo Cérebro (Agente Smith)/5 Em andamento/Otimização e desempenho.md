@@ -35,4 +35,32 @@ tags: [cerebro/andamento, desempenho]
 - Nos logs: linhas `⏱️ Lento: <etapa> levou X s` (no máximo 1 por minuto por etapa) e, no `conferente.log`, `⏱️ Desempenho (etapas mais pesadas)` a cada 10 min.
 - Medir a tela de novo: o script de medição usa o Edge sem janela, só lê e troca de tela pelo menu (não grava nada).
 
+## Diagnóstico de fluidez (28/10/2026, 17h): "fluido = o clique responde na hora"
+A régua do João: **cada ação responde no instante do clique**, porque os dados já estão no PC e o Painel só espelha. Medido no Painel real (só leitura) e no mapa (Edge sem janela; os valores absolutos de quadros por segundo são piores que num PC com placa de vídeo, a comparação entre versões vale).
+
+| O quê | Medido | Causa (evidência) |
+|---|---|---|
+| Abrir o Painel do zero | menu na tela em ~0,9 s | página e fontes; dá para pintar o último estado guardado no navegador e atualizar por trás |
+| Trocar de tela depois da 1ª vez | 22 a 73 ms (instantâneo) | a tela já tem os dados |
+| 1ª abertura de Notas fiscais | 1,5 s para trocar, 8,8 s até os dados | `/api/correio` levou 7,4 s e até `/api/versao` (6 ms em média) esperou 4 s: o servidor está ocupado |
+| Monitoramento | 2,3 s | `/api/atividade` lê o Google **na hora do clique** (média 4,7 s, pico 37 s) |
+| Caixa de entrada | 2,3 s | ~33 buscas de texto de e-mail por minuto (`/api/correio/texto`, até 3,5 s) |
+| Volta de leitura da Central | média 5,5 s, pico 75 s | lê e interpreta a planilha inteira a cada 15 s; clique espera na fila do mesmo processo |
+| Enviar NF | a medir | `Envio.pedir` grava no Google (1 ou 2 idas e voltas) **antes** de responder e de começar a enviar |
+| Mapa (Agentes do Smith) ao arrastar | 11 quadros/s | desenha ~450 linhas e 156 blocos mesmo os apagados (só esmaecidos); escondendo de verdade as linhas apagadas: 30 quadros/s; com blocos apagados mais leves: 46 |
+
+**Conclusão:** não é a quantidade de código. São cinco causas de projeto: (1) clique que espera trabalho remoto (Google/Outlook/rede); (2) leitura completa da planilha a cada volta, disputando o mesmo processo com os cliques; (3) respostas grandes e repetidas sem "sem mudança"; (4) envio que grava no Google antes de responder; (5) mapa que desenha tudo a cada quadro.
+
+**Regra proposta:** o clique só lê da memória. Tudo que é remoto roda por trás e a tela mostra o último valor sabido (e atualiza quando chegar).
+
+Auditoria estática (ruff): 219 `except` largos (escondem erro), 56 funções complexas demais, 29 arquivos abertos sem `with`, 6 laços que viram compreensão de lista. Auditoria de rotas: 36 das 43 rotas têm algum caminho para trabalho remoto (é uma lista de **suspeitos**, superestima; os tempos reais acima é que valem).
+
+### Ordem sugerida (aguarda OK do João)
+1. Mapa: esconder de verdade as linhas apagadas, blocos apagados leves, pausar pontinhos e rótulos enquanto arrasta.
+2. Telas do Monitoramento, Atividade e Visão geral servidas só da memória (atualizadas por trás).
+3. Envio: responder na hora e gravar no Google por trás (com o diário local de envios como garantia).
+4. Primeira tela instantânea: guardar o último estado no navegador e atualizar por trás.
+5. Leitura da Central incremental (só o que mudou) e medir dentro de `atualizar` (ler × interpretar).
+6. "Sem mudança" (ETag) nas respostas de 225 KB; texto de e-mail em lote.
+
 Voltar: [[00 Início]] · Pendências: [[Ideias e pendências]]
