@@ -72,7 +72,7 @@ button { font: inherit; color: inherit; }
 .ag { position: absolute; left: 12px; top: 62px; bottom: 64px; z-index: 6; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; pointer-events: none; }
 .ag > * { pointer-events: auto; }
 .ag:not(.aberto) .ag-lista { display: none; }
-.ag.aberto .ag-dock { display: none; }
+.ag .ag-dock { display: none; }   /* em espera: só o botão; os agentes aparecem ao clicar nele */
 .ag:not(.aberto) .ag-bt .lb { display: none; }
 .ag-bt { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 9px; cursor: pointer; font-size: 12.5px; box-shadow: var(--shadow); }
 .ag-bt:hover { border-color: var(--sel-line); }
