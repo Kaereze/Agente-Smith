@@ -69,7 +69,11 @@ button { font: inherit; color: inherit; }
 .pv .dica-pv { margin-left: auto; color: var(--muted); }
 
 /* agentes: painel flutuante minimalista sobre o mapa */
-.ag { position: absolute; left: 12px; top: 62px; z-index: 6; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.ag { position: absolute; left: 12px; top: 62px; bottom: 64px; z-index: 6; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; pointer-events: none; }
+.ag > * { pointer-events: auto; }
+.ag:not(.aberto) .ag-lista { display: none; }
+.ag.aberto .ag-dock { display: none; }
+.ag:not(.aberto) .ag-bt .lb { display: none; }
 .ag-bt { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 9px; cursor: pointer; font-size: 12.5px; box-shadow: var(--shadow); }
 .ag-bt:hover { border-color: var(--sel-line); }
 .ag-bt .g, .ag-l .g { width: 16px; height: 16px; display: grid; place-items: center; flex: none; }
@@ -77,12 +81,27 @@ button { font: inherit; color: inherit; }
 .g.ok { color: var(--ok-fg); } .g.atencao { color: var(--at-fg); } .g.parado { color: var(--pa-fg); } .g.desligado { color: var(--of-fg); }
 .ag-bt .cv { transition: transform .2s; width: 12px; height: 12px; fill: none; stroke: var(--muted); stroke-width: 2; }
 .ag-bt[aria-expanded="true"] .cv { transform: rotate(180deg); }
-.ag-lista { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; width: 250px; max-height: min(440px, 55vh); overflow-y: auto; }
+.ag-lista { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; width: 250px; max-height: 100%; min-height: 0; overflow-y: auto; }
 .ag-l { display: flex; align-items: flex-start; gap: 8px; width: 100%; border: 0; background: transparent; border-radius: 5px; padding: 5px 8px; cursor: pointer; text-align: left; font-size: 12.5px; color: var(--text2); }
 .ag-l .g { margin-top: 1px; }
 .ag-l:hover, .ag-l.on { background: var(--sel); color: var(--text); }
 .ag-l .t { display: flex; flex-direction: column; min-width: 0; }
 .ag-l small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
+.em { font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; line-height: 1; }
+.ag-l .em { font-size: 16px; width: 20px; text-align: center; flex: none; margin-top: 1px; }
+.ag-l .g { margin-left: auto; }
+.ag-dock { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 100%; }
+.dk { position: relative; width: 38px; height: 38px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; font-size: 19px; cursor: pointer; box-shadow: var(--shadow); opacity: .92; padding: 0; transition: opacity .15s, border-color .15s, transform .15s; }
+.dk:hover, .dk:focus-visible, .dk.on { opacity: 1; border-color: var(--accent); transform: translateX(2px); }
+.dk.on { background: var(--sel); }
+.dk .s { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--canvas); }
+.dk .s svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.dk .s.atencao { background: var(--at-bg); color: var(--at-fg); border-radius: 5px; } .dk .s.parado { background: var(--pa-bg); color: var(--pa-fg); border-radius: 4px; animation: pisca 1.6s ease-in-out infinite; }
+@keyframes pisca { 50% { opacity: .45; } }
+.dk::after { content: attr(data-tip); position: absolute; left: 46px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: var(--card); color: var(--text); border: 1px solid var(--sel-line); border-radius: 6px; padding: 4px 9px; font-size: 12px; font-family: var(--sans); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 7; }
+.dk:hover::after, .dk:focus-visible::after { opacity: 1; }
+.tile .emo { font-size: 23px; line-height: 1; font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
+@media (prefers-reduced-motion: reduce) { .dk, .dk .s.parado { animation: none; transition: none; } }
 /* janela do Painel */
 .win { display: grid; grid-template-columns: auto 1fr; height: calc(100% - 44px); min-height: 640px; }
 .rail { background: var(--rail); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 10px 8px; gap: 2px; width: 56px; transition: width .22s ease; overflow: hidden; }
@@ -314,7 +333,8 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
   </main>
         <div class="ag" id="ag">
           <button class="ag-bt" id="ag-bt" type="button" aria-expanded="false" aria-controls="ag-lista"></button>
-          <div class="ag-lista" id="ag-lista" hidden></div>
+          <div class="ag-dock" id="ag-dock" role="group" aria-label="Agentes em espera"></div>
+          <div class="ag-lista" id="ag-lista"></div>
         </div>
         </section>
       </div>
@@ -377,6 +397,7 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     L.metricas = { nome: "Números da Gerência", cada: "a cada 5 min", onde: "4 PCs", pcs: porPc("Atualizou há 3 min.", ov()) };
     return L;
   }
+  var EMOJI = { robo: "🤖", sync: "📋", vigia: "👀", donoenv: "📬", vigout: "🦉", conf: "🧐", espelho: "🪞", indice: "🗂️", atual: "🔄", faxina: "🧹", nfach: "🔍", saude: "🩺", srv: "🖥️", rede: "📡", metricas: "📊" };
   var PESO = { ok: 0, desligado: 0, atencao: 2, parado: 3 };   // PC desligado não é defeito do agente: aparece no cartão "PCs ligados"
   function agregado(a) {
     var pior = "ok", n = 0, off = 0, ligados = 0;
@@ -415,6 +436,7 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
       var g = agregado(LIVE[id]), s = document.createElement("span");
       s.className = "st " + g.est; s.title = NOMES[g.est] + ": " + g.resumo; s.innerHTML = glifo(g.est);
       n.el.appendChild(s);
+      var tile = n.el.querySelector(".tile"); if (tile && EMOJI[id]) tile.innerHTML = '<span class="emo">' + EMOJI[id] + "</span>";
     });
   };
 
@@ -444,26 +466,33 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
 
     var ordem = { parado: 0, atencao: 1, ok: 2 };
     linhas.sort(function (x, y) { return ordem[x.g.est] - ordem[y.g.est] || x.a.nome.localeCompare(y.a.nome, "pt"); });
-    var lista = $("ag-lista"); lista.innerHTML = "";
+    var lista = $("ag-lista"), dock = $("ag-dock"); lista.innerHTML = ""; dock.innerHTML = "";
     linhas.forEach(function (l) {
+      var emo = EMOJI[l.id] || "•", dica = l.a.nome + (l.g.est === "ok" ? "" : ": " + l.g.resumo);
       var bt = document.createElement("button"); bt.type = "button"; bt.className = "ag-l" + (l.id === selecionado ? " on" : ""); bt.dataset.id = l.id; bt.title = l.g.resumo;
-      bt.innerHTML = '<span class="g ' + l.g.est + '">' + glifo(l.g.est) + '</span><span class="t"><span></span><small></small></span>';
-      bt.querySelector(".t span").textContent = l.a.nome;
+      bt.innerHTML = '<span class="em"></span><span class="t"><span></span><small></small></span><span class="g ' + l.g.est + '">' + glifo(l.g.est) + "</span>";
+      bt.querySelector(".em").textContent = emo; bt.querySelector(".t span").textContent = l.a.nome;
       var sm = bt.querySelector("small"); if (l.g.est === "ok") sm.remove(); else sm.textContent = l.g.resumo;
       bt.onclick = function () { window.mapaEscolher(l.id); };
       lista.appendChild(bt);
+      var dk = document.createElement("button"); dk.type = "button"; dk.className = "dk" + (l.id === selecionado ? " on" : ""); dk.dataset.id = l.id;
+      dk.setAttribute("data-tip", dica); dk.setAttribute("aria-label", l.a.nome + ". " + NOMES[l.g.est]);
+      dk.innerHTML = '<span class="em"></span>' + (l.g.est === "ok" ? "" : '<span class="s ' + l.g.est + '">' + glifo(l.g.est) + "</span>");
+      dk.querySelector(".em").textContent = emo;
+      dk.onclick = function () { window.mapaEscolher(l.id); };
+      dock.appendChild(dk);
     });
     var pior = c.parado ? "parado" : (c.atencao ? "atencao" : "ok");
     var rot = c.parado + c.atencao === 0 ? "Agentes · " + c.ok + " em dia" : "Agentes · " + (c.parado ? c.parado + " parado" + (c.parado > 1 ? "s" : "") : "") + (c.parado && c.atencao ? ", " : "") + (c.atencao ? c.atencao + " em atenção" : "");
-    var abt = $("ag-bt"); abt.innerHTML = '<span class="g ' + pior + '">' + glifo(pior) + "</span><span>" + rot + '</span><svg class="cv" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
-    lista.hidden = abt.getAttribute("aria-expanded") !== "true";
+    var abt = $("ag-bt"); abt.title = rot; abt.setAttribute("aria-label", rot);
+    abt.innerHTML = '<span class="g ' + pior + '">' + glifo(pior) + '</span><span class="lb">' + rot + '</span><svg class="cv" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     var pc = document.querySelector("#pc-aviso"); if (pc) pc.remove();
   }
   window.aoEscolherNo = function (id) {
     selecionado = id;
-    document.querySelectorAll("#ag-lista .ag-l").forEach(function (b) { b.classList.toggle("on", b.dataset.id === id); });
+    document.querySelectorAll("#ag-lista .ag-l, #ag-dock .dk").forEach(function (b) { b.classList.toggle("on", b.dataset.id === id); });
   };
-  $("ag-bt").onclick = function () { var b = $("ag-bt"), ab = b.getAttribute("aria-expanded") === "true"; b.setAttribute("aria-expanded", String(!ab)); $("ag-lista").hidden = ab; };
+  $("ag-bt").onclick = function () { var b = $("ag-bt"), ab = b.getAttribute("aria-expanded") === "true"; b.setAttribute("aria-expanded", String(!ab)); $("ag").classList.toggle("aberto", !ab); };
 
   /* menu */
   function menu() {

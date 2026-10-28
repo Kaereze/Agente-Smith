@@ -20,7 +20,7 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 ### Aba "Agentes do Smith" (mapa + estado ao vivo) · 28/10/2026
 Pedido do João: pôr o mapa do sistema dentro do Painel, numa aba só dele (grupo Admin, abaixo de Monitoramento, só no PC principal),
 com o estado ao vivo dos agentes. Escolhas dele: mapa animado, estado vivo junto, posição no menu e nome exatos.
-Prévia com 2 temas, 2 situações (tudo normal e com problemas) e menu fechado ou aberto; situação por texto e selo, sem verde. Revisão do mesmo dia: o mapa ocupa quase a tela toda e os agentes viraram um botão flutuante sobre o mapa (lista só com ícone e nome; o texto longo só aparece quando há problema); os cartões de resumo saíram e o resumo ficou numa linha ao lado do título.
+Prévia com 2 temas, 2 situações (tudo normal e com problemas) e menu fechado ou aberto; situação por texto e selo, sem verde. Revisão do mesmo dia: o mapa ocupa quase a tela toda e os agentes viraram um botão flutuante sobre o mapa (lista só com ícone e nome; o texto longo só aparece quando há problema); os cartões de resumo saíram e o resumo ficou numa linha ao lado do título. Depois: um **emoji por agente**, em coluna no canto do mapa (em espera, só o emoji; selo só quando há atenção ou parado), que abre na lista com nomes; o mesmo emoji aparece no bloco do agente no mapa. **Exceção pedida pelo João** à regra "sem emojis" do [[Padrão de design]]: vale só para esta aba.
 Esperando o OK do João para codar.
 - **Abrir a página:** [[2026-10-28 Agentes do Smith.html|Agentes do Smith]] (atalhos na barra do endereço: `#problemas`, `#claro-aberto`, `#problemas-no-vigia`) · claude.ai: https://claude.ai/artifact/G9L4RQjc4raPNXfXnKJSrL
 
