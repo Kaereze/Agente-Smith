@@ -57,3 +57,5 @@ tags: [cerebro/historico]
 | 21/10/2026 | **Tela que não trava**: fila do servidor de 128 conexões; página pela metade tenta de novo sem desistir; faixa "Sem dados há 1 min"; F5 recarrega (Ctrl+R fica Responder); a janela confere a tela ao abrir e a cada 30 s | Tela verde no PC do João depois da atualização; medido 44 de 100 pedidos recusados com a fila de 5. João: "pode fazer as 3" e "pode levar" |
 
 Ver: [[O que não mexer]].
+
+- **28/10/2026 · Histórico da pesquisa:** a caixa de busca guarda as pesquisas das últimas 24 h, só no navegador de cada PC (nada no servidor), sem CPF/CNPJ. Troca a decisão de 11/10/2026 ("nada fica guardado no Painel"). Pedido do João.

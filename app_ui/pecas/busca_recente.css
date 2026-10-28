@@ -1,0 +1,22 @@
+/* Histórico da pesquisa (28/10/2026): lista logo abaixo da caixa de busca, com as pesquisas das últimas 24 h. */
+.busca{position:relative}
+.bh{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:80;background:var(--folha);color:var(--tinta);border:1px solid var(--linha-forte,var(--linha));
+  border-radius:8px;box-shadow:0 14px 36px rgba(0,0,0,.35);padding:4px 0;max-height:320px;overflow:auto;font:12.5px/1.4 var(--f-texto,system-ui,sans-serif);
+  animation:bh-entra .14s ease-out}
+.bh[hidden]{display:none}
+@keyframes bh-entra{from{opacity:0;transform:translateY(-4px)}}
+.bh-cab{display:flex;align-items:center;justify-content:space-between;padding:6px 12px 4px;color:var(--tinta-3,#9a9a9a);font-size:11.5px;letter-spacing:.02em}
+.bh-cab button{border:0;background:transparent;color:var(--tinta-3,#9a9a9a);font:inherit;cursor:pointer;padding:2px 4px;border-radius:4px}
+.bh-cab button:hover{color:var(--tinta);text-decoration:underline}
+.bh-it{display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer}
+.bh-it:hover,.bh-it.on{background:var(--linha)}
+.bh-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tinta)}
+.bh-it small{color:var(--tinta-3,#9a9a9a);font-size:11.5px;white-space:nowrap}
+.bh-x{border:0;background:transparent;color:var(--tinta-3,#9a9a9a);font-size:16px;line-height:1;cursor:pointer;padding:0 4px;border-radius:4px;visibility:hidden}
+.bh-it:hover .bh-x,.bh-it.on .bh-x{visibility:visible}
+.bh-x:hover{color:var(--tinta);background:rgba(255,255,255,.1)}
+/* modo Outlook (cinza neutro, igual à barra de cima) */
+.modo-ol .bh{background:#262626;color:#f0f0f0;border-color:#4a4a4a}
+.modo-ol .bh-it:hover,.modo-ol .bh-it.on{background:#363636}
+.modo-ol .bh-t{color:#f0f0f0}
+@media (prefers-reduced-motion:reduce){.bh{animation:none}}

@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/pecas/janela.css">
 <link rel="stylesheet" href="/pecas/carregando.css">
 <link rel="stylesheet" href="/pecas/caixas.css">
+<link rel="stylesheet" href="/pecas/busca_recente.css">
 <link rel="stylesheet" href="/pecas/etapas.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
@@ -2314,6 +2315,7 @@ html,body{background:#1f1f1f}
 <script src="/pecas/janela.js"></script>
 <script src="/pecas/carregando.js"></script>
 <script src="/pecas/caixas.js"></script>
+<script src="/pecas/busca_recente.js"></script>
 <script src="/pecas/etapas.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
@@ -3223,7 +3225,8 @@ document.addEventListener("keydown", e => {
   if (l && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); l.click(); }
 });
 $("busca").addEventListener("input", () => {
-  // a busca de cima vai sempre direto ao Outlook dos 4 PCs (usuário, 11/10/2026): nada fica guardado no Painel
+  // a busca de cima vai sempre direto ao Outlook dos 4 PCs (usuário, 11/10/2026). Só o histórico das últimas 24 h da caixa fica no
+  // navegador deste PC (pecas/busca_recente.js, 28/10/2026); nada disso vai ao servidor
   if (pn.vista !== "correio" && $("busca").value.trim().length >= 3) trocarVista("correio");
   if (pn.vista === "correio") return agendarBusca();
   pagina = 0; desenhar();

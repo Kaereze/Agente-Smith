@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.28.1] — 2026-10-28
+
+### Adicionado
+
+- **Histórico da pesquisa (últimas 24 h)** (pedido do João): ao clicar na caixa de busca de cima aparecem as pesquisas feitas nas
+  últimas 24 h (nome, e-mail do hóspede…), com "há quanto tempo", × para tirar uma e "Limpar"; clicar numa roda a pesquisa de novo;
+  setas e Enter funcionam. Passou de 24 h, a pesquisa some sozinha (reseta ao abrir o Painel e a cada uso). Só guarda quando para de
+  digitar (quem continua digitando substitui o pedaço anterior). **Fica só no navegador deste PC (`localStorage`): nada vai ao servidor,
+  à planilha nem a outro PC.** Não guarda o que parece CPF/CNPJ (LGPD). Troca a decisão de 11/10 ("nada fica guardado"). Código:
+  `app_ui/pecas/busca_recente.js` e `.css`.
+
 ## [2026.10.28] — 2026-10-28
 
 Inclui tudo da 2026.10.27.16 (compressão, limpeza do cache, travas de teste), que não chegou a ser etiquetada.
