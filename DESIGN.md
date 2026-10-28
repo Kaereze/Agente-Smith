@@ -1,6 +1,6 @@
 # Painel Fiscal — design
 
-> **Fonte da verdade: `Segundo Cérebro/1 Regras/Padrão de design.md`** e as decisões em `Segundo Cérebro/4 Histórico/Decisões.md`.
+> **Fonte da verdade: `Segundo Cérebro (Agente Smith)/1 Regras/Padrão de design.md`** e as decisões em `Segundo Cérebro (Agente Smith)/4 Histórico/Decisões.md`.
 > O padrão visual muda com as prévias aprovadas pelo João (a mais recente vence). Antes de desenhar ou mexer em tela,
 > leia essas duas notas e o `PRODUCT.md`. Este arquivo existe só para as skills de design acharem o caminho.
 

@@ -1,7 +1,7 @@
 # Painel Fiscal — produto
 
-> **Fonte da verdade: o Segundo Cérebro** (`Segundo Cérebro/`, cofre do Obsidian). Antes de qualquer trabalho de design ou código,
-> leia `Segundo Cérebro/0 Comece aqui/00 Início.md` e siga a ordem de leitura de lá
+> **Fonte da verdade: o Segundo Cérebro** (`Segundo Cérebro (Agente Smith)/`, cofre do Obsidian). Antes de qualquer trabalho de design ou código,
+> leia `Segundo Cérebro (Agente Smith)/0 Comece aqui/00 Início.md` e siga a ordem de leitura de lá
 > (Hierarquia de prioridades → O que não mexer → Credenciais → Onde mexer). Este arquivo só resume.
 
 ## O que é
@@ -27,4 +27,4 @@ qualquer agente vê, do próprio PC, com quem está o pedido, em que situação 
   (Figma, 21st, páginas publicadas) **só com dados fictícios**. O Claude nunca envia e-mail a hóspede por conta própria.
 - **P1:** Mail Analytics, planilhas dos hotéis, Dropbox e Outlook real: só leitura.
 - **P2:** o Painel nunca inventa número; todo percentual diz contra o quê.
-- Design: `DESIGN.md` e `Segundo Cérebro/1 Regras/Padrão de design.md`.
+- Design: `DESIGN.md` e `Segundo Cérebro (Agente Smith)/1 Regras/Padrão de design.md`.

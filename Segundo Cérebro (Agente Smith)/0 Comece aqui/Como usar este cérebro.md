@@ -8,7 +8,7 @@ tags: [cerebro/inicio]
 # Como usar este cérebro
 
 ## Para o João
-- Abra o Obsidian → **Abrir pasta como cofre** → `Desktop\NOTAS\Solicitacoes NF\Segundo Cérebro` (fica dentro do projeto, no GitHub).
+- Abra o Obsidian → **Abrir pasta como cofre** → `Desktop\NOTAS\Solicitacoes NF\Segundo Cérebro (Agente Smith)` (fica dentro do projeto, no GitHub).
 - Comece por [[00 Início]]. Os nomes entre colchetes são links: clique para abrir.
 - Pode escrever à vontade: ideias novas em [[Ideias e pendências]], decisões em [[Decisões]]. O Claude lê tudo.
 - O **gráfico** (ícone de rede na lateral do Obsidian) mostra como as notas se ligam.

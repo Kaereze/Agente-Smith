@@ -60,3 +60,31 @@ CNPJ e nome de **empresa** não são dado pessoal (a LGPD protege pessoa física
 - Relatórios (quartis, contagens): só números por hotel/agente, nunca o nome de quem pediu.
 
 Voltar: [[00 Início]] · Ver também: [[Credenciais]] · [[O que não mexer]] · [[Se o robô parar]]
+
+## Revisão de 28/10/2026 (revisão de segurança e LGPD, só leitura)
+Feita com `gdpr-data-handling`, `security-review`, `secret-scanning` e `ci-cd-security`; resultado completo na página da auditoria ([[Designs]]). O que muda nesta nota:
+
+### Onde os dados ficam: o que entrou ou mudou desde 19/10
+| Onde | O quê | Por quanto tempo | Situação |
+|---|---|---|---|
+| `estado/indice_emails.sqlite` (cada PC) | Em 28/10: **32.270 e-mails** (105 na entrada, 15.365 enviados, **16.800 excluídos**), 30.231 com o texto pesquisável | 12 meses; o que sai do Outlook sai do índice. **Os "excluídos" ainda estão em Itens Excluídos do Outlook, por isso continuam no índice** | A reavaliar: reduzir a janela e tirar os excluídos mais cedo (ver [[Plano até dezembro]]) |
+| `estado/nf_achadas.json` (PCs com Dropbox, desde 27/10) | Texto (até 8.000 letras) de cada nota dos últimos 30 dias, **com CPF/CNPJ do tomador** | 30 dias (a nota sai da janela e some) | A enxugar: guardar só documento, valores, datas e serviços |
+| `estado/cache_textos_nf.json` | Texto das notas lidas pelo conferente | Sem prazo definido | A definir |
+| `estado/painel_cache.pkl` | Cópia do estado do Painel (pedidos, com CPF) para abrir rápido | Reescrita a cada volta | A trocar de `pickle` por JSON (segurança) |
+| `estado/app_edge`, `estado/app_webview` | Cache do navegador da janela | Limpeza ao abrir (`limpeza.py`, 28/10): só as pastas de cache | Tema e preferências ficam |
+| Navegador de cada PC (`localStorage`) | Pesquisas das últimas 24 h (nome, e-mail), **sem CPF/CNPJ** | 24 h, some sozinho | Só neste PC ([[ADR-04 Histórico de pesquisa de 24 horas, só no navegador de cada PC]]) |
+
+### Registro de tratamento (proposta; **base legal e responsável a confirmar com o jurídico**)
+| Tratamento | Finalidade | Base legal (proposta) | Dados | Prazo hoje | Responsável |
+|---|---|---|---|---|---|
+| Pedido de NF pelo formulário | Emitir e enviar a NF | Obrigação legal e execução de contrato | Nome, CPF/CNPJ, e-mail, datas | Planilhas: ver tabela acima | A definir |
+| Espelho e índice dos e-mails | Responder e achar o pedido do hóspede | Execução de contrato e legítimo interesse | Remetente, assunto, texto | 12 meses (índice) | A definir |
+| Leitura das notas nas pastas | Ligar a nota ao pedido certo | Obrigação legal | CPF/CNPJ do tomador, valores | 30 dias | A definir |
+| Registros técnicos | Achar e corrigir erros | Legítimo interesse | Sem e-mail de hóspede (mascarado) | 5 arquivos de 5 MB | A definir |
+
+### O que ainda falta
+1. **Prazo por tipo de dado** definido pela empresa (o índice de 12 meses é maior do que a operação precisa?).
+2. **Registro de quem viu** os dados (hoje só se registra quem agiu).
+3. **BitLocker** confirmado nos 4 PCs (precisa administrador; pela TI).
+4. **Registro de incidentes** de dado: ver [[Incidentes]]. O caso de 27/10/2026 está em [[2026-10-27 Dado real de hóspede num commit]]: o histórico da versão .12 do repositório (privado) guarda o CPF, o nome e o e-mail de um hóspede. Decisão do João em 28/10: **deixar como está** (mesma razão da decisão nº 1 acima: reescrever o histórico para de atualizar os PCs).
+5. Atendimento ao titular: o passo a passo acima vale; falta quem responde e como se registra.

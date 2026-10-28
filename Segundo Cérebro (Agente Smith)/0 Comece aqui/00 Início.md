@@ -16,7 +16,13 @@ tags: [cerebro/inicio]
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (23/10/2026)
+## Onde paramos (28/10/2026)
+- **Painel e PCs:** versão `2026.10.28.1` (histórico de pesquisa de 24 h). A **Auditoria** está em 6,8/10 e tem a revisão de segurança e LGPD; o caminho até dezembro está em **[[Plano até dezembro]]**. Nada da Fase 1 começou: aguarda o OK do João.
+- **Cofre:** passou a se chamar **Segundo Cérebro (Agente Smith)** ([[ADR-10 O cofre se chama Segundo Cérebro (Agente Smith)]]). Novidades: [[Incidentes]] (4 notas), uma nota por decisão ([[Decisões]]), [[Guia para quem chegou agora]] e a LGPD atualizada ([[Dados de hóspedes (LGPD)]]).
+- **27/10 (um dia cheio):** tela de carregamento com a logo K, Enviar/Receber todas, botão de caixas com problema, Ligar/Pausar o robô, NF achadas nas pastas (CPF/CNPJ), Concluir e Tirar da caixa de entrada. Ver [[2026-10-27]] e [[2026-10-28]].
+- **Pendente do João:** os 3 primeiros itens de segurança (OK), conta do Supabase, os e-mails presos do Cristian, o teste do aviso de endereços do Outlook.
+
+## Antes (23/10/2026)
 - 23/10: **cópia rápida dos formulários no ar** (2026.10.23.1): pedido no Painel em ~10-20 s. Nova direção: sistema de controle do financeiro
   ([[Marcos do projeto]]). Na fila de hoje: revisão geral do design, CPF mascarado, tarefas automáticas no Painel,
   cronograma até dezembro com o plano do Supabase. Ver [[2026-10-23]].
@@ -52,7 +58,7 @@ tags: [cerebro/inicio]
 
 ## As pastas do cofre
 > [!cat-inicio] 0 Comece aqui
-> [[00 Início]] · [[Como usar este cérebro]] · [[Legenda de cores]]
+> [[00 Início]] · [[Como usar este cérebro]] · [[Legenda de cores]] · [[Guia para quem chegou agora]]
 
 > [!cat-regras] 1 Regras — o que vence e o que não se mexe
 > [[Hierarquia de prioridades]] · [[O que não mexer]] · [[Credenciais]] · [[Padrão de design]] · [[Preferências do João]]
@@ -64,10 +70,10 @@ tags: [cerebro/inicio]
 > [[Visão geral do projeto]] · [[Pastas e arquivos]] (+ uma nota por pasta) · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]
 
 > [!cat-historico] 4 Histórico — por que é assim
-> [[Marcos do projeto]] · [[Decisões]] · [[Problemas resolvidos]] · `Diário/` (um arquivo por dia)
+> [[Marcos do projeto]] · [[Decisões]] (+ uma nota por decisão) · [[Incidentes]] · [[Problemas resolvidos]] · `Diário/` (um arquivo por dia)
 
 > [!cat-andamento] 5 Em andamento
-> [[Ideias e pendências]] · rascunho do guia de design (`guia-painel-fiscal.html`)
+> [[Plano até dezembro]] · [[Ideias e pendências]] · rascunho do guia de design (`guia-painel-fiscal.html`)
 
 > [!cat-docs] 6 Documentos — guias longos
 > **[[Apresentação do projeto]]** (PDF + PowerPoint) · **[[Designs]]** (todos os designs e o catálogo de peças) · **[[Guia do Painel Fiscal]]** (cada tela) · **[[Se o robô parar]]** (manual de incidentes) · [[Dados de hóspedes (LGPD)]] · [[README técnico]] · [[Instalação e pendências]] · [[Exemplos de e-mail]]

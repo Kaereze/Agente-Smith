@@ -59,3 +59,18 @@ tags: [cerebro/historico]
 Ver: [[O que não mexer]].
 
 - **28/10/2026 · Histórico da pesquisa:** a caixa de busca guarda as pesquisas das últimas 24 h, só no navegador de cada PC (nada no servidor), sem CPF/CNPJ. Troca a decisão de 11/10/2026 ("nada fica guardado no Painel"). Pedido do João.
+
+## Decisões com uma nota própria (contexto, decisão e consequências)
+A partir de 27/10/2026 as decisões grandes ganham uma nota cada, na pasta `Decisões (uma por nota)`:
+- [[ADR-01 PCs só atualizam com versão etiquetada]]
+- [[ADR-02 O Painel nunca tira nem apaga e-mail da entrada sozinho]]
+- [[ADR-03 Telas novas na paleta da Auditoria, sem verde]]
+- [[ADR-04 Histórico de pesquisa de 24 horas, só no navegador de cada PC]] (troca a decisão de 11/10/2026 sobre a pesquisa)
+- [[ADR-05 Dado real nunca em testes nem documentos]]
+- [[ADR-06 Reiniciar o Outlook de um PC só por botão manual, qualquer agente, pela rede]]
+- [[ADR-07 NF achadas pelo CPF ou CNPJ dentro do PDF, só nas pastas do Dropbox]]
+- [[ADR-08 Ligar e pausar o robô só pelo usuário João, com confirmação]]
+- [[ADR-09 A tela de carregamento (K) trava a tela inteira enquanto a ação roda]]
+- [[ADR-10 O cofre se chama Segundo Cérebro (Agente Smith)]]
+
+Incidentes (o que deu errado e o que mudou): [[Incidentes]].

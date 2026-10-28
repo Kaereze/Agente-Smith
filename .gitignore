@@ -13,8 +13,8 @@ FALHA_CRITICA.txt
 config.local.json
 
 # Obsidian: estado da janela de cada PC
-Segundo Cérebro/.obsidian/workspace*.json
-Segundo Cérebro/.trash/
+Segundo Cérebro (Agente Smith)/.obsidian/workspace*.json
+Segundo Cérebro (Agente Smith)/.trash/
 
 # credenciais: nunca sobem (ver Segundo Cérebro/Credenciais.md)
 chave*.json
