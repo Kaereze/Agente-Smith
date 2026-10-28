@@ -1,3 +1,4 @@
 # Só para quem mexe no código (PC do João e GitHub Actions). Os PCs da equipe instalam só requirements.txt.
 -r requirements.txt
 ruff==0.17.1
+playwright==1.64.1   # teste de tela (testes/test_telas.py); usa o Edge do Windows, não baixa navegador

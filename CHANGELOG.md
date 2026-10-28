@@ -26,6 +26,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 
 ### Adicionado
 
+- **Teste de tela** (`testes/test_telas.py`, Playwright + Edge do Windows, modo demonstração, porta livre, sem mexer no Painel aberto
+  nem em `estado/`): abre cada tela (Visão geral, Notas fiscais, E-mails, Gerência, Máquinas) e a janela do robô e confere erro de
+  JavaScript, rolagem para o lado e texto espremido em coluna estreita; abre um e-mail e confere os 3 estados do bloco "NF enviada".
+  Com o código antigo falha ("bloco espremido: 32 px de 738"). Pulado se não houver Playwright ou Edge. Roda no GitHub Actions
+  (`requirements-dev.txt` agora traz o `playwright`).
 - **Trava de colisão de classes CSS** (`testes/test_css_colisao.py`): uma classe-caixa de tamanho fixo (como `.av`, o círculo do avatar)
   não pode ser usada como estado dentro de `class="${...}"`. Foi o que espremeu o bloco "NF enviada" (corrigido antes, `cb-at`).
 - **Trava de CPF/CNPJ em teste e documento** (`testes/test_sem_documento_real.py`): número com dígito verificador válido fora das listas
