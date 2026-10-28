@@ -836,7 +836,7 @@ function nfCobreHtml(e) {
   const faixa = c.pede_nova ? `<div class="cobre-f vm">Pede nova nota: ${esc((c.motivos || [])[0] || "")}. Foi para Urgência.</div>`
     : c.sugere_concluir ? `<div class="cobre-f az">Tudo bate com a NF ${esc(c.nfs.map(n => n.nf).join(", "))}. Pode concluir.</div>`
     : c.cobre === null ? `<div class="cobre-f am">Não consegui ler a nota enviada: confira antes de concluir.</div>` : "";
-  return `<section class="cx-cobre ${c.pede_nova ? "no" : c.sugere_concluir ? "ok" : "av"}" aria-label="NF já enviada"><div class="cobre-cab"><b>NF enviada</b>${nfs}</div>
+  return `<section class="cx-cobre ${c.pede_nova ? "cb-no" : c.sugere_concluir ? "cb-ok" : "cb-at"}" aria-label="NF já enviada"><div class="cobre-cab"><b>NF enviada</b>${nfs}</div>
     ${linhas}${aviso}${faixa}${c.historico?.itens?.length ? historicoNfHtml(c, true) : ""}<div class="cobre-bt"><button type="button" class="${c.sugere_concluir ? "p dest" : ""}" data-nf-concluir="${esc(e.id)}">Concluir</button>
     <span class="dica">Move a conversa inteira para a pasta “NF enviada”. Nada é apagado.</span></div></section>`;
 }
@@ -849,7 +849,7 @@ function historicoNfHtml(c, dentro = false) {
   const faixa = h.completo ? `<div class="cobre-f az">Todas as notas que o hóspede pediu (${h.itens.length}) estão prontas nas pastas e conferem com o histórico dele. Falta enviar.</div>`
     : `<div class="cobre-f am">Do histórico dele ainda falta: ${esc(falta.map(i => i.nome + (i.nf ? " (confira a NF " + i.nf + ")" : "")).join(", "))}.</div>`;
   const corpo = `<div class="cobre-cab"><b>Histórico do hóspede x notas prontas</b>${(c.prontas || []).map(n => `<span class="rf-chip">NF ${esc(n.nf)}</span>`).join(" ")}</div>${linhas}${faixa}`;
-  return dentro ? `<div class="cobre-hist">${corpo}</div>` : `<section class="cx-cobre ${h.completo ? "ok" : "av"}" aria-label="Histórico do hóspede x notas">${corpo}
+  return dentro ? `<div class="cobre-hist">${corpo}</div>` : `<section class="cx-cobre ${h.completo ? "cb-ok" : "cb-at"}" aria-label="Histórico do hóspede x notas">${corpo}
     <div class="cobre-bt"><span class="dica">Compara tudo o que ele escreveu (inclusive as mensagens anteriores) com as notas das pastas. Nada é enviado nem movido.</span></div></section>`;
 }
 function concluirConversa(id) {
