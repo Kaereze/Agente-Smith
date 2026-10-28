@@ -17,6 +17,15 @@ ela abre no navegador. As que estão também no claude.ai têm o link lá (só a
 
 ## Revisões
 
+### Aba "Agentes do Smith" (mapa + estado ao vivo) · 28/10/2026
+Pedido do João: pôr o mapa do sistema dentro do Painel, numa aba só dele (grupo Admin, abaixo de Monitoramento, só no PC principal),
+com o estado ao vivo dos agentes. Escolhas dele: mapa animado, estado vivo junto, posição no menu e nome exatos.
+Prévia com 2 temas, 2 situações (tudo normal e com problemas) e menu fechado ou aberto; situação por texto e selo, sem verde.
+Esperando o OK do João para codar.
+- **Abrir a página:** [[2026-10-28 Agentes do Smith.html|Agentes do Smith]] (atalhos na barra do endereço: `#problemas`, `#claro-aberto`, `#problemas-no-vigia`) · claude.ai: https://claude.ai/artifact/G9L4RQjc4raPNXfXnKJSrL
+
+![[2026-10-28 Agentes do Smith.png|700]]
+
 ### Carregamento das ações (faixa do rodapé) · 27/10/2026
 Pedido do João: a faixa cinza "Pedindo o envio ao robô…" no rodapé é feia e escondida; quer animação simples e realista.
 3 opções ao vivo: A pílula com segundos, B linha fina, C cartão com a logo desenhada. Recomendação A + C (A até 3 s, C acima de 3 s, onde entra a animação

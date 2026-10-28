@@ -1,0 +1,1132 @@
+<title>Agentes do Smith</title>
+<style>
+/* Layout: janela do Painel (menu de ícones + cartões #242424) com a aba nova; barra de cima só da prévia. */
+:root {
+  --bg: #1f1f1f; --rail: #191919; --card: #242424; --canvas: #1c1c1c; --dot: #303030;
+  --node: #282828; --node-line: #3d3d3d; --node-hover: #313131; --tile: #353535;
+  --text: #f0f0f0; --text2: #d0d0d0; --muted: #a8a8a8; --accent: #479ef5; --accent-t: #6cb8f6;
+  --line: #333333; --panel: #242424; --sel: #3a3a3a; --sel-line: #6b6b6b; --frame: rgba(255,255,255,.04);
+  --f-p: #5aa9ff; --f-m: #ffb454; --f-n: #b69cff; --f-c: #ff7ab6; --f-g: #9aa8ba; --f-ge: #46d3e6; --f-mt: #ff6b6b;
+  --t1: #9aa8ba; --t2: #6f9bff; --t3: #e6b25c; --t4: #a98bf0; --t5: #46d3e6; --t6: #9aa8ba; --t7: #ff7ab6;
+  --note: #3b3321; --note-line: #6e5c2b; --note-text: #f2dfaa; --shadow: 0 4px 12px rgba(0,0,0,.35);
+  --ok-bg: #16324d; --ok-fg: #8cc8fa; --at-bg: #3d3212; --at-fg: #f2c76b; --pa-bg: #3a2326; --pa-fg: #ff8d95; --of-bg: #333333; --of-fg: #b4b4b4;
+  --bar: #0f0f0f; --bar-line: #2c2c2c;
+  --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f3f3f3; --rail: #ececec; --card: #ffffff; --canvas: #f6f7f9; --dot: #d6d9de;
+    --node: #ffffff; --node-line: #cfd3d9; --node-hover: #f4f6f9; --tile: #eceff3;
+    --text: #1f1f1f; --text2: #3a3a3a; --muted: #616161; --accent: #0f6cbd; --accent-t: #0f6cbd;
+    --line: #dcdcdc; --panel: #ffffff; --sel: #e4e8ee; --sel-line: #9aa3b0; --frame: rgba(0,0,0,.03);
+    --f-p: #1a62cc; --f-m: #b36a00; --f-n: #6f47d1; --f-c: #c4256f; --f-g: #5c6b80; --f-ge: #0a7f95; --f-mt: #c22f2f;
+    --t1: #5c6b80; --t2: #2f62d0; --t3: #a8680a; --t4: #6f47d1; --t5: #0a7f95; --t6: #5c6b80; --t7: #c4256f;
+    --note: #fff4cc; --note-line: #d9bd5a; --note-text: #4a3b0c; --shadow: 0 3px 10px rgba(30,40,60,.12);
+    --ok-bg: #dcebfb; --ok-fg: #0b4a8f; --at-bg: #fbeec2; --at-fg: #6b4e00; --pa-bg: #fde0e3; --pa-fg: #9c1c28; --of-bg: #e6e6e6; --of-fg: #555555;
+    --bar: #dedede; --bar-line: #c8c8c8; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f3f3f3; --rail: #ececec; --card: #ffffff; --canvas: #f6f7f9; --dot: #d6d9de;
+  --node: #ffffff; --node-line: #cfd3d9; --node-hover: #f4f6f9; --tile: #eceff3;
+  --text: #1f1f1f; --text2: #3a3a3a; --muted: #616161; --accent: #0f6cbd; --accent-t: #0f6cbd;
+  --line: #dcdcdc; --panel: #ffffff; --sel: #e4e8ee; --sel-line: #9aa3b0; --frame: rgba(0,0,0,.03);
+  --f-p: #1a62cc; --f-m: #b36a00; --f-n: #6f47d1; --f-c: #c4256f; --f-g: #5c6b80; --f-ge: #0a7f95; --f-mt: #c22f2f;
+  --t1: #5c6b80; --t2: #2f62d0; --t3: #a8680a; --t4: #6f47d1; --t5: #0a7f95; --t6: #5c6b80; --t7: #c4256f;
+  --note: #fff4cc; --note-line: #d9bd5a; --note-text: #4a3b0c; --shadow: 0 3px 10px rgba(30,40,60,.12);
+  --ok-bg: #dcebfb; --ok-fg: #0b4a8f; --at-bg: #fbeec2; --at-fg: #6b4e00; --pa-bg: #fde0e3; --pa-fg: #9c1c28; --of-bg: #e6e6e6; --of-fg: #555555;
+  --bar: #dedede; --bar-line: #c8c8c8; color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1f1f1f; --rail: #191919; --card: #242424; --canvas: #1c1c1c; --dot: #303030;
+  --node: #282828; --node-line: #3d3d3d; --node-hover: #313131; --tile: #353535;
+  --text: #f0f0f0; --text2: #d0d0d0; --muted: #a8a8a8; --accent: #479ef5; --accent-t: #6cb8f6;
+  --line: #333333; --panel: #242424; --sel: #3a3a3a; --sel-line: #6b6b6b; --frame: rgba(255,255,255,.04);
+  --f-p: #5aa9ff; --f-m: #ffb454; --f-n: #b69cff; --f-c: #ff7ab6; --f-g: #9aa8ba; --f-ge: #46d3e6; --f-mt: #ff6b6b;
+  --t1: #9aa8ba; --t2: #6f9bff; --t3: #e6b25c; --t4: #a98bf0; --t5: #46d3e6; --t6: #9aa8ba; --t7: #ff7ab6;
+  --note: #3b3321; --note-line: #6e5c2b; --note-text: #f2dfaa; --shadow: 0 4px 12px rgba(0,0,0,.35);
+  --ok-bg: #16324d; --ok-fg: #8cc8fa; --at-bg: #3d3212; --at-fg: #f2c76b; --pa-bg: #3a2326; --pa-fg: #ff8d95; --of-bg: #333333; --of-fg: #b4b4b4;
+  --bar: #0f0f0f; --bar-line: #2c2c2c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* barra só da prévia */
+.pv { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 8px 16px; background: var(--bar); border-bottom: 1px solid var(--bar-line); font-size: 12.5px; }
+.pv b { font-weight: 600; }
+.pv .grp { display: flex; align-items: center; gap: 6px; }
+.pv .grp > span { color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--card); border: 0; padding: 5px 11px; cursor: pointer; font-size: 12.5px; color: var(--text2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: #173b63; color: #fff; }
+:root[data-theme="light"] .seg button[aria-pressed="true"], :root:not([data-theme="dark"]) .seg button[aria-pressed="true"] { }
+.pv .dica-pv { margin-left: auto; color: var(--muted); }
+
+/* janela do Painel */
+.win { display: grid; grid-template-columns: auto 1fr; height: calc(100% - 44px); min-height: 640px; }
+.rail { background: var(--rail); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 10px 8px; gap: 2px; width: 56px; transition: width .22s ease; overflow: hidden; }
+.rail.aberto { width: 232px; }
+.logo { width: 30px; height: 30px; border-radius: 6px; background: #0f6cbd; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 12px; margin: 2px 3px 12px; flex: none; }
+.rot { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 12px 10px 4px; white-space: nowrap; display: none; }
+.rail.aberto .rot { display: block; }
+.sep { height: 1px; background: var(--line); margin: 8px 6px; }
+.rail.aberto .sep { display: none; }
+.it { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--text2); white-space: nowrap; text-align: left; position: relative; }
+.it:hover { background: var(--sel); }
+.it svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.it span { display: none; font-size: 13.5px; }
+.rail.aberto .it span { display: inline; }
+.it.on { background: var(--sel); color: var(--text); box-shadow: inset 0 0 0 1px var(--sel-line); }
+.it.on::before { content: ""; position: absolute; left: -8px; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--accent); }
+.it .nu { margin-left: auto; font-size: 11px; background: #c4314b; color: #fff; border-radius: 9px; padding: 1px 6px; }
+.rail:not(.aberto) .it .nu { display: none; }
+.fim { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+.ava { width: 32px; height: 32px; border-radius: 50%; background: #555; color: #fff; display: grid; place-items: center; font-size: 12px; margin: 6px 2px; flex: none; }
+
+.principal { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.topo { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
+.busca { display: flex; align-items: center; gap: 8px; width: min(340px, 100%); height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--muted); font-size: 13px; }
+.busca svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.pag { padding: 6px 24px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+.cab { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.cab h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.cab p { margin: 0; color: var(--muted); font-size: 13px; }
+.cab .ao { margin-left: auto; color: var(--muted); font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; }
+.cab .ao i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; animation: bate 2s ease-in-out infinite; }
+@keyframes bate { 50% { opacity: .35; } }
+
+.faixa { display: none; border: 1px solid; border-radius: 8px; padding: 10px 14px; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.faixa.on { display: flex; }
+.faixa.vermelha { background: var(--pa-bg); color: var(--pa-fg); border-color: color-mix(in srgb, var(--pa-fg) 40%, transparent); }
+.faixa.ambar { background: var(--at-bg); color: var(--at-fg); border-color: color-mix(in srgb, var(--at-fg) 40%, transparent); }
+.faixa b { font-weight: 600; }
+.faixa button { background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 12.5px; }
+.faixa button:hover { background: rgba(255,255,255,.08); }
+
+.kps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.kp { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; min-width: 0; }
+.kp small { display: block; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.kp strong { display: block; font-size: 26px; font-weight: 600; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+.kp span { font-size: 12.5px; color: var(--muted); }
+.kp.at strong { color: var(--at-fg); } .kp.pa strong { color: var(--pa-fg); }
+
+.grade { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 10px; height: clamp(520px, calc(100vh - 360px), 780px); min-height: 520px; }
+.cartao { background: var(--card); border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.cartao > header { display: flex; flex-wrap: nowrap; gap: 8px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.cartao h2 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.zoom button { white-space: nowrap; }
+.cartao .sub { color: var(--muted); font-size: 12.5px; }
+.chips { display: flex; gap: 5px; flex-wrap: nowrap; margin-left: auto; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.chip { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer; background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--text2); }
+.chip i { width: 14px; height: 3px; border-radius: 2px; background: var(--c, var(--muted)); display: block; }
+.chip:hover { border-color: var(--sel-line); }
+.chip[aria-pressed="true"] { background: #173b63; color: #fff; border-color: #173b63; }
+.zoom { display: flex; gap: 4px; }
+.zoom button { background: var(--card); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; padding: 4px 10px; font-size: 12.5px; min-width: 30px; }
+.zoom button:hover { background: var(--sel); }
+.cartao .stage { flex: 1; min-height: 0; }
+
+.lista .rolagem { overflow-y: auto; min-height: 0; flex: 1; }
+.tb { width: 100%; border-collapse: collapse; }
+.tb th { position: sticky; top: 0; background: var(--card); text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 9px 14px; border-bottom: 1px solid var(--line); z-index: 1; }
+.tb td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+.tb tr.l { cursor: pointer; }
+.tb tr.l:hover td { background: var(--sel); }
+.tb tr.l.on td { background: var(--sel); box-shadow: inset 0 1px 0 var(--sel-line), inset 0 -1px 0 var(--sel-line); }
+.tb td small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; line-height: 1.35; }
+.tb .nome { font-weight: 600; }
+.pil { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pil svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.pil.ok { background: var(--ok-bg); color: var(--ok-fg); } .pil.atencao { background: var(--at-bg); color: var(--at-fg); }
+.pil.parado { background: var(--pa-bg); color: var(--pa-fg); } .pil.desligado { background: var(--of-bg); color: var(--of-fg); }
+.rod { display: flex; align-items: center; gap: 10px; padding: 7px 16px; border-top: 1px solid var(--line); background: var(--rail); font-size: 12px; color: var(--muted); }
+.rod .sel-ro { margin-left: auto; }
+.st { position: absolute; right: -8px; top: -8px; width: 22px; height: 22px; transform: scale(clamp(1, calc(1 / var(--z, 1)), 2.8)); transform-origin: 100% 0; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--canvas); z-index: 3; }
+.st svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.st.ok { background: var(--ok-bg); color: var(--ok-fg); } .st.atencao { background: var(--at-bg); color: var(--at-fg); border-radius: 6px; }
+.st.parado { background: var(--pa-bg); color: var(--pa-fg); border-radius: 4px; } .st.desligado { background: var(--of-bg); color: var(--of-fg); }
+.agora-pc { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px; }
+.agora-pc small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+@media (max-width: 1180px) { .grade { grid-template-columns: 1fr; height: auto; } .grade .cartao.mapa { height: 560px; } .grade .lista { max-height: 460px; } .kps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { .win { grid-template-columns: 1fr; } .rail { display: none; } }
+@media (prefers-reduced-motion: reduce) { .cab .ao i { animation: none; } .rail { transition: none; } }
+
+/* área de trabalho */
+.stage { position: relative; overflow: hidden; background-color: var(--canvas); touch-action: none; cursor: grab; min-height: 0; }
+.stage.pan { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; transform-origin: 0 0; }
+.world.anim { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+.frame {
+  position: absolute; border: 1px dashed color-mix(in srgb, var(--t) 38%, transparent); background: color-mix(in srgb, var(--t) 7%, transparent); border-radius: 14px; pointer-events: none;
+}
+.frame b {
+  position: absolute; left: 18px; top: 14px; font-weight: 600; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: color-mix(in srgb, var(--t) 70%, var(--text));
+}
+svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; overflow: visible; pointer-events: none; }
+.base { fill: none; stroke: var(--c); stroke-width: 2; opacity: .38; }
+.flow { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1 12; opacity: .55; animation: corre 1.2s linear infinite; }
+@keyframes corre { to { stroke-dashoffset: -14; } }
+.edge.dim .base { opacity: .08; }
+.edge.dim .flow { opacity: 0; }
+.pk { fill: var(--c); stroke: var(--node); stroke-width: 1.5; }
+.edge.dim .pk { opacity: 0; }
+.edge.hot .pk { filter: drop-shadow(0 0 4px var(--c)); }
+.edge.hot .base { opacity: .8; stroke-width: 2.6; }
+.edge.hot .flow { stroke-width: 4; }
+.lbl {
+  position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 13px; padding: 3px 9px; border-radius: 11px;
+  background: var(--node); border: 1px solid var(--c); color: var(--text); pointer-events: none; display: none;
+}
+.world.zoomed .lbl { display: block; }
+.lbl.dim { opacity: .15; }
+.world:not(.zoomed) .lbl.show { display: block; }
+.node {
+  position: absolute; width: 240px; height: 92px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: start;
+  padding: 10px 11px; background: var(--node); border: 1px solid var(--node-line); border-radius: 10px; box-shadow: var(--shadow);
+  cursor: pointer; text-align: left;
+}
+.node:hover { background: var(--node-hover); border-color: var(--accent); }
+.node.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.node.dim { opacity: .28; }
+.tile { width: 44px; height: 44px; border-radius: 10px; background: var(--tile); display: grid; place-items: center; margin-top: 12px; }
+.tile svg { width: 24px; height: 24px; fill: none; stroke: var(--text); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kind { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; display: flex; justify-content: space-between; gap: 6px; }
+.kind em { font-style: normal; font-family: var(--mono); letter-spacing: 0; text-transform: none; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt { font-weight: 600; font-size: 13.5px; line-height: 1.22; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ss { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--canvas); border: 2px solid var(--node-line); }
+.node.sel .port, .node:hover .port { border-color: var(--accent); }
+.nota {
+  position: absolute; width: 270px; padding: 12px 14px; background: var(--note); border: 1px solid var(--note-line); color: var(--note-text);
+  border-radius: 4px; box-shadow: var(--shadow); font-size: 12.5px; line-height: 1.45;
+}
+.nota b { display: block; margin-bottom: 4px; font-size: 13px; }
+
+/* menus flutuantes */
+.zonas {
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: calc(100% - 24px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; z-index: 5;
+}
+.zonas span { color: var(--muted); font-size: 12px; margin-right: 2px; }
+.dica {
+  position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 12px; color: var(--muted); font-size: 12px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; z-index: 5; max-width: 330px;
+}
+.stage.com-painel .dica { display: none; }
+
+/* painel de detalhes */
+.painel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(360px, 100%); background: var(--panel); border-left: 1px solid var(--line);
+  transform: translateX(105%); transition: transform .25s ease; z-index: 8; display: flex; flex-direction: column; min-height: 0;
+}
+.painel.on { transform: none; }
+.painel header { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.painel header .tile { margin: 0; flex: none; }
+.painel h2 { margin: 0; font-size: 16px; font-weight: 600; text-wrap: balance; }
+.painel header p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+.fechar { margin-left: auto; background: transparent; border: 1px solid var(--line); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; flex: none; }
+.corpo { overflow-y: auto; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.corpo h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.corpo p { margin: 0; line-height: 1.5; font-size: 13.5px; max-width: 62ch; }
+.corpo ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; }
+.mono { font-family: var(--mono); font-size: 12px; color: var(--accent); overflow-wrap: anywhere; }
+.liga { display: flex; flex-direction: column; gap: 5px; }
+.liga button {
+  display: grid; grid-template-columns: 22px 1fr; gap: 6px; text-align: left; background: var(--node); border: 1px solid var(--node-line); border-radius: 6px; padding: 7px 9px;
+  cursor: pointer; font-size: 12.5px;
+}
+.liga button:hover { border-color: var(--accent); }
+.liga small { display: block; color: var(--muted); font-size: 11.5px; }
+.liga i { font-style: normal; color: var(--c); font-weight: 600; }
+@media (max-width: 760px) {
+  .painel { top: auto; width: 100%; height: 62%; border-left: 0; border-top: 1px solid var(--line); transform: translateY(105%); border-radius: 12px 12px 0 0; }
+  .painel.on { transform: none; }
+  .zonas { bottom: 8px; }
+  .dica { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow { animation: none; stroke-dasharray: 5 7; }
+  .world.anim, .painel { transition: none; }
+}
+</style>
+
+<div class="pv" role="group" aria-label="Controles da prévia">
+  <b>Prévia de design: aba "Agentes do Smith"</b>
+  <div class="grp"><span>Tema</span><div class="seg" id="s-tema"><button data-v="dark">Escuro</button><button data-v="light">Claro</button></div></div>
+  <div class="grp"><span>Situação</span><div class="seg" id="s-cen"><button data-v="normal">Tudo normal</button><button data-v="problemas">Com problemas</button></div></div>
+  <div class="grp"><span>Menu</span><div class="seg" id="s-menu"><button data-v="fechado">Fechado</button><button data-v="aberto">Aberto</button></div></div>
+  <span class="dica-pv">Só dados inventados. Estes botões existem só na prévia.</span>
+</div>
+<div class="win">
+  <nav class="rail" id="rail" aria-label="Menu do Painel"></nav>
+  <div class="principal">
+    <div class="topo"><div class="busca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>Pesquisar no Outlook dos 4 PCs…</div></div>
+    <div class="pag" id="pag">
+      <div class="cab">
+        <h1>Agentes do Smith</h1>
+        <p id="resumo"></p>
+        <span class="ao"><i></i><span id="ao-txt">Atualizado há 4 s</span></span>
+      </div>
+      <div class="faixa" id="faixa" role="status"></div>
+      <div class="kps" id="kps"></div>
+      <div class="grade">
+        <section class="cartao mapa" aria-label="Mapa do sistema">
+          <header>
+            <h2>Mapa do sistema</h2>
+            <div class="chips" id="chips" role="group" aria-label="Destacar um caminho"></div>
+            <div class="zoom" role="group" aria-label="Zoom"><button id="zmenos" aria-label="Afastar">−</button><button id="zmais" aria-label="Aproximar">+</button><button id="zfit">Ver tudo</button></div>
+          </header>
+          <main class="stage" id="stage" aria-label="Diagrama do sistema, arraste para mover">
+    <div class="world" id="world">
+      <div id="frames"></div>
+      <svg class="edges" id="edges" aria-hidden="true"><defs id="defs"></defs></svg>
+      <div id="labels"></div>
+      <div id="nodes"></div>
+    </div>
+    <div class="zonas" id="zonas"><span>Ir para:</span></div>
+    <div class="dica">Arraste para mover, role para dar zoom. Clique num bloco para ver o que ele faz. Escolha um caminho em cima para acender só ele.</div>
+    <aside class="painel" id="painel" aria-live="polite"></aside>
+  </main>
+        </section>
+        <section class="cartao lista" aria-label="Agentes agora">
+          <header><h2>Agentes agora</h2><span class="sub" id="sub-lista"></span></header>
+          <div class="rolagem"><table class="tb"><thead><tr><th>Agente</th><th>Onde</th><th>Situação</th></tr></thead><tbody id="tb"></tbody></table></div>
+          <div class="rod"><span>Clique numa linha para achar o agente no mapa.</span></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var PCS = ["João", "Clara", "Cristian", "Bernardo"];
+  var NOMES = { ok: "Em dia", atencao: "Atenção", parado: "Parado", desligado: "PC desligado" };
+  var GLIFO = {
+    ok: '<path d="m5 12 4.5 4.5L19 7"/>',
+    atencao: '<path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17.5h.01"/>',
+    parado: '<path d="m6 6 12 12M18 6 6 18"/>',
+    desligado: '<path d="M12 3v8M7 6.5a8 8 0 1 0 10 0"/>'
+  };
+  var IC = {
+    grade: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+    doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>',
+    enviar: '<path d="M21 3 10 14M21 3l-7 18-4-8-8-4z"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',
+    caixa: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/>',
+    lista: '<path d="M4 6h16M4 12h10M4 18h16"/>',
+    log: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    rede: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>',
+    seta: '<path d="m9 6 6 6-6 6"/>'
+  };
+  var ico = function (k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC[k] + "</svg>"; };
+  var glifo = function (e) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + GLIFO[e] + "</svg>"; };
+
+  /* Dados inventados do estado ao vivo. Na versão de verdade vêm da aba PCs_Painel e da Atividade_Robo. */
+  function viva(cen) {
+    var p = cen === "problemas", L = {};
+    function porPc(texto, over) {
+      return PCS.map(function (pc) {
+        var o = (over && over[pc]) || null;
+        return o ? { pc: pc, est: o[0], texto: o[1] } : { pc: pc, est: "ok", texto: texto };
+      });
+    }
+    var off = p ? ["desligado", "PC desligado desde 12:40"] : null;
+    var cr = p ? ["atencao", "Outlook sem janela há 6 min"] : null;
+    function ov(extra) { var o = {}; if (p) o.Clara = off; if (extra) for (var k in extra) o[k] = extra[k]; return o; }
+    L.robo = { nome: "Robô de envio", cada: "a cada 10 min", onde: "João", pcs: [{ pc: "João", est: "ok", texto: "Rodou há 4 min e enviou 6 e-mails. Próxima rodada em 6 min." }] };
+    L.sync = { nome: "Cópia para a Central", cada: "a cada 10 min", onde: "João", pcs: [{ pc: "João", est: "ok", texto: "Rodou há 4 min: 3 planilhas mudaram, 0 erros." }] };
+    L.vigia = { nome: "Vigia de formulários", cada: "a cada 10 s", onde: "João", pcs: [p ? { pc: "João", est: "parado", texto: "Sem sinal há 18 min. Era esperado a cada 10 s." } : { pc: "João", est: "ok", texto: "Olhou o Drive há 12 s." }] };
+    L.donoenv = { nome: "Envio pelo PC dono", cada: "quando há pedido", onde: "João", pcs: [{ pc: "João", est: "ok", texto: "Último envio há 9 min, pela caixa de outro PC, confirmado em Itens Enviados." }] };
+    L.vigout = { nome: "Vigia do Outlook", cada: "a cada 20 s", onde: "4 PCs", pcs: porPc("Olhou as caixas há 8 s.", ov(p ? { Cristian: cr } : null)) };
+    L.conf = { nome: "Conferente", cada: "a cada 1 a 2 min", onde: "4 PCs", pcs: porPc("Conferiu há 41 s.", ov(p ? { Cristian: ["atencao", "Sem conferir há 6 min: Outlook sem janela"] } : null)) };
+    L.espelho = { nome: "Espelho de e-mails", cada: "quando muda", onde: "4 PCs", pcs: porPc("Espelho em dia, última mudança há 1 min.", ov(p ? { Cristian: cr } : null)) };
+    L.indice = { nome: "Índice local de e-mails", cada: "contínuo", onde: "4 PCs", pcs: porPc("Pronto: 12 meses indexados.", ov()) };
+    L.atual = { nome: "Atualizador de versão", cada: "a cada poucos min", onde: "4 PCs", pcs: porPc("Na versão 2026.10.28.1.", ov()) };
+    L.faxina = { nome: "Faxina diária", cada: "1 vez por dia", onde: "João", pcs: [p ? { pc: "João", est: "atencao", texto: "Não rodou hoje. Previsto para as 08:00." } : { pc: "João", est: "ok", texto: "Rodou hoje às 08:12. Nada passou do prazo." }] };
+    L.nfach = { nome: "Notas achadas", cada: "a cada 45 s", onde: "4 PCs", pcs: porPc("Varreu 12 PDFs há 38 s.", ov()) };
+    L.saude = { nome: "Saúde do sistema", cada: "contínuo", onde: "4 PCs", pcs: porPc("Publicou há 1 min.", ov()) };
+    L.srv = { nome: "Servidor do Painel", cada: "a cada 15 s", onde: "4 PCs", pcs: porPc("Relendo a cada 15 s.", ov()) };
+    L.rede = { nome: "Rede local do escritório", cada: "sempre ligada", onde: "4 PCs", pcs: porPc("Responde ao ping.", ov()) };
+    L.metricas = { nome: "Números da Gerência", cada: "a cada 5 min", onde: "4 PCs", pcs: porPc("Atualizou há 3 min.", ov()) };
+    return L;
+  }
+  var PESO = { ok: 0, desligado: 0, atencao: 2, parado: 3 };   // PC desligado não é defeito do agente: aparece no cartão "PCs ligados"
+  function agregado(a) {
+    var pior = "ok", n = 0, off = 0, ligados = 0;
+    a.pcs.forEach(function (x) {
+      if (PESO[x.est] > PESO[pior]) pior = x.est;
+      if (x.est !== "ok") n++;
+      if (x.est === "desligado") off++; else ligados++;
+    });
+    var est = pior;
+    var resumo;
+    var fora = a.pcs.filter(function (x) { return x.est === "desligado"; }).map(function (x) { return x.pc; });
+    if (est === "ok") resumo = a.pcs.length > 1 ? "Em dia em " + (a.pcs.length - off) + " de " + a.pcs.length + " PCs" + (fora.length ? " (" + fora.join(", ") + " desligado)" : "") + ". " + a.cada + "." : a.pcs[0].texto;
+    else resumo = a.pcs.filter(function (x) { return x.est !== "ok"; }).map(function (x) { return x.pc + ": " + x.texto; }).join(" · ");
+    return { est: est, resumo: resumo, off: off };
+  }
+
+  var cen = "normal", LIVE = viva(cen), selecionado = null;
+  window.AGORA_NO = function (n, sec, el) {
+    var a = LIVE[n.id]; if (!a) return;
+    var box = el("div");
+    a.pcs.forEach(function (x) {
+      var d = el("div", "agora-pc");
+      d.appendChild(el("strong", null, a.pcs.length > 1 ? x.pc : "Neste PC (" + x.pc + ")"));
+      var pl = el("span", "pil " + x.est); pl.innerHTML = glifo(x.est) + NOMES[x.est]; d.appendChild(pl);
+      d.appendChild(el("small", null, x.texto));
+      box.appendChild(d);
+    });
+    box.appendChild(el("p", null, "Ritmo esperado: " + a.cada + "."));
+    sec("Agora", box);
+  };
+  window.APLICAR_ESTADO = function () {
+    var nos = window.mapaNos; if (!nos) return;
+    Object.keys(LIVE).forEach(function (id) {
+      var n = nos[id]; if (!n) return;
+      var antigo = n.el.querySelector(".st"); if (antigo) antigo.remove();
+      var g = agregado(LIVE[id]), s = document.createElement("span");
+      s.className = "st " + g.est; s.title = NOMES[g.est] + ": " + g.resumo; s.innerHTML = glifo(g.est);
+      n.el.appendChild(s);
+    });
+  };
+
+  function desenhar() {
+    var ids = Object.keys(LIVE), linhas = ids.map(function (id) { var g = agregado(LIVE[id]); return { id: id, a: LIVE[id], g: g }; });
+    var c = { ok: 0, atencao: 0, parado: 0 };
+    linhas.forEach(function (l) { c[l.g.est]++; });
+    var pcsOff = {}; linhas.forEach(function (l) { l.a.pcs.forEach(function (x) { if (x.est === "desligado") pcsOff[x.pc] = 1; }); });
+    var nOff = Object.keys(pcsOff).length;
+
+    $("resumo").textContent = c.parado + c.atencao === 0
+      ? "Tudo em dia: " + ids.length + " agentes, em 4 PCs."
+      : (c.atencao ? c.atencao + (c.atencao > 1 ? " pedem" : " pede") + " atenção" : "") + (c.atencao && c.parado ? " e " : "") + (c.parado ? c.parado + (c.parado > 1 ? " estão parados" : " está parado") : "") + ".";
+    $("kps").innerHTML =
+      '<div class="kp"><small>Agentes em dia</small><strong>' + c.ok + '<span style="font-size:14px;color:var(--muted);font-weight:400"> de ' + ids.length + "</span></strong><span>no ritmo esperado</span></div>" +
+      '<div class="kp' + (c.atencao ? " at" : "") + '"><small>Pedem atenção</small><strong>' + c.atencao + "</strong><span>" + (c.atencao ? "fora do ritmo esperado" : "nenhum agora") + "</span></div>" +
+      '<div class="kp' + (c.parado ? " pa" : "") + '"><small>Parados</small><strong>' + c.parado + "</strong><span>" + (c.parado ? "sem sinal fora do ritmo" : "nenhum agora") + "</span></div>" +
+      '<div class="kp"><small>PCs ligados</small><strong>' + (4 - nOff) + '<span style="font-size:14px;color:var(--muted);font-weight:400"> de 4</span></strong><span>' + (nOff ? Object.keys(pcsOff).join(", ") + " fora" : "João, Clara, Cristian, Bernardo") + "</span></div>";
+
+    var f = $("faixa"), itens = linhas.filter(function (l) { return l.g.est !== "ok"; });
+    f.className = "faixa" + (itens.length ? " on " + (c.parado ? "vermelha" : "ambar") : "");
+    f.innerHTML = "";
+    if (itens.length) {
+      var b = document.createElement("b"); b.textContent = c.parado ? "Precisa de você:" : "Atenção:"; f.appendChild(b);
+      itens.slice(0, 3).forEach(function (l) {
+        var bt = document.createElement("button"); bt.type = "button";
+        bt.textContent = l.a.nome + " (ver no mapa)"; bt.onclick = function () { window.mapaEscolher(l.id); };
+        f.appendChild(bt);
+      });
+    }
+
+    var ordem = { parado: 0, atencao: 1, ok: 2 };
+    linhas.sort(function (x, y) { return ordem[x.g.est] - ordem[y.g.est] || x.a.nome.localeCompare(y.a.nome, "pt"); });
+    var tb = $("tb"); tb.innerHTML = "";
+    linhas.forEach(function (l) {
+      var tr = document.createElement("tr"); tr.className = "l" + (l.id === selecionado ? " on" : ""); tr.dataset.id = l.id; tr.tabIndex = 0;
+      var onde = l.a.onde === "4 PCs" && l.g.off ? (4 - l.g.off) + " de 4 PCs" : l.a.onde;
+      tr.innerHTML = '<td><span class="nome"></span><small></small></td><td></td><td><span class="pil ' + l.g.est + '">' + glifo(l.g.est) + NOMES[l.g.est] + "</span></td>";
+      tr.children[0].children[0].textContent = l.a.nome; tr.children[0].children[1].textContent = l.g.resumo; tr.children[1].textContent = onde;
+      tr.onclick = function () { window.mapaEscolher(l.id); };
+      tr.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.mapaEscolher(l.id); } };
+      tb.appendChild(tr);
+    });
+    $("sub-lista").textContent = ids.length + " agentes";
+    var pc = document.querySelector("#pc-aviso"); if (pc) pc.remove();
+  }
+  window.aoEscolherNo = function (id) {
+    selecionado = id;
+    document.querySelectorAll("#tb tr").forEach(function (tr) { tr.classList.toggle("on", tr.dataset.id === id); });
+    var ln = id && document.querySelector('#tb tr[data-id="' + id + '"]'); if (ln && ln.scrollIntoView) ln.scrollIntoView({ block: "nearest" });
+  };
+
+  /* menu */
+  function menu() {
+    var r = $("rail"); var it = function (k, t, on, nu) { return '<button class="it' + (on ? " on" : "") + '" title="' + t + '">' + ico(k) + "<span>" + t + "</span>" + (nu ? '<em class="nu" style="font-style:normal">' + nu + "</em>" : "") + "</button>"; };
+    r.innerHTML = '<div class="logo">NF</div>' +
+      '<div class="rot">Geral</div>' + it("grade", "Visão geral") + it("doc", "Notas fiscais", 0, "60") + it("refresh", "Itens enviados") + it("caixa", "Caixa de entrada", 0, "81") + it("lista", "Gerência") +
+      '<div class="sep"></div><div class="rot">Admin</div>' + it("log", "Monitoramento") + it("rede", "Agentes do Smith", 1) +
+      '<div class="fim"><div class="ava">U</div></div>';
+  }
+  function seg(id, atual, fn) {
+    var s = $(id); s.querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.v === atual));
+      b.onclick = function () { fn(b.dataset.v); seg(id, b.dataset.v, fn); };
+    });
+  }
+  var tema = (document.documentElement.getAttribute("data-theme")) || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  menu();
+  seg("s-tema", tema, function (v) { tema = v; document.documentElement.setAttribute("data-theme", v); });
+  document.documentElement.setAttribute("data-theme", tema);
+  seg("s-cen", cen, function (v) { cen = v; LIVE = viva(v); desenhar(); window.APLICAR_ESTADO(); if (selecionado && window.mapaEscolher) window.mapaEscolher(selecionado); });
+  seg("s-menu", "fechado", function (v) { $("rail").classList.toggle("aberto", v === "aberto"); setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 260); });
+  desenhar();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var W = 240, H = 92;
+  var X = function (k) { return 60 + k * 500; };
+  var Y = function (r) { return 60 + r * 168; };
+
+  var FLOWS = [
+    { id: "p",  nome: "Pedido do hóspede até o e-mail ao hotel" },
+    { id: "m",  nome: "E-mails, Outlook e telas" },
+    { id: "n",  nome: "Nota fiscal e envio ao hóspede" },
+    { id: "c",  nome: "Os 4 PCs entre si" },
+    { id: "g",  nome: "Código e atualização" },
+    { id: "ge", nome: "Números da Gerência" },
+    { id: "mt", nome: "Faxina e saúde" }
+  ];
+
+  var ICONS = {
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+    form: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    sheet: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/>',
+    eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    bot: '<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4M9 13h.01M15 13h.01M9 16.5h6"/>',
+    route: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/>',
+    mirror: '<rect x="3" y="5" width="8" height="14" rx="1.5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/>',
+    db: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/>',
+    code: '<path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+    git: '<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 8v8M18 11c0 4-6 3-12 5"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',
+    broom: '<path d="M14 3l7 7M13 8l3 3-7 8c-2 2-5 2-6 1 1-1 2-3 3-5z"/>',
+    server: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+    pulse: '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    hand: '<path d="M8 13V6a1.5 1.5 0 0 1 3 0v6M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6.5a1.5 1.5 0 0 1 3 0V15c0 4-2 6-5 6-3 0-4.500-1.500-6-4.500L4 13.500a1.500 1.500 0 0 1 2.500-1.500L8 14"/>',
+    send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    download: '<path d="M12 4v11M7 11l5 5 5-5M4 20h16"/>'
+  };
+
+  /* ---------------------------------------------------------------- blocos */
+  var N = [
+    /* coluna 0: de onde vêm os dados */
+    { id: "hospede", k: 0, r: 0, kind: "Gatilho", icon: "user", t: "Hóspede pede a nota", s: "Preenche o formulário do hotel", tag: "início",
+      roda: "Fora do sistema",
+      det: "Tudo começa quando o hóspede, ou o hotel por ele, preenche o formulário de nota fiscal. O pedido também pode vir por e-mail ou por ligação; a ligação o agente marca à mão no Painel (aba Ligacoes).",
+      regras: ["Para emitir a nota é preciso nome, CPF ou CNPJ e o que entra na nota: diárias, consumo ou estacionamento."] },
+    { id: "form", k: 0, r: 1, kind: "Fonte", icon: "form", t: "Formulário de NF (Google Forms)", s: "Antigo (36 col.) e novo (18 col.)", tag: "2 versões",
+      roda: "Google",
+      det: "Cada hotel tem o seu formulário. O antigo tem 36 colunas; o novo tem 18, com documento do tomador, check-in e check-out e valor da nota. A resposta cai numa planilha do hotel no Drive.",
+      code: "src/sincronizar.py (juntar_planilhas)",
+      regras: ["A cópia junta as duas versões na mesma aba da Central do hotel, com as colunas do formulário novo no fim."] },
+    { id: "emailh", k: 0, r: 2.5, kind: "Gatilho", icon: "inbox", t: "E-mail do hóspede", s: "Respostas, cobranças, correções", tag: "a qualquer hora",
+      roda: "Fora do sistema",
+      det: "O hóspede responde o e-mail do pedido ou escreve para a caixa do hotel: pede correção, cobra a nota, manda documento. Chega por POP3 nas caixas dos hotéis, que ficam no Outlook de cada PC.",
+      regras: ["Mais de 7 dias sem resposta, ou pedido de correção, vira Urgência no Painel."] },
+    { id: "dropbox", k: 0, r: 4.5, kind: "Fonte", icon: "folder", t: "Dropbox das notas", s: "PDFs das NFs já emitidas", tag: "varre a cada 5 min",
+      roda: "Cada PC lê o seu Dropbox",
+      det: "Quatro pastas, uma por agente, onde o PDF da nota emitida é salvo. O sistema só lê: confere o nome (NF 123 - NOME), lê o CPF ou CNPJ de dentro do PDF (com OCR quando é escaneado) e compara com o pedido.",
+      code: "src/confirmar_nfs.py, nf_achadas.py, canceladas.py",
+      regras: ["Notas canceladas e substituídas são arquivos renomeados na pasta, lidos como só leitura.", "Arquivos que estão só online no Dropbox são pulados."] },
+    { id: "dev", k: 0, r: 6.9, kind: "Gatilho", icon: "code", t: "Quem programa", s: "João e o Claude", tag: "commit + etiqueta",
+      roda: "Cópia de trabalho, nunca a pasta do Painel do João",
+      det: "Mudança de código vai para a main com uma etiqueta de versão (AAAA.MM.DD.N), e as 3 branches dos PCs ficam iguais à main. Só documentação sobe sem etiqueta.",
+      code: "Cofre: Como entregar",
+      regras: ["Nunca force push, nunca mover ou apagar etiqueta publicada.", "Desenho primeiro, código só depois do OK do João."] },
+    { id: "github", k: 0, r: 8.2, kind: "Armazena", icon: "git", t: "GitHub (privado)", s: "Kaereze/Notas-Fiscais", tag: "main + 3 branches",
+      roda: "GitHub",
+      det: "Guarda o código e o cofre Segundo Cérebro. As branches Bernardo, Christian e clara espelham a main; os PCs só atualizam quando há versão etiquetada.",
+      regras: ["Nunca guardar senhas, chaves ou dados reais de hóspedes."] },
+
+    /* coluna 1 */
+    { id: "planhot", k: 1, r: 1, kind: "Armazena", icon: "sheet", t: "Planilhas dos hotéis (Drive)", s: "Uma por hotel, só leitura", tag: "só leitura",
+      roda: "Google Drive",
+      det: "Onde o Google grava as respostas. O sistema só lê, com uma exceção autorizada em 15/10/2026: depois que o e-mail do pedido aparece em Itens Enviados, o robô marca TRUE na coluna Enviado.",
+      code: "src/sincronizar.py, sheets.py",
+      regras: ["As respostas nunca são alteradas pelo sistema."] },
+    { id: "outlook", k: 1, r: 2.5, kind: "Armazena", icon: "mail", t: "Outlook de cada PC", s: "Caixas dos hotéis (POP3)", tag: "4 PCs",
+      roda: "Cada PC tem só as caixas dos hotéis dele",
+      det: "É onde chegam os pedidos do robô e as respostas dos hóspedes, e de onde saem as notas. O Painel é espelho do Outlook: quem guarda o histórico é o Outlook, não o Painel.",
+      code: "src/outlook.py, outlook_vivo.py, identidade.py",
+      regras: ["O Outlook precisa estar aberto com janela. Aberto só pelo COM (escondido) não recebe e-mail; o guardião confere a cada 60 s.", "Janela 'E-mail da Internet' pedindo senha costuma ser o servidor recusando a conexão."] },
+    { id: "atual", k: 1, r: 8.2, kind: "Processo", icon: "refresh", t: "Atualizador de versão", s: "Cada PC puxa a versão nova", tag: "só com etiqueta",
+      roda: "Cada PC, dentro do Painel",
+      det: "O Painel pergunta ao GitHub de tempos em tempos e quando alguém aperta Atualizar todos. Se dá para avançar sem conflito, baixa o código e reinicia pela tarefa SolicitacoesNF_Reiniciar do Windows.",
+      code: "src/atualizador.py, Automacoes/reiniciar_servicos.ps1",
+      regras: ["Usa git fetch --tags e merge --ff-only.", "Pasta com arquivo alterado à mão trava a atualização daquele PC.", "Registro em logs/atualizacao.log."] },
+
+    /* coluna 2 */
+    { id: "vigia", k: 2, r: 0, kind: "Processo", icon: "eye", t: "Vigia de formulários", s: "Pergunta ao Drive o que mudou", tag: "10–20 s · PC principal",
+      roda: "PC principal",
+      det: "A cada poucos segundos pergunta ao Drive quais planilhas mudaram (a listagem não gasta a cota das planilhas). Copia só aqueles hotéis para a Central e avisa os Painéis pela rede, para o pedido aparecer em 10–20 s em vez de 6–12 min.",
+      code: "src/vigia_formularios.py",
+      regras: ["Espera enquanto a rodada de 10 em 10 minutos está copiando.", "Usa uma fatia própria da cota do Google."] },
+    { id: "sync", k: 2, r: 1, kind: "Processo", icon: "copy", t: "Cópia para a Central", s: "Copia respostas dos hotéis", tag: "a cada 10 min · PC principal",
+      roda: "PC principal, pelo Agendador do Windows",
+      det: "Rodada completa: copia as planilhas que mudaram para as abas da Central e, logo em seguida, roda o robô de envio.",
+      code: "src/sincronizar.py, Automacoes/agendar_sincronizacao.ps1",
+      regras: ["Se a cópia parar, a Saúde acende a faixa vermelha (já ficou 2,5 dias parada em outubro).", "A Conferência da Cópia compara cada hotel com a Central."] },
+    { id: "robo", k: 2, r: 2, kind: "Processo", icon: "bot", t: "Robô de envio", s: "Um e-mail por pedido, ao hotel", tag: "a cada 10 min · PC principal",
+      roda: "PC principal",
+      det: "Lê os pedidos sem TRUE na Central, monta o e-mail em HTML com um código NF-… e manda para a caixa notafiscal@ do próprio hotel. Só marca TRUE na planilha do hotel depois de ver o e-mail em Itens Enviados.",
+      code: "src/main.py, montar_email.py, outlook.py, diario_envios.py",
+      regras: ["Um diário de envios (anotado antes de enviar) impede reenvio se o processo morrer entre enviar e marcar.", "Antes de enviar confere se o código NF-… já está em Itens Enviados ou na Caixa de Saída: não duplica.", "O servidor de e-mail limita 250 envios por hora."] },
+    { id: "donoenv", k: 2, r: 3, kind: "Processo", icon: "route", t: "Envio pelo PC dono da caixa", s: "A caixa do hotel envia por si", tag: "automático",
+      roda: "PC principal pede; o PC dono envia",
+      det: "Cada caixa de hotel está no Outlook de um PC só. Se não está no PC do robô, ele pede ao PC dono: primeiro pela rede do escritório (na hora); se a rede não chega, pela fila Envios_NF. O PC dono manda da própria caixa do hotel e confere em Itens Enviados.",
+      code: "src/envio_pc_dono.py",
+      regras: ["Nunca sai pela conta do Ondina.", "PC dono desligado: o e-mail espera sem TRUE; passou de 2 h, o alarme de pedido parado avisa no Painel."] },
+    { id: "vigout", k: 2, r: 4, kind: "Processo", icon: "eye", t: "Vigia do Outlook", s: "Só olha, não grava", tag: "a cada 20 s · cada PC",
+      roda: "Cada PC",
+      det: "Olha se chegou ou saiu e-mail novo. Se sim, avisa o conferente, que roda na hora a conferência completa. Sem novidade, a conferência segue no ritmo normal, a cada 2 minutos.",
+      code: "src/vigia_outlook.py" },
+    { id: "conf", k: 2, r: 5, kind: "Processo", icon: "check", t: "Conferente", s: "Liga e-mail, pedido e nota", tag: "1–2 min · cada PC",
+      roda: "Cada PC; no principal também atende os comandos do menu da planilha",
+      det: "Acompanha Itens Enviados e o Dropbox, confirma que a nota enviada bate com a solicitação (nome, CPF ou CNPJ, valor) e põe selo e etiquetas nos e-mails de solicitação.",
+      code: "src/conferente.py, confirmar_nfs.py, controle_nf.py",
+      regras: ["Só nota confirmada vira evento; as ilegíveis ficam de fora.", "Reconhece o assunto 'NF 123 - NOME' com anexo, ou um PDF no Dropbox."] },
+    { id: "espelho", k: 2, r: 6, kind: "Processo", icon: "mirror", t: "Espelho de e-mails", s: "Caixa de entrada para a Central", tag: "só quando muda",
+      roda: "Cada PC",
+      det: "Reflete em abas de passagem da Central a Caixa de Entrada inteira (menos respondidos e solicitações do robô) e os Itens Enviados das últimas 72 horas. Reescreve a cada volta, só se mudou: nada se acumula.",
+      code: "src/espelho_emails.py",
+      regras: ["Lido no Outlook só vale depois de 5 minutos; não lido vale na hora.", "Respondido é quando saiu e-mail da caixa para quem escreveu; excluído some da lista."] },
+    { id: "indice", k: 2, r: 7, kind: "Armazena", icon: "db", t: "Índice local de e-mails", s: "Banco SQLite neste PC", tag: "12 meses",
+      roda: "Cada PC, fora do git e do Google",
+      det: "Banco local (estado/indice_emails.sqlite) com 12 meses de Entrada, Enviados e Excluídos das caixas do PC. Responde a pesquisa em milissegundos.",
+      code: "src/indice_emails.py",
+      regras: ["Montado aos poucos, cerca de 1 s de Outlook por vez, para não atrapalhar o robô.", "O que passa de 12 meses sai na faxina diária.", "Dado de hóspede fica só no PC e no Outlook."] },
+
+    /* coluna 3: Central */
+    { id: "c_hot", k: 3, r: 0.9, kind: "Armazena", icon: "sheet", t: "Abas por hotel", s: "Respostas copiadas", tag: "Central",
+      roda: "Planilha Central", det: "Uma aba por hotel com as respostas do formulário antigo e do novo juntas. Gravada pela cópia do PC principal; lida pelo robô e pelo Painel.", code: "src/sheets.py" },
+    { id: "c_cad", k: 3, r: 1.8, kind: "Armazena", icon: "sheet", t: "Cadastro_Hoteis e Status", s: "Hotel, e-mail, agente", tag: "Central",
+      roda: "Planilha Central", det: "O cadastro diz qual e-mail e qual agente cuidam de cada hotel (sem linha de cabeçalho). Status guarda o liga e desliga do robô.", code: "src/sheets.py, hoteis.py" },
+    { id: "c_env", k: 3, r: 2.7, kind: "Armazena", icon: "sheet", t: "Envios_NF e Anexos", s: "Fila de envio entre PCs", tag: "Central",
+      roda: "Planilha Central",
+      det: "Fila que só cresce no fim, com os estados PEDIDO, ASSUMIDO, ENVIADO e FALHOU. Anexos do computador viajam em partes e são apagados depois do envio; anexos do Dropbox viajam como caminho relativo.",
+      code: "src/envio_nf.py", regras: ["Faxina de 3 dias."] },
+    { id: "c_log", k: 3, r: 3.6, kind: "Armazena", icon: "sheet", t: "Log de Envios", s: "Histórico dos envios", tag: "Central",
+      roda: "Planilha Central", det: "Registro de cada envio do robô, para conferir depois o que saiu, quando e para quem.", code: "src/historico.py" },
+    { id: "c_trat", k: 3, r: 4.5, kind: "Armazena", icon: "sheet", t: "Tratamento", s: "Uma linha por fato (A:H)", tag: "Central",
+      roda: "Planilha Central",
+      det: "Registro que só cresce no fim: tudo o que acontece com cada solicitação (nota confirmada, para quem foi, tratativa, nota única ou dividida, quem está com ela).",
+      regras: ["A faxina resume o que tem mais de 3 dias e tira solicitações com mais de 150 dias, depois de conferir que o estado de cada uma fica idêntico."] },
+    { id: "c_cor", k: 3, r: 5.4, kind: "Armazena", icon: "sheet", t: "Correio_<PC>, CorreioTexto, CaixaPedidos", s: "Espelho das caixas", tag: "Central",
+      roda: "Planilha Central", det: "Abas de passagem, uma de cada tipo por PC: a Caixa de Entrada espelhada, o texto dos e-mails e as solicitações do robô que estão na Caixa de Entrada." },
+    { id: "c_evt", k: 3, r: 6.3, kind: "Armazena", icon: "sheet", t: "Eventos, Ligações e Atividade", s: "Lido, excluído, urgência", tag: "Central",
+      roda: "Planilha Central",
+      det: "Eventos_Correio guarda lido, excluído e urgência; Ligacoes guarda a marca do agente; Atividade_Robo é o registro de todos os PCs.",
+      regras: ["Eventos: 3 dias. Atividade: 7 dias. Ligações: 400 dias."] },
+    { id: "c_pcs", k: 3, r: 7.2, kind: "Armazena", icon: "sheet", t: "PCs_Painel e Comandos_PC", s: "Quem está ligado e recados", tag: "Central",
+      roda: "Planilha Central",
+      det: "Cada Painel publica a cada minuto quem é, quais caixas tem, se o Outlook está aberto, a versão do código e a saúde. Comandos_PC é o quadro de recados: um PC pede (por exemplo, atualizar), o de destino executa e responde.",
+      code: "src/rede_pcs.py" },
+
+    /* coluna 4: Painel (servidor) */
+    { id: "faxina", k: 4, r: 0.3, kind: "Processo", icon: "broom", t: "Faxina diária", s: "Nada vira bola de neve", tag: "1 vez por dia · principal",
+      roda: "PC principal",
+      det: "Resume e remove o que passou do prazo nas abas de registro, com cópia de segurança antes de mexer no Tratamento. Também a limpeza local do que cresce sozinho (cache da janela do Painel).",
+      code: "src/faxina.py, limpeza.py",
+      regras: ["Fila, anexos, comandos, lido e excluído: 3 dias. Atividade do robô: 7 dias.", "Antes de gravar, confere que o estado de cada solicitação fica idêntico."] },
+    { id: "saude", k: 4, r: 1.5, kind: "Processo", icon: "pulse", t: "Saúde do sistema", s: "Faixa vermelha quando foge", tag: "contínuo",
+      roda: "Cada PC publica; a tela mostra",
+      det: "Avisa quando a cópia está parada, o Outlook está sem janela, há e-mails presos na Caixa de Saída, uma caixa pede senha ou um pedido está parado. Também dispara um aviso do Windows.",
+      code: "src/saude.py, avisos_windows.py" },
+    { id: "srv", k: 4, r: 3.4, kind: "Processo", icon: "server", t: "Servidor do Painel", s: "127.0.0.1:8765 em cada PC", tag: "relê a cada 15 s",
+      roda: "Cada PC, ligado com o Windows",
+      det: "Cérebro local do Painel. Um laço lê a Central, as notas achadas, a Gerência e as canceladas, guarda um cache e entrega tudo à tela por uma API JSON. Só aceita conexão do próprio PC e exige um token nas ações.",
+      code: "src/app_servidor.py (Estado, criar_handler)",
+      regras: ["Janela fechada relê a cada 60 s, para poupar a cota do Google.", "Fechar a janela só esconde; o servidor continua.", "Em casa, o modo demonstração usa dados fictícios."] },
+    { id: "nfach", k: 4, r: 5.8, kind: "Processo", icon: "search", t: "Notas achadas", s: "Acha a nota pelo CPF no PDF", tag: "45 s · 12 PDFs",
+      roda: "Linha de fundo do Painel",
+      det: "Varre PDFs recentes do Dropbox, extrai o CPF ou CNPJ e monta o índice estado/nf_achadas.json. Mostra na ficha que já existe nota daquele documento e confere se a nota já enviada cobre o que o hóspede pede agora.",
+      code: "src/nf_achadas.py, nf_cobre.py",
+      regras: ["Janela de 30 dias; nota fresca 72 h; nota pronta 168 h."] },
+    { id: "rede", k: 4, r: 7.0, kind: "Processo", icon: "network", t: "Rede local do escritório", s: "Porta 8766, pedidos assinados", tag: "sem gastar cota",
+      roda: "Cada PC",
+      det: "Conversa direta entre os Painéis dos 4 PCs: busca ao vivo no Outlook, texto de um e-mail, aviso de que há novidade, envio pelo PC dono e Enviar/Receber. Não passa pelo Google.",
+      code: "src/rede_local.py",
+      regras: ["Só aceita IP da rede local (10.x, 172.16–31.x, 192.168.x).", "Todo pedido vem assinado (HMAC) com um segredo tirado da chave do Google, e vale 2 minutos.", "Só e-mail de caixa de hotel sai, nunca de caixa pessoal.", "Melhoria combinada, aguardando OK: pedido de uso único e validade de 30 s."] },
+
+    /* coluna 5: telas e ações */
+    { id: "metricas", k: 5, r: 0.5, kind: "Processo", icon: "chart", t: "Números da Gerência", s: "Junta Central e Mail Analytics", tag: "a cada 5 min",
+      roda: "Cada PC",
+      det: "Junta as solicitações da Central com os números que o Mail Analytics já grava (recebidos, enviados, ligações, substituições e cancelamentos, notas) e compara o mês com o anterior.",
+      code: "src/painel_metricas.py, relatorio_semana.py, fiscal_intelligence.py" },
+    { id: "ui", k: 5, r: 2.3, kind: "Tela", icon: "monitor", t: "Telas do Painel", s: "Janela do aplicativo", tag: "claro e escuro",
+      roda: "Cada PC",
+      det: "Visão geral, Hotéis, Notas fiscais, Caixa de entrada, Itens enviados, Gerência, Atividade e Robô. É uma janela de aplicativo; o X só esconde.",
+      code: "app_ui/index.html, painel.js, correio.js, robo.js, pecas/*; src/app_janela.py" },
+    { id: "busca", k: 5, r: 3.4, kind: "Tela", icon: "search", t: "Busca", s: "Nome, e-mail, CPF ou frase", tag: "histórico de 24 h",
+      roda: "Cada PC",
+      det: "Pesquisa pelo índice local dos 4 PCs, em milissegundos; a opção ao vivo pergunta direto ao Outlook de cada PC pela rede. Guarda as pesquisas das últimas 24 horas só no navegador daquele PC, sem CPF ou CNPJ.",
+      code: "src/busca_outlook.py, indice_emails.py; app_ui/pecas/busca_recente.js" },
+    { id: "acoes", k: 5, r: 4.5, kind: "Ação", icon: "hand", t: "Ações do agente", s: "O que a equipe faz na tela", tag: "com token",
+      roda: "Cada PC",
+      det: "Marcar lido ou não lido, urgência (botão direito), excluir (com Desfazer por 10 s), responder, encaminhar, tratativa, nota dividida, marcar Ligação, concluir a conversa e mover o e-mail para a pasta NF enviada.",
+      code: "src/app_servidor.py (rotas /api/...)",
+      regras: ["O Painel nunca tira nem apaga e-mail da entrada sozinho.", "Abrir um e-mail no Painel marca como lido no Outlook."] },
+    { id: "envnf", k: 5, r: 5.6, kind: "Ação", icon: "send", t: "Enviar NF", s: "Com conferência antes", tag: "da caixa do hotel",
+      roda: "PC que pede; o PC dono envia",
+      det: "O agente escolhe o PDF (o Painel sugere os do Dropbox), o sistema confere se a nota bate com a solicitação e envia da caixa do próprio hotel. Se a caixa está neste PC, envia na hora; se está em outro, avisa pela rede e deixa o pedido na fila como reserva.",
+      code: "src/envio_nf.py" },
+    { id: "envrec", k: 5, r: 6.7, kind: "Ação", icon: "refresh", t: "Enviar/Receber todas", s: "Roda o F9 nos 4 Outlooks", tag: "pela rede",
+      roda: "Cada PC responde por si",
+      det: "O Painel pede aos 4 PCs, pela rede deles, que rodem o Enviar/Receber do próprio Outlook. Também manda o que estiver preso na Caixa de Saída. Guarda quanto cada PC demorou e usa a mediana como estimativa.",
+      code: "src/enviar_receber.py" },
+    { id: "cmd", k: 5, r: 7.8, kind: "Ação", icon: "download", t: "Atualizar todos os PCs", s: "Recado pela Central", tag: "botão",
+      roda: "Qualquer PC",
+      det: "Grava o comando atualizar em Comandos_PC. Cada PC baixa a versão etiquetada mais nova e reinicia o Painel. O resultado de cada um aparece na página Atividade.",
+      code: "src/rede_pcs.py, atualizador.py" },
+
+    /* coluna 6: leitura da Gerência e saída */
+    { id: "mailan", k: 6, r: 0, kind: "Fonte", icon: "sheet", t: "Mail Analytics", s: "Planilha de números, só leitura", tag: "produção",
+      roda: "Google Sheets",
+      det: "Planilha em produção que conta recebidos, enviados, ligações, substituições e cancelamentos e notas por agente e dia. Este sistema só lê e nunca altera.",
+      regras: ["No fim de semana, vira uma linha de domingo gravada na segunda de manhã."] },
+    { id: "fi", k: 6, r: 1, kind: "Fonte", icon: "sheet", t: "Fiscal Intelligence", s: "Gravada pelo Mail Analytics", tag: "só leitura",
+      roda: "Google Sheets", det: "Planilha de apoio gravada pelo Mail Analytics. O Painel lê a cada 5 minutos para a Gerência.", code: "src/fiscal_intelligence.py" },
+    { id: "donoout", k: 6, r: 5.6, kind: "Saída", icon: "send", t: "Outlook do PC dono envia", s: "Sai da caixa do próprio hotel", tag: "COM do Outlook",
+      roda: "O PC que tem a caixa do hotel",
+      det: "O envio acontece sempre pelo Outlook do PC que tem aquela caixa de hotel. O e-mail do robô vai da caixa do hotel para ela mesma; a nota vai da caixa do hotel para o hóspede.",
+      code: "src/outlook.py, envio_pc_dono.py" },
+    { id: "itens", k: 6, r: 6.7, kind: "Processo", icon: "check", t: "Itens Enviados", s: "A prova de que saiu", tag: "confirma",
+      roda: "Outlook do PC dono",
+      det: "O envio só conta como feito depois que o e-mail aparece em Itens Enviados. Só então o robô marca TRUE e o conferente reconhece a nota.",
+      regras: ["Resposta do hóspede com a nota anexada não conta como envio."] },
+    { id: "hospdest", k: 6, r: 7.8, kind: "Saída", icon: "user", t: "Hóspede recebe a nota", s: "Por e-mail", tag: "fim",
+      roda: "Fora do sistema", det: "A nota fiscal chega na caixa do hóspede, enviada pela caixa do hotel. Se ele responder, a conversa volta para a Caixa de Entrada do PC dono." },
+
+    /* linha de baixo: os 4 PCs */
+    { id: "pc_joao", k: 2, r: 9.6, kind: "Computador", icon: "monitor", t: "João", s: "PC principal", tag: "tudo",
+      roda: "Trabalho; sessão de código do Claude",
+      det: "Além do que todos os PCs rodam, este faz a cópia dos hotéis (a cada 10 min), a vigia de formulários, o robô de envio, a conferência diária e a faxina. Fim de semana trabalham João e Cristian.",
+      regras: ["Todos os PCs rodam: Painel (tarefa no logon), conferente (a cada 10 min, que se mantém ligado), guardião do Outlook e vigia do Outlook.", "O Painel do João é onde o código novo aparece primeiro; por isso o trabalho de código é feito numa cópia."] },
+    { id: "pc_clara", k: 3, r: 9.6, kind: "Computador", icon: "monitor", t: "Clara", s: "Painel, conferente e Outlook", tag: "caixas dela",
+      roda: "Trabalho", det: "Roda o Painel e o conferente e tem no Outlook as caixas dos hotéis dela. Sem permissão de administrador: liberar a porta 8766 no firewall exige alguém com administrador." },
+    { id: "pc_cris", k: 4, r: 9.6, kind: "Computador", icon: "monitor", t: "Cristian", s: "Painel, conferente e Outlook", tag: "caixas dele",
+      roda: "Trabalho", det: "Roda o Painel e o conferente. Trabalha no fim de semana junto com o João, e esse fim de semana conta para ele na Gerência." },
+    { id: "pc_bern", k: 5, r: 9.6, kind: "Computador", icon: "monitor", t: "Bernardo", s: "Painel, conferente e Outlook", tag: "caixas dele",
+      roda: "Trabalho", det: "Roda o Painel e o conferente e tem no Outlook as caixas dos hotéis dele." }
+  ];
+
+  /* ligações: [de, para, caminho, texto, lado de saída, lado de entrada, desvio saída, desvio entrada, duas pontas] */
+  var E = [
+    ["hospede", "form", "p", "preenche o formulário", "b", "t"],
+    ["form", "planhot", "p", "grava a resposta"],
+    ["planhot", "vigia", "p", "Drive avisa em 1–2 s"],
+    ["planhot", "sync", "p", "lê a cada 10 min"],
+    ["vigia", "c_hot", "p", "copia só o que mudou"],
+    ["sync", "c_hot", "p", "copia as planilhas"],
+    ["c_hot", "robo", "p", "pedidos sem TRUE", "l", "r"],
+    ["c_cad", "robo", "p", "hotel, e-mail e agente", "l", "r"],
+    ["robo", "outlook", "p", "e-mail do pedido para a caixa do hotel", "l", "r"],
+    ["robo", "planhot", "p", "marca TRUE depois de confirmar", "t", "b"],
+    ["robo", "c_log", "p", "registra o envio"],
+    ["robo", "donoenv", "p", "caixa em outro PC?", "b", "t"],
+    ["donoenv", "outlook", "p", "envia pelo PC dono", "l", "b"],
+    ["donoenv", "c_env", "p", "reserva: fila Envios_NF"],
+
+    ["emailh", "outlook", "m", "e-mail chega (POP3)"],
+    ["outlook", "vigout", "m", "olhada a cada 20 s"],
+    ["vigout", "conf", "m", "chegou algo novo", "b", "t"],
+    ["outlook", "conf", "m", "lê Entrada e Enviados"],
+    ["outlook", "espelho", "m", "reflete as caixas"],
+    ["outlook", "indice", "m", "indexa 12 meses"],
+    ["conf", "c_trat", "m", "nota confirmada"],
+    ["espelho", "c_cor", "m", "grava Correio_<PC>"],
+    ["c_cor", "srv", "m", "lê a cada 15 s"],
+    ["c_trat", "srv", "m", "situação de cada pedido"],
+    ["c_hot", "srv", "m", "pedidos dos hotéis"],
+    ["c_evt", "srv", "m", "lido, excluído, urgência"],
+    ["srv", "ui", "m", "API local :8765"],
+    ["ui", "acoes", "m", "o agente age", "b", "t"],
+    ["acoes", "srv", "m", "ação com token", "l", "r"],
+    ["acoes", "c_evt", "m", "grava o evento"],
+    ["ui", "busca", "m", "pesquisa", "b", "t"],
+    ["busca", "indice", "m", "resposta local"],
+    ["busca", "rede", "m", "ao vivo nos 4 Outlooks", "l", "r"],
+
+    ["dropbox", "conf", "n", "confere o PDF"],
+    ["dropbox", "nfach", "n", "CPF/CNPJ de dentro do PDF"],
+    ["nfach", "srv", "n", "esta nota já existe?", "t", "b"],
+    ["acoes", "envnf", "n", "Enviar NF", "b", "t"],
+    ["envnf", "donoout", "n", "caixa neste PC: envia na hora"],
+    ["envnf", "rede", "n", "outro PC: avisa pela rede", "l", "r"],
+    ["envnf", "c_env", "n", "grava o pedido na fila", "l", "r"],
+    ["rede", "donoout", "n", "PC dono envia"],
+    ["c_env", "donoout", "n", "reserva: PC dono lê a fila"],
+    ["donoout", "itens", "n", "envia", "b", "t"],
+    ["itens", "hospdest", "n", "a nota chega ao hóspede", "b", "t"],
+
+    ["ui", "envrec", "c", "botão Enviar/Receber", "r", "r"],
+    ["envrec", "rede", "c", "pede o F9 a cada PC", "l", "r"],
+    ["ui", "cmd", "c", "botão Atualizar todos", "r", "r"],
+    ["c_pcs", "pc_joao", "c", "PCs_Painel e Comandos_PC", "b", "t", -75, -45, 1],
+    ["c_pcs", "pc_clara", "c", "", "b", "t", -25, -45, 1],
+    ["c_pcs", "pc_cris", "c", "", "b", "t", 25, -45, 1],
+    ["c_pcs", "pc_bern", "c", "", "b", "t", 75, -45, 1],
+    ["rede", "pc_joao", "c", "rede local assinada", "b", "t", -75, 45, 1],
+    ["rede", "pc_clara", "c", "", "b", "t", -25, 45, 1],
+    ["rede", "pc_cris", "c", "", "b", "t", 25, 45, 1],
+    ["rede", "pc_bern", "c", "", "b", "t", 75, 45, 1],
+
+    ["dev", "github", "g", "push da main + etiqueta", "b", "t"],
+    ["github", "atual", "g", "fetch --tags + merge"],
+    ["cmd", "c_pcs", "g", "grava o recado atualizar", "l", "r"],
+    ["c_pcs", "atual", "g", "cada PC lê o recado", "l", "r"],
+    ["atual", "pc_joao", "g", "baixa e reinicia o Painel", "b", "t"],
+
+    ["mailan", "metricas", "ge", "lê, só leitura", "l", "r"],
+    ["fi", "metricas", "ge", "lê, só leitura", "l", "r"],
+    ["metricas", "ui", "ge", "Visão geral e Gerência", "b", "t"],
+
+    ["faxina", "c_trat", "mt", "resume o que passou de 3 dias", "l", "r"],
+    ["faxina", "c_env", "mt", "limpa a fila (3 dias)", "l", "r"],
+    ["faxina", "c_evt", "mt", "eventos 3 dias, robô 7", "l", "r"],
+    ["c_pcs", "saude", "mt", "quem está ligado e a saúde", "r", "l"],
+    ["saude", "ui", "mt", "faixa vermelha no topo"]
+  ];
+
+  var NOTAS = [
+    { x: 60, y: 1670, t: "Cota do Google", s: "60 leituras por minuto somando os 4 PCs. Toda leitura nova entra na conta; por isso cada programa tem a sua fatia (cota_google.py)." },
+    { x: 560, y: 1670, t: "Nada acumula", s: "O Painel não é histórico: quem guarda é o Outlook e a planilha de cada hotel. As abas de registro têm faxina de 3 a 7 dias." },
+    { x: 3060, y: 1670, t: "Dado de hóspede", s: "Só no Outlook e no índice local de cada PC. Nunca em arquivo de teste, documento ou GitHub." }
+  ];
+
+  var FR = [
+    { id: "f1", t: "1 · De onde vêm os dados", z: "Fontes", m: ["hospede", "form", "emailh", "dropbox", "dev", "github"] },
+    { id: "f2", t: "2 · Coleta e Outlook de cada PC", z: "Coleta", m: ["planhot", "outlook", "atual", "vigia", "sync", "robo", "donoenv", "vigout", "conf", "espelho", "indice"] },
+    { id: "f3", t: "3 · Planilha Central", z: "Central", m: ["c_hot", "c_cad", "c_env", "c_log", "c_trat", "c_cor", "c_evt", "c_pcs"] },
+    { id: "f4", t: "4 · Painel Fiscal, um em cada PC", z: "Painel", m: ["faxina", "saude", "srv", "nfach", "rede", "metricas", "ui", "busca", "acoes", "envnf", "envrec", "cmd"] },
+    { id: "f5", t: "5 · Saída", z: "Saída", m: ["donoout", "itens", "hospdest"] },
+    { id: "f6", t: "Leitura da Gerência", z: null, m: ["mailan", "fi"] },
+    { id: "f7", t: "Os 4 computadores do financeiro", z: "4 PCs", m: ["pc_joao", "pc_clara", "pc_cris", "pc_bern"] }
+  ];
+
+  /* ---------------------------------------------------------------- montagem */
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+  var stage = $("stage"), world = $("world"), nodesEl = $("nodes"), framesEl = $("frames"), edgesEl = $("edges"), defs = $("defs"), labelsEl = $("labels"), painel = $("painel");
+
+  var REDUZ = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var byId = {};
+  N.forEach(function (n) { n.x = X(n.k); n.y = Y(n.r); byId[n.id] = n; });
+  NOTAS.forEach(function (n) { /* posições já em px */ });
+
+  function colorOf(f) { return "var(--f-" + f + ")"; }
+
+  function svg(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    for (var a in attrs) el.setAttribute(a, attrs[a]);
+    return el;
+  }
+
+  // pontas de seta, uma por caminho
+  FLOWS.forEach(function (f) {
+    ["end", "start"].forEach(function (pos) {
+      var m = svg("marker", { id: "seta-" + f.id + "-" + pos, viewBox: "0 0 10 10", refX: pos === "end" ? "8" : "2", refY: "5", markerWidth: "9", markerHeight: "9", markerUnits: "userSpaceOnUse", orient: "auto-start-reverse" });
+      var p = svg("path", { d: "M1 1 L9 5 L1 9 z", style: "fill:" + colorOf(f.id) });
+      m.appendChild(p); defs.appendChild(m);
+    });
+  });
+
+  // quadros de fundo
+  FR.forEach(function (fr) {
+    var xs = [], ys = [], xe = [], ye = [];
+    fr.m.forEach(function (id) { var n = byId[id]; xs.push(n.x); ys.push(n.y); xe.push(n.x + W); ye.push(n.y + H); });
+    var pad = 34, top = 58;
+    var minx = Math.min.apply(null, xs) - pad, miny = Math.min.apply(null, ys) - top, maxx = Math.max.apply(null, xe) + pad, maxy = Math.max.apply(null, ye) + pad;
+    fr.box = { x: minx, y: miny, w: maxx - minx, h: maxy - miny };
+    var d = document.createElement("div");
+    d.className = "frame"; d.style.setProperty("--t", "var(--t" + (FR.indexOf(fr) + 1) + ")");
+    d.style.cssText = "left:" + minx + "px;top:" + miny + "px;width:" + (maxx - minx) + "px;height:" + (maxy - miny) + "px";
+    var b = document.createElement("b"); b.textContent = fr.t; d.appendChild(b);
+    framesEl.appendChild(d);
+  });
+
+  // blocos
+  N.forEach(function (n) {
+    var el = document.createElement("button");
+    el.className = "node"; el.type = "button"; el.id = "n-" + n.id;
+    el.style.left = n.x + "px"; el.style.top = n.y + "px";
+    el.setAttribute("aria-label", n.t + ". " + n.s);
+    var tile = document.createElement("div"); tile.className = "tile";
+    tile.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n.icon] + "</svg>";
+    var txt = document.createElement("div"); txt.className = "txt";
+    var kind = document.createElement("div"); kind.className = "kind";
+    var ks = document.createElement("span"); ks.textContent = n.kind; kind.appendChild(ks);
+    if (n.tag) { var em = document.createElement("em"); em.textContent = n.tag; kind.appendChild(em); }
+    var tt = document.createElement("div"); tt.className = "tt"; tt.textContent = n.t;
+    var ss = document.createElement("div"); ss.className = "ss"; ss.textContent = n.s;
+    txt.appendChild(kind); txt.appendChild(tt); txt.appendChild(ss);
+    el.appendChild(tile); el.appendChild(txt);
+    n.el = el; nodesEl.appendChild(el);
+  });
+
+  // notas adesivas
+  NOTAS.forEach(function (n) {
+    var d = document.createElement("div"); d.className = "nota"; d.style.left = n.x + "px"; d.style.top = n.y + "px";
+    var b = document.createElement("b"); b.textContent = n.t; var p = document.createElement("div"); p.textContent = n.s;
+    d.appendChild(b); d.appendChild(p); nodesEl.appendChild(d);
+  });
+
+  // ligações
+  function port(n, side, off) {
+    off = off || 0;
+    if (side === "r") return { x: n.x + W, y: n.y + H / 2 + off, dx: 1, dy: 0 };
+    if (side === "l") return { x: n.x, y: n.y + H / 2 + off, dx: -1, dy: 0 };
+    if (side === "t") return { x: n.x + W / 2 + off, y: n.y, dx: 0, dy: -1 };
+    return { x: n.x + W / 2 + off, y: n.y + H, dx: 0, dy: 1 };
+  }
+  var usedPorts = {};
+  var edges = [];
+  E.forEach(function (e, i) {
+    var a = byId[e[0]], b = byId[e[1]], fs = e[4] || "r", ts = e[5] || "l";
+    var p0 = port(a, fs, e[6]), p1 = port(b, ts, e[7]);
+    var dist = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    var k = fs === ts ? 50 : Math.max(50, Math.min(dist * 0.45, 230));
+    var d = "M" + p0.x + " " + p0.y + " C" + (p0.x + p0.dx * k) + " " + (p0.y + p0.dy * k) + " " + (p1.x + p1.dx * k) + " " + (p1.y + p1.dy * k) + " " + p1.x + " " + p1.y;
+    var g = svg("g", { class: "edge", style: "--c:" + colorOf(e[2]) });
+    var base = svg("path", { d: d, class: "base", "marker-end": "url(#seta-" + e[2] + "-end)" });
+    if (e[8]) base.setAttribute("marker-start", "url(#seta-" + e[2] + "-start)");
+    var flow = svg("path", { d: d, class: "flow" });
+    g.appendChild(base); g.appendChild(flow); edgesEl.appendChild(g);
+    if (!REDUZ) {   // pacotes de dados andando no sentido da seta
+      var comp = base.getTotalLength(), qtd = Math.max(1, Math.round(comp / 380));
+      for (var j = 0; j < qtd; j++) {
+        var pk = svg("circle", { r: "5", class: "pk" });
+        var am = svg("animateMotion", { dur: (comp / 95) + "s", repeatCount: "indefinite", begin: "-" + (j * comp / 95 / qtd) + "s", path: d });
+        pk.appendChild(am); g.appendChild(pk);
+      }
+    }
+    var ed = { i: i, from: e[0], to: e[1], f: e[2], text: e[3], g: g };
+    if (e[3]) {
+      var mid = base.getPointAtLength(base.getTotalLength() / 2);
+      var l = document.createElement("div"); l.className = "lbl"; l.textContent = e[3];
+      l.style.left = mid.x + "px"; l.style.top = mid.y + "px"; l.style.setProperty("--c", colorOf(e[2]));
+      labelsEl.appendChild(l); ed.lbl = l;
+    }
+    edges.push(ed);
+    if (!e[6] && !e[7]) { usedPorts[e[0] + ":" + fs] = [a, fs]; usedPorts[e[1] + ":" + ts] = [b, ts]; }
+  });
+  Object.keys(usedPorts).forEach(function (key) {
+    var n = usedPorts[key][0], s = usedPorts[key][1], p = document.createElement("i"); p.className = "port";
+    if (s === "r") p.style.cssText = "right:-6px;top:" + (H / 2 - 5) + "px";
+    if (s === "l") p.style.cssText = "left:-6px;top:" + (H / 2 - 5) + "px";
+    if (s === "t") p.style.cssText = "top:-6px;left:" + (W / 2 - 5) + "px";
+    if (s === "b") p.style.cssText = "bottom:-6px;left:" + (W / 2 - 5) + "px";
+    n.el.appendChild(p);
+  });
+
+  /* ---------------------------------------------------------------- zoom e movimento */
+  var tx = 0, ty = 0, sc = 1, MIN = 0.22, MAX = 2.2;
+  function aplicar() {
+    world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + sc + ")";
+    world.classList.toggle("zoomed", sc >= 0.5); world.style.setProperty("--z", sc);
+    var s = 26 * sc;
+    stage.style.backgroundImage = "radial-gradient(circle, var(--dot) " + Math.max(1, 1.3 * sc) + "px, transparent " + (Math.max(1, 1.3 * sc) + 0.5) + "px)";
+    stage.style.backgroundSize = s + "px " + s + "px";
+    stage.style.backgroundPosition = tx + "px " + ty + "px";
+  }
+  function espacoUtil() {
+    var r = stage.getBoundingClientRect();
+    var comPainel = painel.classList.contains("on") && window.innerWidth > 760;
+    return { w: r.width - (comPainel ? 360 : 0), h: r.height - (window.innerWidth <= 760 && painel.classList.contains("on") ? r.height * 0.62 : 0) };
+  }
+  function animar(fn) {
+    var reduz = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduz) { world.classList.add("anim"); setTimeout(function () { world.classList.remove("anim"); }, 480); }
+    fn();
+  }
+  function enquadrar(box, margem) {
+    var u = espacoUtil(), m = margem == null ? 40 : margem;
+    var s = Math.min((u.w - m * 2) / box.w, (u.h - m * 2 - 50) / box.h);
+    sc = Math.max(MIN, Math.min(MAX, s));
+    tx = (u.w - box.w * sc) / 2 - box.x * sc;
+    ty = (u.h - box.h * sc) / 2 - box.y * sc + 10;
+    aplicar();
+  }
+  var TUDO = { x: 20, y: 10, w: 3340, h: 1880 };
+  function verTudo() { animar(function () { enquadrar(TUDO, 16); }); }
+  function zoomEm(cx, cy, fator) {
+    var ns = Math.max(MIN, Math.min(MAX, sc * fator)); fator = ns / sc;
+    tx = cx - (cx - tx) * fator; ty = cy - (cy - ty) * fator; sc = ns; aplicar();
+  }
+  $("zmais").onclick = function () { var u = espacoUtil(); animar(function () { zoomEm(u.w / 2, u.h / 2, 1.3); }); };
+  $("zmenos").onclick = function () { var u = espacoUtil(); animar(function () { zoomEm(u.w / 2, u.h / 2, 1 / 1.3); }); };
+  $("zfit").onclick = verTudo;
+
+  stage.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var r = stage.getBoundingClientRect();
+    zoomEm(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0016)));
+  }, { passive: false });
+
+  var ptrs = {}, arrastou = false, ult = null, pinca = null, alvoClique = null;
+  stage.addEventListener("pointerdown", function (ev) {
+    if (ev.target.closest(".zonas, .painel, .dica")) return;
+    ptrs[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    alvoClique = ev.target.closest(".node");
+    arrastou = false; ult = { x: ev.clientX, y: ev.clientY };
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; pinca = Math.hypot(a.x - b.x, a.y - b.y); arrastou = true; }
+    try { stage.setPointerCapture(ev.pointerId); } catch (e) { /* sem captura */ }
+  });
+  stage.addEventListener("pointermove", function (ev) {
+    if (!ptrs[ev.pointerId]) return;
+    ptrs[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2 && pinca) {
+      var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), r = stage.getBoundingClientRect();
+      zoomEm((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, d / pinca); pinca = d; return;
+    }
+    var dx = ev.clientX - ult.x, dy = ev.clientY - ult.y;
+    if (!arrastou && Math.hypot(dx, dy) < 5) return;
+    if (!arrastou) { arrastou = true; stage.classList.add("pan"); }
+    tx += dx; ty += dy; ult = { x: ev.clientX, y: ev.clientY }; aplicar();
+  });
+  function soltar(ev) {
+    if (!ptrs[ev.pointerId]) return;
+    delete ptrs[ev.pointerId]; pinca = null; stage.classList.remove("pan");
+    if (!arrastou && alvoClique && ev.type === "pointerup") escolher(alvoClique.id.slice(2));
+    else if (!arrastou && !alvoClique && ev.type === "pointerup" && !ev.target.closest(".zonas, .painel, .dica")) limpar();
+    alvoClique = null;
+  }
+  stage.addEventListener("pointerup", soltar);
+  stage.addEventListener("pointercancel", soltar);
+
+  /* ---------------------------------------------------------------- escolha e destaque */
+  var selecionado = null, caminho = null;
+  function atualizar() {
+    var ativas = {}, nosAtivos = {}, filtro = !!(selecionado || caminho);
+    edges.forEach(function (e) {
+      var on = selecionado ? (e.from === selecionado || e.to === selecionado) : (caminho ? e.f === caminho : false);
+      ativas[e.i] = on; if (on) { nosAtivos[e.from] = 1; nosAtivos[e.to] = 1; }
+    });
+    if (selecionado) nosAtivos[selecionado] = 1;
+    edges.forEach(function (e) {
+      e.g.classList.toggle("hot", !!ativas[e.i]);
+      e.g.classList.toggle("dim", filtro && !ativas[e.i]);
+      if (e.lbl) { e.lbl.classList.toggle("show", !!ativas[e.i]); e.lbl.classList.toggle("dim", filtro && !ativas[e.i]); }
+    });
+    N.forEach(function (n) {
+      n.el.classList.toggle("sel", n.id === selecionado);
+      n.el.classList.toggle("dim", filtro && !nosAtivos[n.id]);
+    });
+    document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String((c.dataset.f || "") === (caminho || ""))); });
+  }
+  function limpar() { selecionado = null; painel.classList.remove("on"); stage.classList.remove("com-painel"); atualizar(); if (window.aoEscolherNo) window.aoEscolherNo(null); }
+
+  function centralizar(n) {
+    var u = espacoUtil();
+    animar(function () { tx = u.w / 2 - (n.x + W / 2) * sc; ty = u.h / 2 - (n.y + H / 2) * sc; aplicar(); });
+  }
+
+  function escolher(id) {
+    var n = byId[id]; if (!n) return;
+    selecionado = id;
+    painel.classList.add("on"); stage.classList.add("com-painel");
+    desenharPainel(n); atualizar(); if (window.aoEscolherNo) window.aoEscolherNo(id);
+    if (sc < 0.7) { sc = 0.9; aplicar(); }
+    centralizar(n);
+  }
+
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  function desenharPainel(n) {
+    painel.textContent = "";
+    var h = el("header");
+    var tile = el("div", "tile"); tile.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n.icon] + "</svg>";
+    var box = el("div"); var h2 = el("h2", null, n.t); var p = el("p", null, n.kind + " · " + n.s); box.appendChild(h2); box.appendChild(p);
+    var x = el("button", "fechar", "×"); x.setAttribute("aria-label", "Fechar detalhes"); x.onclick = limpar;
+    h.appendChild(tile); h.appendChild(box); h.appendChild(x); painel.appendChild(h);
+    var c = el("div", "corpo");
+    function sec(titulo, filho) { var s = el("section"); s.appendChild(el("h3", null, titulo)); s.appendChild(filho); c.appendChild(s); }
+    if (window.AGORA_NO) window.AGORA_NO(n, sec, el);
+    sec("O que faz", el("p", null, n.det));
+    if (n.tag) sec("Quando", el("p", null, n.tag));
+    if (n.roda) sec("Onde roda", el("p", null, n.roda));
+    if (n.regras && n.regras.length) { var ul = el("ul"); n.regras.forEach(function (r) { ul.appendChild(el("li", null, r)); }); sec("Regras e limites", ul); }
+    if (n.code) sec("No código", el("div", "mono", n.code));
+    function lista(titulo, itens, seta) {
+      if (!itens.length) return;
+      var l = el("div", "liga");
+      itens.forEach(function (e) {
+        var outro = byId[seta === "←" ? e.from : e.to];
+        var b = el("button"); b.type = "button";
+        var i = el("i", null, seta); i.style.setProperty("--c", colorOf(e.f));
+        var t = el("span"); t.appendChild(document.createTextNode(outro.t));
+        if (e.text) { var sm = el("small", null, e.text + " · " + FLOWS.filter(function (f) { return f.id === e.f; })[0].nome); t.appendChild(sm); }
+        b.appendChild(i); b.appendChild(t); b.onclick = function () { escolher(outro.id); };
+        l.appendChild(b);
+      });
+      sec(titulo, l);
+    }
+    lista("Recebe de", edges.filter(function (e) { return e.to === n.id; }), "←");
+    lista("Entrega para", edges.filter(function (e) { return e.from === n.id; }), "→");
+    painel.appendChild(c);
+  }
+
+  /* ---------------------------------------------------------------- barras */
+  var chips = $("chips");
+  function chip(id, nome, cor) {
+    var b = el("button", "chip"); b.type = "button"; b.dataset.f = id || "";
+    if (cor) { var i = el("i"); i.style.setProperty("--c", cor); b.appendChild(i); b.style.setProperty("--c", cor); }
+    b.appendChild(document.createTextNode(nome));
+    b.onclick = function () { caminho = (caminho === id) ? null : id; if (id === null) caminho = null; atualizar(); };
+    chips.appendChild(b);
+  }
+  chip(null, "Tudo");
+  var CURTO = { p: "Pedido", m: "E-mails e telas", n: "Nota e envio", c: "4 PCs", g: "Código", ge: "Gerência", mt: "Faxina e saúde" };
+  FLOWS.forEach(function (f) { chip(f.id, CURTO[f.id] || f.nome, colorOf(f.id)); });
+
+  var zonas = $("zonas");
+  FR.forEach(function (fr) {
+    if (!fr.z) return;
+    var b = el("button", null, fr.z); b.type = "button";
+    b.onclick = function () { animar(function () { enquadrar(fr.box, 30); }); };
+    zonas.appendChild(b);
+  });
+
+  nodesEl.addEventListener("click", function (ev) {
+    if (ev.detail !== 0) return;   // clique do mouse já foi tratado no pointerup; aqui só Enter e Espaço
+    var b = ev.target.closest(".node"); if (b) escolher(b.id.slice(2));
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") limpar();
+    else if (ev.key === "+" || ev.key === "=") $("zmais").click();
+    else if (ev.key === "-") $("zmenos").click();
+    else if (ev.key === "0") verTudo();
+  });
+  window.addEventListener("resize", function () { if (!selecionado) verTudo(); });
+
+  window.mapaEscolher = escolher; window.mapaNos = byId;
+  atualizar();
+  verTudo();
+  if (window.APLICAR_ESTADO) window.APLICAR_ESTADO();
+})();
+</script>
+<script>
+(function () {
+  var t = (location.hash || "").slice(1).split("-"), q = function (s) { var b = document.querySelector(s); if (b) b.click(); };
+  if (t.indexOf("problemas") >= 0) q('#s-cen button[data-v="problemas"]');
+  if (t.indexOf("claro") >= 0) q('#s-tema button[data-v="light"]');
+  if (t.indexOf("aberto") >= 0) q('#s-menu button[data-v="aberto"]');
+  var i = t.indexOf("no"); if (i >= 0 && t[i + 1] && window.mapaEscolher) setTimeout(function () { window.mapaEscolher(t[i + 1]); }, 150);
+})();
+</script>
