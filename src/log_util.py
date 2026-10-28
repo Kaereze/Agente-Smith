@@ -69,7 +69,8 @@ def configurar_logging(nome):
             ("[TESTE] " if sob_teste else "") + "%(asctime)s %(levelname)s [%(name)s] %(message)s",
             datefmt="%d/%m/%Y %H:%M:%S",
         )
-        arquivo = RotatingFileHandler(caminho, maxBytes=5_000_000, backupCount=5, encoding="utf-8")
+        arquivo = RotatingFileHandler(caminho, maxBytes=5_000_000, backupCount=2,
+                                       encoding="utf-8")   # 15 MB por programa (eram 30; auditoria 27/10/2026)
         arquivo.setFormatter(formato)
         arquivo.addFilter(_MascaraDeEmail())
         tela = logging.StreamHandler(sys.stdout)

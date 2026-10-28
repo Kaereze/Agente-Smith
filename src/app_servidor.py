@@ -8,6 +8,7 @@ janela abre já carregada. O último estado também vai pro disco (painel_cache.
 sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 """
 import datetime
+import gzip
 import hashlib
 import json
 import os
@@ -55,7 +56,8 @@ import painel_metricas as metricas
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
 from app_envio import Envio
-from config import PASTA_ESTADO, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
+from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
+import limpeza
 from log_util import configurar_logging
 import outlook_vivo
 from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba,
@@ -2095,11 +2097,15 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto
                     junto = {k: corpo[k] for k in VOLATEIS_JUNTO if isinstance(corpo, dict) and k in corpo}
                     dados_ = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str).encode("utf-8")
+            dados_, gz = comprimir_se_vale(dados_, self.headers.get("Accept-Encoding"))
             self.send_response(codigo)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
             if versao:
                 self.send_header("X-Versao", versao)
+            if gz:
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Vary", "Accept-Encoding")
             self.send_header("Content-Length", str(len(dados_)))
             self.end_headers()
             self.wfile.write(dados_)
@@ -2115,9 +2121,12 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             url = urlparse(self.path)
             if url.path in ("/", "/index.html"):
                 html = _pagina_inteira().replace("__TOKEN__", token).replace("__PAGINA__", _marca_pagina())
-                corpo = html.encode("utf-8")
+                corpo, gz = comprimir_se_vale(html.encode("utf-8"), self.headers.get("Accept-Encoding"))
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                if gz:
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)
@@ -2134,8 +2143,14 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             if estatico:
                 arquivo, tipo = estatico
                 corpo = (PASTA_UI / arquivo).read_bytes()
+                gz = False
+                if tipo.startswith("text/"):   # imagem e fonte já são comprimidas
+                    corpo, gz = comprimir_se_vale(corpo, self.headers.get("Accept-Encoding"))
                 self.send_response(200)
                 self.send_header("Content-Type", tipo)
+                if gz:
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
                 self.send_header("Cache-Control", "max-age=31536000" if arquivo.startswith("fontes/") else "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
@@ -2332,6 +2347,14 @@ def abrir_janela():
                       "--no-first-run", "--no-default-browser-check"])
 
 
+def comprimir_se_vale(dados, aceita):
+    """gzip só quando o navegador aceita e o corpo passa de 1 KB (auditoria 27/10/2026: /api/estado 1,8 MB -> 202 KB).
+    -> (bytes, comprimido?)"""
+    if len(dados) < 1024 or "gzip" not in (aceita or "").lower():
+        return dados, False
+    return gzip.compress(dados, compresslevel=4, mtime=0), True
+
+
 def assinatura_tela(corpo):
     """Hash do que a tela mostra, sem o que muda sozinho a cada volta (VOLATEIS_TELA). Velocidade 3, 21/10/2026."""
     def limpar(x):
@@ -2469,6 +2492,12 @@ def main():
         estado.vigiar_caixa_de_saida()
         estado.iniciar_indice()
         estado.iniciar_nf_achadas()
+    try:
+        liberado = limpeza.aparar_registros(PASTA_LOGS)   # cópia girada antiga e grande (auditoria 27/10/2026)
+        if liberado:
+            logger.info(f"🧹 Registros antigos apagados: {liberado // 1_000_000} MB")
+    except Exception as e:   # limpeza nunca derruba o Painel
+        logger.warning(f"Limpeza de registros não rodou: {e}")
     logger.info(f"🖥️ Painel Notas Fiscais no ar em http://127.0.0.1:{PORTA}/ · agente {nome_do_agente()}")
     if not sem_janela:
         abrir_janela()

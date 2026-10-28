@@ -9,6 +9,29 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.27.16] — 2026-10-27
+
+### Mudou
+
+- **Respostas do Painel comprimidas (gzip)** (auditoria de 27/10, otimização): a página, os `.js` e as respostas grandes da API
+  (`/api/estado`, `/api/correio`) vão comprimidas quando o navegador aceita e passam de 1 KB. No modo demonstração: `/api/estado`
+  318 KB → 39 KB e `/api/correio` 196 KB → 22 KB; no Painel real eram 1,8 MB e 1,5 MB (cerca de 9 vezes menores). A tela não muda.
+  Código: `app_servidor.comprimir_se_vale` e `_json`/`do_GET` dentro de `criar_handler`.
+- **Cache da janela limpo ao abrir** (auditoria: 560 MB por PC eram cache do navegador): `src/limpeza.py` apaga só as pastas de cache
+  (`Cache`, `Code Cache`, `GPUCache`, shaders, `CacheStorage`, `component_crx_cache`) de `estado/app_webview` e `estado/app_edge`, e só
+  se passarem de 50 MB. Tema e preferências (Local Storage, IndexedDB) e todo dado do Painel ficam. O registro `painel.log` diz quantos MB
+  saíram e quais pastas ainda pesam mais (só nome e tamanho).
+- **Registros menores:** ao ligar, o Painel apaga cópias GIRADAS grandes (`*.txt.1`, `*.log.2`, acima de 15 MB; a saída antiga do console
+  de 31 MB ficou parada como `.txt.1`) e cada programa guarda 2 cópias de 5 MB, não 5 (de 30 MB para 15 MB por programa).
+
+### Adicionado
+
+- **Trava de colisão de classes CSS** (`testes/test_css_colisao.py`): uma classe-caixa de tamanho fixo (como `.av`, o círculo do avatar)
+  não pode ser usada como estado dentro de `class="${...}"`. Foi o que espremeu o bloco "NF enviada" (corrigido antes, `cb-at`).
+- **Trava de CPF/CNPJ em teste e documento** (`testes/test_sem_documento_real.py`): número com dígito verificador válido fora das listas
+  derruba os testes, em qualquer PC (casa e GitHub), sem precisar da pasta `estado/`. Os 12 que já existiam ficam só como impressão
+  digital (SHA-256), sem o número.
+
 ## [2026.10.27.15] — 2026-10-27
 
 ### Mudou

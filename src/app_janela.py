@@ -241,6 +241,15 @@ def main():
         garantir_inicio_com_windows()
     except Exception:
         pass   # sem o atalho, só não liga sozinho com o Windows
+    try:
+        import limpeza
+        from log_util import configurar_logging
+        liberado = limpeza.limpar_cache_da_janela(PASTA_ESTADO)   # só o cache do navegador, antes de a janela abrir (27/10/2026)
+        if liberado:
+            configurar_logging("janela").info(
+                f"🧹 Cache da janela limpo: {liberado // 1_000_000} MB liberados; maiores que sobraram: {limpeza.maiores_pastas(PASTA_ESTADO)}")
+    except Exception:
+        pass   # sem a limpeza só fica maior, nada quebra
     import webview
     try:
         esconder_em_vez_de_fechar()
