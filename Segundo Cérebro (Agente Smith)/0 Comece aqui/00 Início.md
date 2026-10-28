@@ -4,12 +4,13 @@ pasta: "0 Comece aqui"
 atualizado: 2026-10-21
 tags: [cerebro/inicio]
 ---
-# Segundo Cérebro — Projeto Notas Fiscais
+r# Segundo Cérebro — Projeto Notas Fiscais
 
 > A memória do projeto: o João tem as ideias, o Claude programa, os dois leem e escrevem aqui.
 > Fica dentro do repositório `Kaereze/Notas-Fiscais` (todas as branches) e chega a qualquer PC pelo clone. Cores: [[Legenda de cores]].
 
 ## Ordem de leitura (Claude: sempre nesta ordem)
+0. **[[Manual do Claude (receitas)]]** (receitas com comandos exatos) e **[[Armadilhas conhecidas]]** (o que já deu errado). Preferências e memória do Claude: [[Preferências do João]] e [[Memória do Claude (migrada)]].
 1. **Esta página** → onde paramos.
 2. [[Hierarquia de prioridades]] → o que vence quando duas coisas brigam.
 3. [[O que não mexer]] e [[Credenciais]] → proibições e onde ficam as chaves (nunca o valor).
@@ -61,10 +62,10 @@ tags: [cerebro/inicio]
 > [[00 Início]] · [[Como usar este cérebro]] · [[Legenda de cores]] · [[Guia para quem chegou agora]]
 
 > [!cat-regras] 1 Regras — o que vence e o que não se mexe
-> [[Hierarquia de prioridades]] · [[O que não mexer]] · [[Credenciais]] · [[Padrão de design]] · [[Preferências do João]]
+> [[Hierarquia de prioridades]] · [[O que não mexer]] · [[Credenciais]] · [[Padrão de design]] · [[Preferências do João]] · [[Memória do Claude (migrada)]]
 
 > [!cat-trabalho] 2 Como trabalhar — passo a passo
-> [[Onde mexer]] · [[Como entregar]] · [[Painel em casa]] · [[Dia do administrador]]
+> [[Manual do Claude (receitas)]] · [[Armadilhas conhecidas]] · [[Onde mexer]] · [[Como entregar]] · [[Painel em casa]] · [[Dia do administrador]]
 
 > [!cat-mapa] 3 Mapa do projeto — como o sistema é
 > [[Visão geral do projeto]] · [[Pastas e arquivos]] (+ uma nota por pasta) · [[Planilhas e abas]] · [[API do Painel]] · [[Pessoas e PCs]] · [[Glossário]]

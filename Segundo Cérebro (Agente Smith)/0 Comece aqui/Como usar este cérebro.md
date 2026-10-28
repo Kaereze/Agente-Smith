@@ -26,3 +26,9 @@ tags: [cerebro/inicio]
 5. Conversa que **muda o rumo** do projeto → [[Marcos do projeto]] (data, frase do João, o que mudou).
 6. Arquivo ou função nova/renomeada → atualizar [[Onde mexer]] e [[Pastas e arquivos]].
 7. Não apagar o que o João escreveu; se algo mudou, marcar como ~~antigo~~ e escrever o novo embaixo.
+
+## Acréscimo de 28/10/2026 (para a sessão chegar "fria" e já saber o que fazer)
+8. **Receitas:** para entregar, testar, desenhar ou diagnosticar, siga o [[Manual do Claude (receitas)]]; antes de qualquer comando novo, leia [[Armadilhas conhecidas]].
+9. **A lista de fim de etapa é a R6 do manual.** "Onde paramos" em [[00 Início]] **sempre** com a data de hoje (ficou 5 dias parada antes de 28/10).
+10. **O que o Claude aprender vai para o cofre, não só para a memória dele** (a memória fica num PC só): preferência do João → [[Preferências do João]]; decisão → nota em `Decisões (uma por nota)`; falha → [[Incidentes]]; truque ou erro de ferramenta → [[Armadilhas conhecidas]].
+11. Ao criar uma nota: **sem `:` `/` `"` `?` `*` no nome do arquivo** (o Windows trata de forma diferente).
