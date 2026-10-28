@@ -87,6 +87,16 @@ certificado, desconectado) e do alerta do Windows no PC dono e no do João. Espe
 
 ![[2026-10-26 Alerta de Outlook parado.png|700]]
 
+### Auditoria do Painel + revisão de segurança e LGPD · 28/10/2026
+Mesma página da auditoria (mesmo link), agora com uma seção de **revisão de segurança e LGPD só de leitura** (skills security-review,
+ci-cd-security, secret-scanning e gdpr-data-handling). Achados principais: pedido assinado entre PCs repetível por 120 s (sem código único),
+servidor da rede lê até 2 MB antes de conferir a assinatura (sem tempo-limite), um segredo só para os 4 PCs e para o Google, token do Painel
+obtido por qualquer programa do PC, conteúdo entre PCs sem cifra, cache com `pickle`, GitHub Actions por etiqueta; LGPD: índice local de
+32.270 e-mails com 16.800 excluídos por até 365 dias, texto de notas com CPF/CNPJ guardado inteiro, BitLocker não confirmado, faltam
+registro de tratamento, pedido do titular e trilha de acesso. Bom: nenhuma chave em nenhum dos 276 commits, lista curta de comandos, texto
+de e-mail escapado. **Nada foi alterado no código; correções aguardam o OK.**
+- **Abrir a página:** [[2026-10-28 Auditoria do Painel.html|Auditoria 28/10]] · claude.ai: https://claude.ai/artifact/72MWnQiSRryurMZsyRgBx4
+
 ### Auditoria do Painel (atualizada) · 27/10/2026
 Pedido do João ("vamos para otimização, atualiza o documento de auditoria"): mesma página da auditoria (mesmo link), versão
 2026.10.27.14. Nota geral **6,8** (era 6,6). Estado do plano de 24/10 (alerta de Caixa de Saída, canal de teste e registros sem e-mail

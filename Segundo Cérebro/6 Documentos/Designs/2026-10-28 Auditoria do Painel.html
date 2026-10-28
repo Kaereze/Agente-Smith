@@ -1,0 +1,252 @@
+<title>Auditoria do Painel Fiscal</title>
+<style>
+:root{--bg:#f6f7f8;--folha:#fff;--linha:#e2e5e9;--tinta:#1b1f24;--tinta2:#4b5560;--tinta3:#6b7580;--azul:#0f6cbd;--azul-f:#e7f1fb;--verde:#107c41;--verde-f:#e6f4ec;--ambar:#9a6700;--ambar-f:#fdf3dc;--verm:#c4314b;--verm-f:#fbe9ec;--chip:#eef1f4;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161616;--folha:#1f1f1f;--linha:#333;--tinta:#f0f0f0;--tinta2:#b4b4b4;--tinta3:#8f8f8f;--azul:#479ef5;--azul-f:#16324d;--verde:#5ec27e;--verde-f:#173b2a;--ambar:#f2c76b;--ambar-f:#3d3212;--verm:#ff8d95;--verm-f:#3a2326;--chip:#2b2b2b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tinta);font:15px/1.6 "Segoe UI",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding-block:40px 80px;padding-inline:20px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px;letter-spacing:-.015em;text-wrap:balance}
+h2{font-size:21px;margin:48px 0 12px;letter-spacing:-.01em}
+h3{font-size:16px;margin:0 0 4px}
+p{margin:0 0 12px;max-width:74ch}
+.lead{color:var(--tinta2);font-size:16px}
+.meta{font-size:13px;color:var(--tinta3);margin:0 0 26px}
+.geral{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--folha);border:1px solid var(--linha);border-radius:14px;padding:20px 24px;margin:8px 0 18px}
+.geral .n{font:700 56px/1 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.geral .n small{font-size:20px;color:var(--tinta3);font-weight:600}
+.geral .ant{display:block;font:600 12.5px "Segoe UI";color:var(--tinta3);margin-top:6px}
+.geral p{margin:0;color:var(--tinta2)}
+.geral b{color:var(--tinta)}
+.areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.area{background:var(--folha);border:1px solid var(--linha);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.area .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.area b{font:700 22px/1 "Segoe UI";font-variant-numeric:tabular-nums}
+.area b em{font:600 12px "Segoe UI";font-style:normal;color:var(--tinta3);margin-left:4px}
+.area span{font-size:13.5px;font-weight:600}
+.area small{font-size:12.5px;color:var(--tinta2);line-height:1.45}
+.area i{display:block;height:4px;border-radius:2px;background:var(--chip);overflow:hidden}
+.area i::after{content:"";display:block;height:100%;width:var(--p);background:var(--c)}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--folha);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3);font-weight:600}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.tabela{overflow-x:auto}
+.st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:10px;white-space:nowrap}
+.ok{background:var(--verde-f);color:var(--verde)}.par{background:var(--ambar-f);color:var(--ambar)}.nao{background:var(--verm-f);color:var(--verm)}
+.achado{background:var(--folha);border:1px solid var(--linha);border-radius:12px;padding:16px 20px;margin:12px 0}
+.achado header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.pri{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+.p0{background:var(--verm-f);color:var(--verm)}.p1{background:var(--ambar-f);color:var(--ambar)}.p2{background:var(--azul-f);color:var(--azul)}
+.achado p{color:var(--tinta2);font-size:14.5px;margin:0 0 6px}
+.achado p b{color:var(--tinta)}
+.achado .med{font-size:13px;color:var(--tinta3)}
+.chave{background:var(--azul-f);border-radius:10px;padding:14px 16px;margin:14px 0;max-width:80ch}
+.chave b{color:var(--azul)}
+code{font:13px Consolas,monospace;background:var(--chip);padding:1px 5px;border-radius:4px}
+.lista{margin:0 0 12px;padding-left:20px;color:var(--tinta2);max-width:80ch}.lista li{margin:3px 0}
+@media (max-width:520px){h1{font-size:25px}.geral{grid-template-columns:1fr}.geral .n{font-size:44px}}
+</style>
+
+<main>
+  <h1>Auditoria do Painel Fiscal</h1>
+  <p class="lead">O projeto olhado de ponta a ponta, agora com foco em otimização: o que mudou desde a primeira auditoria, o que medimos hoje no Painel de verdade e o que otimizar primeiro.</p>
+  <p class="meta">Atualizada em 28/10/2026 · versão 2026.10.28 · revisão de segurança e LGPD acrescentada · primeira auditoria em 24/10 (versão 2026.10.24.1), otimização em 27/10 · medido no Painel real só lendo (contagens, tamanhos e tempos, sem abrir e-mail) · nada foi alterado para esta medição</p>
+
+  <div class="geral"><div class="n">6,8<small> /10</small><span class="ant">antes: 6,6 em 24/10</span></div>
+    <p><b>Subiu um pouco: os três itens "Agora" da primeira auditoria foram entregues, e o que entrou nesta semana foi isolado em peças novas.</b> A nota não sobe mais porque o que falta é estrutural (login e perfis, ponto único no PC do João, banco de dados, código concentrado) e porque o Painel está crescendo mais depressa do que está sendo enxugado: em 3 dias o servidor cresceu 20%. A boa notícia da medição de hoje: os maiores ganhos de otimização são simples e de baixo risco, e o mais pesado (560 MB) nem é código nosso.</p></div>
+
+  <h2>Nota por área</h2>
+  <div class="areas">
+    <div class="area" style="--p:85%;--c:var(--verde)"><div class="t"><span>Dados chegando</span><b>8,5<em>antes 8,5</em></b></div><i></i><small>Formulário em ~10-20 s; NF no Dropbox: etiqueta pelo nome em ~10 s e, agora, pelo CPF/CNPJ dentro do PDF em até ~45 s.</small></div>
+    <div class="area" style="--p:85%;--c:var(--verde)"><div class="t"><span>Testes e entrega</span><b>8,5<em>antes 8</em></b></div><i></i><small>606 testes (eram 527). Atualização só por etiqueta (canal de teste). Falta teste de tela no GitHub.</small></div>
+    <div class="area" style="--p:85%;--c:var(--verde)"><div class="t"><span>Documentação</span><b>8,5<em>antes 8</em></b></div><i></i><small>Cofre atualizado a cada etapa, desenhos de cada tela guardados, diário do dia.</small></div>
+    <div class="area" style="--p:75%;--c:var(--ambar)"><div class="t"><span>Confiabilidade</span><b>7,5<em>antes 7</em></b></div><i></i><small>Alerta de Outlook parado, botão de caixas com problema e reinício. Continua: PC do João único; 3 caixas recusadas pelo servidor de e-mail.</small></div>
+    <div class="area" style="--p:60%;--c:var(--ambar)"><div class="t"><span>Segurança</span><b>6<em>antes 6</em></b></div><i></i><small>E-mail fora dos registros. Continua: sem login, rede entre PCs sem cifra; dado real num commit (privado).</small></div>
+    <div class="area" style="--p:70%;--c:var(--ambar)"><div class="t"><span>Design e uso</span><b>7<em>antes 6</em></b></div><i></i><small>Paleta única, tela de carregamento, caixas com problema, Concluir. Falta a régua de design em todas as telas.</small></div>
+    <div class="area" style="--p:50%;--c:var(--verm)"><div class="t"><span>Código e arquitetura</span><b>5<em>antes 5</em></b></div><i></i><small>Peças novas isoladas (+). Mas <code>app_servidor.py</code> foi de 2.074 para 2.480 linhas em 3 dias (−).</small></div>
+    <div class="area" style="--p:55%;--c:var(--ambar)"><div class="t"><span>LGPD e governança</span><b>5,5<em>antes 5</em></b></div><i></i><small>Registros sem e-mail de hóspede. Falta registro de acesso, prazo por tipo de dado e pedido do titular.</small></div>
+    <div class="area" style="--p:50%;--c:var(--verm)"><div class="t"><span>Banco de dados</span><b>5<em>antes 5</em></b></div><i></i><small>Planilha Central no limite; novos índices locais em arquivo JSON. Supabase aguardando decisão.</small></div>
+  </div>
+
+  <h2>O que aconteceu com o plano de 24/10</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Item da primeira auditoria</th><th>Situação</th><th>O que foi feito</th></tr></thead>
+    <tbody>
+      <tr><td>Alerta ativo quando a Caixa de Saída trava</td><td><span class="st ok">Feito</span></td><td>Aviso no Windows e no sino quando o Outlook para (26/10); reconhece a janela de senha e diz a caixa; botão de caixas com problema com reinício do Outlook (27/10).</td></tr>
+      <tr><td>Canal de teste antes dos 4 PCs</td><td><span class="st ok">Feito</span></td><td>Os PCs só atualizam sozinhos com versão etiquetada; hoje foram 15 versões etiquetadas e 21 commits.</td></tr>
+      <tr><td>Tirar e-mail de hóspede dos registros</td><td><span class="st ok">Feito</span></td><td>Máscara nos registros técnicos.</td></tr>
+      <tr><td>Login simples e perfis</td><td><span class="st par">Em parte</span></td><td>Ligar e pausar o robô só no usuário João; operadores por PC. Perfil gerente x operador ainda não.</td></tr>
+      <tr><td>Testes de tela automáticos</td><td><span class="st par">Em parte</span></td><td>Toda entrega foi conferida num navegador de teste, mas à mão: ainda não roda no GitHub.</td></tr>
+      <tr><td>Política LGPD completa</td><td><span class="st par">Em parte</span></td><td>Registros limpos e regra de só usar dado inventado em testes (nasceu de um tropeço hoje, abaixo).</td></tr>
+      <tr><td>O PC do João não pode ser o único</td><td><span class="st nao">Pendente</span></td><td>Nada mudou.</td></tr>
+      <tr><td>Separar os dois arquivos gigantes</td><td><span class="st nao">Piorou</span></td><td>O servidor cresceu 20%; o <code>index.html</code> ficou parado em ~3.480 linhas, mas é o arquivo mais mexido do projeto.</td></tr>
+      <tr><td>Criptografar o que passa entre os PCs</td><td><span class="st nao">Pendente</span></td><td>Nada mudou.</td></tr>
+      <tr><td>Banco de dados de verdade (Supabase)</td><td><span class="st nao">Aguardando</span></td><td>Falta a decisão: conta (região São Paulo) e caminho A ou B para os formulários.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Entregue desde a primeira auditoria</h2>
+  <ul class="lista">
+    <li><b>Enviar/Receber todas</b> pede aos 4 PCs, sem gastar cota do Google, com o tempo estimado de cada um.</li>
+    <li><b>Tela de carregamento</b> com a logo K desenhada em qualquer ação acima de 3 s, com animação de erro por PC.</li>
+    <li><b>Botão de caixas com problema</b>: mostra quais caixas têm e-mail preso e reinicia o Outlook do PC; o aviso diz qual caixa pede senha.</li>
+    <li><b>Ligar e pausar o robô</b> (só João) e o aviso do Outlook que pede acesso a endereços, com o arquivo pronto para testar.</li>
+    <li><b>NF achadas pelas pastas</b>: o Painel lê o CPF/CNPJ dentro do PDF e liga a nota ao e-mail ou pedido do hóspede, inclusive e-mail sem formulário; compara o <b>histórico inteiro</b> do hóspede com as notas.</li>
+    <li><b>Concluir e "Tirar da caixa de entrada"</b>: movem e-mails para a pasta "NF enviada", sempre por clique, com desfazer. O Painel nunca tira nem apaga e-mail sozinho.</li>
+  </ul>
+
+  <h2>Otimização: o que medimos hoje</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>O que</th><th>Medido</th><th>Leitura</th></tr></thead>
+    <tbody>
+      <tr><td>Pasta <code>estado/</code></td><td class="n"><b>695 MB</b></td><td><span class="st nao">Atenção</span> 468 MB são o cache do navegador da janela (<code>app_edge</code>) e 92 MB o cache do <code>app_webview</code>: 560 MB que não são dado do Painel. O resto: índice de e-mails 52 MB (+11 MB de rascunho), cache do Painel 13 MB, textos de notas 6,3 MB, NF achadas 4,5 MB.</td></tr>
+      <tr><td>Registros (<code>logs/</code>)</td><td class="n"><b>99 MB</b></td><td><span class="st par">Atenção</span> um único arquivo de saída do console passou de 31 MB sem teto; os demais giram em 5 MB.</td></tr>
+      <tr><td>Resposta <code>/api/estado</code></td><td class="n">1,8 MB · 91-204 ms</td><td><span class="st par">Atenção</span> sem compressão. Comprimida ficaria com 202 KB (9 vezes menor, medido).</td></tr>
+      <tr><td>Resposta <code>/api/correio</code></td><td class="n">1,5 MB · 69-75 ms</td><td><span class="st par">Atenção</span> sem compressão; comprimida 186 KB (8 vezes menor, medido).</td></tr>
+      <tr><td>Como a tela pede os dados</td><td class="n">a cada 3 s</td><td><span class="st ok">Bom</span> só pergunta "mudou?" (resposta minúscula) e baixa tudo apenas quando muda.</td></tr>
+      <tr><td>Página inicial</td><td class="n">288 KB</td><td><span class="st par">Atenção</span> estilo, tela e lógica no mesmo arquivo (3.483 linhas).</td></tr>
+      <tr><td>Memória</td><td class="n">517 MB em 10 processos</td><td><span class="st ok">Aceitável</span> o servidor do Painel usa 246 MB, o conferente 57 MB, a janela 28 MB.</td></tr>
+      <tr><td>Primeira leitura das notas</td><td class="n">753 notas, ~47 min</td><td><span class="st ok">Bom</span> lê 12 por volta de 45 s, sempre as mais novas primeiro: a nota que acabou de sair não espera o histórico.</td></tr>
+      <tr><td>Testes</td><td class="n">606 em ~24 s</td><td><span class="st ok">Bom</span> eram 527 em 24/10.</td></tr>
+      <tr><td>Arquivos mais mexidos (30 dias)</td><td class="n">101 e 78 vezes</td><td><span class="st nao">Atenção</span> <code>index.html</code> e <code>app_servidor.py</code>: onde uma mudança mais arrisca quebrar outra.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta" style="margin-top:8px">Não medido hoje: uso de processador, cota do Google por minuto (era 57 de 60 em 24/10) e tempo de abrir a janela. Entram na próxima rodada.</p>
+
+  <h2>O que otimizar, em ordem</h2>
+
+  <div class="achado"><header><span class="pri p0">Agora</span><h3>Limpar o cache da janela do aplicativo</h3></header>
+    <p>É de longe o maior peso: <b>560 MB</b> de cache do navegador da janela (<code>app_edge</code> e <code>app_webview</code>) em <b>cada PC</b>. Proposta: ao abrir, apagar só as pastas de cache (<code>Cache</code>, <code>Code Cache</code>, <code>GPUCache</code>) e preservar o armazenamento local, onde ficam o tema e as preferências. Ganho esperado: cerca de 500 MB por PC. Risco baixo; não mexe em dado do Painel.</p>
+    <p class="med">Como medir depois: tamanho de <code>estado/</code> (hoje 695 MB).</p></div>
+
+  <div class="achado"><header><span class="pri p0">Agora</span><h3>Teto para os registros de console</h3></header>
+    <p>Um arquivo de saída do console tem 31 MB e não gira. Proposta: o mesmo rodízio dos outros registros (5 MB, poucos arquivos). Ganho: de 99 MB para uns 40 MB.</p>
+    <p class="med">Como medir depois: tamanho de <code>logs/</code>.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas</span><h3>Comprimir as respostas do Painel</h3></header>
+    <p>As telas de Notas fiscais e de e-mails baixam 1,8 MB e 1,5 MB a cada mudança. Medido: com compressão ficam com 202 KB e 186 KB, 8 a 9 vezes menores. É uma mudança pequena no servidor e a tela não percebe, só fica mais rápida (principalmente nos PCs que buscam pela rede). Depois, enviar só o que mudou (diferenças) em vez da lista inteira.</p>
+    <p class="med">Como medir depois: tamanho e tempo de <code>/api/estado</code> e <code>/api/correio</code> (hoje 1,8 MB e 1,5 MB).</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas</span><h3>Guardar o índice das NF de forma enxuta</h3></header>
+    <p>O índice das notas achadas (4,5 MB) guarda até 8 mil caracteres de texto de cada nota e é <b>regravado inteiro</b> a cada leitura nova. Proposta: guardar só o que o cruzamento usa (documento, valores, datas, serviços) e gravar por nota, no mesmo banco SQLite que já guarda o índice de e-mails. Ganho estimado: de 4,5 MB para algumas centenas de KB e sem regravar tudo (a confirmar ao fazer).</p>
+    <p class="med">Como medir depois: tamanho de <code>nf_achadas.json</code> e tempo de cada leitura.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas</span><h3>Documento de cada e-mail guardado, em vez de recalcular</h3></header>
+    <p>A etiqueta "NF pronta" recalcula a cada 2 minutos e a cada nota nova varrendo os e-mails e buscando o texto dos candidatos em outros PCs (até 8 por volta). Proposta: guardar o CPF/CNPJ de cada e-mail uma vez (arquivo local) e indexar por documento: a nota nova acha o e-mail direto, sem varredura e sem pedir texto de novo depois de um reinício.</p>
+    <p class="med">Como medir depois: tempo do recálculo das etiquetas e quantidade de pedidos de texto entre PCs.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Próximas</span><h3>Separar os dois arquivos gigantes</h3></header>
+    <p>É o mesmo item de 24/10, agora mais urgente: <code>app_servidor.py</code> subiu 20% em 3 dias e os dois arquivos entram em quase toda entrega. As peças novas (<code>nf_achadas</code>, <code>nf_cobre</code>, <code>enviar_receber</code>) mostram o caminho: um módulo por assunto, com teste próprio. Sugestão: tirar do servidor primeiro o correio (rotas e Concluir/Tirar da entrada) e o envio.</p></div>
+
+  <div class="achado"><header><span class="pri p2">Depois</span><h3>Testes de tela no GitHub, e olhar a memória e o processador</h3></header>
+    <p>Rodar no GitHub as mesmas conferências de tela que hoje fazemos à mão, no modo demonstração. E medir processador e memória do servidor ao longo de um dia (o servidor está em 246 MB) para achar vazamentos antes de virarem problema.</p></div>
+
+  <h2>Riscos novos desta semana</h2>
+  <div class="achado"><header><span class="pri p1">LGPD</span><h3>Dado real de hóspede ficou no histórico de uma versão</h3></header>
+    <p>Ao provar o cruzamento com um caso real, copiei o CPF, o nome e o e-mail de um hóspede para testes e para o diário da versão .12. O bloqueio automático barrou a versão seguinte, eu troquei tudo por dados inventados e a regra "só dado inventado em testes e documentos" ficou anotada. <b>O histórico da .12 continua com o dado, no repositório privado.</b> Reescrever o histórico quebraria a atualização dos 3 outros PCs, então a decisão do João foi deixar como está. Sugestão para fechar a lacuna: uma trava automática que falha se um CPF ou CNPJ válido aparecer em teste ou documento.</p></div>
+  <div class="achado"><header><span class="pri p1">Confiabilidade</span><h3>Caixas que o servidor de e-mail recusa</h3></header>
+    <p>Três caixas (Rondonópolis, Pousada Jeri e Bahia) receberam do servidor a resposta "conta temporariamente indisponível" ao mesmo tempo, e os e-mails do robô ficaram presos na Caixa de Saída. O robô não duplica (confere um código em Itens Enviados e na Caixa de Saída antes de mandar), então o problema é só de espera. Falta quem administra o e-mail da rede olhar essas contas; uma trava entre rodadas do "Enviar/Receber todas" está proposta e estacionada.</p></div>
+
+
+  <h2>Revisão de segurança e LGPD (28/10/2026, só leitura)</h2>
+  <p>Feita com as skills <code>security-review</code>, <code>ci-cd-security</code>, <code>secret-scanning</code> e <code>gdpr-data-handling</code>: li o servidor do Painel, a conversa entre os PCs, o GitHub Actions e os dados guardados em disco. Só reporto o que o código comprova; o que depende de verificação aparece à parte. Nada foi alterado.</p>
+
+  <div class="chave"><b>Resumo:</b> a base é melhor do que parece (nenhuma chave no código nem no histórico, comandos entre PCs numa lista curta, texto de e-mail sempre escapado, GitHub Actions com permissão mínima). Os pontos fracos são <b>a conversa entre os PCs</b> (repetível por 2 minutos e aberta na rede) e <b>quanto dado de hóspede fica guardado, e por quanto tempo</b>, em cada PC.</div>
+
+  <h3 style="margin:18px 0 6px">Segurança</h3>
+
+  <div class="achado"><header><span class="pri p0">Alta, com condição</span><h3>Pedido assinado entre PCs pode ser repetido por 2 minutos</h3></header>
+    <p><b>Onde:</b> <code>src/rede_local.py</code> (assinatura vale 120 s e não tem código único de uso). Quem estiver na rede do escritório e capturar um pedido assinado consegue repeti-lo até a validade acabar, inclusive <code>/rede/reiniciar_outlook</code> (fecha o Outlook do PC), <code>/rede/enviar_receber</code> e <code>/rede/enviar</code>. A condição é estar na rede e enxergar o tráfego, que hoje passa aberto.</p>
+    <p><b>Correção:</b> guardar os códigos de cada pedido já usado e recusar repetido, e baixar a validade de 120 s para 30 s. Mudança pequena e de baixo risco.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média</span><h3>Qualquer máquina da rede pode sobrecarregar o Painel</h3></header>
+    <p><b>Onde:</b> <code>src/rede_local.py</code>. O servidor lê o corpo do pedido (até 2 MB) <b>antes</b> de conferir a assinatura e não tem tempo-limite por conexão. Várias conexões lentas ou grandes seguram o Painel de um PC (negação de serviço). Um <code>Content-Length</code> inválido também derruba o pedido sem tratamento.</p>
+    <p><b>Correção:</b> teto de 64 KB para quase todas as rotas, tempo-limite por conexão e limite de conexões ao mesmo tempo.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média</span><h3>Um segredo só vale para os 4 PCs e para o Google</h3></header>
+    <p><b>Onde:</b> <code>segredo_da_chave</code> deriva o segredo da rede da chave privada do Google. Se a chave de <b>um</b> PC vazar, a rede inteira e o Google ficam comprometidos ao mesmo tempo, e não dá para trocar um sem trocar o outro.</p>
+    <p><b>Correção:</b> segredo próprio da rede, separado do Google, e um por PC, com troca simples.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média, a verificar</span><h3>Qualquer programa no PC consegue o token do Painel</h3></header>
+    <p><b>Onde:</b> <code>app_servidor.py</code>, <code>GET /</code> devolve a página com o token sem exigir nada além do cabeçalho <code>Host</code>, que qualquer programa local escolhe. Num PC com outro usuário do Windows ou área de trabalho remota (o <code>mstsc</code> está em uso), esse usuário ou um programa malicioso fala com o Painel como o agente.</p>
+    <p><b>A verificar:</b> se os 4 PCs têm mais de um usuário do Windows. <b>Correção:</b> entregar o token só à janela do Painel (por argumento de inicialização) e recusar a página sem ele.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média</span><h3>O conteúdo entre os PCs passa aberto na rede</h3></header>
+    <p>Já estava na auditoria de 24/10: texto de e-mail e CPF/CNPJ trafegam sem cifra. Junto com o primeiro item, é o que mais importa fechar. <b>Correção:</b> cifrar o conteúdo (AES-GCM, com o segredo da rede) ou usar TLS.</p></div>
+
+  <div class="achado"><header><span class="pri p2">Baixa a média</span><h3>Cache do Painel lido com <code>pickle</code></h3></header>
+    <p><b>Onde:</b> <code>app_servidor.py</code> lê <code>estado/painel_cache.pkl</code> com <code>pickle.loads</code>. Quem conseguir escrever nesse arquivo executa código dentro do Painel. A pasta só é acessível ao usuário, a administradores e ao sistema, e não sincroniza com a nuvem, então exige acesso local. <b>Correção:</b> trocar por JSON, ou assinar o arquivo com o segredo antes de ler.</p></div>
+
+  <div class="achado"><header><span class="pri p2">Baixa a média</span><h3>GitHub Actions: código externo fixado por etiqueta, não por código</h3></header>
+    <p><b>Onde:</b> <code>.github/workflows/testes.yml</code> usa <code>actions/checkout@v4</code> e <code>actions/setup-python@v5</code>. Etiqueta pode ser movida por quem controlar a ação. <b>Está bom:</b> permissão mínima (<code>contents: read</code>), sem gatilhos perigosos (<code>pull_request_target</code> e similares). <b>Correção:</b> fixar cada ação pelo código completo (SHA) e ligar o Dependabot.</p></div>
+
+  <h3 style="margin:18px 0 6px">LGPD</h3>
+
+  <div class="achado"><header><span class="pri p0">Alta</span><h3>O índice local guarda 1 ano de e-mails, inclusive os excluídos</h3></header>
+    <p><b>Medido:</b> o índice de e-mails de cada PC tem <b>32.270 e-mails</b> (105 na entrada, 15.365 enviados e <b>16.800 excluídos</b>), 30.231 com o texto completo pesquisável, em arquivo SQLite sem cifra, com janela de 365 dias. E-mail que a pessoa excluiu continua pesquisável e guardado por até 1 ano. Isso vai contra a minimização e o direito ao apagamento.</p>
+    <p><b>Correção:</b> tirar do índice o que foi excluído (sugestão: 30 dias), reduzir a janela ao que a operação precisa, e escrever a finalidade e o prazo.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média</span><h3>Texto das notas com CPF/CNPJ guardado inteiro</h3></header>
+    <p><b>Onde:</b> <code>cache_textos_nf.json</code> (6,3 MB), <code>nf_achadas.json</code> (4,5 MB, até 8 mil caracteres de cada nota, criado por mim em 27/10) e <code>painel_cache.pkl</code>. <b>Correção:</b> guardar só o que o cruzamento usa (documento, valores, datas, serviços) e definir prazo para apagar.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média, a verificar</span><h3>Cifra do disco dos 4 PCs não confirmada</h3></header>
+    <p>Tentei ler o estado do BitLocker e o Windows exigiu administrador, então <b>não sei</b>. Os dados de hóspedes ficam em claro no disco; sem BitLocker, um PC roubado entrega tudo. <b>A fazer pela TI:</b> confirmar BitLocker ligado nos 4 PCs.</p></div>
+
+  <div class="achado"><header><span class="pri p1">Média</span><h3>Faltam os documentos e a trilha que a LGPD pede</h3></header>
+    <p>Existem inventário e faxina, mas faltam: registro das atividades de tratamento (finalidade, base legal, prazo e responsável por tipo de dado), procedimento para o hóspede pedir acesso ou apagamento, <b>registro de quem viu</b> os dados (hoje só se registra quem agiu) e registro de incidentes. O caso do CPF no histórico da versão .12 (repositório privado, decisão de deixar) deve entrar nesse registro.</p></div>
+
+  <h3 style="margin:18px 0 6px">O que está bom (confirmado no código)</h3>
+  <ul class="lista">
+    <li>Nenhuma chave, token ou senha no código nem no conteúdo dos 276 commits do histórico; a chave do Google fica fora do projeto; teste automático barra vazamento de credencial e de CPF/CNPJ válido.</li>
+    <li>Pela fila da Planilha o único comando remoto é <code>atualizar</code>; pela rede só valem as rotas de uma lista fixa (buscar, texto, enviar, Enviar/Receber, reiniciar Outlook…), sem comando livre.</li>
+    <li>O texto dos e-mails é sempre escapado na tela (sem brecha de script); arquivos servidos só de uma lista fixa; programas externos chamados sempre com lista de argumentos, sem <code>shell=True</code>.</li>
+    <li>O servidor local só ouve neste PC, confere o cabeçalho <code>Host</code> (barra DNS rebinding) e exige o token em toda ação.</li>
+    <li>A pasta <code>estado/</code> só abre para o usuário, administradores e o sistema, e fica na Área de Trabalho local, fora do OneDrive e do Dropbox.</li>
+  </ul>
+
+  <h3 style="margin:18px 0 6px">O que não consegui conferir</h3>
+  <ul class="lista">
+    <li>Regras do Firewall do Windows nos 4 PCs (a porta 8766 escuta em todas as placas; só recusa IP fora de rede privada).</li>
+    <li>BitLocker (precisa administrador); vulnerabilidades dos pacotes Python (não rodei <code>pip-audit</code>).</li>
+    <li>Configurações do GitHub só visíveis ao dono: proteção de branch, verificação em duas etapas, varredura de segredos ligada.</li>
+    <li>Permissões da conta de serviço do Google e quem tem acesso à Planilha Central.</li>
+  </ul>
+
+  <h3 style="margin:18px 0 6px">Ordem proposta de correção</h3>
+  <ol class="lista">
+    <li>Código único em cada pedido entre PCs e validade de 30 s; teto de corpo, tempo-limite e limite de conexões (pequeno, baixo risco).</li>
+    <li>Tirar e-mails excluídos do índice e reduzir a janela; enxugar o índice das NF.</li>
+    <li>Trocar o <code>pickle</code>; fixar o GitHub Actions por código e ligar o Dependabot.</li>
+    <li>Segredo próprio da rede, por PC, e cifrar o conteúdo entre os PCs.</li>
+    <li>Token só para a janela do Painel (depois de verificar os usuários do Windows).</li>
+    <li>Registro de tratamento, pedido do titular, trilha de acesso e BitLocker (com a TI).</li>
+  </ol>
+
+  <h2>O que um sistema financeiro de empresa grande tem (e onde o Painel está)</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Item</th><th>Painel hoje</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>Testes automáticos e revisão a cada mudança</td><td><span class="st ok">Tem</span></td><td>606 testes, GitHub Actions, trava de segredos.</td></tr>
+      <tr><td>Versões e histórico de mudanças</td><td><span class="st ok">Tem</span></td><td>Versão por data, etiqueta, CHANGELOG, diário no cofre.</td></tr>
+      <tr><td>Documentação e manual de incidentes</td><td><span class="st ok">Tem</span></td><td>Segundo Cérebro, "Se o robô parar", guia do dev, desenhos de cada tela.</td></tr>
+      <tr><td>Ambiente de teste (homologação)</td><td><span class="st ok">Tem</span></td><td>Atualização automática só por etiqueta; modo demonstração. Falta teste de tela no GitHub.</td></tr>
+      <tr><td>Monitoramento</td><td><span class="st par">Em parte</span></td><td>Avisos no Windows e no sino, Máquinas, caixas com problema. Falta o relatório automático por e-mail (aprovado).</td></tr>
+      <tr><td>Trilha de auditoria (quem fez o quê)</td><td><span class="st par">Em parte</span></td><td>Envios, tratativas, Concluir e Ligar/Pausar do robô ficam registrados; quem viu dados, não.</td></tr>
+      <tr><td>Backup e recuperação</td><td><span class="st par">Em parte</span></td><td>Cópias da Central e histórico do Google; a volta nunca foi ensaiada.</td></tr>
+      <tr><td>Criptografia</td><td><span class="st par">Em parte</span></td><td>Google e Outlook usam; a rede entre PCs e a pasta <code>estado/</code>, não.</td></tr>
+      <tr><td>Política de dados (LGPD)</td><td><span class="st par">Em parte</span></td><td>Inventário, faxina e registros sem e-mail; falta prazo por tipo e atendimento ao titular.</td></tr>
+      <tr><td>Relatórios gerenciais em um clique</td><td><span class="st par">Em parte</span></td><td>Visão geral e Gerência; falta exportar (PDF/Excel).</td></tr>
+      <tr><td>Login e perfis de acesso</td><td><span class="st par">Em parte</span></td><td>Só o usuário João liga e pausa o robô; falta o perfil gerente x operador.</td></tr>
+      <tr><td>Continuidade (se um PC cair)</td><td><span class="st nao">Não tem</span></td><td>O PC do João é o único que copia e envia aos hotéis.</td></tr>
+      <tr><td>Banco de dados transacional</td><td><span class="st nao">Não tem</span></td><td>Planilha Central com cota quase cheia.</td></tr>
+      <tr><td>Indicadores financeiros (R$, contas a pagar, caixa, cancelamentos)</td><td><span class="st nao">Não tem</span></td><td>Hoje é o fluxo de NF.</td></tr>
+      <tr><td>Integração com outros sistemas (emissor de NF, sistema do hotel)</td><td><span class="st par">Em parte</span></td><td>O Painel já lê as notas das pastas e cruza com os pedidos; o resto ainda é copiado à mão.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Pontos fortes (não mexer)</h2>
+  <p>O Painel espelhar o Outlook em vez de guardar cópia própria; o envio sempre pela caixa do hotel no PC dono; nunca enviar duas vezes (código conferido antes de mandar); só mover e-mail por clique, com desfazer; a pesquisa pelo índice local (milissegundos); a tela que só baixa dados quando algo mudou; as peças únicas (filtro, etiqueta, janela, carregamento); o modo demonstração; e o costume de desenhar antes, testar numa cópia e entregar só com etiqueta.</p>
+  <p class="meta" style="margin-top:28px">Nenhum dado de hóspede aparece nesta página: só contagens, tempos, tamanhos e nomes de hotel.</p>
+</main>
