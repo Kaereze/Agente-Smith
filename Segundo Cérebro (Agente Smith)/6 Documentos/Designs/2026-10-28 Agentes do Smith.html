@@ -87,12 +87,16 @@ button { font: inherit; color: inherit; }
 .ag-l:hover, .ag-l.on { background: var(--sel); color: var(--text); }
 .ag-l .t { display: flex; flex-direction: column; min-width: 0; }
 .ag-l small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
-.em { font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; line-height: 1; }
-.ag-l .em { font-size: 16px; width: 20px; text-align: center; flex: none; margin-top: 1px; }
+.em { display: grid; place-items: center; line-height: 1; }
+.em svg { fill: none; }
+.ag-l .em { width: 20px; flex: none; margin-top: 0; color: var(--text2); }
+.ag-l .em svg { width: 17px; height: 17px; }
+.ag-l:hover .em, .ag-l.on .em { color: var(--text); }
 .ag-l .g { margin-left: auto; }
 .ag-dock { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 100%; }
-.dk { position: relative; width: 38px; height: 38px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; font-size: 19px; cursor: pointer; box-shadow: var(--shadow); opacity: .92; padding: 0; transition: opacity .15s, border-color .15s, transform .15s; }
-.dk:hover, .dk:focus-visible, .dk.on { opacity: 1; border-color: var(--accent); transform: translateX(2px); }
+.dk { position: relative; width: 38px; height: 38px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); display: grid; place-items: center; color: var(--text2); cursor: pointer; box-shadow: var(--shadow); opacity: .95; padding: 0; transition: opacity .15s, border-color .15s, transform .15s; }
+.dk .em svg { width: 20px; height: 20px; }
+.dk:hover, .dk:focus-visible, .dk.on { opacity: 1; color: var(--text); border-color: var(--accent); transform: translateX(2px); }
 .dk.on { background: var(--sel); }
 .dk .s { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--canvas); }
 .dk .s svg { width: 9px; height: 9px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -100,7 +104,6 @@ button { font: inherit; color: inherit; }
 @keyframes pisca { 50% { opacity: .45; } }
 .dk::after { content: attr(data-tip); position: absolute; left: 46px; top: 50%; transform: translateY(-50%); white-space: nowrap; background: var(--card); color: var(--text); border: 1px solid var(--sel-line); border-radius: 6px; padding: 4px 9px; font-size: 12px; font-family: var(--sans); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 7; }
 .dk:hover::after, .dk:focus-visible::after { opacity: 1; }
-.tile .emo { font-size: 23px; line-height: 1; font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
 @media (prefers-reduced-motion: reduce) { .dk, .dk .s.parado { animation: none; transition: none; } }
 /* janela do Painel */
 .win { display: grid; grid-template-columns: auto 1fr; height: calc(100% - 44px); min-height: 640px; }
@@ -397,7 +400,9 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     L.metricas = { nome: "Números da Gerência", cada: "a cada 5 min", onde: "4 PCs", pcs: porPc("Atualizou há 3 min.", ov()) };
     return L;
   }
-  var EMOJI = { robo: "🤖", sync: "📋", vigia: "👀", donoenv: "📬", vigout: "🦉", conf: "🧐", espelho: "🪞", indice: "🗂️", atual: "🔄", faxina: "🧹", nfach: "🔍", saude: "🩺", srv: "🖥️", rede: "📡", metricas: "📊" };
+  var ICONE = {"robo": "i-enviar", "sync": "i-copiar", "vigia": "i-olho", "donoenv": "i-enc", "vigout": "i-mail", "conf": "i-nf", "espelho": "i-caixa", "indice": "i-log", "atual": "i-sync", "faxina": "i-lixo", "nfach": "i-busca", "saude": "i-cadeado", "srv": "i-painel", "rede": "i-gente", "metricas": "i-hotel"};   // ícones do próprio Painel (app_ui/index.html, símbolos i-*)
+  var ICONES_PAINEL = {"i-busca": "<circle cx=\"11\" cy=\"11\" r=\"6.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"m16 16 4.5 4.5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>", "i-painel": "<path d=\"M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-gente": "<circle cx=\"9\" cy=\"8\" r=\"3.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/><path d=\"M3.5 19c.8-3.3 3-5 5.5-5s4.7 1.7 5.5 5M15.5 5.2a3 3 0 0 1 0 5.6M17.5 14c1.6.6 2.7 2.2 3 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>", "i-caixa": "<path d=\"M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-enviar": "<path d=\"M4 12 20 4l-6 16-3-7z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-enc": "<path d=\"M14 7l6 5-6 5M20 12H10a6 6 0 0 0-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-mail": "<path d=\"M3 6h18v12H3zM3 7l9 6 9-6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linejoin=\"round\"/>", "i-nf": "<path d=\"M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-copiar": "<path d=\"M8 8h11v12H8zM5 16V4h11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-olho": "<path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"/>", "i-sync": "<path d=\"M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15m0 5v-5h-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-lixo": "<path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "i-log": "<path d=\"M4 6h16M4 12h10M4 18h13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>", "i-cadeado": "<path d=\"M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/>", "i-hotel": "<path d=\"M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2M2 21h20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"};
+  var icoP = function (id) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES_PAINEL[ICONE[id]] || "") + "</svg>"; };
   var PESO = { ok: 0, desligado: 0, atencao: 2, parado: 3 };   // PC desligado não é defeito do agente: aparece no cartão "PCs ligados"
   function agregado(a) {
     var pior = "ok", n = 0, off = 0, ligados = 0;
@@ -436,7 +441,7 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
       var g = agregado(LIVE[id]), s = document.createElement("span");
       s.className = "st " + g.est; s.title = NOMES[g.est] + ": " + g.resumo; s.innerHTML = glifo(g.est);
       n.el.appendChild(s);
-      var tile = n.el.querySelector(".tile"); if (tile && EMOJI[id]) tile.innerHTML = '<span class="emo">' + EMOJI[id] + "</span>";
+      var tile = n.el.querySelector(".tile"); if (tile && ICONE[id]) tile.innerHTML = icoP(id);
     });
   };
 
@@ -468,17 +473,17 @@ svg.edges { position: absolute; left: 0; top: 0; width: 3400px; height: 2000px; 
     linhas.sort(function (x, y) { return ordem[x.g.est] - ordem[y.g.est] || x.a.nome.localeCompare(y.a.nome, "pt"); });
     var lista = $("ag-lista"), dock = $("ag-dock"); lista.innerHTML = ""; dock.innerHTML = "";
     linhas.forEach(function (l) {
-      var emo = EMOJI[l.id] || "•", dica = l.a.nome + (l.g.est === "ok" ? "" : ": " + l.g.resumo);
+      var dica = l.a.nome + (l.g.est === "ok" ? "" : ": " + l.g.resumo);
       var bt = document.createElement("button"); bt.type = "button"; bt.className = "ag-l" + (l.id === selecionado ? " on" : ""); bt.dataset.id = l.id; bt.title = l.g.resumo;
       bt.innerHTML = '<span class="em"></span><span class="t"><span></span><small></small></span><span class="g ' + l.g.est + '">' + glifo(l.g.est) + "</span>";
-      bt.querySelector(".em").textContent = emo; bt.querySelector(".t span").textContent = l.a.nome;
+      bt.querySelector(".em").innerHTML = icoP(l.id); bt.querySelector(".t span").textContent = l.a.nome;
       var sm = bt.querySelector("small"); if (l.g.est === "ok") sm.remove(); else sm.textContent = l.g.resumo;
       bt.onclick = function () { window.mapaEscolher(l.id); };
       lista.appendChild(bt);
       var dk = document.createElement("button"); dk.type = "button"; dk.className = "dk" + (l.id === selecionado ? " on" : ""); dk.dataset.id = l.id;
       dk.setAttribute("data-tip", dica); dk.setAttribute("aria-label", l.a.nome + ". " + NOMES[l.g.est]);
       dk.innerHTML = '<span class="em"></span>' + (l.g.est === "ok" ? "" : '<span class="s ' + l.g.est + '">' + glifo(l.g.est) + "</span>");
-      dk.querySelector(".em").textContent = emo;
+      dk.querySelector(".em").innerHTML = icoP(l.id);
       dk.onclick = function () { window.mapaEscolher(l.id); };
       dock.appendChild(dk);
     });
