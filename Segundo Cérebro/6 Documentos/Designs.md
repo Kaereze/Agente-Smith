@@ -222,6 +222,8 @@ João pediu 4 opções bem diferentes da primeira. Pasta `Opcoes tela do e-mail/
 - **C, etapas do pedido:** linha do tempo (recebido, dados completos, NF pronta, NF enviada), lista de conferência (certo / falta) e um botão principal que muda. [[Opcao C - Etapas do pedido.html|C]]
 - **D, mensagem anotada pelo robô:** o robô marca os dados no próprio texto do hóspede, com chips que piscam o trecho. [[Opcao D - Mensagem anotada pelo robo.html|D]]
 
+**Escolha do João (27/10/2026): opção C**, com a barra de baixo só em ícones pequenos (caixa 24, não lidos 22, robô com o número de problemas, central, avisos, atualizar, tema; tudo com dica ao passar o mouse e a lista dos avisos num balão). Próximo passo: montar no Painel de demonstração.
+
 ## Só no claude.ai (apresentações e canvas)
 
 Estes são de um tipo de página que só abre dentro do claude.ai (slides e canvas de design), então ficam aqui só com o link.

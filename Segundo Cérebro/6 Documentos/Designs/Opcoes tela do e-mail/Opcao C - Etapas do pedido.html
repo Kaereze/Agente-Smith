@@ -73,6 +73,16 @@ h1.t{margin:0;font-size:20px;font-weight:600}
 @keyframes tempo{to{transform:scaleX(0)}}
 .toast .bt.m{height:24px;border:0;color:var(--azul-tx);padding:0 6px}
 .nota{font-size:12.5px;color:var(--mut)}
+.ib{height:34px;gap:6px;padding:0 10px}
+.ib .conta{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);padding:0 6px;position:relative}
+.ib svg{width:15px;height:15px;flex:none}
+.ib-bt{position:relative;width:28px;height:28px;border-radius:6px;border:0;background:transparent;color:#cfcfcf;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.ib-bt:hover{background:#303030;color:#fff}
+.ib-bt .num{position:absolute;top:0;right:-2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#5a2328;color:var(--verm);border:1px solid #7a343a;font:600 10px/12px var(--f);font-style:normal;text-align:center}
+.ib-bt .pt-am{position:absolute;top:4px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--am);border:1.5px solid var(--barra)}
+.ib [data-t]::after{content:attr(data-t);position:absolute;bottom:34px;left:50%;transform:translate(-50%,4px);white-space:nowrap;font-size:12px;padding:2px 8px;border-radius:5px;background:#2b2b2b;border:1px solid var(--linha2);color:var(--tx);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
+.ib [data-t]:hover::after,.ib [data-t]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+.ib .conta[data-t]::after{left:0;transform:translate(0,4px)}.ib .conta[data-t]:hover::after{transform:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (max-width:900px){.pagina{padding:12px}}
 
@@ -135,11 +145,17 @@ h1.t{margin:0;font-size:20px;font-weight:600}
       <button type="button"><span class="pt" style="background:var(--am)"></span><span><b>Conferência parada</b><br><span class="mut">Clara, Cristian, João</span></span></button>
       <button type="button"><span class="pt" style="background:var(--azul)"></span><span><b>Central sincronizada 23:07</b><br><span class="mut">Tudo certo</span></span></button>
     </div>
-    <div class="barra-b">
-      <span>Itens: 24</span><span>Não lidos: 22</span><span class="esp"></span>
-      <button type="button" class="bt m" id="bt-avisos" aria-expanded="false" aria-controls="pop" style="display:inline-flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:var(--am)"></span>2 avisos</button>
-      <button type="button" class="bt m">Escuro</button>
+    <div class="barra-b ib">
+      <span class="conta" data-t="Itens na caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-7h14l2 7v5H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>24</span>
+      <span class="conta" data-t="Não lidos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>22</span>
+      <span class="esp"></span>
+      <button type="button" class="ib-bt" id="bt-robo" aria-label="Robô: 4 problemas" data-t="Robô · 4 problemas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5M12 5h.01"/><path d="M9.5 13v.5M14.5 13v.5"/><path d="M9.5 16.5h5"/></svg><i class="num" aria-hidden="true">4</i></button>
+      <button type="button" class="ib-bt" id="bt-central" aria-label="Central sincronizada 23:07" data-t="Central sincronizada 23:07"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/><path d="M9.5 13.5l2 2 3.5-4"/></svg></button>
+      <button type="button" class="ib-bt" id="bt-avisos" aria-expanded="false" aria-controls="pop" aria-label="Avisos: 2" data-t="Avisos (2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="pt-am" aria-hidden="true"></i></button>
+      <button type="button" class="ib-bt" aria-label="Atualizar agora" data-t="Atualizar agora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4M4 5v3h3"/><path d="M4 13a8 8 0 0 0 14 4M20 19v-3h-3"/></svg></button>
+      <button type="button" class="ib-bt" aria-label="Trocar tema (escuro)" data-t="Tema escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
     </div>
+
   </div>
   <p class="nota">Dados inventados. Paleta da Auditoria (azul e âmbar, sem verde). Com “reduzir movimento” ligado no Windows as animações ficam paradas.</p>
 </main>
@@ -179,6 +195,7 @@ const pop=$("#pop"), btA=$("#bt-avisos");
 function fechaPop(){pop.classList.remove("aberto");btA.setAttribute("aria-expanded","false");}
 btA.addEventListener("click",(e)=>{e.stopPropagation();const abre=!pop.classList.contains("aberto");pop.classList.toggle("aberto",abre);btA.setAttribute("aria-expanded",String(abre));});
 document.addEventListener("click",(e)=>{if(!pop.contains(e.target))fechaPop();});
+const btR=$("#bt-robo"); if(btR)btR.addEventListener("click",(e)=>{e.stopPropagation();btA.click();});
 document.addEventListener("keydown",(e)=>{if(e.key==="Escape")fechaPop();});
 function toast(html,ms){const t=document.createElement("div");t.className="toast";t.innerHTML=html;$("#avisos").appendChild(t);
   const some=()=>{t.classList.add("sai");setTimeout(()=>t.remove(),reduz?0:250);};if(ms)setTimeout(some,ms);return{el:t,some};}
