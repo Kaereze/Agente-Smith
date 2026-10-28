@@ -19,4 +19,4 @@ O João quis ver, dentro do Painel, o mapa de **todas** as ferramentas do projet
 - Um teste falha se um módulo novo de `src/` ficar fora do mapa.
 
 ## Consequências
-Hoje há sinal real para 9 dos 19 agentes. Medir os outros pede que cada um publique um sinal próprio (próxima entrega). O gerador do mapa ainda não está no repositório: módulo novo entra no `mapa.html` à mão. Ver [[Mapa visual do sistema]] e [[Designs]].
+Hoje há sinal real para 8 dos 19 agentes. Medir os outros pede que cada um publique um sinal próprio (próxima entrega). O gerador do mapa ainda não está no repositório: módulo novo entra no `mapa.html` à mão. Ver [[Mapa visual do sistema]] e [[Designs]].
