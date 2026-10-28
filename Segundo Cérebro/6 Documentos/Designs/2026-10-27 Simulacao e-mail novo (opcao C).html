@@ -308,7 +308,7 @@ h1.t{margin:0;font-size:20px;font-weight:600}
     $$(".it").forEach((b) => b.classList.toggle("sel", b.dataset.id === id)); redesenhaItem(e);
     const [txt, cls, off] = principalDe(e), et = etapasDe(e), it = itensDe(e);
     $("#leit").innerHTML =
-      '<div class="top"><div class="lin"><h2>' + esc(e.nome) + '</h2><span class="pil">Vence em ' + (e.enviada ? "—" : "46 h") + '</span><span class="mut small">' + e.hotel + ' · PC de João</span><span class="esp"></span>' +
+      '<div class="top"><div class="lin"><h2>' + esc(e.nome) + '</h2>' + (e.enviada ? "" : '<span class="pil">Vence em 46 h</span>') + '<span class="mut small">' + e.hotel + ' · PC de João</span><span class="esp"></span>' +
       '<button type="button" class="bt">' + (e.enviada ? "Enviar outra NF" : "Marcar tratativa") + '</button>' +
       '<button type="button" class="bt ' + cls + '"' + (off ? ' aria-disabled="true" title="Quando a nota aparecer na pasta, o robô avisa"' : "") + ">" + txt + "</button></div>" +
       '<div class="etapas" id="etapas">' + et.map((x) => '<div class="et"><b>' + x[0] + '</b><span>' + x[1] + "</span></div>").join("") + "</div></div>" +
