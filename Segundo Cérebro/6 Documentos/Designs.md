@@ -214,6 +214,14 @@ a leitura do robô campo a campo, 3 situações (falta dado, NF já enviada, NF 
 a barra de baixo com um botão de avisos. **Aguardando o OK do João** (e 6 perguntas em aberto) antes de mexer no Painel. Cópia parada no canvas:
 https://claude.ai/artifact/DZfLKiootmf4ivhaSGDqPM (tem uma prancheta em branco "Artboard 1" para apagar).
 
+### 4 outras opções da tela do e-mail (27/10/2026, animadas)
+
+João pediu 4 opções bem diferentes da primeira. Pasta `Opcoes tela do e-mail/`, cada uma abre com dois cliques e tem as 3 situações (falta dado, NF já enviada, NF pronta):
+- **A, resumo fixo ao lado:** mensagem inteira na esquerda; cartão de atendimento fixo na direita, botões no pé do cartão. [[Opcao A - Resumo fixo ao lado.html|A]]
+- **B, barra de uma linha e gaveta:** resumo em uma linha no topo; "Detalhes" abre uma gaveta. O máximo de espaço para a mensagem. [[Opcao B - Barra compacta e gaveta.html|B]]
+- **C, etapas do pedido:** linha do tempo (recebido, dados completos, NF pronta, NF enviada), lista de conferência (certo / falta) e um botão principal que muda. [[Opcao C - Etapas do pedido.html|C]]
+- **D, mensagem anotada pelo robô:** o robô marca os dados no próprio texto do hóspede, com chips que piscam o trecho. [[Opcao D - Mensagem anotada pelo robo.html|D]]
+
 ## Só no claude.ai (apresentações e canvas)
 
 Estes são de um tipo de página que só abre dentro do claude.ai (slides e canvas de design), então ficam aqui só com o link.

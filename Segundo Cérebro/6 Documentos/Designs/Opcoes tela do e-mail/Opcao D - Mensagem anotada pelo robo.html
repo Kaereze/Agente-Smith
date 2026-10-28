@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opção D · a mensagem anotada pelo robô</title>
+<style>
+
+:root{--bg:#171717;--tela:#1f1f1f;--painel:#262626;--linha:#3a3a3a;--linha2:#4a4a4a;--tx:#f0f0f0;--mut:#a8a8a8;
+--azul:#479ef5;--azul-tx:#9ccbf7;--azul-bg:#172b42;--azul-bd:#2a4f78;--am:#f0c46a;--am-bg:#33290f;--am-bd:#5c4a1d;--verm:#ff8d95;--barra:#1a1a1a;
+--f:"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.pagina{max-width:1160px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px}
+h1.t{margin:0;font-size:20px;font-weight:600}
+.sub{margin:0;color:var(--mut);font-size:13px;line-height:1.5;max-width:84ch}
+.cmd{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:12px 14px;border:1px solid var(--linha);border-radius:10px;background:#1c1c1c}
+.grupo{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut)}
+.seg{display:inline-flex;border:1px solid var(--linha2);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;border:0;background:transparent;color:var(--tx);font-size:13px;border-right:1px solid var(--linha2)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--azul);color:#0b1b2e;font-weight:600}
+.cmd .rep{height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px}
+.tela{position:relative;height:700px;background:var(--tela);border:1px solid var(--linha);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.rolagem{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#555 transparent}
+.bt{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--linha2);background:transparent;color:var(--tx);font-size:13px;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.bt:hover{background:#303030;border-color:#5a5a5a}.bt:active{transform:scale(.97)}
+.bt.p{border:0;background:var(--azul);color:#0b1b2e;font-weight:600}.bt.p:hover{background:#6bb2f8}
+.bt.m{height:28px;padding:0 10px}.bt.ln{border:0;color:var(--azul-tx);display:inline-flex;align-items:center;gap:6px;padding:0 8px}
+.bt.ln svg{transition:transform .25s}.bt.ln[aria-expanded=true] svg{transform:rotate(180deg)}
+.lin{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.esp{flex-grow:1}.mut{color:var(--mut)}.small{font-size:13px}
+.chip{display:inline-block;font-size:12.5px;border-radius:6px;padding:3px 8px;border:1px solid var(--linha2);background:#2b2b2b}
+.chip.am{color:var(--am);background:var(--am-bg);border-color:var(--am-bd)}
+.chip.az{color:var(--azul-tx);background:var(--azul-bg);border-color:var(--azul-bd)}
+.pil{font-size:13px;color:var(--am);background:var(--am-bg);border:1px solid var(--am-bd);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.col{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1)}
+.col>.in{overflow:hidden;min-height:0;opacity:0;transition:opacity .22s ease}
+.col.aberto{grid-template-rows:1fr}.col.aberto>.in{opacity:1;transition:opacity .3s ease .12s}
+.val{transition:opacity .3s ease}
+.val.lendo-i{color:transparent!important;border-radius:4px;background:linear-gradient(90deg,#333 0%,#444 50%,#333 100%);background-size:200% 100%;animation:brilho 1s linear infinite;user-select:none}
+@keyframes brilho{from{background-position:200% 0}to{background-position:-200% 0}}
+.revela{animation:sobe .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes sobe{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.leitura{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);min-height:18px}
+.leitura .barra{width:90px;height:3px;border-radius:2px;background:#3a3a3a;overflow:hidden}
+.leitura .barra i{display:block;height:100%;width:0;background:var(--azul);transition:width .9s ease}
+.corpo{padding:16px 24px 0;display:flex;flex-direction:column;gap:16px;font-size:15px;line-height:1.6}
+.ant{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;width:max-content}
+.ant:hover{color:var(--tx)}.ant svg{transition:transform .2s}.ant[aria-expanded=true] svg{transform:rotate(90deg)}
+.citado{font-size:13.5px;color:#c8c8c8;border-left:2px solid var(--linha2);padding-left:12px;line-height:1.5}
+.strip{margin:14px 24px 0;border:1px solid var(--azul-bd);background:var(--azul-bg);border-radius:8px;overflow:hidden}
+.strip .topo{padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:14px;flex-wrap:wrap}
+.strip .topo b{color:var(--azul-tx)}
+.strip .conteudo{padding:10px 14px;border-top:1px solid var(--azul-bd);background:#1c2837;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.barra-b{height:38px;border-top:1px solid var(--linha);background:var(--barra);padding:0 16px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--mut);position:relative;flex:none}
+.pop{position:absolute;right:16px;bottom:46px;width:340px;background:#2b2b2b;border:1px solid var(--linha2);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);transform-origin:bottom right;transform:scale(.96) translateY(6px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);z-index:5}
+.pop.aberto{opacity:1;transform:none;pointer-events:auto}
+.pop button{display:flex;width:100%;text-align:left;gap:10px;align-items:flex-start;background:transparent;border:0;border-radius:6px;color:var(--tx);padding:8px;font-size:13px}
+.pop button:hover{background:#363636}.pt{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.avisos{position:absolute;left:0;right:0;bottom:50px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:6}
+.toast{pointer-events:auto;background:#2b2b2b;border:1px solid var(--linha2);border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.4);animation:entra .28s cubic-bezier(.2,.8,.2,1)}
+.toast.sai{animation:saiu .25s ease forwards}
+@keyframes entra{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes saiu{to{opacity:0;transform:translateY(6px) scale(.97)}}
+.gira{width:14px;height:14px;border-radius:50%;border:2px solid #555;border-top-color:var(--azul);animation:g .8s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.toast .tempo{width:60px;height:3px;border-radius:2px;background:#444;overflow:hidden}
+.toast .tempo i{display:block;height:100%;width:100%;background:var(--azul);transform-origin:left;animation:tempo 10s linear forwards}
+@keyframes tempo{to{transform:scaleX(0)}}
+.toast .bt.m{height:24px;border:0;color:var(--azul-tx);padding:0 6px}
+.nota{font-size:12.5px;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:900px){.pagina{padding:12px}}
+
+
+.o4-top{background:var(--painel);border-bottom:1px solid var(--linha);padding:16px 24px;display:flex;flex-direction:column;gap:12px}
+.o4-top h2{margin:0;font-size:20px;font-weight:600;color:#f5f5f5}
+.achou{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:30px}
+.achou .rot{font-size:12.5px;color:var(--mut)}
+.ch{font-size:13px;border-radius:6px;padding:4px 9px;border:1px solid var(--azul-bd);background:var(--azul-bg);color:var(--azul-tx);cursor:default;transition:transform .15s,background .15s;animation:sobe .35s cubic-bezier(.2,.8,.2,1)}
+.ch:hover,.ch:focus-visible{background:#1d3a5c;transform:translateY(-1px)}
+.ch.am{border-color:var(--am-bd);background:var(--am-bg);color:var(--am)}.ch.am:hover{background:#40330f}
+.o4-msg{flex:1;min-height:0;padding:22px 0 24px}
+.o4-msg .cab{padding:0 32px;display:flex;flex-direction:column;gap:6px}
+.o4-msg .texto{padding:18px 32px 0;font-size:16.5px;line-height:2;max-width:78ch;display:flex;flex-direction:column;gap:14px}
+mark.ach{position:relative;color:inherit;background:linear-gradient(var(--azul-bg),var(--azul-bg)) 0 100%/0% 100% no-repeat;border-bottom:2px solid transparent;border-radius:3px;padding:2px 3px;margin:0 -1px;transition:background-size .4s cubic-bezier(.2,.8,.2,1),border-color .3s}
+mark.ach.on{background-size:100% 100%;border-bottom-color:var(--azul)}
+mark.ach.am{background-image:linear-gradient(var(--am-bg),var(--am-bg))}mark.ach.am.on{border-bottom-color:var(--am)}
+mark.ach.pisca{animation:pisca .9s ease}
+@keyframes pisca{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 4px rgba(71,158,245,.45)}}
+mark.ach::after{content:attr(data-t);position:absolute;left:0;top:-26px;white-space:nowrap;font-size:12px;line-height:1.4;padding:2px 7px;border-radius:5px;background:#2b2b2b;border:1px solid var(--linha2);color:var(--tx);opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s,transform .15s;z-index:3}
+mark.ach:hover::after{opacity:1;transform:none}
+.o4-msg .strip{margin:0 32px 14px}
+.o4-falta{margin:14px 32px 0;border:1px solid var(--am-bd);background:var(--am-bg);color:var(--am);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:14px}
+
+</style>
+</head>
+<body>
+<main class="pagina">
+  <h1 class="t">Opção D · a mensagem anotada pelo robô</h1>
+  <p class="sub">Em vez de uma ficha separada, o robô marca os dados direto no texto que o hóspede escreveu (CNPJ, datas, valor, serviços), como um marca-texto. Em cima, uma linha de chips lista o que ele achou; passe o mouse num chip e o trecho pisca na mensagem. O que falta aparece em âmbar, no próprio texto.</p>
+  <div class="cmd" role="group" aria-label="Controles da demonstração">
+    <div class="grupo">Situação do pedido
+      <div class="seg" id="seg-sit">
+        <button type="button" data-v="falta" aria-pressed="true">Falta dado</button>
+        <button type="button" data-v="enviada" aria-pressed="false">NF já enviada</button>
+        <button type="button" data-v="pronta" aria-pressed="false">NF pronta</button>
+      </div>
+    </div>
+    <button type="button" class="rep" id="bt-rep">Repetir a leitura do robô</button>
+  </div>
+  <div class="tela" id="tela" data-estado="falta">
+
+<div class="o4-top">
+  <div class="lin"><h2>Ricardo Rocha Pereira</h2><span class="pil">Vence em 20 h</span><span class="mut small">LAGOA · PC de João</span><span class="esp"></span>
+    <button type="button" class="bt est" data-e="falta">Pedir o que falta</button>
+    <button type="button" class="bt">Marcar tratativa</button>
+    <button type="button" class="bt p" data-acao="enviar">Enviar NF</button></div>
+  <div class="achou" id="achou" aria-live="polite"><span class="rot" id="leitura-t">O robô marca os dados no texto…</span></div>
+</div>
+<div class="o4-msg rolagem">
+  <div class="cab"><h1 style="margin:0;font-size:18px;font-weight:600;color:#f5f5f5">Re: Solicitação NF</h1>
+<div class="mut small">Ricardo Rocha Pereira &lt;ricardo@exemplo.com.br&gt; · para notafiscal@redeandradelagoa.com.br · ter., 27/10/2026 21:17</div></div>
+  <div style="height:14px"></div>
+  <div class="strip est" data-e="enviada" hidden><div class="topo"><b>NF 1552 enviada em 27/10 17:45</b><span style="color:#d0d0d0">Datas, valor e CNPJ conferem com o pedido.</span><span class="esp"></span>
+<button type="button" class="bt m ln" data-alterna="#det" aria-expanded="false" aria-controls="det">Ver detalhes <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+<button type="button" class="bt m" data-acao="concluir" style="font-weight:600">Concluir</button></div>
+<div class="col" id="det"><div class="in"><div class="conteudo"><span><b>NF 1552.pdf</b> · enviada para ricardo@exemplo.com.br · conferida no Outlook e no PDF</span><span class="mut">Datas 23/10 → 24/10 · valor R$ 190,00 · CNPJ 27.598.834/0001-20: tudo igual ao pedido.</span><span class="mut">Concluir move a conversa para a pasta “NF enviada”. Dá para desfazer em 10 s.</span></div></div></div></div><div class="strip est" data-e="pronta" hidden><div class="topo"><b>NF 1552 pronta na pasta da Clara</b><span style="color:#d0d0d0">Datas, valor e CNPJ conferem com o pedido. É só enviar.</span></div></div>
+  <div class="o4-falta est" data-e="falta"><span>O hóspede pede para <b>separar hospedagem e estacionamento</b>, mas não diz se são 2 notas.</span><span class="esp"></span><button type="button" class="bt m">Pedir confirmação</button></div>
+  <div class="texto" id="texto">
+    <span>Boa tarde! Preciso da nota fiscal em nome da <mark class="ach" data-k="emp" data-t="Quem · do texto do e-mail">Transportes Rota Sul Ltda</mark>, <mark class="ach" data-k="doc" data-t="CNPJ · do texto do e-mail">CNPJ 27.598.834/0001-20</mark>.</span>
+    <span>Fiquei de <mark class="ach" data-k="dat" data-t="Datas · do texto do e-mail">23/10 a 24/10</mark> (<mark class="ach" data-k="dia" data-t="Diárias · conferido com o formulário">1 diária</mark> de <mark class="ach" data-k="val" data-t="Valor · conferido com o formulário">R$ 190,00</mark>), reserva <mark class="ach" data-k="res" data-t="Reserva · do e-mail">45154</mark>, e paguei também o <mark class="ach" data-k="srv" data-t="Serviço · do texto do e-mail">estacionamento de R$ 120,00</mark>. O voucher é da <mark class="ach" data-k="vou" data-t="Voucher · do texto do e-mail">Porto Seguro</mark>.</span>
+    <span><mark class="ach am" data-k="div" data-t="Falta decidir: 1 ou 2 notas?">Se possível, separar a hospedagem do estacionamento.</mark> Obrigado!</span>
+    <span>Ricardo Rocha Pereira</span>
+    <button type="button" class="ant" data-alterna="#ant" aria-expanded="false" aria-controls="ant"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Mostrar mensagens anteriores</button>
+<div class="col" id="ant"><div class="in"><div class="citado">Em 26/10/2026, equipe fiscal escreveu: Olá! Para emitir a nota, confirme o CNPJ e o que deve entrar (hospedagem e estacionamento).</div></div></div>
+  </div>
+</div>
+    <div class="avisos" id="avisos" aria-live="polite"></div>
+    <div class="pop" id="pop" role="dialog" aria-label="Avisos do Painel">
+      <button type="button"><span class="pt" style="background:var(--verm)"></span><span><b>Robô · 4 problemas</b><br><span class="mut">Ver o registro do robô</span></span></button>
+      <button type="button"><span class="pt" style="background:var(--am)"></span><span><b>Conferência parada</b><br><span class="mut">Clara, Cristian, João</span></span></button>
+      <button type="button"><span class="pt" style="background:var(--azul)"></span><span><b>Central sincronizada 23:07</b><br><span class="mut">Tudo certo</span></span></button>
+    </div>
+    <div class="barra-b">
+      <span>Itens: 24</span><span>Não lidos: 22</span><span class="esp"></span>
+      <button type="button" class="bt m" id="bt-avisos" aria-expanded="false" aria-controls="pop" style="display:inline-flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:var(--am)"></span>2 avisos</button>
+      <button type="button" class="bt m">Escuro</button>
+    </div>
+  </div>
+  <p class="nota">Dados inventados. Paleta da Auditoria (azul e âmbar, sem verde). Com “reduzir movimento” ligado no Windows as animações ficam paradas.</p>
+</main>
+<script>
+
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const tela=$("#tela"), reduz=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const espera=(ms)=>new Promise((r)=>setTimeout(r,reduz?0:ms));
+let corrida=0;
+function marcar(seg,v){$$("button",seg).forEach((b)=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));}
+function aplicaEstado(){
+  const e=tela.dataset.estado;
+  $$(".est").forEach((x)=>{const mostra=x.dataset.e.split(" ").includes(e);
+    if(x.hidden===mostra){x.hidden=!mostra;if(mostra){x.classList.remove("revela");void x.offsetWidth;x.classList.add("revela");}}});
+}
+async function lerVal(){ /* leitura padrão: cada .val vira um brilho e aparece em sequência */
+  const minha=++corrida, campos=$$(".val",tela).filter((c)=>c.offsetParent!==null||true);
+  const t=$("#leitura-t"), b=$("#leitura-b");
+  campos.forEach((c)=>{c.classList.remove("revela");c.classList.add("lendo-i");});
+  if(t)t.textContent="Robô lendo o e-mail e o formulário…";
+  if(b){b.style.transition="none";b.style.width="0";}
+  await espera(30); if(b){b.style.transition="";b.style.width="100%";}
+  await espera(350);
+  for(const c of campos){ if(minha!==corrida)return; c.classList.remove("lendo-i"); c.classList.add("revela"); await espera(90); }
+  if(minha===corrida&&t)t.textContent="Robô leu "+campos.length+" dados · confira o que estiver em âmbar";
+}
+function aoMudar(){ (window.ler||lerVal)(); }
+$("#seg-sit").addEventListener("click",(e)=>{const b=e.target.closest("button");if(!b)return;
+  tela.dataset.estado=b.dataset.v;marcar($("#seg-sit"),b.dataset.v);aplicaEstado();if(window.aoTrocarEstado)window.aoTrocarEstado();aoMudar();});
+$("#bt-rep").addEventListener("click",()=>{aoMudar();});
+document.addEventListener("click",(e)=>{
+  const a=e.target.closest("[data-alterna]"); if(!a)return;
+  const alvo=$(a.dataset.alterna), abre=a.getAttribute("aria-expanded")!=="true";
+  a.setAttribute("aria-expanded",String(abre)); alvo.classList.toggle("aberto",abre);
+});
+const pop=$("#pop"), btA=$("#bt-avisos");
+function fechaPop(){pop.classList.remove("aberto");btA.setAttribute("aria-expanded","false");}
+btA.addEventListener("click",(e)=>{e.stopPropagation();const abre=!pop.classList.contains("aberto");pop.classList.toggle("aberto",abre);btA.setAttribute("aria-expanded",String(abre));});
+document.addEventListener("click",(e)=>{if(!pop.contains(e.target))fechaPop();});
+document.addEventListener("keydown",(e)=>{if(e.key==="Escape")fechaPop();});
+function toast(html,ms){const t=document.createElement("div");t.className="toast";t.innerHTML=html;$("#avisos").appendChild(t);
+  const some=()=>{t.classList.add("sai");setTimeout(()=>t.remove(),reduz?0:250);};if(ms)setTimeout(some,ms);return{el:t,some};}
+document.addEventListener("click",async(e)=>{
+  if(e.target.closest("[data-acao=enviar]")){
+    const t=toast('<span class="gira" aria-hidden="true"></span><span>Enviando NF · PC de João</span>');
+    await espera(1800); const h=new Date().toTimeString().slice(0,5);
+    t.el.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ccbf7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Enviado '+h+'</span>';
+    setTimeout(t.some,reduz?0:3500);
+  }
+  if(e.target.closest("[data-acao=concluir]")){
+    const antes=tela.dataset.estado;
+    const t=toast('<span>Conversa movida para “NF enviada”</span><span class="tempo" aria-hidden="true"><i></i></span><button type="button" class="bt m">Desfazer</button>');
+    const fim=setTimeout(t.some,10000);
+    t.el.querySelector("button").addEventListener("click",()=>{clearTimeout(fim);t.some();});
+  }
+});
+
+
+const NOMES={emp:"Quem",doc:"CNPJ",dat:"Datas",dia:"Diárias",val:"Valor",res:"Reserva",srv:"Serviço",vou:"Voucher",div:"Falta: 1 ou 2 notas?"};
+async function ler(){
+  const minha=++corrida, achou=$("#achou");
+  const marcas=$$("mark.ach"); marcas.forEach((m)=>m.classList.remove("on"));
+  achou.innerHTML='<span class="rot" id="leitura-t">O robô marca os dados no texto…</span>';
+  await espera(300);
+  let n=0;
+  for(const m of marcas){
+    if(minha!==corrida)return;
+    if(m.dataset.k==="div"&&tela.dataset.estado!=="falta")continue;
+    m.classList.add("on");
+    const c=document.createElement("span"); c.className="ch"+(m.classList.contains("am")?" am":""); c.tabIndex=0; c.textContent=NOMES[m.dataset.k]; c.dataset.k=m.dataset.k;
+    achou.appendChild(c); n++; await espera(170);
+  }
+  if(minha===corrida){const t=$("#leitura-t"); if(t)t.textContent="O robô achou "+n+" dados:"; }
+}
+window.ler=ler;
+function pisca(k){const m=$('mark.ach[data-k="'+k+'"]'); if(!m)return; m.scrollIntoView({block:"center",behavior:reduz?"auto":"smooth"}); m.classList.remove("pisca"); void m.offsetWidth; m.classList.add("pisca");}
+document.addEventListener("mouseover",(e)=>{const c=e.target.closest(".ch"); if(c)pisca(c.dataset.k);});
+document.addEventListener("focusin",(e)=>{const c=e.target.closest(".ch"); if(c)pisca(c.dataset.k);});
+window.aoTrocarEstado=()=>{};
+
+aplicaEstado(); aoMudar();
+</script>
+</body>
+</html>
