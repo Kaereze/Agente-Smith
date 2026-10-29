@@ -15,7 +15,7 @@ Para um PC **com** Outlook (conferente), use [[Instalação e pendências]].
 
 ## O que você precisa ter em mãos
 
-1. **Conta do GitHub com convite aceito** para o repositório privado `Kaereze/Notas-Fiscais`. O convite chega por e-mail; abra o link e aceite.
+1. **Conta do GitHub com convite aceito** para o repositório privado `Kaereze/Agente-Smith`. O convite chega por e-mail; abra o link e aceite.
 2. **`chave-api.json`**: chave do Google criada só para este PC (veja "A chave" abaixo).
 3. **`segredo-rede.txt`**: gerado no PC do João (veja "O segredo da rede" abaixo).
 4. Windows 10 ou 11 de 64 bits, com internet.
@@ -35,7 +35,7 @@ winget install -e --id Git.Git
 Feche e abra o PowerShell de novo. Depois:
 
 ```powershell
-git clone https://github.com/Kaereze/Notas-Fiscais.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
+git clone https://github.com/Kaereze/Agente-Smith.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
 ```
 
 Na primeira vez abre uma janela do navegador pedindo o login do GitHub: entre com a conta que recebeu o convite. Se aparecer "repositório não encontrado", o convite ainda não foi aceito.

@@ -1,6 +1,6 @@
 # Notas Fiscais — Rede Andrade
 
-[![Testes](https://github.com/Kaereze/Notas-Fiscais/actions/workflows/testes.yml/badge.svg?branch=main)](https://github.com/Kaereze/Notas-Fiscais/actions/workflows/testes.yml)
+[![Testes](https://github.com/Kaereze/Agente-Smith/actions/workflows/testes.yml/badge.svg?branch=main)](https://github.com/Kaereze/Agente-Smith/actions/workflows/testes.yml)
 
 Automação das solicitações de nota fiscal dos hotéis da rede, usada pela equipe fiscal em 4 PCs com Windows.
 Tem duas partes:

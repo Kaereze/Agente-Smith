@@ -229,7 +229,7 @@ Se preferir fazer cada passo à mão e entender cada linha, use a **seção 6**.
 
 **Uma vez só, no GitHub (conta Kaereze):**
 
-1. Abra o repositório `Kaereze/Notas-Fiscais`.
+1. Abra o repositório `Kaereze/Agente-Smith`.
 2. **Settings → Collaborators → Add people**.
 3. Convide a conta do GitHub do operador. Ele aceita o convite no e-mail.
    (Ou faça o login com a sua conta no PC dele.)
@@ -243,7 +243,7 @@ winget install -e --id Git.Git
 Instala o Git. Depois **feche e abra o PowerShell** para ele passar a reconhecer o comando `git`.
 
 ```powershell
-git clone https://github.com/Kaereze/Notas-Fiscais.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
+git clone https://github.com/Kaereze/Agente-Smith.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
 ```
 
 - Baixa o código para `Área de Trabalho\Solicitacoes NF`.
@@ -317,7 +317,7 @@ Tem que responder `git version 2.x`.
 **Pelo GitHub:**
 
 ```powershell
-git clone https://github.com/Kaereze/Notas-Fiscais.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
+git clone https://github.com/Kaereze/Agente-Smith.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
 ```
 
 **Ou pelo pendrive** (gerado pelo `Bat\gerar_pacote_pendrive.bat` no PC do João):
@@ -849,7 +849,7 @@ O resultado fica em `logstualizacao.log`. Se faltar Git, `.venv` ou as tarefas,
 
 ```powershell
 cd "$env:USERPROFILE\Desktop\Solicitacoes NF"
-git remote set-url origin https://github.com/Kaereze/Notas-Fiscais.git
+git remote set-url origin https://github.com/Kaereze/Agente-Smith.git
 ```
 
 - Troca a "origem" das atualizações, que era o pendrive, pelo GitHub. Precisa só **uma vez** por PC.
@@ -859,7 +859,7 @@ git remote set-url origin https://github.com/Kaereze/Notas-Fiscais.git
 git remote -v
 ```
 
-Confere: tem que mostrar `https://github.com/Kaereze/Notas-Fiscais.git`.
+Confere: tem que mostrar `https://github.com/Kaereze/Agente-Smith.git`.
 
 > **Por que todos no mesmo dia:** os Painéis conversam entre si pela Planilha Central (fila de envio de NF,
 > aba `PCs_Painel`). Versões muito diferentes podem não se entender.
@@ -874,7 +874,7 @@ faz sentido num PC sem as caixas dos hotéis. Lá você cria **só o ambiente**.
 ### Primeira vez
 
 ```powershell
-git clone https://github.com/Kaereze/Notas-Fiscais.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
+git clone https://github.com/Kaereze/Agente-Smith.git "$env:USERPROFILE\Desktop\Solicitacoes NF"
 ```
 
 Baixa o código (peça o login do GitHub na primeira vez).

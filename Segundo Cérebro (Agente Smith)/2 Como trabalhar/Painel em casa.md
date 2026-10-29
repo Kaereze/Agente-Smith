@@ -12,7 +12,7 @@ Responder, enviar NF e marcar lido continuam **só nos PCs do trabalho**.
 ## Passo 1: o projeto
 No PC de casa, com o Git instalado:
 ```
-git clone https://github.com/Kaereze/Notas-Fiscais.git "%USERPROFILE%\Desktop\NOTAS\Solicitacoes NF"
+git clone https://github.com/Kaereze/Agente-Smith.git "%USERPROFILE%\Desktop\NOTAS\Solicitacoes NF"
 ```
 
 ## Passo 2: a chave do Google de casa (separada, só leitura)

@@ -5,7 +5,7 @@ setlocal EnableExtensions
 :: Nao precisa de Outlook nem Dropbox.
 :: 1a vez: baixa o projeto do GitHub, instala o Python se faltar e cria o ambiente. Depois: atualiza e abre.
 title Painel Fiscal - modo demonstracao
-set "REPO=https://github.com/Kaereze/Notas-Fiscais.git"
+set "REPO=https://github.com/Kaereze/Agente-Smith.git"
 set "LOGDEMO=%TEMP%\painel_demo_instalacao.log"
 echo %date% %time% inicio>"%LOGDEMO%"
 

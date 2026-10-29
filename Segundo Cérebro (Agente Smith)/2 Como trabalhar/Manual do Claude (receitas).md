@@ -9,7 +9,7 @@ tags: [cerebro/trabalho, receitas]
 # Manual do Claude: receitas passo a passo
 
 > Para uma sessão **nova**, sem memória, que só tem este cofre. Cada receita tem o comando exato. O que já deu errado está em [[Armadilhas conhecidas]]; as preferências do João em [[Preferências do João]] e [[Memória do Claude (migrada)]].
-> Projeto: `C:\Users\Usuário\Desktop\NOTAS\Solicitacoes NF` (GitHub `Kaereze/Notas-Fiscais`, **privado**). O PC do trabalho é `DESKTOP-GA8IJAU`.
+> Projeto: `C:\Users\Usuário\Desktop\NOTAS\Solicitacoes NF` (GitHub `Kaereze/Agente-Smith`, **privado**). O PC do trabalho é `DESKTOP-GA8IJAU`.
 
 ## R0. Começar uma sessão (sempre)
 1. `cd "C:\Users\Usuário\Desktop\NOTAS\Solicitacoes NF"` e depois `git fetch --tags origin`, `git status --short`, `git log -3 --oneline`.
@@ -19,7 +19,7 @@ tags: [cerebro/trabalho, receitas]
 
 ## R1. Mexer no código sem derrubar o Painel do João
 A pasta do projeto **é onde o Painel do João roda**: commit de código nela reinicia o Painel dele ([[2026-10-28 Painel lento por reinícios depois das entregas]]).
-1. Trabalhe numa **cópia separada**: `git clone https://github.com/Kaereze/Notas-Fiscais.git "%USERPROFILE%\Desktop\NOTAS_dev"` (uma vez) e depois `git pull` nela.
+1. Trabalhe numa **cópia separada**: `git clone https://github.com/Kaereze/Agente-Smith.git "%USERPROFILE%\Desktop\NOTAS_dev"` (uma vez) e depois `git pull` nela.
 2. Instale as ferramentas de teste (uma vez): `python -m pip install -r requirements-dev.txt`.
 3. Edite, teste ([[#R2. Testar]]), commite e dê push **da cópia**. O Painel do João se atualiza sozinho quando houver **etiqueta** ([[ADR-01 PCs só atualizam com versão etiquetada]]).
 4. **Só documentação** (cofre, CHANGELOG, diário) pode ser feita na pasta do projeto: documentação não reinicia o Painel.

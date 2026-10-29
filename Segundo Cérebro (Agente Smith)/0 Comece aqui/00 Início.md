@@ -7,7 +7,7 @@ tags: [cerebro/inicio]
 r# Segundo Cérebro — Projeto Notas Fiscais
 
 > A memória do projeto: o João tem as ideias, o Claude programa, os dois leem e escrevem aqui.
-> Fica dentro do repositório `Kaereze/Notas-Fiscais` (todas as branches) e chega a qualquer PC pelo clone. Cores: [[Legenda de cores]].
+> Fica dentro do repositório `Kaereze/Agente-Smith` (todas as branches) e chega a qualquer PC pelo clone. Cores: [[Legenda de cores]].
 
 ## Ordem de leitura (Claude: sempre nesta ordem)
 0. **[[Manual do Claude (receitas)]]** (receitas com comandos exatos) e **[[Armadilhas conhecidas]]** (o que já deu errado). Preferências e memória do Claude: [[Preferências do João]] e [[Memória do Claude (migrada)]].
