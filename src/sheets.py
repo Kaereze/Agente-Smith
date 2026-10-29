@@ -1,5 +1,6 @@
 """Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log."""
 import datetime
+import functools
 import hashlib
 import re
 import socket
@@ -290,12 +291,18 @@ def limitar_leitura():
     (cota_google.da_linha() or COTA).usar("leitura")
 
 
+@functools.lru_cache(maxsize=512)
+def _cabecalhos_normalizados(cabecalhos):
+    """Os cabeçalhos de uma aba são os mesmos a cada linha lida: normaliza uma vez só (lista imutável: só leitura)."""
+    return tuple(normalizar(c) for c in cabecalhos)
+
+
 def _achar_coluna(cabecalhos, nomes_aceitos):
     """nomes_aceitos: str ou lista em ordem de preferência."""
     if isinstance(nomes_aceitos, str):
         nomes_aceitos = [nomes_aceitos]
     alvos = [normalizar(n) for n in nomes_aceitos if str(n).strip()]
-    normalizados = [normalizar(c) for c in cabecalhos]
+    normalizados = _cabecalhos_normalizados(tuple(cabecalhos))
     for alvo in alvos:
         if alvo in normalizados:
             return normalizados.index(alvo)

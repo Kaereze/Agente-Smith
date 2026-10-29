@@ -72,4 +72,23 @@ Auditoria estática (ruff): 219 `except` largos (escondem erro), 56 funções co
 
 **Ainda faltam** (ordem sugerida): primeira tela instantânea (último estado no navegador), leitura incremental da Central, "sem mudança" nas respostas de 225 KB e texto de e-mail em lote. Outras ações que ainda esperam o Google no clique: marcar lido, excluir, urgência, mover para NF enviada, concluir conversa e a Gerência (`relatorio_semana`).
 
+## Diagnóstico do travamento (29/10/2026): o amostrador achou a causa
+O João: "tá muito travado". O Painel estava pior que na medição de 28/10: `/api/estado` média 1,1 s (27% das respostas acima de 1 s, pico de 66 s); volta de leitura média 9 s (pico de 217 s); conferente 31 s por volta. A CPU do PC estava baixa (nada acima de 4%), o Outlook respondia em 50 ms e não havia processo duplicado: o travamento era **espera dentro do próprio servidor**.
+
+Amostrei o servidor e o conferente por 75 s com o **py-spy** (só observa, sem parar o processo; instalado fora do projeto em `C:\Users\Usuário\pdev_tools`; comando: `py-spy record --pid <PID> --duration 75 --gil --nonblocking --format raw`). Resultado:
+
+| Onde | Peso (das amostras com o GIL em uso) |
+|---|---|
+| Servidor: laço de leitura da planilha | 52% |
+| Servidor: `tratamento.normalizar` (sozinha) | 19% (a função mais pesada de todas) |
+| Servidor: montar a fila por clique (`fila_da_tela`) | 15% |
+| Conferente: renovar credencial do Google (assinatura RSA) | 14% |
+| Conferente: `normalizar` | 18% |
+
+**Causa:** o Python só executa um trabalho de CPU por vez no processo (o "GIL"). O laço de leitura interpretava a planilha inteira a cada volta recalculando `normalizar` para os mesmos textos, e o clique da tela esperava na fila.
+
+**Correção (versão 2026.10.29, ainda não publicada):** lembrar o resultado de funções puras (`normalizar`, `tipo_documento`, cabeçalhos normalizados) e reaproveitar a credencial do Drive. Medido no mesmo teste (3.650 pedidos, 73 abas, dados inventados): **1.864 ms → 310 ms**. 14 testes novos. O efeito no Painel real aparece em `/api/desempenho` depois de publicar.
+
+**Ainda aberto:** montar a fila por clique (15%); `confirmar_nfs` do conferente (31 s por volta: ler PDFs e Outlook); `faxina.rodar`, que reinterpreta todas as solicitações.
+
 Voltar: [[00 Início]] · Pendências: [[Ideias e pendências]]

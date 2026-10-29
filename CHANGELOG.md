@@ -21,7 +21,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - **Mapa de Agentes do Smith mais leve:** linha apagada deixa de ser desenhada (antes só esmaecia e eram ~450 por quadro), bloco apagado
   fica leve, e pontinhos e rótulos somem enquanto o mapa se move. Medido igual antes e depois: de 12 para 35 quadros por segundo ao
   arrastar (navegador sem placa de vídeo; no PC deve ser melhor).
-- 9 testes novos (`testes/test_fluidez.py`).
+- **Painel travado: causa achada com amostrador (py-spy) e corrigida.** O servidor segurava o processo 28% do tempo e o maior gasto era
+  `normalizar` (tirar acento e caixa), chamada milhões de vezes por hora com os mesmos textos: os 36 cabeçalhos de cada aba eram
+  normalizados de novo a cada linha lida. Agora o resultado fica lembrado (`tratamento.normalizar`, `tipo_documento`, cabeçalhos em
+  `sheets._achar_coluna`). Interpretar a planilha (3.650 pedidos, 73 abas, dados inventados) foi de 1.864 ms para 310 ms (6 vezes).
+- **Credencial do Google reaproveitada:** `sincronizar.listar_pasta` criava credencial nova (assinatura RSA e ida à internet) a cada chamada,
+  e a vigia dos formulários chama de 10 em 10 s. Agora a sessão do Drive é reaproveitada e só refeita se o Google recusar (401).
+- 14 testes novos (`testes/test_fluidez.py`).
 
 ## [2026.10.28.3] — 2026-10-28
 

@@ -116,3 +116,90 @@ def test_mapa_esconde_de_verdade_o_que_esta_apagado_e_o_que_anima_enquanto_move(
     assert ".edge.dim { display: none; }" in html                    # linha apagada não é pintada (11 -> 30 quadros por segundo)
     assert ".node.dim { opacity: .28; box-shadow: none; }" in html and ".node.dim .port { display: none; }" in html
     assert ".world.movendo .lbl, .world.movendo .pk { display: none; }" in html and 'world.classList.add("movendo")' in html
+
+
+# ---------------------------------------------------------------- CPU do servidor (29/10/2026): lembrar o que é igual
+def _normalizar_de_referencia(texto):
+    import unicodedata
+    nfkd = unicodedata.normalize("NFKD", str(texto or ""))
+    return " ".join("".join(c for c in nfkd if not unicodedata.combining(c)).lower().split())
+
+
+def test_normalizar_continua_dando_o_mesmo_resultado_e_fica_lembrado():
+    import tratamento
+    amostras = ["  Endereço de E-mail ", "CPF/CNPJ", None, 123, "", "Ação  Nº 5", "ÁGUA", "ﬁnal", "água", " \t "]
+    for s in amostras:
+        assert tratamento.normalizar(s) == _normalizar_de_referencia(s), repr(s)
+    antes = tratamento._normalizado.cache_info().hits
+    tratamento.normalizar("  Endereço de E-mail ")
+    assert tratamento._normalizado.cache_info().hits > antes
+
+
+def test_tipo_documento_continua_igual():
+    from tratamento import tipo_documento
+    casos = {"CPF": "cpf", "CNPJ": "cnpj", "CPF/CNPJ": "cpf_cnpj", "CPF ou CNPJ do Tomador": "cpf_cnpj", "CEP": "cep",
+             "Recepção": None, "Nome": None, "Documento Tomador": None, "Código Postal (CEP)": "cep"}
+    for cabecalho, esperado in casos.items():
+        assert tipo_documento(cabecalho) == esperado, cabecalho
+    assert tipo_documento("Documento Tomador", {"documento tomador": "cpf_cnpj"}) == "cpf_cnpj"   # a lista da configuração vence
+
+
+def test_achar_coluna_com_cabecalhos_lembrados():
+    import sheets
+    cab = ["Carimbo de data/hora", "Endereço de e-mail", "Nome"]
+    assert sheets._achar_coluna(cab, "ENDERECO DE E-MAIL") == 1
+    assert sheets._achar_coluna(cab, ["x", "nome"]) == 2
+    assert sheets._achar_coluna(cab, "nada") is None
+    assert sheets._achar_coluna(tuple(cab), "nome") == 2
+
+
+class _RespostaDrive:
+    def __init__(self, status=200):
+        self.status_code = status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"http {self.status_code}")
+
+    def json(self):
+        return {"files": [{"id": "a", "name": "n"}]}
+
+
+def _drive_falso(monkeypatch, respostas):
+    import google.auth.transport.requests as transporte
+    import google.oauth2.service_account as conta
+    criadas = []
+
+    class Sessao:
+        def __init__(self, credenciais):
+            criadas.append(credenciais)
+
+        def get(self, url, **kw):
+            return _RespostaDrive(respostas.pop(0) if respostas else 200)
+
+    class Credenciais:
+        @staticmethod
+        def from_service_account_file(caminho, scopes=None):
+            return object()
+    monkeypatch.setattr(transporte, "AuthorizedSession", Sessao)
+    monkeypatch.setattr(conta, "Credentials", Credenciais)
+    return criadas
+
+
+def test_sessao_do_drive_e_criada_uma_vez_so(monkeypatch):
+    import sincronizar
+    sincronizar._sessoes_drive.clear()
+    criadas = _drive_falso(monkeypatch, [])
+    for _ in range(3):
+        assert sincronizar.listar_pasta("chave-a.json", "pasta") == [{"id": "a", "name": "n"}]
+    assert len(criadas) == 1                         # antes eram 3: uma credencial nova (RSA + internet) a cada chamada
+    sincronizar._sessoes_drive.clear()
+
+
+def test_sessao_do_drive_recusada_pelo_google_e_refeita_uma_vez(monkeypatch):
+    import sincronizar
+    sincronizar._sessoes_drive.clear()
+    criadas = _drive_falso(monkeypatch, [401, 200])
+    assert sincronizar.listar_pasta("chave-b.json", "pasta")
+    assert len(criadas) == 2
+    sincronizar._sessoes_drive.clear()

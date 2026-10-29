@@ -1,4 +1,5 @@
 """Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP."""
+import functools
 import re
 import unicodedata
 
@@ -24,16 +25,28 @@ def detectar_formato_data(valores, padrao="americano"):
     return padrao
 
 
-def normalizar(texto):
-    """'  Endereço de E-mail ' -> 'endereco de e-mail'"""
-    nfkd = unicodedata.normalize("NFKD", str(texto or ""))
+@functools.lru_cache(maxsize=200_000)
+def _normalizado(texto):
+    nfkd = unicodedata.normalize("NFKD", texto)
     sem_acento = "".join(c for c in nfkd if not unicodedata.combining(c))
     return " ".join(sem_acento.lower().split())
 
 
+def normalizar(texto):
+    """'  Endereço de E-mail ' -> 'endereco de e-mail'
+    Função pura chamada milhões de vezes por hora com os mesmos textos (cabeçalhos e valores da planilha): o resultado fica lembrado
+    (29/10/2026: era o maior gasto de CPU do servidor do Painel, medido com py-spy; travava os cliques)."""
+    return _normalizado(str(texto or ""))
+
+
+@functools.lru_cache(maxsize=64)
+def _padrao_da_palavra(palavra):
+    return re.compile(rf"\b{palavra}\b")
+
+
 def _tem_palavra(cabecalho_normalizado, palavra):
     # \b: "recepcao" contém "cep"
-    return re.search(rf"\b{palavra}\b", cabecalho_normalizado) is not None
+    return _padrao_da_palavra(palavra).search(cabecalho_normalizado) is not None
 
 
 def tipo_documento(cabecalho, colunas_documento=None):
@@ -42,6 +55,12 @@ def tipo_documento(cabecalho, colunas_documento=None):
     for nome, tipo in (colunas_documento or {}).items():
         if normalizar(nome) == c:
             return tipo
+    return _tipo_pelo_nome(c)
+
+
+@functools.lru_cache(maxsize=4096)
+def _tipo_pelo_nome(c):
+    """A parte que só depende do nome (normalizado) da coluna: lembrada, porque o mesmo cabeçalho aparece em toda linha lida."""
     tem_cpf, tem_cnpj = _tem_palavra(c, "cpf"), _tem_palavra(c, "cnpj")
     if tem_cpf and tem_cnpj:
         return "cpf_cnpj"

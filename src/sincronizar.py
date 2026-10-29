@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -342,16 +343,37 @@ def chaves_da_lista_ja_enviadas(caminho):
     return chaves
 
 
-def listar_pasta(caminho_chave, pasta_id):
+_sessoes_drive = {}
+_trava_sessoes_drive = threading.Lock()
+
+
+def _sessao_drive(caminho_chave, nova=False):
+    """Uma sessão do Drive por chave, reaproveitada (29/10/2026, medido com py-spy): criar credencial nova a cada chamada (a vigia dos
+    formulários chama de 10 em 10 s) gastava CPU na assinatura RSA e uma ida à internet só para pedir token. A biblioteca renova o
+    token sozinha quando vence; nova=True descarta a guardada (chave trocada ou token recusado)."""
     from google.auth.transport.requests import AuthorizedSession
     from google.oauth2.service_account import Credentials
-    s = AuthorizedSession(Credentials.from_service_account_file(
-        caminho_chave, scopes=["https://www.googleapis.com/auth/drive.readonly"]))
+    with _trava_sessoes_drive:
+        if nova:
+            _sessoes_drive.pop(caminho_chave, None)
+        s = _sessoes_drive.get(caminho_chave)
+        if s is None:
+            s = _sessoes_drive[caminho_chave] = AuthorizedSession(Credentials.from_service_account_file(
+                caminho_chave, scopes=["https://www.googleapis.com/auth/drive.readonly"]))
+        return s
+
+
+def listar_pasta(caminho_chave, pasta_id):
+    s = _sessao_drive(caminho_chave)
     arquivos, token = [], None
     while True:
-        r = s.get("https://www.googleapis.com/drive/v3/files", timeout=30, params={
+        pedido = dict(timeout=30, params={
             "q": f"'{pasta_id}' in parents and trashed=false and mimeType='{MIME_PLANILHA}'",
             "pageSize": 1000, "pageToken": token, "fields": "nextPageToken, files(id,name,modifiedTime,version)"})
+        r = s.get("https://www.googleapis.com/drive/v3/files", **pedido)
+        if r.status_code == 401:   # token recusado: uma sessão nova, uma vez só
+            s = _sessao_drive(caminho_chave, nova=True)
+            r = s.get("https://www.googleapis.com/drive/v3/files", **pedido)
         r.raise_for_status()
         j = r.json()
         arquivos += j.get("files", [])
