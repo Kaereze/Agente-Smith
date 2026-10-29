@@ -69,10 +69,10 @@ function itensDaTela(busca) {
     const deles = new Set(Object.entries(r?.pcs || {}).filter(([, s]) => s.ok).map(([pc]) => pc));
     const espelho = (cx.dados?.emails || []).filter(e => !deles.has(e.pc) && passaBusca(e, busca)).map(e => ({ ...e, pasta: "entrada" }));
     const vistos = new Set();
-    return [...(r?.resultados || []), ...espelho].filter(e => !vistos.has(e.id) && vistos.add(e.id))
+    return [...(r?.resultados || []), ...espelho].filter(e => !vistos.has(e.id) && vistos.add(e.id) && !cx.escondidos[e.id])
       .filter(e => !cx.hotel || e.hotel === cx.hotel).sort((a, b) => b.quando.localeCompare(a.quando));
   }
-  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(e => doEscopo(e)) : emailsDa(cx.caixa);
+  const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(e => !cx.escondidos[e.id] && doEscopo(e)) : emailsDa(cx.caixa);
   const lista = base.filter(e => (!cx.hotel || (e.hotel || "").split(" / ").includes(cx.hotel)) && (!cx.soNaoLidos || e.lido === false)
     && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario"))
     && (!cx.filtroL || FILTROS_LISTA[cx.filtroL]?.[1](e)));
@@ -981,8 +981,36 @@ function encaminhar(id) {
   };
 }
 
+// Acha o e-mail em qualquer lista da tela: Caixa de entrada, Itens enviados (72 h) e resultado de pesquisa (29/10/2026).
+function achaEmail(id) {
+  return (cx.dados?.emails || []).find(x => x.id === id) || (cx.dados?.enviados || []).find(x => x.id === id)
+    || (cx.live?.resultados || []).find(x => x.id === id) || null;
+}
+const souAdmin = () => document.documentElement.classList.contains("e-admin");   // João no PC principal (o servidor também confere)
+// O que o servidor precisa para excluir um e-mail que só está no índice do PC dono (resultado de pesquisa).
+const dadosDaExclusao = e => ({ entry: e.entry || "", caixa: e.caixa || "", de: e.de || "", nome: e.nome || "", hotel: e.hotel || "", assunto: e.assunto || "" });
+
+// Administrador: Delete exclui direto, sem janela (o "Desfazer" de 10 s continua). Os outros agentes veem a janela de confirmação.
+function excluirDireto(id) {
+  const e = achaEmail(id);
+  if (!e || document.querySelector(".modal-fundo")) return;
+  excluirAgora(e);
+}
+
+function excluirAgora(e) {
+  const id = e.id;
+  cx.escondidos[id] = true; if (cx.sel === id) cx.sel = null;
+  desenharCorreio();
+  mostrarDesfazer("E-mail excluído", () => { delete cx.escondidos[id]; desenharCorreio(); }, async () => {
+    const r = await api("/api/correio/excluir", { id, ...dadosDaExclusao(e) });
+    if (!r.ok) { delete cx.escondidos[id]; desenharCorreio(); toast(r.motivo || "Não deu pra excluir", true); }
+    else if (r.aviso) toast(r.aviso);
+    carregarCorreio();
+  });
+}
+
 function excluir(id) {
-  const e = (cx.dados?.emails || []).find(x => x.id === id);
+  const e = achaEmail(id);
   if (!e || document.querySelector(".modal-fundo")) return;
   const fundo = document.createElement("div");
   fundo.className = "modal-fundo";
@@ -993,17 +1021,7 @@ function excluir(id) {
     <div class="modal-rodape"><button id="exc-nao">Cancelar</button><button class="perigo" id="exc-sim">Excluir</button></div></div>`;
   document.body.appendChild(fundo);
   $("exc-nao").onclick = () => fundo.remove();
-  $("exc-sim").onclick = () => {
-    fundo.remove();
-    cx.escondidos[id] = true; if (cx.sel === id) cx.sel = null;
-    desenharCorreio();
-    mostrarDesfazer("E-mail excluído", () => { delete cx.escondidos[id]; desenharCorreio(); }, async () => {
-      const r = await api("/api/correio/excluir", { id });
-      if (!r.ok) { delete cx.escondidos[id]; toast(r.motivo || "Não deu pra excluir", true); }
-      else if (r.aviso) toast(r.aviso);
-      carregarCorreio();
-    });
-  };
+  $("exc-sim").onclick = () => { fundo.remove(); excluirAgora(e); };
 }
 
 function mostrarDesfazer(msg, desfazer, confirmar, aviso = "Exclusão desfeita") {   // 10 s pra desfazer: só depois disso o pedido sai daqui
@@ -1104,7 +1122,7 @@ document.addEventListener("click", ev => {
   if (d.cxFaixa === "resp") return escrever(id, "resp");
   if (d.cxFaixa === "nf") return escrever(id, "nf");
   if (d.cxFaixa === "enc") return escrever(id, "enc");
-  if (d.cxFaixa === "exc") return excluir(id);
+  if (d.cxFaixa === "exc") return souAdmin() ? excluirDireto(id) : excluir(id);
   if (d.cxFaixa === "naolido") return marcarNaoLido(id);
   if (d.cxFaixa === "lido") {
     const x = (cx.dados?.emails || []).find(m => m.id === id);
@@ -1135,7 +1153,7 @@ document.addEventListener("click", e => {
   if (d.cxResp) return escrever(d.cxResp, "resp");
   if (d.cxRespNf) return escrever(d.cxRespNf, "nf");
   if (d.cxEnc) return escrever(d.cxEnc, "enc");
-  if (d.cxExcluir) return excluir(d.cxExcluir);
+  if (d.cxExcluir) return souAdmin() ? excluirDireto(d.cxExcluir) : excluir(d.cxExcluir);
   if (d.cxNaolido) marcarNaoLido(d.cxNaolido);
 });
 // Botão direito no e-mail (usuário, 20/10/2026): lido/não lido e urgência. Shift+F10 ou a tecla de menu abrem também.
@@ -1247,7 +1265,11 @@ document.addEventListener("keydown", e => {
   const precisa = () => { toast("Abra um e-mail da caixa primeiro (clique ou use as setas)", true); };
   if (e.ctrlKey && k === "r") { e.preventDefault(); return aberto ? escrever(aberto, e.shiftKey ? "nf" : "resp") : precisa(); }
   if (e.ctrlKey && k === "f") { e.preventDefault(); return aberto ? escrever(aberto, "enc") : precisa(); }
-  if (e.key === "Delete") { e.preventDefault(); return aberto ? excluir(aberto) : precisa(); }
+  if (e.key === "Delete") {   // vale também no resultado de pesquisa e nos itens enviados (29/10/2026)
+    e.preventDefault();
+    const alvo = cx.sel && !cx.resolvendo[cx.sel] ? achaEmail(cx.sel) : null;
+    return alvo ? (souAdmin() ? excluirDireto(alvo.id) : excluir(alvo.id)) : precisa();
+  }
   if (e.ctrlKey && k === "u") { e.preventDefault(); return aberto ? marcarNaoLido(aberto) : precisa(); }
   if (e.ctrlKey && k === "q") {
     e.preventDefault();

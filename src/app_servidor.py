@@ -175,6 +175,7 @@ class Estado:
         self.backend, self.cfg, self.relogio = backend, cfg, relogio
         self.envio_nf = servico_envio or envio_nf.ServicoEnvio(backend, cfg, socket.gethostname(), self.registrar_nf_enviada)
         self.envio_nf.segundo_plano = lambda trabalho: threading.Thread(target=trabalho, daemon=True, name="envio_nf").start()   # noqa: E731
+        self.envio_nf.entry_confere = lambda i, e, c: bool(getattr(self, "indice", None) and self.indice.confere(i, e, c))   # noqa: E731
         self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
@@ -1542,10 +1543,22 @@ class Estado:
             with self.lock:
                 self.eventos_pendentes = pendentes + self.eventos_pendentes
 
-    def excluir_email(self, id_email, agente):
+    def excluir_email(self, id_email, agente, extra=None):
         """Some na hora pra equipe toda; o PC dono move pra Itens Excluídos do Outlook dele (o "Desfazer" de 10 s
         fica na tela: só depois dele o pedido chega aqui)."""
-        e = self._email(id_email)
+        try:
+            e = self._email(id_email)
+        except KeyError:
+            # Resultado de pesquisa (ou e-mail antigo): só está no índice do PC dono, não no espelho da equipe. O PC dono exclui pelo
+            # EntryID depois de conferir no índice dele; não há linha do espelho para sumir, então não há evento para a equipe.
+            extra = extra or {}
+            entry, caixa = str(extra.get("entry", "")).strip(), str(extra.get("caixa", "")).strip().lower()
+            if not (entry and caixa and caixa in self._caixas_de_hotel()):
+                raise
+            sol = {"aba": "", "carimbo": "", "email": str(extra.get("de", "")), "hotel": str(extra.get("hotel", "")),
+                   "nome": str(extra.get("nome") or extra.get("de") or "")}
+            return self.envio_nf.pedir(sol, "", str(extra.get("assunto", ""))[:300], caixa, [], agente, responder=id_email,
+                                       acao=envio_nf.EXCLUIR, entry=entry)
         sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
         r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.EXCLUIR)
         if not r.get("ok"):
@@ -2324,7 +2337,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     return self._json(estado.evento_correio([str(i) for i in corpo.get("ids", [])], str(corpo.get("acao", "")),
                                                             nome_do_agente()))
                 if path == "/api/correio/excluir":
-                    return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente()))
+                    return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente(), corpo))
                 if path == "/api/correio/urgencia":
                     return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
                 if path == "/api/correio/mover_nf":

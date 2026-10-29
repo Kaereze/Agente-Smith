@@ -891,6 +891,8 @@ class ServicoEnvio:
         # Painel: função que roda um trabalho por trás (thread). Com ela, o clique em Enviar responde na hora e a gravação do
         # pedido no Google e o envio seguem por trás (29/10/2026). Sem ela (testes), tudo acontece na chamada, como sempre foi.
         self.segundo_plano = None
+        # Painel: (id, entry, caixa) -> True se o e-mail está no índice local desta caixa. Sem isso (testes), nenhum EntryID de fora vale.
+        self.entry_confere = lambda id_email, entry, caixa: False
 
     # chamado a cada volta do laço do Painel, com as abas já lidas no batch da Central
     def tick(self, lidas, agente):
@@ -942,7 +944,7 @@ class ServicoEnvio:
                       f" estar aberto/rodando).")
 
     def pedir(self, sol, para, assunto, conta_de, anexos_entrada, quem, mensagem=None, cc="", selo="", responder="",
-              acao="", livre=False, ligacao=False):
+              acao="", livre=False, ligacao=False, entry=""):
         """responder: id do e-mail do espelho (espelho_emails) — sai como resposta, anexo opcional.
         acao: "encaminhar" | "excluir" (no Outlook do PC dono). anexos_entrada: [{"tipo": "dropbox", "rel", "nome"} |
         {"tipo": "arquivo", "nome", "conteudo": bytes}]. PC dono desligado: o pedido espera na fila."""
@@ -970,6 +972,8 @@ class ServicoEnvio:
         pedido["pc_destino"] = destino
         if ligacao:
             pedido["ligacao"] = True   # o PC dono põe a categoria LIGAÇÃO no e-mail ao enviar
+        if entry:
+            pedido["entry"] = entry   # excluir um resultado de pesquisa (só está no índice); o PC dono confere antes
         linha_pedido = evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)
 
         def gravar():
@@ -1105,6 +1109,8 @@ class ServicoEnvio:
                 resultado = {"confirmado": bool(enviar(corpo, self.caixas_de_hotel()))}
             elif acao == EXCLUIR:
                 entry = espelho_emails.entry_do_email(p["responder"])
+                if not entry and p.get("entry") and self.entry_confere(p["responder"], p["entry"], p.get("conta_de", "")):
+                    entry = p["entry"]   # resultado de pesquisa: está no índice local e não no espelho; conferido no índice desta caixa
                 if entry:
                     self.excluir(entry)
             elif acao == URGENCIA:

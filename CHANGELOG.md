@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.1] — 2026-10-29 (aguarda publicação)
+
+### Mudou
+- **Excluir direto para o administrador (João no PC principal).** Tecla Delete exclui na hora, sem janela de confirmação, na Caixa de
+  entrada, nos itens enviados e nos resultados de pesquisa; continua o "Desfazer" de 10 s. O e-mail vai para Itens Excluídos do Outlook
+  do PC dono da caixa (o Outlook faz isso sozinho). Os outros agentes continuam vendo a janela de confirmação.
+
+### Segurança
+- Resultado de pesquisa só existe no índice do PC dono, então o pedido de exclusão leva o EntryID. O PC dono só exclui se o par
+  (id, EntryID) estiver no índice dele **daquela caixa** (`Indice.confere`); EntryID de fora nunca vale sozinho.
+- 12 testes novos (`testes/test_excluir_direto.py`).
+
 ## [2026.10.29] — 2026-10-29
 
 ### Mudou (fluidez: "o clique responde na hora")

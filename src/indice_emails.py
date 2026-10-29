@@ -143,6 +143,16 @@ class Indice:
                                    "ORDER BY quando DESC LIMIT ?", (int(quantos),)).fetchall()
 
     # --- pesquisa ---
+    def confere(self, id_email, entry, caixa):
+        """True se este e-mail (id e EntryID) está no índice DESTA caixa. Só o que o próprio PC indexou das caixas dos hotéis pode ser
+        excluído por pedido vindo de outro lugar (29/10/2026): o EntryID chega da tela e nunca vale sozinho."""
+        if not (id_email and entry and caixa):
+            return False
+        with self.lock:
+            achou = self.db.execute("SELECT 1 FROM emails WHERE id=? AND entry=? AND lower(caixa)=lower(?)",
+                                    (id_email, entry, caixa)).fetchone()
+        return achou is not None
+
     def buscar(self, termo, limite=busca_outlook.LIMITE_POR_PC):
         consulta = consulta_fts(termo)
         if len(busca_outlook.limpar_termo(termo)) < 3 or not consulta:
