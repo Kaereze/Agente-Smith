@@ -22,6 +22,7 @@ import socket
 import threading
 import time
 import urllib.request
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -35,14 +36,44 @@ TEMPO_RESPOSTA = 12
 MAX_CORPO = 2 * 1024 * 1024   # o /rede/enviar leva o HTML do e-mail (até ~40 KB)
 
 
-def segredo_da_chave(caminho_chave):
-    """Segredo comum aos 4 PCs, derivado da chave privada da conta de serviço (o arquivo nunca sai do PC)."""
+ARQUIVO_SEGREDO_REDE = "segredo-rede.txt"
+
+
+def _segredo_do_arquivo(caminho_chave):
+    """Segredo da rede guardado à parte (29/10/2026): 64 caracteres hexadecimais em segredo-rede.txt, na mesma pasta da chave.
+    Serve para um PC com chave do Google diferente (chave nova, criada só para ele) falar com os outros sem a chave privada
+    de ninguém viajar: o arquivo leva só o resumo já calculado. Arquivo ausente ou malformado = None (vale o cálculo da chave)."""
+    try:
+        texto = (Path(caminho_chave).parent / ARQUIVO_SEGREDO_REDE).read_text(encoding="utf-8").strip()
+        segredo = bytes.fromhex(texto)
+    except (OSError, ValueError):
+        return None
+    return segredo if len(segredo) == 32 else None
+
+
+def _segredo_calculado(caminho_chave):
     try:
         dados = json.load(open(caminho_chave, encoding="utf-8"))
         base = f"{dados.get('private_key_id', '')}|{dados.get('private_key', '')}"
     except (OSError, ValueError):
         return b""
     return hashlib.sha256(("painel-fiscal-rede|" + base).encode()).digest()
+
+
+def segredo_da_chave(caminho_chave):
+    """Segredo comum aos PCs da rede. Vale o segredo-rede.txt ao lado da chave, se existir; senão é derivado da chave privada
+    da conta de serviço (o arquivo nunca sai do PC). O resultado dos dois é o mesmo número para quem tem a chave original."""
+    return _segredo_do_arquivo(caminho_chave) or _segredo_calculado(caminho_chave)
+
+
+def gerar_arquivo_segredo(caminho_chave, destino):
+    """Grava em destino o segredo calculado da chave de caminho_chave (para levar a um PC com outra chave). Nunca mostra o
+    valor. -> True se gravou."""
+    segredo = _segredo_calculado(caminho_chave)
+    if not segredo:
+        return False
+    Path(destino).write_text(segredo.hex(), encoding="utf-8")
+    return True
 
 
 def assinar(segredo, quando, caminho, corpo):

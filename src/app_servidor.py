@@ -58,7 +58,7 @@ import desempenho
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
 from app_envio import Envio
-from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal
+from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
 import limpeza
 from log_util import configurar_logging
 import outlook_vivo
@@ -176,6 +176,8 @@ class Estado:
         self.envio_nf = servico_envio or envio_nf.ServicoEnvio(backend, cfg, socket.gethostname(), self.registrar_nf_enviada)
         self.envio_nf.segundo_plano = lambda trabalho: threading.Thread(target=trabalho, daemon=True, name="envio_nf").start()   # noqa: E731
         self.envio_nf.entry_confere = lambda i, e, c: bool(getattr(self, "indice", None) and self.indice.confere(i, e, c))   # noqa: E731
+        if sem_outlook(cfg):
+            self.envio_nf.ler_contas = lambda: []   # PC só com o Painel: nenhuma caixa aqui, o PC dono de cada caixa é quem envia
         self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
@@ -367,7 +369,7 @@ class Estado:
     # ---------- rede de PCs ----------
     def _extras_pc(self):
         """Colunas E-J da linha deste PC em PCs_Painel."""
-        outlook = self.outlook or "?"
+        outlook = "sem Outlook" if sem_outlook(self.cfg) else (self.outlook or "?")
         leituras, escritas = cota_google.consumo_deste_pc()
         # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
         uso = getattr(self, "uso_ref", None)
@@ -600,7 +602,7 @@ class Estado:
                 linhas.append(atividade.linha(atividade.ATUALIZADO, detalhe=f"de {anterior} para {self.versao}", agente=agente))
             CAMINHO_VERSAO.write_text(self.versao, encoding="utf-8")
             self.versao_registrada = True
-        estado_outlook = rede_pcs.outlook_aberto()   # "aberto" | "sem janela" | "fechado" | None
+        estado_outlook = None if sem_outlook(self.cfg) else rede_pcs.outlook_aberto()   # "aberto" | "sem janela" | "fechado" | None
         if estado_outlook is not None and estado_outlook != self.outlook:
             aberto = estado_outlook == "aberto"
             if self.outlook is not None or not aberto:
@@ -1126,6 +1128,8 @@ class Estado:
 
     # --- chamadas que chegam dos outros PCs (rede_local) ---
     def rede_buscar(self, corpo):
+        if sem_outlook(getattr(self, "cfg", {})):   # PC só com o Painel: não tem caixa para pesquisar
+            return {"resultados": [], "completo": True, "fonte": "sem_outlook", "pc": socket.gethostname()}
         indice = getattr(self, "indice", None)
         if indice is not None and not corpo.get("vivo") and indice.total():
             r = indice.buscar(corpo.get("q", ""), limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
@@ -2550,8 +2554,9 @@ def main():
 
     threading.Thread(target=laco, daemon=True).start()
     if not modo_demo and not so_ver:
-        estado.vigiar_caixa_de_saida()
-        estado.iniciar_indice()
+        if not sem_outlook(cfg):   # PC só com o Painel não tem Outlook para vigiar nem para indexar
+            estado.vigiar_caixa_de_saida()
+            estado.iniciar_indice()
         estado.iniciar_nf_achadas()
     try:
         liberado = limpeza.aparar_registros(PASTA_LOGS)   # cópia girada antiga e grande (auditoria 27/10/2026)

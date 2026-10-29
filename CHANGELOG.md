@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Não publicada] — PC novo só com o Painel
+
+### Adicionado
+- **Instalador do PC "só Painel"** (sem Outlook e sem caixas de hotel; primeiro uso: Ingrid): `INSTALAR_PC_SO_PAINEL.bat` +
+  `Automacoes/instalar_pc_so_painel.ps1`, em 10 etapas, com teste final que lê a Planilha Central e chama cada PC ligado
+  (`Automacoes/testar_pc_novo.py`, só leitura). Guia no cofre: "Instalar um PC novo (só Painel)".
+- Papel `so_painel` (`config.sem_outlook`): não indexa nem vigia o Outlook, aparece aos outros PCs como "sem Outlook" (sem alerta de
+  "Outlook fechado") e o pedido de envio vai para o PC dono da caixa.
+- **Segredo da rede à parte**: `segredo-rede.txt` ao lado da chave vale no lugar do cálculo pela chave (`rede_local.segredo_da_chave`).
+  Uma chave nova do Google, só para um PC, falava com os outros e recebia 403; com o arquivo, fala. O arquivo leva só o resumo, nunca a
+  chave privada (`Automacoes/gerar_segredo_rede.py`). Os PCs atuais seguem iguais.
+- 17 testes novos (`test_so_painel.py`, `test_segredo_rede.py`, `test_instalador_so_painel.py`).
+
 ## [2026.10.29.1] — 2026-10-29
 
 ### Mudou

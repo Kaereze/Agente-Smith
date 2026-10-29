@@ -81,6 +81,15 @@ def e_principal(cfg):
     return cfg.get("papel") == "principal"
 
 
+PAPEL_SO_PAINEL = "so_painel"
+
+
+def sem_outlook(cfg):
+    """PC só com o Painel (29/10/2026, ex.: o da Ingrid): sem Outlook e sem caixas de hotel. Vê, emite e pede o envio; quem envia é o
+    PC dono da caixa. Escolhido à mão no config.local.json ("papel": "so_painel"); não roda conferente nem cópia."""
+    return cfg.get("papel") == PAPEL_SO_PAINEL
+
+
 def validar_config(cfg, exigir_chave=True):
     problemas = []
 
