@@ -16,6 +16,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
   com zero hotéis e zero e-mails, e a tela abria em "Ingrid". Agora PC `so_painel` fica fora do filtro de agentes (dela e dos outros PCs)
   e a tela abre em "Todos os agentes". 1 teste novo.
 
+### Adicionado
+- `Automacoes/conferir_contagem_outlook.py`: compara, caixa por caixa, a Caixa de Entrada do Outlook do PC (não lidos = número azul, e total) com o que o
+  Painel espelhou, com a soma. Só lê. No PC do João: 90 não lidos e 98 no total nos dois lados.
+
 ## [2026.10.29.2] — 2026-10-29 (PC novo só com o Painel)
 
 ### Adicionado

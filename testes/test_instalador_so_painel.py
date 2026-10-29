@@ -75,3 +75,14 @@ def test_instalador_nao_leva_segredo_nenhum():
     for etapa in ("Python", "Git", "Projeto", ".venv", "Chave do Google", "Configuracao", "WebView2", "Firewall", "Painel", "Teste final"):
         assert etapa in ps1, etapa
     assert "agendar_conferente" not in ps1 and "agendar_sincronizacao" not in ps1     # este PC não roda conferente nem cópia
+
+
+def test_conferencia_de_contagem_compara_caixa_por_caixa_e_soma():
+    m = _modulo("conferir_contagem_outlook")
+    outlook = {"a@x": (10, 13), "b@x": (2, 2), "c@x": (5, 7)}
+    painel = {"a@x": (10, 13), "b@x": (2, 2), "c@x": (4, 7)}
+    linhas = m.comparar(outlook, painel)
+    assert [(l[0], l[3]) for l in linhas] == [("a@x", True), ("b@x", True), ("c@x", False)]
+    assert m.somar(linhas, 1) == (17, 22) and m.somar(linhas, 2) == (16, 22)
+    so_painel = m.comparar({}, {"z@x": (1, 1)})                       # caixa que o Painel guarda e o Outlook não tem mais
+    assert so_painel == [("z@x", None, (1, 1), False)]
