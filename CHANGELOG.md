@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.5] — 2026-10-29
+
+### Adicionado
+- **Assinatura da Ingrid** (Auxiliar Financeiro) entre os selos do Painel (`app_ui/assinaturas/ingrid.png`, 1200x380 como as outras). Ela abre
+  já com o selo dela; os outros operadores também podem escolhê-lo. 1 teste novo.
+
 ## [2026.10.29.4] — 2026-10-29
 
 ### Adicionado

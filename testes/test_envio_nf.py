@@ -511,3 +511,10 @@ def test_marca_invisivel_leva_o_id_do_envio_e_o_assumido_avisa(cfg, planilha):
     _esperar(pc_a, r["id"])
     assert vistos == [r["id"]]
     assert en.dobrar_fila(planilha.aba(en.ABA_FILA))[r["id"]]["marca_id"] is True
+
+
+def test_selo_da_ingrid_entra_depois_da_equipe_e_vira_o_padrao_dela():
+    lista = [s["id"] for s in en.selos()]
+    assert lista[:5] == ["joao", "cristian", "clara", "bernardo", "ingrid"]
+    assert en.selo_do_agente("Ingrid") == "ingrid" and en.caminho_selo("ingrid")
+    assert [s["nome"] for s in en.selos()][4] == "Ingrid"
