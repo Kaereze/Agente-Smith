@@ -9,6 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.6] — 2026-10-29 (aguarda publicação)
+
+### Removido
+- **Reconhecimento automático de NF emitida/enviada na tela do e-mail** (pedido do João: a regra concreta ainda será definida por ele).
+  Saem as etapas "NF pronta" e "NF enviada", o botão **Concluir**, "NF na pasta / Ainda não emitida", "Pede nova nota", o aviso "marcada como enviada
+  mas não achei o envio" e a caixa "Histórico x notas prontas". Fica só "Recebido" e "Dados completos"; o botão é "Pedir o que falta" ou "Enviar NF".
+  Mover para "NF enviada" na mão continua. Desligado por `RECONHECE_NF = false` em `correio.js`. 2 testes novos.
+
 ## [2026.10.29.5] — 2026-10-29
 
 ### Adicionado

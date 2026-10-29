@@ -18,8 +18,11 @@ function etapasModelo(x) {
   // x: { hora, falta:[], semFormulario, tom, doc, docRot, datas, diarias, valor, pede, divisao, reserva, titular,
   //      notas:[{nf}], nfsEnviadas:[{nf, quando}], situacaoPedido, cobre:{cobre, pede_nova, motivos, avisos_envio, sugere_concluir}|null,
   //      temPedido }
-  const falta = x.falta || [], notas = x.notas || [], enviadas = x.nfsEnviadas || [], c = x.cobre || null;
-  const estado = etapasSituacao(x);
+  // reconhece === false (29/10/2026, pedido do João): o Painel NÃO decide sozinho se a nota já foi emitida ou enviada. Ficam só
+  // "Recebido" e "Dados completos"; sem "NF na pasta", sem "NF enviada" e sem o botão Concluir, até ele definir a regra.
+  const livre = x.reconhece === false;
+  const falta = x.falta || [], notas = livre ? [] : x.notas || [], enviadas = livre ? [] : x.nfsEnviadas || [], c = livre ? null : x.cobre || null;
+  const estado = etapasSituacao(livre ? { ...x, notas: [], nfsEnviadas: [], situacaoPedido: "" } : x);
   const nfNum = (enviadas[0]?.nf) || (notas[0]?.nf) || "";
   const dadosOk = !falta.length && !x.semFormulario;
   const passos = [
@@ -30,6 +33,7 @@ function etapasModelo(x) {
       cls: estado === "enviada" ? "feita" : estado === "pronta" || (estado === "completo") ? "atual azul" : "" },
     { nome: "NF enviada", sub: estado === "enviada" ? (enviadas[0]?.quando || "") : estado === "pronta" ? "falta enviar" : "", cls: estado === "enviada" ? "feita" : "" },
   ];
+  if (livre) passos.splice(2);
   if (estado === "enviada" && c && (c.pede_nova || c.cobre === null || (c.avisos_envio || []).length)) passos[3].cls = "feita atencao";
 
   const na = (rot, val) => ({ tipo: "na", rot, val });
@@ -44,7 +48,7 @@ function etapasModelo(x) {
     c?.pede_nova ? at("Atenção", "Pede nova nota" + ((c.motivos || [])[0] ? ": " + c.motivos[0] : "")) : x.divisao ? ok("Divisão", x.divisao) : ok("Divisão", "1 nota só"),
     x.reserva ? ok("Reserva", x.reserva) : x.titular ? ok("Titular da reserva", x.titular) : na("Reserva", "Não informada"),
   ];
-  if (!x.semFormulario) {
+  if (!x.semFormulario && !livre) {
     if (estado === "enviada") {
       itens.push(c && (c.avisos_envio || []).length ? at("NF enviada", `Marcada como enviada, mas não achei o envio da NF ${c.avisos_envio.join(", ")} nos Itens Enviados`)
         : c && c.cobre === null ? at("NF enviada", "Não consegui ler a nota enviada: confira antes de concluir")

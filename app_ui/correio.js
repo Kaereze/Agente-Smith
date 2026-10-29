@@ -7,6 +7,9 @@ let cx = { caixa: "entrada", dados: null, sel: null, hist: {}, textos: {}, hotel
            soNaoLidos: false, fechados: {}, caixaSel: "", soForm: false, pcsAbertos: {}, pcsTodas: {}, aba: "inicio",
            semPastas: false, menu: false };   // igual ao Outlook (15/10/2026): pasta escolhida, faixa e menus
 const CAIXAS = { entrada: "Caixa de entrada", urgencia: "Urgência", enviados: "Itens enviados" };
+// O Painel só mostra a nota como emitida/enviada (e oferece "Concluir") quando houver uma regra concreta, que o João ainda vai definir
+// (29/10/2026). Até lá: sem "NF na pasta", sem "NF enviada", sem Concluir e sem o histórico x notas prontas.
+const RECONHECE_NF = false;
 const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["Nota complementar", "atencao"],
   cobranca: ["Cobrança", "atencao"], dados_tomador: ["Dados do tomador", "info"], pedido_nf: ["Pedido de NF", "ok"] };
 const PASTAS = { entrada: "Recebido", enviado: "Enviado", excluido: "Excluído" };
@@ -622,7 +625,7 @@ function resumoFixoHtml(e, entra = false) {
     tom: r.tom, doc: docF, docRot: docT || "CPF / CNPJ", datas, diarias, valor: campo(/valor.*nota/), pede: r.pede,
     divisao: ped?.dividida || ped?.partes > 1 || (e.quartos?.[0] || e.quartos || 0) >= 2 ? `Dividir em ${partes || 2} notas` : "",
     reserva: campo(/estada|reserva/), titular: r.tit, notas: e.notas || [], nfsEnviadas: enviadas,
-    situacaoPedido: ped ? situacaoDoPedido(ped) : "", cobre: c, temPedido: !!ped });
+    situacaoPedido: ped ? situacaoDoPedido(ped) : "", cobre: c, temPedido: !!ped, reconhece: RECONHECE_NF });
   const onde = [e.hotel || ped?.hotel || "", e.pc ? "PC de " + nomeAgente(e.pc) + (pcOnline(e.pc) ? "" : " (desligado)") : ""].filter(Boolean).join(" · ");
   const podeAbrir = !!r.dados && !ehForm, aberta = podeAbrir && !!cx.fichaAberta;
   return etapasTelaHtml(m, e, { nome, prazo: prazoInfo(ped?.prazo || e.prazo), onde, chave: ped?.chave || "", entra, podeAbrir, aberta,
@@ -795,7 +798,7 @@ function desenharLeituraCorreio() {
   // como o Outlook (Prévia 5, 20/10/2026): cabeçalho, de onde veio, anexos, a ficha e o texto alinhado com o nome
   const ped = pedidoDoEmail(e), dividida = (e.quartos?.[0] || e.quartos || 0) >= 2 || !!(ped && (ped.dividida || ped.partes > 1));
   const anexos = anexosHtml(e.anexos, { id: e.id, id_espelho: noEspelhoDoPainel(e) ? e.id : "", pc: e.pc, entry: e.entry || "" });
-  if (!enviado && !robo && !(cx.cobre && cx.cobre[e.id])) setTimeout(() => carregarCobre(e.id), 0);   // NF enviada x o que ele pede
+  if (RECONHECE_NF && !enviado && !robo && !(cx.cobre && cx.cobre[e.id])) setTimeout(() => carregarCobre(e.id), 0);   // NF enviada x o que ele pede
   const entra = cx.animou !== e.id ? " ol-entra" : "";
   cx.animou = e.id;
   const cab = enviado ? `<div class="ol-cab"><h1>${esc(e.assunto || "(sem assunto)")}</h1>
@@ -814,7 +817,7 @@ function desenharLeituraCorreio() {
     ${anexos ? `<div class="ol-anexos">${anexos}</div>` : ""}
     ${e.alerta_doc ? `<div class="cx-verifica"><b>NF com CPF/CNPJ diferente do pedido</b><div>${esc(e.alerta_doc)}</div>
       <div class="dica">O robô abriu a nota deste hóspede e comparou com o formulário. Confira antes de responder.</div></div>` : ""}
-    ${verificacaoHtml(e)}${enviado ? "" : (cx.cobre?.[e.id]?.historico?.itens?.length && !cx.cobre[e.id].nfs?.length ? historicoNfHtml(cx.cobre[e.id]) : "")}
+    ${verificacaoHtml(e)}${enviado || !RECONHECE_NF ? "" : (cx.cobre?.[e.id]?.historico?.itens?.length && !cx.cobre[e.id].nfs?.length ? historicoNfHtml(cx.cobre[e.id]) : "")}
     <div class="ol-corpo">${robo && ped ? formularioHtml(ped, e) : (() => { const f = formDoTexto(cx.textos[e.id]?.texto); return f ? formularioHtml(f, e) : corpoTexto(e.id); })()}</div></div>`;
 }
 

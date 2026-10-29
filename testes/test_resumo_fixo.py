@@ -65,3 +65,21 @@ def test_itens_marcam_o_que_falta_e_avisos_da_nf_enviada():
     assert any(i["tipo"] == "at" and "não achei o envio da NF 1552" in i["val"] for i in sem["itens"])
     texto = _node("etapasModelo({ hora: '10:00', falta: [], semFormulario: true, temPedido: false })")
     assert texto["itens"] == [] and texto["principal"]["acao"] == "nf" and texto["secundario"] is None
+
+
+def test_sem_reconhecimento_o_painel_nao_diz_que_a_nota_foi_emitida_nem_oferece_concluir():
+    """29/10/2026 (João): até existir uma regra concreta, nada de "NF na pasta", "NF enviada" ou Concluir automáticos."""
+    m = _node(f"etapasModelo({BASE}, reconhece: false, nfsEnviadas: [{{ nf: '1552', quando: '27/10 17:45' }}], notas: [{{ nf: '1602' }}], situacaoPedido: 'enviada', cobre: {{ pede_nova: true, motivos: ['x'] }} }})")
+    assert m["estado"] == "completo" and m["principal"]["texto"] == "Enviar NF" and m["principal"]["acao"] == "nf"
+    assert [p["nome"] for p in m["passos"]] == ["Recebido", "Dados completos"]
+    textos = " ".join(i["rot"] + " " + i["val"] for i in m["itens"])
+    assert "NF enviada" not in textos and "NF nas pastas" not in textos and "Ainda não emitida" not in textos and "Pede nova nota" not in textos
+    falta = _node(f"etapasModelo({BASE}, reconhece: false, falta: ['CPF/CNPJ'], doc: '' }})")
+    assert falta["estado"] == "falta" and falta["principal"]["texto"] == "Pedir o que falta"
+
+
+def test_a_tela_do_email_desliga_o_reconhecimento_da_nf():
+    js = (UI / "correio.js").read_text(encoding="utf-8")
+    assert "const RECONHECE_NF = false;" in js and "reconhece: RECONHECE_NF" in js
+    assert "if (RECONHECE_NF && !enviado && !robo" in js                     # nem busca /api/nf_cobre
+    assert "${enviado || !RECONHECE_NF ? \"\" :" in js                      # nem o histórico x notas prontas
