@@ -91,4 +91,17 @@ Amostrei o servidor e o conferente por 75 s com o **py-spy** (só observa, sem p
 
 **Ainda aberto:** montar a fila por clique (15%); `confirmar_nfs` do conferente (31 s por volta: ler PDFs e Outlook); `faxina.rodar`, que reinterpreta todas as solicitações.
 
+## Resultado medido depois da versão 2026.10.29 (29/10/2026, ~8 min após atualizar; mesmo teste de antes, Painel real, só leitura)
+| O quê | Antes | Depois |
+|---|---|---|
+| Abrir o Painel (menu na tela) | 931 ms | **385 ms** |
+| 1ª abertura de Notas fiscais (tela trocou / dados prontos) | 1.493 ms / 8.831 ms | **52 ms / 0 ms** |
+| Monitoramento (dados prontos) | 2.284 ms | **102 ms** |
+| `/api/atividade` (média, pico) | 4.399 ms, 37.045 ms | **17 ms, 53 ms** |
+| `/api/estado` (média, p95, pico; respostas acima de 1 s) | 1.125 ms, 3.558 ms, 66.566 ms; 27% | **278 ms, 839 ms, 1.367 ms; 6%** |
+| `/api/correio` (média, pico) | 186 ms, 7.193 ms | **140 ms, 458 ms** |
+| Volta de leitura da planilha (média, p95) | 9.055 ms, 23.030 ms | 7.621 ms, 20.684 ms (ainda alta: é espera do Google, não CPU) |
+
+Amostra pequena (26 voltas, 51 respostas de `/api/estado`). **Ainda aberto:** a Caixa de entrada leva ~2,9 s para buscar ~15 textos de e-mail em segundo plano (cada um 160 a 815 ms, ao vivo); a volta de leitura ainda leva ~6,4 s por espera do Google; envio de NF só dá para medir com uso real (`POST /api/envio_nf`).
+
 Voltar: [[00 Início]] · Pendências: [[Ideias e pendências]]
