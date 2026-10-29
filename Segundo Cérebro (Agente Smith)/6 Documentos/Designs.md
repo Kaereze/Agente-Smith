@@ -246,6 +246,9 @@ João pediu 4 opções bem diferentes da primeira. Pasta `Opcoes tela do e-mail/
 
 **Simulação junta (27/10/2026):** [[2026-10-27 Simulacao e-mail novo (opcao C).html|Simulação · chega um e-mail novo]]: barra da esquerda, caixa de entrada, leitura da C e barra de ícones; botões para chegar pedido completo, com dado faltando ou resposta de quem já recebeu a NF, e para a NF aparecer na pasta (a etapa acende e o aviso sobe).
 
+## Botão Recarregar (29/10/2026, animado, aprovado pelo João)
+Prévia do ⟳ da barra: um clique relê a planilha e pede o Enviar/Receber aos PCs com Outlook; K em loop de 5 s; passou de 5 s o K vai para o ícone (pequeno); 10 s no máximo; erro libera na hora. Arquivo: `6 Documentos/Designs/2026-10-29 Botao Recarregar.html` · https://claude.ai/artifact/7pzPz5iCsWUqCAi5JXRT98
+
 ## Só no claude.ai (apresentações e canvas)
 
 Estes são de um tipo de página que só abre dentro do claude.ai (slides e canvas de design), então ficam aqui só com o link.

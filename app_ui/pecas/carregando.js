@@ -7,7 +7,8 @@
   const NS = "http://www.w3.org/2000/svg", MIN_VISIVEL_MS = 1200;
   const DESTRAVA_MS = 90000;   // se a ação não responder em 90 s, a tela deixa de travar (não prende ninguém para sempre)
   const ativos = new Map();   // id -> ação em andamento (a tela fica enquanto houver alguma)
-  let veu, info, k, ciclo, tick, fechar, destrava, abriuEm = 0, vistos = new Set(), fim = null;
+  let veu, info, k, ciclo, tick, fechar, destrava, espera, emStandby = false, abriuEm = 0, vistos = new Set(), fim = null;
+  const VOLTA_MS = 5000;   // 29/10/2026 (João): o K se desenha, segura e se apaga em loop de 5 s
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   function montar() {
@@ -53,10 +54,10 @@
   function desenhar() { k.classList.remove("desenha", "apaga", "ok", "erro", "treme"); void k.getBoundingClientRect(); k.classList.add("desenha"); }
   function ciclar() {
     desenhar(); clearInterval(ciclo);
-    ciclo = setInterval(() => { k.classList.remove("desenha"); k.classList.add("apaga"); setTimeout(desenhar, 520); }, (K.fim + 1.6) * 1000);
+    ciclo = setInterval(() => { k.classList.remove("desenha"); k.classList.add("apaga"); setTimeout(desenhar, 300); }, VOLTA_MS - 300);
   }
   function esconder() {
-    clearInterval(ciclo); clearInterval(tick); clearTimeout(fechar); clearTimeout(destrava);
+    clearInterval(ciclo); clearInterval(tick); clearTimeout(fechar); clearTimeout(destrava); clearTimeout(espera); emStandby = false;
     veu?.classList.remove("on", "trava"); info?.classList.remove("on", "erro"); vistos = new Set(); fim = null;
   }
 
@@ -73,7 +74,7 @@
   }
   function atualizar() {
     const a = [...ativos.values()].pop();
-    if (!a) return;
+    if (!a || emStandby) return;   // em stand-by só o ícone mostra o andamento
     let itens = [], prog = null, eta = null;
     try { itens = a.itens() || []; prog = a.progresso(); eta = a.eta(); } catch (e) { /* a ação pode ter sumido */ }
     info.classList.toggle("on", itens.length > 0);   // sem lista de PCs não há o que contar: fica só o K
@@ -86,13 +87,20 @@
   function abrir(a) {
     montar(); ativos.set(a.id, a);
     if (veu.classList.contains("on") && !fim) { atualizar(); return; }
-    clearTimeout(fechar); fim = null; vistos = new Set(); abriuEm = Date.now();
+    clearTimeout(fechar); clearTimeout(espera); emStandby = false; fim = null; vistos = new Set(); abriuEm = Date.now();
     info.classList.remove("erro"); q(".cg-bar").classList.remove("erro"); q(".cg-bar i").style.width = "0%"; q(".cg-pct").textContent = ""; q(".cg-eta").textContent = "";
     veu.classList.add("on", "trava"); clearTimeout(destrava); destrava = setTimeout(() => veu.classList.remove("trava"), DESTRAVA_MS);
     ciclar(); atualizar(); clearInterval(tick); tick = setInterval(atualizar, 400);
+    // Stand-by (29/10/2026): a ação que pede standbyMs sai da tela grande depois desse tempo e quem segue mostrando o andamento é o
+    // ícone da barra (o K pequeno). A tela destrava; a ação continua. Avisa por "painel:acao-standby".
+    if (a.standbyMs) espera = setTimeout(() => {
+      if (!ativos.has(a.id) || fim) return;
+      emStandby = true; clearInterval(ciclo); veu.classList.remove("on", "trava"); info.classList.remove("on");
+      window.dispatchEvent(new CustomEvent("painel:acao-standby", { detail: { id: a.id } }));
+    }, a.standbyMs);
   }
   function terminar(ativa, ok, texto) {
-    fim = { ok };
+    fim = { ok }; clearTimeout(espera);
     clearInterval(ciclo); clearInterval(tick); clearTimeout(destrava); veu.classList.remove("trava");   // terminou: destrava
     k.classList.remove("desenha", "apaga", "treme"); void k.getBoundingClientRect(); k.classList.add(ok ? "ok" : "erro");
     let temLista = false;
@@ -106,8 +114,22 @@
     } else { q(".cg-bar").hidden = false; q(".cg-meta").hidden = false; }
     clearTimeout(fechar);
     fechar = setTimeout(esconder, ok ? 1500 : 6000);
-    if (ok) setTimeout(() => veu?.classList.remove("on"), 1100);
+    if (ok || emStandby) setTimeout(() => veu?.classList.remove("on"), emStandby ? 0 : 1100);
+    emStandby = false;
   }
+  // O K pequeno do ícone ⟳ (do tamanho dos outros ícones): contorno fraco e uma faixa de tinta que varre da esquerda para a direita, em repetição
+  window.cgMiniK = () => {
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "cg-mini"); svg.setAttribute("viewBox", `-6 -6 ${K.w + 12} ${K.h + 12}`); svg.setAttribute("aria-hidden", "true");
+    const d = K.itens.map(i => i[0]).join(""), cp = document.createElementNS(NS, "clipPath"), r = document.createElementNS(NS, "rect");
+    cp.setAttribute("id", "cg-mini-cp");
+    [["x", -6], ["y", -6], ["width", K.w + 12], ["height", K.h + 12]].forEach(([n, v]) => r.setAttribute(n, v));
+    r.setAttribute("class", "faixa"); cp.appendChild(r);
+    const base = document.createElementNS(NS, "path"), tinta = document.createElementNS(NS, "path");
+    for (const [p, c] of [[base, "base"], [tinta, "tinta"]]) { p.setAttribute("class", c); p.setAttribute("d", d); p.setAttribute("fill-rule", "evenodd"); }
+    tinta.setAttribute("clip-path", "url(#cg-mini-cp)");
+    svg.append(cp, base, tinta); return svg;
+  };
   window.addEventListener("painel:acao-longa", e => abrir(e.detail));
   window.addEventListener("painel:acao-longa-fim", e => {
     const { id, ok, texto } = e.detail, a = ativos.get(id);

@@ -86,7 +86,8 @@ def test_estimativa_vem_da_mediana_dos_ultimos_tempos(tmp_path):
 
 def test_um_pedido_por_vez_e_intervalo_entre_pedidos(tmp_path):
     s, _ = servico(tmp_path, {"PC-J": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0},
-                              "PC-C": {"_dorme": 0.4, "ok": True, "segundos": 1, "saiu": 0, "presos": 0}, "PC-K": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}})
+                              "PC-C": {"_dorme": 0.4, "ok": True, "segundos": 1, "saiu": 0, "presos": 0}, "PC-K": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}},
+                   pcs=PCS[:3])   # os 3 respondem: deu tudo certo, então há um intervalo curto antes do próximo pedido
     a = s.iniciar("João")
     assert s.iniciar("Clara")["id"] == a["id"]                                   # já tem um rodando: devolve o mesmo
     esperar_fim(s, a["id"])
@@ -171,3 +172,61 @@ def test_tela_do_k_entra_na_pagina_e_escuta_os_eventos():
 
 def test_a_faixa_de_baixo_nao_mostra_mais_carregando():
     assert 'classList.remove("oculta", "erro"); $("carregando-txt").textContent = frase' not in HTML
+
+
+# ---------- 29/10/2026: botão ⟳ do topo (um pedido, 10 s no máximo, libera na falha) ----------
+def test_com_falha_ou_atraso_o_botao_libera_na_hora(tmp_path):
+    s, _ = servico(tmp_path, {"PC-J": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}, "PC-C": {"erro": "sem rede"},
+                              "PC-K": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}})            # Bernardo está desligado: também é falha
+    a = s.iniciar("João")
+    v = esperar_fim(s, a["id"])
+    assert v["falhas"] and "erro" not in s.status(a["id"])
+    novo = s.iniciar("João")
+    assert "erro" not in novo and novo["id"] != a["id"]                                              # sem esperar: pode apertar de novo
+
+
+def test_passou_de_10_s_corta_avisa_quem_faltou_e_o_que_fez_ficou_feito(tmp_path):
+    cortes = []
+    s, _ = servico(tmp_path, {"PC-J": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0},
+                              "PC-C": {"_dorme": 0.6, "ok": True, "segundos": 5, "saiu": 0, "presos": 0},
+                              "PC-K": {"ok": True, "segundos": 2, "saiu": 1, "presos": 0}}, pcs=PCS[:3])
+    s.agendar = lambda segundos, fazer: type("T", (), {"start": lambda self: cortes.append((segundos, fazer))})()
+    a = s.iniciar("João")
+    assert cortes and cortes[0][0] == er.LIMITE_TOTAL == 10                                          # o corte está marcado para 10 s
+    for _ in range(100):                                                                           # espera só os rápidos terminarem
+        if s.status(a["id"])["feitos"] >= 2:
+            break
+        time.sleep(0.01)
+    assert not s.status(a["id"])["fim"]
+    cortes[0][1]()                                                                                 # "passaram 10 s"
+    v = s.status(a["id"])
+    estados = {p["agente"]: (p["estado"], p["res"]) for p in v["pcs"]}
+    assert v["fim"] and estados["Clara"] == ("atraso", "não respondeu em 10 s")
+    assert estados["João"][0] == "feito" and estados["Cristian"][0] == "feito"                      # o que fez, fez
+    assert v["falhas"] == ["Clara: não respondeu em 10 s"] and v["limite"] == 10
+    time.sleep(0.9)                                                                                # a resposta atrasada chega: não muda o que a tela já mostrou
+    assert {p["agente"]: p["estado"] for p in s.status(a["id"])["pcs"]}["Clara"] == "atraso"
+    assert json.loads((tmp_path / "t.json").read_text())["PC-C"][-1] == 5.0                        # mas o tempo dela entra no histórico
+
+
+def test_pc_so_painel_nao_entra_no_pedido(tmp_path):
+    pcs = PCS[:3] + [{"pc": "PC-I", "agente": "Ingrid", "online": True, "rede": "10.0.0.9:8766", "papel": "so_painel"}]
+    s, chamadas = servico(tmp_path, {"PC-J": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}, "PC-C": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0},
+                                     "PC-K": {"ok": True, "segundos": 1, "saiu": 0, "presos": 0}, "PC-I": {"erro": "não deveria ser chamado"}}, pcs=pcs)
+    v = esperar_fim(s, s.iniciar("João")["id"])
+    assert "PC-I" not in chamadas and v["total"] == 3 and not v["falhas"]                         # sem Outlook: nem pedido, nem falha
+
+
+def test_tela_um_clique_loop_de_5_s_standby_no_icone_e_10_s_no_maximo():
+    ui = Path(__file__).resolve().parents[1] / "app_ui"
+    js = (ui / "pecas" / "carregando.js").read_text(encoding="utf-8")
+    css = (ui / "pecas" / "carregando.css").read_text(encoding="utf-8")
+    assert "const VOLTA_MS = 5000;" in js and "VOLTA_MS - 300" in js                                # o K se desenha em loop de 5 s
+    assert "painel:acao-standby" in js and "a.standbyMs" in js and "window.cgMiniK" in js           # passou de 5 s: sai de cena, o ícone assume
+    assert ".cg-mini" in css and ".cg-pcs li.atraso" in css
+    assert "standbyMs: 5000" in CORREIO and "LIMITE_PEDIDO_MS = 10500" in CORREIO                   # 10 s no máximo (+ folga da rede)
+    assert 'pintarTopo("rodando")' in CORREIO and 'pintarTopo("")' in CORREIO and "recEmCurso" in CORREIO
+    assert "if (recEmCurso || (cx.er && !cx.er.fim)) return;" in CORREIO                           # um clique só enquanto roda
+    assert 'api("/api/atualizar", {})' in CORREIO                                                   # o mesmo clique relê a planilha
+    assert 'enviarReceberTodas();   // relê a planilha e pede o Enviar/Receber' in HTML or "return enviarReceberTodas();" in HTML
+    assert '"/api/atualizar"]' in HTML and 'id="btn-mini"' in HTML and "#btn-atualizar.em-espera .g-mini" in HTML

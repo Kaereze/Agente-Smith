@@ -18,7 +18,7 @@
 .cg-k.desenha{animation:cg-aquarela calc(var(--fim) + .3s) ease-out forwards}
 .cg-k.apaga .mk path,.cg-k.ok .mk path,.cg-k.erro .mk path{stroke-dashoffset:0;opacity:1}
 .cg-k.apaga .mk-cheio,.cg-k.ok .mk-cheio,.cg-k.erro .mk-cheio{opacity:1}
-.cg-k.apaga .pr{animation:cg-apaga .6s ease forwards}
+.cg-k.apaga .pr{animation:cg-apaga .3s ease forwards}
 .cg-k.ok .pr{fill:var(--cp-azul);transition:fill .3s}
 .cg-k.erro .pr{fill:var(--cp-verm);transition:fill .3s}
 .cg-k.ok{animation:cg-pulo .5s ease}
@@ -50,12 +50,22 @@
 .cg-pcs li.andando .pt{background:var(--cp-azul);animation:cg-pisca 1s ease-in-out infinite}
 .cg-pcs li.feito .pt{background:var(--cp-azul)}
 .cg-pcs li.feito.aviso .pt{background:var(--cp-ambar)}
+.cg-pcs li.atraso{border-color:var(--cp-ambar)}
+.cg-pcs li.atraso .pt{background:var(--cp-ambar)}
+.cg-pcs li.atraso .rs{color:var(--cp-ambar);font-weight:600}
 .cg-pcs li.falha{border-color:var(--cp-verm);background:var(--cp-verm-f)}
 .cg-pcs li.falha .pt{background:var(--cp-verm)}
 .cg-pcs li.falha .rs{color:var(--cp-verm);font-weight:600}
 .cg-pcs li.falha:not(.vi){animation:cg-treme .55s cubic-bezier(.36,.07,.19,.97)}
 .cg-pcs li.feito:not(.vi) .pt{animation:cg-pop .4s ease}
 @keyframes cg-pisca{50%{opacity:.25}}
+/* K pequeno do ícone de recarregar (stand-by) */
+.cg-mini{width:18px;height:18px;overflow:visible;display:block}
+.cg-mini .base{fill:currentColor;opacity:.3}
+.cg-mini .tinta{fill:currentColor}
+.cg-mini .faixa{animation:cg-varre 1.5s ease-in-out infinite}
+@keyframes cg-varre{0%{transform:translateX(-110%)}70%,100%{transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.cg-mini .faixa{animation:none}}
 @keyframes cg-pop{40%{transform:scale(1.9)}}
 .cg-rod{display:flex;justify-content:flex-end;margin-top:10px}
 .cg-rod button{font:500 12.5px var(--f-texto);border:1px solid var(--cp-linha);background:transparent;color:var(--cp-tinta);border-radius:8px;padding:6px 12px;cursor:pointer}

@@ -9,7 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [2026.10.29.6] — 2026-10-29 (aguarda publicação)
+## [2026.10.29.6] — 2026-10-29
+
+### Mudou
+- **Botão ⟳ (recarregar) otimizado** (desenho aprovado pelo João): um clique relê a planilha **e** pede o Enviar/Receber (F9) aos PCs com Outlook, o que
+  também manda o que estiver preso na Caixa de Saída. A tela do K passa a ser um **loop de 5 s**; depois de 5 s ela sai de cena e o ícone ⟳ mostra o
+  **K pequeno** carregando (a tela destrava). O pedido **nunca passa de 10 s**: quem não respondeu vira aviso ("não respondeu em 10 s") e o que
+  deu certo ficou feito. **Erro libera o botão na hora**; clique duplo não pede de novo; o PC só com o Painel (sem Outlook) não entra no pedido.
+  O botão do rodapé e os da tela de E-mails usam a mesma função. 4 testes novos.
 
 ### Removido
 - **Reconhecimento automático de NF emitida/enviada na tela do e-mail** (pedido do João: a regra concreta ainda será definida por ele).

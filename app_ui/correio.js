@@ -536,27 +536,58 @@ function pintarSync() {
       : `${er.feitos} de ${er.total} PCs · uns ${er.eta} s`;
   });
 }
+// Ícone ⟳ da barra (29/10/2026): "rodando" = a tela grande está aberta; "em-espera" = passou de 5 s, o K pequeno segue carregando;
+// "fim-ok" / "fim-aviso" = resultado por uns 2,6 s. Travado só enquanto roda; erro ou fim libera na hora.
+const LIMITE_PEDIDO_MS = 10500;   // o Painel corta o pedido em 10 s (enviar_receber.LIMITE_TOTAL)
+let recEmCurso = false;
+function pintarTopo(estado) {
+  const b = $("btn-atualizar");
+  if (!b) return;
+  b.classList.remove("rodando", "em-espera", "fim-ok", "fim-aviso");
+  if (estado) b.classList.add(estado);
+  b.disabled = estado === "rodando" || estado === "em-espera";
+  b.setAttribute("aria-busy", String(b.disabled));
+}
+// Um clique só: relê a planilha E pede o Enviar/Receber (F9) aos PCs com Outlook. Enquanto roda, outro clique não pede nada de novo;
+// se der erro, libera na hora. O botão do topo e os da tela de E-mails usam esta mesma função.
 async function enviarReceberTodas() {
-  if (cx.er && !cx.er.fim) return;
-  // a tela do K abre na hora (limiteMs: 0), não só depois de 3 s
-  const longa = acaoLonga("Enviar/Receber todas", { limiteMs: 0, progresso: () => cx.er?.progresso ?? 0, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
-  const r = await api("/api/enviar_receber", {});
-  if (r.erro || r.ok === false) { longa.fim(false, r.erro || r.motivo || "Não deu pra pedir agora"); return toast(r.erro || r.motivo || "Não deu pra pedir agora", true); }
-  cx.er = r;
-  pintarSync();
-  for (let i = 0; i < 90 && !cx.er.fim; i++) {   // até ~1 min; o Painel já dá cada PC como falha em 40 s
-    await esperar(700);
-    const s = await api("/api/enviar_receber/status?id=" + encodeURIComponent(cx.er.id));
-    if (s.erro) break;
-    cx.er = s; pintarSync();
+  if (recEmCurso || (cx.er && !cx.er.fim)) return;
+  recEmCurso = true; pintarTopo("rodando");
+  // a tela do K abre na hora (limiteMs: 0); depois de 5 s ela sai de cena e o ícone segue (standbyMs)
+  const longa = acaoLonga("Enviar/Receber todas", { limiteMs: 0, standbyMs: 5000, progresso: () => cx.er?.progresso ?? 0, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
+  const aoStandby = e => { if (e.detail.id === longa.acao.id) pintarTopo("em-espera"); };
+  window.addEventListener("painel:acao-standby", aoStandby);
+  try { api("/api/atualizar", {}).then(() => (typeof carregar === "function" ? carregar() : null)).catch(() => {}); } catch (e) { /* relê a planilha em paralelo */ }
+  try {
+    const r = await api("/api/enviar_receber", {});
+    if (r.erro || r.ok === false) {
+      const motivo = r.erro || r.motivo || "Não deu pra pedir agora";
+      longa.fim(false, motivo); pintarTopo(""); return toast(motivo, true);
+    }
+    cx.er = r;
+    pintarSync();
+    const ate = Date.now() + LIMITE_PEDIDO_MS;
+    while (!cx.er.fim && Date.now() < ate) {   // no máximo 10 s; quem não respondeu vira aviso e o que deu certo ficou feito
+      await esperar(500);
+      const s = await api("/api/enviar_receber/status?id=" + encodeURIComponent(cx.er.id));
+      if (s.erro) break;
+      cx.er = s; pintarSync();
+    }
+    cx.er = { ...cx.er, fim: true };
+    pintarSync();
+    const falhas = cx.er.falhas || [], avisos = cx.er.avisos || [];
+    longa.fim(!falhas.length, falhas.join("; "));
+    pintarTopo(falhas.length || avisos.length ? "fim-aviso" : "fim-ok");
+    setTimeout(() => pintarTopo(""), 2600);
+    toast(falhas.length ? "Terminou com aviso: " + falhas.join("; ") : avisos.length ? "Atualizado. " + avisos.join("; ") : `${cx.er.total} PCs atualizados`, !!falhas.length);
+    carregarCorreio();
+    setTimeout(() => { cx.er = null; pintarSync(); }, 2500);
+  } catch (e) {
+    longa.fim(false, "Não deu pra pedir agora"); pintarTopo(""); toast("Não deu pra pedir agora", true);
+  } finally {
+    window.removeEventListener("painel:acao-standby", aoStandby);
+    recEmCurso = false;
   }
-  cx.er = { ...cx.er, fim: true };
-  pintarSync();
-  const falhas = cx.er.falhas || [], avisos = cx.er.avisos || [];
-  longa.fim(!falhas.length, falhas.join("; "));
-  toast(falhas.length ? "Atualizado, mas: " + falhas.join("; ") : avisos.length ? "Atualizado. " + avisos.join("; ") : `${cx.er.total} PCs atualizados`, !!falhas.length);
-  carregarCorreio();
-  setTimeout(() => { cx.er = null; pintarSync(); }, 2500);
 }
 const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC = { resp: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v5"/>', todos: '<path d="M7 14L2 9l5-5"/><path d="M12 14L7 9l5-5"/><path d="M7 9h9a5 5 0 015 5v5"/>',

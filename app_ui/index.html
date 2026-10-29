@@ -113,6 +113,17 @@ svg.ic{width:17px;height:17px;flex:none}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--tinta-3);flex:none}
 .dot.on{background:var(--ok)} .dot.off{background:var(--erro)} .dot.warn{background:var(--atencao)}
 .btn-ic{padding:7px 9px}
+/* ícone ⟳ de recarregar (29/10/2026): sobrepõe 4 desenhos no mesmo lugar e mostra um de cada vez */
+#btn-atualizar{position:relative;display:inline-grid;place-items:center}
+#btn-atualizar > *{grid-area:1/1;transition:opacity .2s,transform .25s}
+#btn-atualizar .g-mini,#btn-atualizar .g-ok,#btn-atualizar .g-aviso{opacity:0;transform:scale(.7)}
+#btn-atualizar.em-espera .g-sync,#btn-atualizar.fim-ok .g-sync,#btn-atualizar.fim-aviso .g-sync{opacity:0;transform:scale(.7)}
+#btn-atualizar.em-espera .g-mini,#btn-atualizar.fim-ok .g-ok,#btn-atualizar.fim-aviso .g-aviso{opacity:1;transform:none}
+#btn-atualizar.fim-ok{color:var(--azul,#479ef5)}#btn-atualizar.fim-aviso{color:var(--atencao,#f0c46a)}
+#btn-atualizar:disabled{cursor:progress;opacity:1}
+#btn-atualizar.rodando .g-sync{animation:rec-gira 1s linear infinite}
+@keyframes rec-gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#btn-atualizar.rodando .g-sync{animation:none}}
 
 .vista{min-height:0;overflow:hidden}
 .rolagem{height:100%;overflow-y:auto;padding:22px 26px 40px}
@@ -2303,7 +2314,7 @@ html,body{background:#1f1f1f}
         <span class="pill rb-chip" id="robo" role="button" tabindex="0">Robô</span>
         <span class="pill rs-ic" id="sync" title="Central"><span class="dot" id="sync-dot"></span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/></svg><span class="so-leitor" id="sync-txt">conectando…</span></span>
         <span class="pill rs-ic clicavel" id="pcs" data-vista="maquinas" title="PCs da equipe" role="button" tabindex="0"><span class="dot" id="pcs-dot"></span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span class="so-leitor" id="pcs-txt">PCs</span></span>
-        <button class="btn-ic" id="btn-atualizar" title="Reler a planilha agora" aria-label="Reler a planilha agora"><svg class="ic"><use href="#i-sync"/></svg></button>
+        <button class="btn-ic" id="btn-atualizar" title="Recarregar: reler a planilha e pedir o Enviar/Receber aos PCs" aria-label="Recarregar: reler a planilha e pedir o Enviar/Receber aos PCs"><svg class="ic g-sync"><use href="#i-sync"/></svg><span class="g-mini" id="btn-mini"></span><svg class="ic g-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="ic g-aviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v6M12 17v.5"/></svg></button>
         <button class="tema-btn" id="btn-tema" title="Tema: segue o Windows, claro ou escuro"><svg class="ic"><use href="#i-tema"/></svg><span id="tema-nome" class="so-leitor">Sistema</span></button>
         <button class="tema-btn btn-ajuda" id="btn-ajuda" title="Ajuda: o que cada nome significa e os atalhos do teclado (tecla ?)" aria-label="Ajuda">?</button>
       </div>
@@ -2404,7 +2415,7 @@ function carregando(path, liga, erro) {
 // da leitura e os PCs) e aqui devolvemos a cópia guardada (lida de novo, igual a uma resposta nova) com essas partes
 // novas por cima, marcada com j.__igual (não entra no {...j}).
 const COMPARADAS = ["/api/estado", "/api/emails", "/api/correio"], GUARDADAS = {}, REDESENHO_MS = 60000;
-const SEM_TELA_K = ["/api/correio/evento", "/api/tema", "/api/enviar_receber", "/api/outlook/reiniciar"];   // rápidas ou com tela própria
+const SEM_TELA_K = ["/api/correio/evento", "/api/tema", "/api/enviar_receber", "/api/outlook/reiniciar", "/api/atualizar"];   // rápidas ou com tela própria
 async function api(path, corpo){
   carregando(path, true);
   const longa = corpo && !SEM_TELA_K.some(p => path.startsWith(p)) ? acaoLonga((FAZENDO.find(([p]) => path.startsWith(p)) || [])[1] || "Trabalhando…") : null;   // passou de 3 s: tela do K
@@ -3308,7 +3319,11 @@ document.querySelectorAll(".secao").forEach(g => {
 });
 // Barra de baixo em ícones: o texto da Central vira dica ao passar o mouse (27/10/2026)
 new MutationObserver(() => { const s = $("sync-txt").textContent; $("sync").title = s; $("sync").setAttribute("aria-label", s); }).observe($("sync-txt"), { childList: true, characterData: true, subtree: true });
-$("btn-atualizar").addEventListener("click", async () => { $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar(); });
+$("btn-atualizar").addEventListener("click", async () => {
+  if (typeof enviarReceberTodas === "function") return enviarReceberTodas();   // relê a planilha e pede o Enviar/Receber aos PCs (correio.js)
+  $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar();
+});
+if (window.cgMiniK) $("btn-mini").appendChild(window.cgMiniK());
 $("btn-enviar").addEventListener("click", () => rbAbrir());   // a janela do robô substitui a de confirmação (22/10/2026)
 let focoAntesDaJanela = null;
 const focaveis = el => [...el.querySelectorAll('button:not([disabled]),input:not([type="hidden"]):not([hidden]),select,textarea,[contenteditable="true"],a[href],[tabindex="0"]')]

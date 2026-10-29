@@ -18,7 +18,8 @@ logger = configurar_logging("enviar_receber")
 
 MAX_ESPERA_PC = 25         # um PC que passa disso responde "continua" e o Painel segue
 TEMPO_REDE = 40            # espera pela resposta de outro PC
-INTERVALO_MIN = 10         # entre um pedido e o seguinte (evita apertar 3 vezes sem querer)
+INTERVALO_MIN = 3          # entre um pedido que deu tudo certo e o seguinte (evita apertar 2 vezes sem querer); com falha, libera na hora
+LIMITE_TOTAL = 10          # 29/10/2026 (João): o pedido nunca passa de 10 s; quem não respondeu vira aviso e "o que fez, fez"
 ESTIMATIVA_PADRAO = 8.0    # segundos, até ter histórico
 HISTORICO = 8              # últimos tempos guardados por PC
 
@@ -92,6 +93,7 @@ class EnviarReceber:
         self.caminho, self.ao_terminar, self.relogio = Path(caminho_tempos), ao_terminar, relogio
         self.lock = threading.Lock()
         self.job = None
+        self.agendar = lambda segundos, fazer: threading.Timer(segundos, fazer)   # os testes trocam por um relógio deles
 
     # histórico de tempos
     def _tempos(self):
@@ -116,11 +118,14 @@ class EnviarReceber:
             j = self.job
             if j and not j["fim"]:
                 return self._ver(j)
-            if j and self.relogio() - j["terminou"] < INTERVALO_MIN:
-                return {"erro": f"Acabou de rodar. Espere uns {int(INTERVALO_MIN - (self.relogio() - j['terminou'])) + 1} s."}
+            espera = INTERVALO_MIN if j and j.get("tudo_certo") else 0   # deu algum erro ou atraso: o botão libera na hora
+            if j and self.relogio() - j["terminou"] < espera:
+                return {"erro": f"Acabou de rodar. Espere uns {int(espera - (self.relogio() - j['terminou'])) + 1} s."}
             tempos = self._tempos()
             pcs = []
             for p in self.pcs():
+                if p.get("papel") == "so_painel":   # PC só com o Painel (sem Outlook): não tem Enviar/Receber para rodar
+                    continue
                 nome = p.get("agente") or p["pc"]
                 x = {"pc": p["pc"], "agente": nome, "estado": "andando", "segundos": None, "res": "", "aviso": False,
                      "eta": _mediana(tempos.get(p["pc"], [])), "inicio": self.relogio()}
@@ -134,7 +139,21 @@ class EnviarReceber:
             if x["estado"] == "andando":
                 threading.Thread(target=self._um, args=(j, x, next(p for p in self.pcs() if p["pc"] == x["pc"])), daemon=True).start()
         self._conferir_fim(j)
+        if not j["fim"]:
+            corte = self.agendar(LIMITE_TOTAL, lambda: self._cortar(j))
+            if hasattr(corte, "daemon"):
+                corte.daemon = True
+            if hasattr(corte, "start"):
+                corte.start()
         return self._ver(j)
+
+    def _cortar(self, j):
+        """Passou de LIMITE_TOTAL: quem ainda não respondeu vira "atraso" (aviso) e o pedido termina. O que já foi feito, ficou feito."""
+        with self.lock:
+            for x in j["pcs"]:
+                if x["estado"] == "andando":
+                    x.update(estado="atraso", res=f"não respondeu em {LIMITE_TOTAL} s", segundos=float(LIMITE_TOTAL))
+        self._conferir_fim(j)
 
     def _um(self, j, x, p):
         try:
@@ -142,6 +161,10 @@ class EnviarReceber:
         except Exception as e:
             r = {"erro": f"falhou ({str(e)[:60]})"}
         r = r or {"erro": "sem resposta"}
+        if x["estado"] != "andando":   # o pedido já foi cortado em LIMITE_TOTAL: só guarda o tempo, a tela já seguiu em frente
+            if not r.get("erro") and r.get("segundos"):
+                self._guardar(p["pc"], r["segundos"])
+            return
         x["segundos"] = round(self.relogio() - x["inicio"], 1)
         if r.get("erro"):
             x.update(estado="falha", res=str(r["erro"])[:60])
@@ -163,7 +186,8 @@ class EnviarReceber:
         with self.lock:
             if not j["fim"] and all(x["estado"] != "andando" for x in j["pcs"]):
                 j["fim"], j["terminou"] = True, self.relogio()
-                falhas = [f"{x['agente']}: {x['res']}" for x in j["pcs"] if x["estado"] == "falha"]
+                falhas = [f"{x['agente']}: {x['res']}" for x in j["pcs"] if x["estado"] in ("falha", "atraso")]
+                j["tudo_certo"] = not falhas
                 logger.info(f"🔄 Enviar/Receber todas (pedido por {j['quem'] or '?'}): "
                             f"{len(j['pcs']) - len(falhas)} de {len(j['pcs'])} PCs" + (f" — {'; '.join(falhas)}" if falhas else ""))
 
@@ -183,7 +207,8 @@ class EnviarReceber:
         return {"id": j["id"], "fim": j["fim"], "progresso": round(1.0 if j["fim"] else progresso, 3),
                 "eta": 0 if j["fim"] else int(eta_total + .999), "decorrido": round(agora - j["inicio"], 1), "pcs": pcs,
                 "feitos": sum(1 for p in pcs if p["estado"] != "andando"), "total": len(pcs),
-                "falhas": [f"{p['agente']}: {p['res']}" for p in pcs if p["estado"] == "falha"],
+                "falhas": [f"{p['agente']}: {p['res']}" for p in pcs if p["estado"] in ("falha", "atraso")],
+                "limite": LIMITE_TOTAL,
                 "avisos": [f"{p['agente']}: {p['res']}" for p in pcs if p["aviso"]]}
 
     def status(self, id_):
