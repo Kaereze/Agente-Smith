@@ -63,4 +63,13 @@ Auditoria estática (ruff): 219 `except` largos (escondem erro), 56 funções co
 5. Leitura da Central incremental (só o que mudou) e medir dentro de `atualizar` (ler × interpretar).
 6. "Sem mudança" (ETag) nas respostas de 225 KB; texto de e-mail em lote.
 
+## Feito em 29/10/2026 (itens 1 a 3 da ordem sugerida)
+| Item | Mudança | Resultado |
+|---|---|---|
+| 1. Mapa | linha apagada escondida de verdade; bloco apagado leve; pontinhos e rótulos somem enquanto move | **12 → 35 quadros/s** ao arrastar (mesmo teste, navegador sem GPU) |
+| 2. Monitoramento | `/api/atividade` só da memória; o laço lê o Google (`atualizar_atividade`) | clique deixa de esperar o Google (antes média 4,7 s, pico 37 s); conferir com `/api/desempenho` depois de algumas horas |
+| 3. Envio | responde na hora; gravar o pedido no Google e enviar seguem por trás; falha de gravação vira "falhou" e nada sai | tempo do clique medido depois do uso real (`POST /api/envio_nf` no medidor) |
+
+**Ainda faltam** (ordem sugerida): primeira tela instantânea (último estado no navegador), leitura incremental da Central, "sem mudança" nas respostas de 225 KB e texto de e-mail em lote. Outras ações que ainda esperam o Google no clique: marcar lido, excluir, urgência, mover para NF enviada, concluir conversa e a Gerência (`relatorio_semana`).
+
 Voltar: [[00 Início]] · Pendências: [[Ideias e pendências]]

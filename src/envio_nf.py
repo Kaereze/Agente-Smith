@@ -888,6 +888,9 @@ class ServicoEnvio:
         self.caixas_de_hotel = lambda: {}              # o Painel troca: {caixa: hotel} do cadastro (e-mail do robô)
         self.reconferidos = {}                         # id -> quando conferiu de novo um e-mail do robô sem confirmação
         self.lock = threading.Lock()
+        # Painel: função que roda um trabalho por trás (thread). Com ela, o clique em Enviar responde na hora e a gravação do
+        # pedido no Google e o envio seguem por trás (29/10/2026). Sem ela (testes), tudo acontece na chamada, como sempre foi.
+        self.segundo_plano = None
 
     # chamado a cada volta do laço do Painel, com as abas já lidas no batch da Central
     def tick(self, lidas, agente):
@@ -962,14 +965,42 @@ class ServicoEnvio:
             else:
                 partes += partes_do_anexo(f"{id_envio}#{i}", a["nome"], a["conteudo"])
                 anexos.append({"tipo": "planilha", "nome": a["nome"]})
-        if partes:
-            self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
         pedido = montar_pedido(sol, para, cc, assunto, conta_de, anexos,
                                mensagem if (responder or livre) else (mensagem or mensagem_padrao(self.cfg)), selo, responder, acao)
         pedido["pc_destino"] = destino
         if ligacao:
             pedido["ligacao"] = True   # o PC dono põe a categoria LIGAÇÃO no e-mail ao enviar
-        self.backend.anexar_linhas(self.central, ABA_FILA, [evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)])
+        linha_pedido = evento(self.relogio(), id_envio, PEDIDO, self.pc, quem, pedido)
+
+        def gravar():
+            if partes:
+                self.backend.anexar_linhas(self.central, ABA_ANEXOS, partes)
+            self.backend.anexar_linhas(self.central, ABA_FILA, [linha_pedido])
+
+        if getattr(self, "segundo_plano", None):
+            # Responde ao clique já (29/10/2026): as idas e voltas ao Google e o envio seguem por trás. A tela acompanha pelo estado
+            # do envio; se o pedido não gravar, o estado vira "falhou" e nada sai (como antes, quando o erro subia na chamada).
+            if destino == self.pc:
+                self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
+                                       "assumido_por": "", "resultado": None, "detalhe": "", "pc": ""}
+
+            def por_tras():
+                try:
+                    gravar()
+                except Exception as e:
+                    logger.warning(f"⚠️ {id_envio}: não consegui gravar o pedido na planilha ({str(e)[:100]}) — nada foi enviado")
+                    with self.lock:
+                        self.locais[id_envio] = {"estado": "falhou", "pc": self.pc, "contas_locais": self.contas,
+                                                 "detalhe": "Não consegui gravar o pedido na planilha. Aperte Enviar de novo."}
+                    return
+                if destino == self.pc:
+                    self._executar(id_envio, self.fila[id_envio])
+                elif self.avisar_dono:
+                    self._acordar_dono(destino, id_envio)
+
+            self.segundo_plano(por_tras)
+            return {"ok": True, "id": id_envio, "destino": destino, "aviso": motivo}
+        gravar()
         if destino == self.pc:
             self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
                                    "assumido_por": "", "resultado": None, "detalhe": "", "pc": ""}

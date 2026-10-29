@@ -174,6 +174,7 @@ class Estado:
     def __init__(self, backend, cfg, relogio=time.monotonic, servico_envio=None):
         self.backend, self.cfg, self.relogio = backend, cfg, relogio
         self.envio_nf = servico_envio or envio_nf.ServicoEnvio(backend, cfg, socket.gethostname(), self.registrar_nf_enviada)
+        self.envio_nf.segundo_plano = lambda trabalho: threading.Thread(target=trabalho, daemon=True, name="envio_nf").start()   # noqa: E731
         self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
@@ -692,11 +693,16 @@ class Estado:
     def pcs(self):
         return rede_pcs.ler_pcs(self.envio_nf.pcs_linhas)
 
+    def atualizar_atividade(self, forcar=False):
+        """Lê a aba Atividade_Robo do Google e guarda na memória. Chamado pelo laço do Painel, NUNCA pelo clique da tela."""
+        _, lido = self.atividade_cache
+        if not forcar and time.monotonic() - lido < ATIVIDADE_CACHE_SEGUNDOS:
+            return
+        linhas = self.backend.ler_abas(self.central, [atividade.ABA])[0].get(atividade.ABA, [])
+        self.atividade_cache = (linhas, time.monotonic())
+
     def atividade_resumo(self):
-        linhas, lido = self.atividade_cache
-        if time.monotonic() - lido > ATIVIDADE_CACHE_SEGUNDOS:
-            linhas = self.backend.ler_abas(self.central, [atividade.ABA])[0].get(atividade.ABA, [])
-            self.atividade_cache = (linhas, time.monotonic())
+        linhas, _ = self.atividade_cache   # só memória: o clique nunca espera o Google (29/10/2026); quem lê é o laço
         return {"pcs": self.pcs(), "eventos": atividade.ler(linhas, 400), "este_pc": socket.gethostname(),
                 "versao": self.versao, "atualizacao": self.atualizacao}
 
@@ -2519,6 +2525,11 @@ def main():
                     estado.atualizar_fi()
                 with medir("painel.canceladas", logger=logger):
                     estado.atualizar_canceladas()
+                with medir("painel.atividade", logger=logger):
+                    try:
+                        estado.atualizar_atividade()
+                    except Exception as e:   # a tela de Monitoramento segue com o último valor guardado
+                        logger.warning(f"⚠️ Não consegui ler a atividade da equipe ({str(e)[:100]})")
                 with medir("painel.salvar_cache", logger=logger):
                     estado.salvar_cache()
             estado.versao_tela += 1

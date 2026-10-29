@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29] — 2026-10-29
+
+### Mudou (fluidez: "o clique responde na hora")
+
+- **Enviar NF/e-mail responde na hora:** o servidor não espera mais as idas e voltas ao Google antes de responder ao clique. A gravação
+  do pedido na Central e o envio seguem por trás (`ServicoEnvio.segundo_plano`); a tela acompanha pelo estado do envio. Se o pedido não
+  gravar, nada é enviado e o estado vira "falhou: aperte Enviar de novo". Sem o segundo plano (testes), tudo segue como sempre foi.
+- **Monitoramento sem Google no clique:** `/api/atividade` agora só lê da memória; quem lê a aba Atividade_Robo é o laço do Painel
+  (`atualizar_atividade`, a cada 20 s). Antes, o clique esperava o Google (média 4,7 s, pico 37 s).
+- **Mapa de Agentes do Smith mais leve:** linha apagada deixa de ser desenhada (antes só esmaecia e eram ~450 por quadro), bloco apagado
+  fica leve, e pontinhos e rótulos somem enquanto o mapa se move. Medido igual antes e depois: de 12 para 35 quadros por segundo ao
+  arrastar (navegador sem placa de vídeo; no PC deve ser melhor).
+- 9 testes novos (`testes/test_fluidez.py`).
+
 ## [2026.10.28.3] — 2026-10-28
 
 ### Adicionado
