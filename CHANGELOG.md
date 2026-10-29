@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.4] — 2026-10-29
+
+### Adicionado
+- `Bat/conferir_contagem.bat`: duplo clique para rodar a conferência da Caixa de Entrada (Outlook x Painel) em qualquer PC. Só lê.
+
 ## [2026.10.29.3] — 2026-10-29
 
 ### Corrigido
