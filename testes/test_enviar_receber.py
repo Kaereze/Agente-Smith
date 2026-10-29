@@ -230,3 +230,12 @@ def test_tela_um_clique_loop_de_5_s_standby_no_icone_e_10_s_no_maximo():
     assert 'api("/api/atualizar", {})' in CORREIO                                                   # o mesmo clique relê a planilha
     assert 'enviarReceberTodas();   // relê a planilha e pede o Enviar/Receber' in HTML or "return enviarReceberTodas();" in HTML
     assert '"/api/atualizar"]' in HTML and 'id="btn-mini"' in HTML and "#btn-atualizar.em-espera .g-mini" in HTML
+
+
+def test_toda_acao_sai_da_tela_grande_em_5_s_e_nao_fica_em_loop_infinito():
+    """29/10/2026 (João): o POST /api/atualizar levou 79 s e a tela do K ficou em loop. Agora nenhuma ação segura a tela além do stand-by."""
+    js = (UI / "pecas" / "carregando.js").read_text(encoding="utf-8")
+    assert "const STANDBY_PADRAO_MS = 5000;" in js and "a.standbyMs ?? STANDBY_PADRAO_MS" in js        # vale para qualquer ação, não só o recarregar
+    assert "if (a.standbyMs) espera" not in js                                                       # o stand-by não depende de a ação pedir
+    assert 'painel:espera' in js and "emEspera.delete(id)" in js and "emEspera.clear()" in js          # o ícone sabe quando ainda há ação em andamento
+    assert 'window.addEventListener("painel:espera"' in HTML and 'b.classList.toggle("em-espera", e.detail.n > 0)' in HTML

@@ -9,6 +9,12 @@
   const ativos = new Map();   // id -> ação em andamento (a tela fica enquanto houver alguma)
   let veu, info, k, ciclo, tick, fechar, destrava, espera, emStandby = false, abriuEm = 0, vistos = new Set(), fim = null;
   const VOLTA_MS = 5000;   // 29/10/2026 (João): o K se desenha, segura e se apaga em loop de 5 s
+  // Limite da tela (29/10/2026, João: "ela está em loop infinito"): TODA ação sai da tela grande depois de STANDBY_PADRAO_MS, mesmo que o
+  // servidor ainda esteja respondendo (ex.: o Painel levou 79 s para reler a planilha). A tela destrava; o ícone ⟳ do rodapé mostra o K
+  // pequeno enquanto houver ação em stand-by. Uma ação pode pedir outro tempo com standbyMs.
+  const STANDBY_PADRAO_MS = 5000;
+  const emEspera = new Set();   // ações em stand-by (a tela grande já saiu, a ação segue)
+  const avisarEspera = () => window.dispatchEvent(new CustomEvent("painel:espera", { detail: { n: emEspera.size } }));
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   function montar() {
@@ -59,6 +65,7 @@
   function esconder() {
     clearInterval(ciclo); clearInterval(tick); clearTimeout(fechar); clearTimeout(destrava); clearTimeout(espera); emStandby = false;
     veu?.classList.remove("on", "trava"); info?.classList.remove("on", "erro"); vistos = new Set(); fim = null;
+    if (emEspera.size) { emEspera.clear(); avisarEspera(); }
   }
 
   function lista(itens) {
@@ -93,11 +100,12 @@
     ciclar(); atualizar(); clearInterval(tick); tick = setInterval(atualizar, 400);
     // Stand-by (29/10/2026): a ação que pede standbyMs sai da tela grande depois desse tempo e quem segue mostrando o andamento é o
     // ícone da barra (o K pequeno). A tela destrava; a ação continua. Avisa por "painel:acao-standby".
-    if (a.standbyMs) espera = setTimeout(() => {
+    espera = setTimeout(() => {
       if (!ativos.has(a.id) || fim) return;
       emStandby = true; clearInterval(ciclo); veu.classList.remove("on", "trava"); info.classList.remove("on");
+      emEspera.add(a.id); avisarEspera();
       window.dispatchEvent(new CustomEvent("painel:acao-standby", { detail: { id: a.id } }));
-    }, a.standbyMs);
+    }, a.standbyMs ?? STANDBY_PADRAO_MS);
   }
   function terminar(ativa, ok, texto) {
     fim = { ok }; clearTimeout(espera);
@@ -134,6 +142,7 @@
   window.addEventListener("painel:acao-longa-fim", e => {
     const { id, ok, texto } = e.detail, a = ativos.get(id);
     ativos.delete(id);
+    if (emEspera.delete(id)) avisarEspera();
     if (ativos.size || !veu) return;
     const resto = Math.max(0, MIN_VISIVEL_MS - (Date.now() - abriuEm));
     setTimeout(() => terminar(a, ok, texto), resto);

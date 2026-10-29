@@ -3324,6 +3324,12 @@ $("btn-atualizar").addEventListener("click", async () => {
   $("sync-txt").textContent = "atualizando…"; await api("/api/atualizar", {}); carregar();
 });
 if (window.cgMiniK) $("btn-mini").appendChild(window.cgMiniK());
+// Qualquer ação que passou de 5 s saiu da tela grande: o ⟳ do rodapé mostra o K pequeno enquanto ela segue (carregando.js)
+window.addEventListener("painel:espera", e => {
+  const b = $("btn-atualizar");
+  if (!b || b.classList.contains("rodando") || b.classList.contains("fim-ok") || b.classList.contains("fim-aviso")) return;
+  b.classList.toggle("em-espera", e.detail.n > 0);
+});
 $("btn-enviar").addEventListener("click", () => rbAbrir());   // a janela do robô substitui a de confirmação (22/10/2026)
 let focoAntesDaJanela = null;
 const focaveis = el => [...el.querySelectorAll('button:not([disabled]),input:not([type="hidden"]):not([hidden]),select,textarea,[contenteditable="true"],a[href],[tabindex="0"]')]

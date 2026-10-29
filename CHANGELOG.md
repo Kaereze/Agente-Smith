@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.7] — 2026-10-29 (aguarda publicação)
+
+### Corrigido
+- **Tela do K em loop sem fim.** O ⟳ antigo esperava o POST `/api/atualizar` (levou 79 s no PC do João) com a tela grande aberta e travada. Agora
+  **toda** ação sai da tela grande depois de 5 s (stand-by), a tela destrava e o ícone ⟳ do rodapé mostra o K pequeno enquanto a ação continuar.
+  Antes só o botão de recarregar tinha esse limite. 1 teste novo.
+
 ## [2026.10.29.6] — 2026-10-29
 
 ### Mudou
