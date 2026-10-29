@@ -54,3 +54,10 @@ def test_o_servidor_nao_vigia_nem_indexa_outlook_no_pc_so_painel():
     assert 'outlook = "sem Outlook" if sem_outlook(self.cfg)' in fonte           # os outros PCs não o veem como "Outlook fechado"
     assert "estado_outlook = None if sem_outlook(self.cfg)" in fonte             # nem aparece "robô parou de ler e-mails" na atividade
     assert "self.envio_nf.ler_contas = lambda: []" in fonte
+
+
+def test_tela_pc_so_painel_fica_fora_do_filtro_de_agentes_e_abre_em_todos():
+    html = (RAIZ / "app_ui" / "index.html").read_text(encoding="utf-8")
+    assert '(st.pcs || []).filter(p => p.papel !== "so_painel").map(p => p.agente)' in html
+    # sem ela na lista, escopoAtual() devolve "todos" para quem não tem hotel (antes: abria em "Ingrid" e tudo ficava vazio)
+    assert 'agentesEquipe().includes(e) ? e : "todos"' in html

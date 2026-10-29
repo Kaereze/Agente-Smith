@@ -2768,7 +2768,7 @@ const tagNotaUnica = s => s.nota_unica ? `<span class="tag nf-ok" title="${esc(s
 let escopo = "";
 try { escopo = localStorage.getItem("painel.agenteFiltro") || ""; } catch (e) {}
 const ORDEM_AGENTES = ["João", "Clara", "Cristian", "Bernardo"];
-const agentesEquipe = () => { const da = (st.pcs || []).map(p => p.agente).filter(Boolean);
+const agentesEquipe = () => { const da = (st.pcs || []).filter(p => p.papel !== "so_painel").map(p => p.agente).filter(Boolean);   // PC só com o Painel (Ingrid) não tem caixa: fora do filtro, e ela abre em "Todos"
   return [...ORDEM_AGENTES.filter(a => da.includes(a)), ...da.filter(a => !ORDEM_AGENTES.includes(a)).sort()]; };
 const escopoAtual = () => { const e = escopo || st.agente || "todos"; return e === "todos" || agentesEquipe().includes(e) ? e : "todos"; };
 const doAgente = (agentes, alvo = escopoAtual()) => alvo === "todos" || agentes.includes(alvo);

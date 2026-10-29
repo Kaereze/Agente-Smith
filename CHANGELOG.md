@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.10.29.3] — 2026-10-29 (aguarda publicação)
+
+### Corrigido
+- **PC só com o Painel via tudo vazio.** O Painel abre filtrado no operador do PC; a Ingrid, sem caixas, aparecia como um agente a mais
+  com zero hotéis e zero e-mails, e a tela abria em "Ingrid". Agora PC `so_painel` fica fora do filtro de agentes (dela e dos outros PCs)
+  e a tela abre em "Todos os agentes". 1 teste novo.
+
 ## [2026.10.29.2] — 2026-10-29 (PC novo só com o Painel)
 
 ### Adicionado
