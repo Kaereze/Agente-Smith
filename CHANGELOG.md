@@ -9,7 +9,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Não publicada] — PC novo só com o Painel
+## [2026.10.29.2] — 2026-10-29 (PC novo só com o Painel)
 
 ### Adicionado
 - **Instalador do PC "só Painel"** (sem Outlook e sem caixas de hotel; primeiro uso: Ingrid): `INSTALAR_PC_SO_PAINEL.bat` +
