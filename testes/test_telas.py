@@ -129,8 +129,9 @@ def test_e_mail_aberto_mostra_a_ficha_de_etapas_e_nao_as_caixas_antigas(painel_d
         largura = topo.evaluate("el => el.getBoundingClientRect().width")
         pai = topo.evaluate("el => el.parentElement.getBoundingClientRect().width")
         assert largura > pai * 0.9, f"ficha {nome} espremida: {largura:.0f} px de {pai:.0f}"
-        assert pagina.locator(".c-etapas .c-et").count() == 4 and pagina.locator(".c-lista .c-item").count() == 8
-        assert pagina.locator(".c-top .c-bt.p").inner_text() == "Concluir"   # NF já enviada: o botão principal é Concluir
+        # desde 29/10 (João) o reconhecimento automático de NF está desligado: só 2 etapas e nada de Concluir, mesmo com a NF "achada"
+        assert pagina.locator(".c-etapas .c-et").count() == 2 and pagina.locator(".c-lista .c-item").count() >= 6
+        assert "Concluir" not in pagina.locator(".c-top").inner_text()
     # as caixas e o histórico antigos saíram da leitura
     for antigo in (".cx-cobre", ".cx-aviso-nf", ".cx-hist", ".ol-resumo"):
         assert pagina.locator(antigo).count() == 0, f"sobrou {antigo}"

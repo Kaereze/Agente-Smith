@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "52d97310e25ebd0c",
+    "type": "split",
+    "children": [
+      {
+        "id": "c7cc17228377f44b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "86340677997c9ff5",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Visualização em gráfico"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "9aede18ea149825d",
+    "type": "split",
+    "children": [
+      {
+        "id": "b73f4b577b8942b0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1d52e21ac520dfbf",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "586c968416dedd25",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "f4bb2d31bf2b827e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "724653b5acf9cfc3",
+    "type": "split",
+    "children": [
+      {
+        "id": "1a5d6623ce5325fd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1f6c1e1a392ce954",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos"
+            }
+          },
+          {
+            "id": "2f3c9df5b29f88ee",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída"
+            }
+          },
+          {
+            "id": "aa46e0950ca68f3c",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "ff9d8728b2789bb7",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas as propriedades"
+            }
+          },
+          {
+            "id": "0c3e68d6bdd724c3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "graph:Abrir visualização em gráfico": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Criar nova base": false
+    }
+  },
+  "active": "86340677997c9ff5",
+  "lastOpenFiles": [
+    "5 Diário/2026-10-12.md.tmp.18664.d7324c3c9f10",
+    "00 Início.md.tmp.18664.bbb2af8f04ed",
+    "00 Início.md.tmp.18664.d615a02aa716",
+    "00 Início.md.tmp.18664.5a944f03a0cc",
+    "3 Decisões e ideias/Perguntas e respostas.md",
+    "3 Decisões e ideias/Plano até dezembro.md",
+    "3 Decisões e ideias/Dicionário de dados.md",
+    "1 Regras/Regras de design e dados.md",
+    "2 Projeto/Visão e propósito.md",
+    "00 Início.md",
+    "4 Mapa do projeto/Código/sincronizar.md",
+    "4 Mapa do projeto/Código/app_servidor.md",
+    "Decisões.md.tmp.18664.df6752c73be7",
+    "Como entregar.md.tmp.18664.3e170738255f",
+    "Como usar este cérebro.md.tmp.18664.44df7773f6dc",
+    "00 Início.md.tmp.18664.b8874b61e9eb",
+    "Painel em casa.md",
+    "Mapa do projeto/Onde mexer.md",
+    "Mapa do projeto/00 Mapa do projeto.md",
+    "Mapa do projeto/Documentos/README.md",
+    "Mapa do projeto/Documentos/INSTALACAO_E_PENDENCIAS.md",
+    "Mapa do projeto/Documentos",
+    "Mapa do projeto/Atalhos e automações.md",
+    "Mapa do projeto/Testes.md",
+    "Mapa do projeto/Pasta estado e logs.md",
+    "Mapa do projeto/Configuração.md",
+    "Mapa do projeto/Abas da Planilha Central.md",
+    "Mapa do projeto/Rotas do Painel.md",
+    "Mapa do projeto/Telas/painel.js.md",
+    "Mapa do projeto/Telas/index.html.md",
+    "Mapa do projeto/Telas/graficos.js.md",
+    "Mapa do projeto/Telas/correio.js.md",
+    "Mapa do projeto/Telas",
+    "Mapa do projeto/Código/Automacoes - gerar_mapa_cerebro.py.md",
+    "Mapa do projeto/Código/Automacoes - gerar_exemplo_email.py.md",
+    "Mapa do projeto/Código"
+  ]
+}
