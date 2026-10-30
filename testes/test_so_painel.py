@@ -49,7 +49,7 @@ def test_pesquisa_pela_rede_nao_mexe_no_outlook_de_quem_nao_tem():
 
 
 def test_o_servidor_nao_vigia_nem_indexa_outlook_no_pc_so_painel():
-    fonte = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert "if not sem_outlook(cfg):" in fonte and "estado.vigiar_caixa_de_saida()" in fonte
     assert 'outlook = "sem Outlook" if sem_outlook(self.cfg)' in fonte           # os outros PCs não o veem como "Outlook fechado"
     assert "estado_outlook = None if sem_outlook(self.cfg)" in fonte             # nem aparece "robô parou de ler e-mails" na atividade

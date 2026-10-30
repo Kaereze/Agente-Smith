@@ -84,7 +84,7 @@ def test_agente_sem_sinal_real_nao_aparece_na_resposta():
 
 
 def test_rota_so_do_administrador_e_arquivo_fora_da_lista_publica():
-    fonte = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     trecho = fonte[fonte.index('if url.path in ("/agentes/mapa", "/api/agentes", "/api/desempenho")'):]
     trecho = trecho[:trecho.index("estatico = ESTATICOS.get(url.path)")]
     assert "e_admin_aqui(estado.cfg, nome_do_agente(), liberado())" in trecho and "403" in trecho

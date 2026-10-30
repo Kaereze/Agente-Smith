@@ -33,7 +33,6 @@ import app_dados as dados
 import atividade
 import atualizador
 import avisos_windows
-import busca_outlook
 import canceladas
 import hospedes
 import indice_emails
@@ -43,7 +42,6 @@ import envio_nf
 import enviar_receber
 import nf_achadas
 import espelho_emails
-import envio_pc_dono
 import rede_local
 import rede_pcs
 import contagem_painel
@@ -56,6 +54,7 @@ import desempenho
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
 from app_envio import Envio
+from estado_rede import RedeMixin, VERIFICAR_ATUALIZACAO_MINUTOS, TELAS, SEM_REDE_SEGUNDOS, JANELA_ABERTA_SEGUNDOS, ATIVIDADE_CACHE_SEGUNDOS   # noqa: F401
 from estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_SEGUNDOS, _kw_ligacao   # noqa: F401  (nomes usados por testes e rotas)
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
 import limpeza
@@ -97,14 +96,10 @@ def _pagina_inteira(tentativas=6):
             return html
         time.sleep(0.25)
     return html
-JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
 CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
 CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
 CANCELADAS_MINUTOS = 10
-VERIFICAR_ATUALIZACAO_MINUTOS = 15
-SEM_REDE_SEGUNDOS = 300      # PC que não respondeu pela rede: 5 min usando a cópia, sem esperar
 CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
-ATIVIDADE_CACHE_SEGUNDOS = 20
 SALVAR_CACHE_SEGUNDOS = 120
 VERSAO_CACHE = 1
 VOLATEIS_TELA = {"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
@@ -115,7 +110,6 @@ DROPBOX_OLHAR_SEGUNDOS = 10   # pasta de notas do Dropbox: mudou = NF nova, refa
 HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
 JANELA_PAINEL_DIAS = 120
-TELAS = {"visao": "Visão geral", "fila": "Notas fiscais", "correio": "E-mails", "log": "Log", "maquinas": "Máquinas"}   # pra Máquinas mostrar onde cada um está
 RESOLVIDA_HORAS = 24               # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 REINICIO_PENDENTE_MIN = 5          # código novo na pasta e o Painel ainda no velho por mais que isso: pede o reinício de novo
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
@@ -165,11 +159,14 @@ def nome_do_agente():
     return os.environ.get("USERNAME", "?")
 
 
-class Estado(CorreioMixin):
+class Estado(CorreioMixin, RedeMixin):
+    """Cache em memória da Central. Uma leitura (batch) por atualização, pra caber na cota da API."""
+
+    def _caminho_versao(self):
+        return CAMINHO_VERSAO
+
     def _agente(self):   # o correio pergunta aqui, sem importar este módulo (que roda como __main__)
         return nome_do_agente()
-
-    """Cache em memória da Central. Uma leitura (batch) por atualização, pra caber na cota da API."""
 
     def __init__(self, backend, cfg, relogio=time.monotonic, servico_envio=None):
         self.backend, self.cfg, self.relogio = backend, cfg, relogio
@@ -365,22 +362,6 @@ class Estado(CorreioMixin):
         elif novas:
             dados.dobrar_eventos([dados.CABECALHO_TRATAMENTO] + novas, self.estados)
         self.trat_linhas = trat
-
-    # ---------- rede de PCs ----------
-    def _extras_pc(self):
-        """Colunas E-J da linha deste PC em PCs_Painel."""
-        outlook = "sem Outlook" if sem_outlook(self.cfg) else (self.outlook or "?")
-        leituras, escritas = cota_google.consumo_deste_pc()
-        # "'" na frente: a planilha lê "09119e6" como número (9.12E+09) e estragaria a versão
-        uso = getattr(self, "uso_ref", None)
-        aberta = bool(uso and time.monotonic() - uso[0] < JANELA_ABERTA_SEGUNDOS)
-        tela = TELAS.get(getattr(self, "vista_atual", ""), "")
-        return [outlook, "'" + self.versao, self.cfg.get("papel", ""), rede_pcs.ultima_conferencia(),
-                rede_local.endereco_deste_pc() if self.rede_ligada else "", f"'{leituras}/{escritas}",
-                f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
-                saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia(), self._planilhas_sem_cadastro(),
-                             self._ultimo_robo(), getattr(self, "ultimo_recebido", ""), getattr(self, "motivo_outlook", ""),
-                             getattr(self, "caixas_senha", []))]
 
     def _planilhas_sem_cadastro(self):
         if not e_principal(self.cfg):
@@ -580,62 +561,6 @@ class Estado(CorreioMixin):
         return [atividade.linha(atividade.FALHA, detalhe=f"código {na_pasta} baixado, mas o PC continuava no {self.versao}: {como}",
                                 agente=agente)]
 
-    def _rede(self, lidas, solicitacoes):
-        if getattr(self, "so_ver", False):   # modo casa: só olha; não executa comando nem se registra como PC
-            return
-        pc, agente = socket.gethostname(), nome_do_agente()
-        linhas = []
-        try:
-            linhas += self._conferir_reinicio(agente)
-        except Exception:
-            logger.debug("conferir reinício", exc_info=True)
-        try:
-            linhas += self._conferencia_diaria(agente)
-        except Exception:
-            logger.debug("conferência diária", exc_info=True)
-        if not self.versao_registrada:   # 1ª volta depois de ligar: registra se a versão mudou
-            try:
-                anterior = CAMINHO_VERSAO.read_text(encoding="utf-8").strip()
-            except OSError:
-                anterior = ""
-            if anterior and anterior != self.versao:
-                linhas.append(atividade.linha(atividade.ATUALIZADO, detalhe=f"de {anterior} para {self.versao}", agente=agente))
-            CAMINHO_VERSAO.write_text(self.versao, encoding="utf-8")
-            self.versao_registrada = True
-        estado_outlook = None if sem_outlook(self.cfg) else rede_pcs.outlook_aberto()   # "aberto" | "sem janela" | "fechado" | None
-        if estado_outlook is not None and estado_outlook != self.outlook:
-            aberto = estado_outlook == "aberto"
-            if self.outlook is not None or not aberto:
-                tipo = atividade.OUTLOOK_ABERTO if aberto else atividade.OUTLOOK_FECHADO
-                detalhe = ("o robô deste PC voltou a ler os e-mails das caixas daqui" if aberto else
-                           "Outlook aberto sem janela: não baixa e-mail (o guardião vai abrir)" if estado_outlook == "sem janela"
-                           else "o robô deste PC parou de ler os e-mails das caixas daqui")
-                linhas.append(atividade.linha(tipo, detalhe=detalhe, agente=agente))
-            self.outlook = estado_outlook
-        # Pedido novo na planilha: só o principal registra (os outros veriam o mesmo e repetiriam)
-        chaves = {s["chave"]: s for s in solicitacoes}
-        if self.chaves_vistas is not None and e_principal(self.cfg):
-            novas = [chaves[k] for k in chaves.keys() - self.chaves_vistas]
-            linhas += [atividade.linha(atividade.NOVA_SOLICITACAO, s["hotel"], s["nome"],
-                                       f"pedido de {s['carimbo']} · {s['email']}", agente="Robô") for s in novas[:30]]
-            if len(novas) > 30:
-                linhas.append(atividade.linha(atividade.NOVA_SOLICITACAO, detalhe=f"+{len(novas) - 30} pedidos novos", agente="Robô"))
-        self.chaves_vistas = set(chaves)
-        for id_c, comando, por in rede_pcs.pendentes(lidas.get(rede_pcs.ABA_COMANDOS, []), pc):
-            if id_c not in self.comandos_em_execucao:
-                self.comandos_em_execucao.add(id_c)
-                threading.Thread(target=self._executar_comando, args=(id_c, comando, por), daemon=True).start()
-        if self.cfg.get("painel", {}).get("atualizar_sozinho", True) and time.monotonic() >= self.proxima_verificacao:
-            self.proxima_verificacao = time.monotonic() + VERIFICAR_ATUALIZACAO_MINUTOS * 60
-            threading.Thread(target=self._verificar_atualizacao, args=(True,), daemon=True).start()
-        atividade.registrar(self.backend, self.central, linhas)
-        # Aviso do Windows: PC desligou, Outlook fechou ou conferência parou (principal: todos; os outros: só ele)
-        for titulo, texto in self.avisos.mudancas(self.pcs(), pc, e_principal(self.cfg),
-                                                  cfg_avisos=self.cfg.get("painel", {}).get("avisos")):
-            avisos_windows.mostrar(titulo, texto)
-        for titulo, texto in self.avisos.outlook(self.pcs(), pc, e_principal(self.cfg)):   # Outlook parado (26/10/2026)
-            avisos_windows.mostrar(titulo, texto)
-
     def _verificar_atualizacao(self, automatica, pedido_por=""):
         s = atualizador.situacao(so_etiquetadas=automatica)   # automática: só versão com etiqueta (canal de teste, 27/10/2026)
         motivo = atualizador.motivo_para_nao(s)
@@ -693,22 +618,6 @@ class Estado(CorreioMixin):
         self.backend.anexar_linhas(self.central, rede_pcs.ABA_COMANDOS, [rede_pcs.pedido(para, comando, por)])
         return {"ok": True}
 
-    def pcs(self):
-        return rede_pcs.ler_pcs(self.envio_nf.pcs_linhas)
-
-    def atualizar_atividade(self, forcar=False):
-        """Lê a aba Atividade_Robo do Google e guarda na memória. Chamado pelo laço do Painel, NUNCA pelo clique da tela."""
-        _, lido = self.atividade_cache
-        if not forcar and time.monotonic() - lido < ATIVIDADE_CACHE_SEGUNDOS:
-            return
-        linhas = self.backend.ler_abas(self.central, [atividade.ABA])[0].get(atividade.ABA, [])
-        self.atividade_cache = (linhas, time.monotonic())
-
-    def atividade_resumo(self):
-        linhas, _ = self.atividade_cache   # só memória: o clique nunca espera o Google (29/10/2026); quem lê é o laço
-        return {"pcs": self.pcs(), "eventos": atividade.ler(linhas, 400), "este_pc": socket.gethostname(),
-                "versao": self.versao, "atualizacao": self.atualizacao}
-
     def registrar_nf_enviada(self, pedido, quem):
         """NF enviada pelo Painel: entra no pedido como emitida (todos os PCs veem). Resposta a um e-mail
         de quem não tem pedido pelo formulário não tem onde registrar."""
@@ -724,97 +633,6 @@ class Estado(CorreioMixin):
 
     LIDO_APLICADO = PASTA_ESTADO / "lido_aplicado.json"
     LIDO_OUTLOOK_DESDE = "2026-10-11T11:55:36"   # clique de antes desta regra não vai pro Outlook (era só o lido da equipe)
-
-    def _enderecos_rede(self, so_online=True):
-        """PC que não respondeu pela rede nos últimos 5 min fica de fora (usuário, 15/10/2026: o e-mail e o histórico
-        demoravam porque cada pedido esperava 12 s pelo PC da Clara, que está em outra faixa de rede): usa a cópia."""
-        agora, fora = time.monotonic(), getattr(self, "_sem_rede", {})
-        return {p["pc"]: p["rede"] for p in self.pcs() if p.get("rede") and (p["online"] or not so_online)
-                and p["pc"] != socket.gethostname() and agora - fora.get(p["pc"], -1e9) > SEM_REDE_SEGUNDOS}
-
-    def _anotar_rede(self, respostas):
-        fora = self.__dict__.setdefault("_sem_rede", {})
-        for pc, r in (respostas or {}).items():
-            if "não respondeu pela rede" in str((r or {}).get("erro", "")):
-                fora[pc] = time.monotonic()
-            elif r and "erro" not in r:
-                fora.pop(pc, None)
-
-    # --- chamadas que chegam dos outros PCs (rede_local) ---
-    def rede_buscar(self, corpo):
-        if sem_outlook(getattr(self, "cfg", {})):   # PC só com o Painel: não tem caixa para pesquisar
-            return {"resultados": [], "completo": True, "fonte": "sem_outlook", "pc": socket.gethostname()}
-        indice = getattr(self, "indice", None)
-        if indice is not None and not corpo.get("vivo") and indice.total():
-            r = indice.buscar(corpo.get("q", ""), limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200))
-            return {"resultados": [{**x, "pc": socket.gethostname()} for x in r], "completo": self.montador.pronto,
-                    "fonte": "indice", "pc": socket.gethostname()}
-        import pythoncom
-        pythoncom.CoInitialize()
-        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
-        rapido = bool(corpo.get("so_enviados"))   # só os Itens Enviados, com limite de tempo curto
-        r = busca_outlook.buscar(ns, self._caixas_de_hotel(), corpo.get("q", ""), socket.gethostname(),
-                                 limite=min(int(corpo.get("limite") or busca_outlook.LIMITE_POR_PC), 200),
-                                 tempo_maximo=min(float(corpo.get("tempo") or busca_outlook.TEMPO_MAXIMO), busca_outlook.TEMPO_MAXIMO),
-                                 pastas=((5, "enviado"),) if rapido else busca_outlook.PASTAS)
-        return {**r, "pc": socket.gethostname()}
-
-    def rede_texto(self, corpo):
-        """Texto inteiro de um e-mail das caixas deste PC: do espelho (já lido) ou direto do Outlook."""
-        local = espelho_emails.item_local(str(corpo.get("id", ""))) if corpo.get("id") else {}
-        if local and "texto" in local:
-            return {"texto": local.get("texto", ""), "citado": local.get("citado", ""), "pc": socket.gethostname()}
-        if not corpo.get("entry"):
-            raise KeyError("e-mail não está mais no espelho deste PC")
-        import pythoncom
-        pythoncom.CoInitialize()
-        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
-        return busca_outlook.abrir(ns, str(corpo["entry"]), self._caixas_de_hotel(), socket.gethostname())
-
-    def rede_anexo(self, corpo):
-        """Anexo de um e-mail das caixas deste PC (foto, PDF do hóspede) pra ver no Painel. Só leitura."""
-        entry = str(corpo.get("entry") or "") or espelho_emails.item_local(str(corpo.get("id", ""))).get("entry_id", "")
-        if not entry:
-            raise KeyError("e-mail não está mais no espelho deste PC")
-        import pythoncom
-        pythoncom.CoInitialize()
-        ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
-        return {**busca_outlook.ler_anexo(ns, entry, self._caixas_de_hotel(), str(corpo.get("nome", ""))), "pc": socket.gethostname()}
-
-    def rede_enviar(self, corpo):
-        """Pedido do robô (PC principal, 15/10/2026): manda o e-mail do formulário da própria caixa do hotel, que
-        está neste Outlook, para ela mesma (envio_pc_dono.enviar_aqui)."""
-        import pythoncom
-        pythoncom.CoInitialize()
-        app = outlook_vivo.aplicativo()
-        return envio_pc_dono.enviar_aqui(app, app.GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
-
-    def rede_conferir_envio(self, corpo):
-        import pythoncom
-        pythoncom.CoInitialize()
-        return envio_pc_dono.conferir_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
-
-    def rede_enviar_receber(self, _corpo):
-        """Outro PC (ou este Painel) pede o Enviar/Receber deste Outlook (27/10/2026): roda e espera acabar."""
-        if not outlook_vivo.pode_usar():
-            return {"erro": "Outlook fechado neste PC"}
-        import pythoncom
-        pythoncom.CoInitialize()
-        r = enviar_receber.rodar_aqui(outlook_vivo.aplicativo().GetNamespace("MAPI"))
-        self.versao_tela += 1
-        return r
-
-    def rede_caixas(self, _corpo):
-        """Outro PC (ou este Painel) pergunta quais caixas daqui têm e-mail preso (27/10/2026)."""
-        return {"pc": socket.gethostname(), "caixas": list(getattr(self, "caixas_presas", []) or [])}
-
-    def rede_reiniciar_outlook(self, _corpo):
-        """Fecha à força e abre de novo o Outlook DESTE PC (27/10/2026: o que o João fazia à mão quando parava de enviar)."""
-        import pythoncom
-        pythoncom.CoInitialize()
-        r = outlook_vivo.reiniciar()
-        self.versao_tela += 1
-        return r
 
     def caixas_com_problema(self):
         """Pro botão de caixas: por PC com Outlook sem enviar/receber, o aviso e as caixas com e-mail preso (27/10/2026)."""
@@ -902,9 +720,6 @@ class Estado(CorreioMixin):
         self.versao_tela += 1
         return {"ok": True, "ligado": bool(ligado)}
 
-    def rede_ping(self, _corpo):
-        return {"pc": socket.gethostname(), "agente": nome_do_agente(), "versao": self.versao}
-
     def marca_tela(self):
         """Muda quando a tela tem dado novo pra buscar (velocidade 3, 21/10/2026): leitura da Central, NF do Dropbox ou
         envio que terminou. A tela pergunta isto a cada 3 s e só relê quando muda."""
@@ -912,25 +727,6 @@ class Estado(CorreioMixin):
         locais = list(getattr(envio, "locais", {}).values())
         feitos = sum(1 for v in locais if (v or {}).get("estado") in ("enviado", "falhou"))
         return f"{getattr(self, 'versao_tela', 0)}.{len(locais)}.{feitos}"
-
-    def rede_novidade(self, corpo):
-        """O robô deste PC (ou o Painel de outro PC, repassando) gravou e-mail/NF novo na Central (21/10/2026): o laço
-        relê já. Do robô daqui: repassa aos outros PCs uma vez (o repassado não é repassado de novo)."""
-        acordar = self.__dict__.setdefault("acordar", threading.Event())
-        if str((corpo or {}).get("o_que", "")) == "formulario":   # cópia rápida (23/10/2026): relê as abas dos hotéis já
-            self.hoteis_lidos_em = -1e9
-        acordar.set()
-        if not (corpo or {}).get("repassado"):
-            threading.Thread(target=self._repassar_novidade, args=(dict(corpo or {}),), daemon=True).start()
-        return {"ok": True}
-
-    def _repassar_novidade(self, corpo):
-        enderecos = self._enderecos_rede()
-        if not enderecos or not getattr(self, "segredo", None):
-            return
-        self._anotar_rede(rede_local.perguntar_a_todos(self.segredo, enderecos, "novidade",
-                                                       {"o_que": str(corpo.get("o_que", ""))[:20], "repassado": True},
-                                                       tempo=5))
 
     def olhar_dropbox(self):
         """Pasta de notas do Dropbox mudou (NF nova)? Refaz a lista e as NFs dos e-mails na hora (21/10/2026; antes a
@@ -947,10 +743,6 @@ class Estado(CorreioMixin):
         self.versao_tela += 1
         logger.info("🧾 NF nova no Dropbox — NFs dos e-mails refeitas")
         return True
-
-    def rede_envio_nf(self, corpo):
-        """Envio direto (21/10/2026): outro PC gravou um pedido para a caixa que está aqui e avisa na hora."""
-        return self.envio_nf.receber_pela_rede(corpo)
 
     def _avisar_dono_envio(self, pc, corpo):
         """Avisa o PC dono pela rede. Sem caminho até ele (outra faixa de rede, firewall, desligado) = erro, e o pedido
@@ -1744,7 +1536,6 @@ def main():
         return 0
 
     from sheets import BackendGoogle
-    import cota_google
     cota_google.configurar("painel")
     modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/demo.py)
     cfg = carregar_config(exigir_chave=not modo_demo)

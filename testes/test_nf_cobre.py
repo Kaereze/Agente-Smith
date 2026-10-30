@@ -73,7 +73,7 @@ def test_motivo_curto_da_urgencia():
 
 
 def test_ligacoes_no_servidor_e_na_tela():
-    srv = "".join((RAIZ / "src" / f).read_text(encoding="utf-8") for f in ("app_servidor.py", "estado_correio.py"))
+    srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     envio = (RAIZ / "src" / "envio_nf.py").read_text(encoding="utf-8")
     js = (RAIZ / "app_ui" / "correio.js").read_text(encoding="utf-8")
     assert 'url.path == "/api/nf_cobre"' in srv and 'path == "/api/correio/concluir"' in srv
@@ -118,7 +118,7 @@ def test_falta_a_nota_do_estacionamento_ou_o_valor_nao_bate():
 
 
 def test_botao_direito_tirar_da_entrada_vale_ate_para_respondido_e_nunca_apaga():
-    srv = "".join((RAIZ / "src" / f).read_text(encoding="utf-8") for f in ("app_servidor.py", "estado_correio.py"))
+    srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     js = (RAIZ / "app_ui" / "correio.js").read_text(encoding="utf-8")
     assert 'path == "/api/correio/mover_nf"' in srv and "def mover_email_nf" in srv
     corpo = srv.split("def mover_email_nf")[1].split("def concluir_conversa")[0]

@@ -128,7 +128,7 @@ def test_tag_sem_envio_nos_itens_enviados_gera_aviso():
 def test_tela_e_servidor_ligados_sem_marcar_outra_nota():
     ui = RAIZ / "app_ui" / "painel.js"
     js = ui.read_text(encoding="utf-8")
-    srv = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert "avisos_nf" in js and "outra nota" in js and "a.outra || a.possivel" in js
     assert "!o.sugestoes[0].outra && !o.sugestoes[0].possivel" in js          # "outra nota" e "possível" nunca vêm marcadas
     assert "estado.iniciar_nf_achadas()" in srv and "nf_achadas.achadas_do_pedido" in srv

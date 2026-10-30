@@ -8,7 +8,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 import app_servidor  # noqa: E402
 
 ROBO = (RAIZ / "app_ui" / "robo.js").read_text(encoding="utf-8")
-SERVIDOR = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
 
 
 class _Backend:

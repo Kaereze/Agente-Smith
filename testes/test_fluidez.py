@@ -70,7 +70,7 @@ def test_sem_segundo_plano_continua_como_sempre_o_erro_sobe(cfg, planilha, monke
 
 
 def test_o_servidor_liga_o_segundo_plano_do_envio():
-    fonte = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert "self.envio_nf.segundo_plano = lambda trabalho: threading.Thread(target=trabalho" in fonte
 
 
@@ -104,10 +104,10 @@ def test_atividade_o_laco_le_uma_vez_e_guarda_por_20_s():
 
 
 def test_laco_do_painel_atualiza_a_atividade_e_o_clique_nao_tem_ler_abas():
-    fonte = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert 'medir("painel.atividade"' in fonte and "estado.atualizar_atividade()" in fonte
     corpo = fonte[fonte.index("    def atividade_resumo(self):"):]
-    corpo = corpo[:corpo.index("    def registrar_nf_enviada")]
+    corpo = corpo[:corpo.index("\n    def ", 10)]   # só este método (o seguinte muda de arquivo quando o Estado é partido)
     assert "ler_abas" not in corpo
 
 

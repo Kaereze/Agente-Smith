@@ -115,6 +115,6 @@ def test_tela_delete_direto_so_para_o_administrador_e_em_todas_as_listas():
 
 
 def test_rota_de_excluir_passa_os_dados_do_e_mail():
-    fonte = (RAIZ / "src" / "app_servidor.py").read_text(encoding="utf-8")
+    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert 'estado.excluir_email(str(corpo.get("id", "")), nome_do_agente(), corpo)' in fonte
     assert "self.envio_nf.entry_confere = lambda i, e, c" in fonte
