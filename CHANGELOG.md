@@ -9,6 +9,20 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-10-30
+
+### Mudou
+
+- **Regras do que falta para emitir a NF** (pedido do João), num lugar só: `app_ui/pecas/regras_nf.js`. Principal: **nome, CPF/CNPJ de verdade (confere os dígitos) e CEP**.
+  Dígito errado vira "CPF/CNPJ inválido" e pede de novo. "O que quer na nota" deixou de ser obrigatório. Telefone (e número do endereço, se o formulário tiver o campo)
+  entram só na mensagem, nunca como "Falta dado".
+- **Pedir o que falta** prepara a mensagem com só o que falta, no campo editável; **nada sai sem a pessoa enviar**.
+- Demonstração: CPF/CNPJ fictícios agora com dígitos certos; ~7% vêm com 1 dígito errado e ~5% sem CEP, para ver o Painel reconhecer.
+
+### Removido
+
+- Botão **Marcar tratativa** do e-mail (só abria a ficha; o botão que registra é "Registrar tratativa", na ficha da NF).
+
 ## [2026.10.30] — 2026-10-30
 
 Reestruturação do servidor (pedido do João: Painel só de NF e e-mail, rápido, organizado). **Mesma lógica, nada muda na tela.**

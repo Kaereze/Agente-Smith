@@ -813,6 +813,11 @@ function modeloPedirFalta(faltas) {
   const saudacao = h < 12 ? "Bom dia!" : h < 18 ? "Boa tarde!" : "Boa noite!";
   const pergunta = { "nome": "Nome completo (ou razão social) que deve constar na nota:",
     "CPF/CNPJ": "CPF ou CNPJ que deve constar na nota:",
+    "CPF/CNPJ inválido": "O CPF ou CNPJ informado não confere (algum número deve estar errado). Pode confirmar o correto?",
+    "CEP": "CEP do endereço que deve constar na nota:",
+    "CEP inválido": "O CEP informado está incompleto ou errado. Pode confirmar o correto?",
+    "telefone": "Telefone para contato:",
+    "número do endereço": "Número do endereço (casa ou apartamento):",
     "o que quer na nota": "A nota deve incluir apenas as diárias ou também consumos e estacionamento (se houver)?" };
   return `${saudacao}
 

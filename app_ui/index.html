@@ -2293,6 +2293,7 @@ html,body{background:#1f1f1f}
 <div class="aviso-parado oculta" id="aviso-parado" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>
   <span><b>Sem dados do servidor <span id="aviso-parado-txt">há 1 min</span>.</b> Tentando de novo a cada 15 s.</span><button type="button" id="aviso-parado-bt">Recarregar agora</button></div>
 <div class="so-leitor" id="anuncio" aria-live="polite"></div>
+<script src="/pecas/regras_nf.js"></script>
 <script src="/pecas/filtro.js"></script>
 <script src="/pecas/etiqueta.js"></script>
 <script src="/pecas/janela.js"></script>
@@ -2609,22 +2610,7 @@ function passaSit(it, f) {
   if (f === "concluida") return s.situacao === "concluida" && !s.envio_pendente;   // "NF enviada": só a que saiu (21/10/2026)
   return s.situacao === f;
 }
-// O que é preciso pra emitir (usuário, 14/10/2026): nome + CPF/CNPJ (acham a reserva) + o que entra na nota
-// (diárias, consumo, estacionamento). Faltou algum: tag "Falta dado" e o botão "Pedir o que falta".
-function campoDoPedido(s, ...testes) {
-  const semAc = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const c = (s.campos || []).find(([k]) => testes.some(r => r.test(semAc(k))));
-  return c ? String(c[1] || "").trim() : "";
-}
-function faltaDados(s) {
-  if (s.situacao === "concluida") return [];
-  const falta = [];
-  if (!campoDoPedido(s, /nome.*tomador/, /razao social/, /^nome( completo)?$/)) falta.push("nome");
-  const doc = campoDoPedido(s, /documento.*tomador/, /cpf.*cnpj|cnpj.*cpf/, /^cnpj/, /^cpf(?!.*titular)/).replace(/\D/g, "");
-  if (doc.length !== 11 && doc.length !== 14) falta.push("CPF/CNPJ");
-  if (!campoDoPedido(s, /informac/, /o que.*nota/, /itens/)) falta.push("o que quer na nota");
-  return falta;
-}
+// O que é preciso pra emitir (campoDoPedido, faltaDados, faltaExtras): pecas/regras_nf.js
 // Urgência (usuário, 14/10/2026): prazo perto de vencer (ou vencido) ou o hóspede cobrou de novo
 function motivoUrgente(s) {
   if (s.situacao === "concluida") return "";
@@ -3058,7 +3044,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-pedir-dados]");
   if (!b) return;
   const s = acharPedido(b.dataset.pedirDados);
-  if (s) abrirEnvioNF(null, { novo: true, para: s.email, conta: s.na_caixa?.caixa || "", solicitar: true, faltas: faltaDados(s) });
+  if (s) abrirEnvioNF(null, { novo: true, para: s.email, conta: s.na_caixa?.caixa || "", solicitar: true, faltas: [...faltaDados(s), ...faltaExtras(s)] });
 });
 
 // Etapa 2: CPF/CNPJ da NF diferente do pedido, pedido repetido e os outros pedidos do mesmo hóspede (e-mail ou CPF/CNPJ)

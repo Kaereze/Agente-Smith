@@ -121,12 +121,33 @@ MODELOS = [   # (assunto, texto) dos e-mails dos hóspedes — os casos do dia a
 ]
 
 
-def _cpf(r):
-    return f"{r.randint(100, 999)}.{r.randint(100, 999)}.{r.randint(100, 999)}-{r.randint(10, 99)}"
+def _dv_cpf(base):
+    for n in (9, 10):
+        s = sum(int(base[i]) * (n + 1 - i) for i in range(n))
+        base += str((s * 10) % 11 % 10)
+    return base
 
 
-def _cnpj(r):
-    return f"{r.randint(10, 99)}.{r.randint(100, 999)}.{r.randint(100, 999)}/0001-{r.randint(10, 99)}"
+def _dv_cnpj(base):
+    for pesos in ([5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]):
+        resto = sum(int(d) * p for d, p in zip(base, pesos)) % 11
+        base += str(0 if resto < 2 else 11 - resto)
+    return base
+
+
+def _cpf(r, errado=False):
+    """CPF fictício com os dígitos conferindo (o Painel agora confere); errado=True troca o último dígito."""
+    d = _dv_cpf("".join(str(r.randint(0, 9)) for _ in range(9)))
+    if errado:
+        d = d[:-1] + str((int(d[-1]) + 1) % 10)
+    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}"
+
+
+def _cnpj(r, errado=False):
+    d = _dv_cnpj("".join(str(r.randint(0, 9)) for _ in range(8)) + "0001")
+    if errado:
+        d = d[:-1] + str((int(d[-1]) + 1) % 10)
+    return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
 
 
 def _pessoa(r):
@@ -170,8 +191,10 @@ class BackendDemo:
                 ci = (quando - datetime.timedelta(days=r.randint(2, 6))).date()
                 co = ci + datetime.timedelta(days=r.randint(1, 4))
                 carimbo = f"{quando.month}/{quando.day}/{quando.year} {quando:%H:%M:%S}"
-                linhas.append([carimbo, email, _cnpj(r) if empresa else _cpf(r), r.choice(EMPRESAS) if empresa else nome,
-                               f"{r.randint(10000, 99999)}-{r.randint(100, 999)}", f"(11) 9{r.randint(1000, 9999)}-{r.randint(1000, 9999)}",
+                errado = r.random() < 0.07   # alguns pedidos chegam com 1 dígito do CPF/CNPJ errado e outros sem CEP (o Painel reconhece)
+                sem_cep = r.random() < 0.05
+                linhas.append([carimbo, email, _cnpj(r, errado) if empresa else _cpf(r, errado), r.choice(EMPRESAS) if empresa else nome,
+                               "" if sem_cep else f"{r.randint(10000, 99999)}-{r.randint(100, 999)}", f"(11) 9{r.randint(1000, 9999)}-{r.randint(1000, 9999)}",
                                _cpf(r), nome, ci.strftime("%d/%m/%Y"), co.strftime("%d/%m/%Y"),
                                r.choice(["", "", "Colocar o número da reserva", "Descrever as diárias"]),
                                "Sim" if r.random() < 0.08 else "Não", "TRUE" if dias >= 1 else "FALSE"])

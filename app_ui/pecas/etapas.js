@@ -60,8 +60,7 @@ function etapasModelo(x) {
     : estado === "falta" && x.temPedido ? { texto: "Pedir o que falta", acao: "pedir", cls: "p" }
     : estado === "completo" ? { texto: "Enviar NF", acao: "nf", cls: "" }
     : { texto: "Enviar NF", acao: "nf", cls: "p" };
-  const secundario = estado === "enviada" ? { texto: "Enviar outra NF", acao: "nf" }
-    : x.temPedido ? { texto: "Marcar tratativa", acao: "tratativa" } : null;
+  const secundario = estado === "enviada" ? { texto: "Enviar outra NF", acao: "nf" } : null;   // "Marcar tratativa" saiu (João, 30/10): só abria a ficha
   if (estado === "falta" && !x.temPedido) { principal.texto = "Enviar NF"; principal.acao = "nf"; principal.cls = ""; }
   return { estado, passos, itens, principal, secundario };
 }
