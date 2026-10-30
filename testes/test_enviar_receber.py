@@ -156,8 +156,8 @@ def test_gancho_de_acao_longa_avisa_depois_de_3_s_e_o_api_liga_sozinho():
 
 def test_servidor_so_atende_pelo_painel_deste_pc_e_pela_rede_assinada():
     import app_servidor
-    fonte = Path(app_servidor.__file__).read_text(encoding="utf-8")
-    assert '"enviar_receber": estado.rede_enviar_receber' in fonte and 'path == "/api/enviar_receber"' in fonte
+    fonte = "".join(Path(app_servidor.__file__).with_name(n).read_text(encoding="utf-8") for n in ("app_servidor.py", "rotas_api.py"))
+    assert '"enviar_receber": estado.rede_enviar_receber' in fonte and '"/api/enviar_receber"' in fonte
 
 
 # ---------- tela de carregamento do K (peça única, 27/10/2026) ----------

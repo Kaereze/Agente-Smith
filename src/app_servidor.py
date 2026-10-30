@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -47,6 +48,7 @@ import saude
 import fiscal_intelligence
 import painel_metricas as metricas
 import agentes_smith
+import rotas_api
 import desempenho
 from arquivos import salvar_json
 from hoteis import CadastroHoteis
@@ -58,7 +60,7 @@ from estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
 import limpeza
 from log_util import configurar_logging
-from sheets import (LINHA_COMANDO, LINHA_PEDIDO, STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
+from sheets import (STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
 from tratamento import normalizar
 
 logger = configurar_logging("app")
@@ -646,6 +648,19 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     envio = envio or Envio(ao_terminar=estado.atualizar)
     liberado = lambda: bool(getattr(estado, "so_ver", False) or getattr(estado, "demo", False))   # noqa: E731
     operadores = [k for k in cfg.get("agentes", {}) if not str(k).startswith("_")]
+    # o que as rotas (rotas_api.py) enxergam do servidor; cada lambda procura o nome na hora, para os testes poderem trocá-lo
+    contexto = SimpleNamespace(
+        estado=estado, cfg=cfg, pc=pc, envio=envio, operadores=operadores, temas_ok=TEMAS_OK,
+        agente=lambda: nome_do_agente(),
+        marca_pagina=lambda: _marca_pagina(),
+        e_admin=lambda: e_admin_aqui(estado.cfg, nome_do_agente(), liberado()),
+        operadores_deste_pc=lambda recarregar=False: operadores_deste_pc(carregar_config() if recarregar else cfg, liberado()),
+        ler_prefs=lambda: ler_prefs(),
+        salvar_pref=lambda chave, valor: salvar_pref(chave, valor),
+        carregar_config=lambda: carregar_config(),
+        e_principal=lambda cfg_: e_principal(cfg_),
+        escrever_linhas_status=lambda *a, **k: escrever_linhas_status(*a, **k),
+    )
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
@@ -736,73 +751,12 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 return self.wfile.write(corpo)
             if not self._autorizado():
                 return self._json({"erro": "não autorizado"}, 403)
-            if url.path == "/api/versao":
-                return self._json({"v": estado.marca_tela()})
-            if url.path == "/api/estado":
-                dias = int(parse_qs(url.query).get("dias", ["45"])[0] or 0)
-                estado.vista_atual = parse_qs(url.query).get("vista", [""])[0]
-                return self._json({
-                    "agente": nome_do_agente(), "pc": pc, "erro": estado.erro, "operadores": operadores_deste_pc(cfg, liberado()),
-                    "atualizado_em": estado.atualizado_em.isoformat(timespec="seconds") if estado.atualizado_em else "",
-                    "atualizar_segundos": int(cfg.get("app", {}).get("atualizar_segundos", 15)),
-                    "status": estado.resumo_status(), "fila": estado.fila_da_tela(dias), "pcs": estado.pcs(),
-                    "caixa_pcs": estado.resumo_caixa(), "saude": estado.problemas_de_saude(),
-                    "hoteis": estado.hoteis_por_agente(), "ligacoes": estado.resumo_ligacoes(),
-                    "demo": bool(getattr(estado, "demo", False)), "pagina": _marca_pagina(), "so_ver": bool(getattr(estado, "so_ver", False)),
-                    "admin": e_admin_aqui(estado.cfg, nome_do_agente(), liberado()),
-                    "tema": ler_prefs().get("tema", ""),
-                }, comparar=True)
-            if url.path == "/api/envio":
-                def ler_status():
-                    aba = cfg["aba_status"]
-                    linhas = estado.backend.ler_abas(estado.central, [aba])[0].get(aba, [])
-                    return {str(l[0]).strip(): (str(l[1]) if len(l) > 1 else "") for l in linhas if l}
-                return self._json(envio.situacao(ler_status))
+            rota = rotas_api.GET.get(url.path)
+            if rota is None:
+                return self._json({"erro": "não encontrado"}, 404)
             q = {k: v[0] for k, v in parse_qs(url.query).items()}
             try:
-                if url.path == "/api/envio_nf/opcoes":
-                    return self._json(estado.opcoes_envio(q.get("chave", "")))
-                if url.path == "/api/envio_nf/status":
-                    return self._json(estado.situacao_envio(q.get("id", "")))
-                if url.path == "/api/nf_cobre":
-                    return self._json(estado.nf_cobre(q.get("id", "")))
-                if url.path == "/api/caixas":
-                    return self._json(estado.caixas_com_problema())
-                if url.path == "/api/enviar_receber/status":
-                    return self._json(estado._enviar_receber().status(q.get("id", "")))
-                if url.path == "/api/painel":
-                    return self._json(estado.painel(q.get("ini"), q.get("fim")))
-                if url.path == "/api/hotel":
-                    return self._json(estado.hotel(q.get("nome", ""), q.get("ini"), q.get("fim")))
-                if url.path == "/api/relatorio_semana":
-                    try:
-                        q = parse_qs(url.query)
-                        return self._json(estado.relatorio_semana(int(q.get("deslocamento", q.get("semana", ["0"]))[0] or 0),
-                                                                  q.get("tipo", ["semana"])[0]))
-                    except Exception as e:
-                        logger.warning(f"⚠️ Relatório da semana: {e}")
-                        return self._json({"erro": f"não consegui ler a planilha do Mail Analytics ({str(e)[:120]})"})
-                if url.path == "/api/cadastro/faltando":
-                    return self._json({"faltando": estado.cadastro_faltando(),
-                                       "agentes": sorted({p["agente"] for p in estado.pcs() if p.get("agente")})})
-                if url.path == "/api/atividade":
-                    return self._json(estado.atividade_resumo())
-                if url.path == "/api/emails":
-                    return self._json({"emails": estado.lista_emails(), "este_pc": pc}, comparar=True)
-                if url.path == "/api/correio":
-                    return self._json(estado.lista_correio(), comparar=True)
-                if url.path == "/api/correio/conversa":
-                    return self._json(estado.conversa(q.get("de", "")))
-                if url.path == "/api/correio/texto":
-                    return self._json(estado.texto_email(q.get("id", ""), q.get("pc", ""), q.get("entry", "")))
-                if url.path == "/api/correio/anexo":
-                    return self._json(estado.anexo_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""), q.get("nome", "")))
-                if url.path == "/api/correio/buscar":
-                    return self._json(estado.buscar_outlook(q.get("q", ""), q.get("vivo", "") == "1"))
-                if url.path == "/api/email/opcoes":
-                    return self._json(estado.opcoes_email(q.get("id", "")))
-                if url.path == "/api/email/novo":
-                    return self._json(estado.opcoes_email_novo(q.get("conta", "")))
+                return self._json(rota(contexto, q), comparar=url.path in rotas_api.COMPARAR)
             except KeyError as e:
                 return self._json({"erro": str(e).strip("'\"")}, 404)
             except ValueError as e:
@@ -810,7 +764,6 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             except Exception as e:
                 logger.exception("erro na API")
                 return self._json({"erro": f"não deu pra buscar agora: {e}"}, 500)
-            return self._json({"erro": "não encontrado"}, 404)
 
         def do_POST(self):
             ultimo_uso[0] = time.monotonic()
@@ -822,76 +775,16 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             except ValueError:
                 return self._json({"erro": "JSON inválido"}, 400)
             path = urlparse(self.path).path
-            if getattr(estado, "so_ver", False) and path not in ("/api/agente", "/api/atualizar"):
+            if getattr(estado, "so_ver", False) and path not in rotas_api.POST_NO_MODO_CASA:
                 return self._json({"ok": False, "motivo": "Modo casa: só visualização. Faça isso no PC do trabalho."})
+            rota = rotas_api.POST.get(path)
+            if rota is None:
+                return self._json({"erro": "não encontrado"}, 404)
             try:
-                if path == "/api/acao":
-                    r = estado.registrar(nome_do_agente(), pc, corpo["chave"], corpo["acao"], corpo.get("valor", ""))
-                    return self._json(r)
-                if path == "/api/tema":   # tema por PC (claro, escuro ou o do Windows), lembrado depois de reiniciar
-                    tema = str(corpo.get("tema", ""))
-                    if tema not in TEMAS_OK:
-                        return self._json({"ok": False, "motivo": "tema desconhecido"}, 400)
-                    salvar_pref("tema", tema)
-                    return self._json({"ok": True})
-                if path == "/api/agente":
-                    nome = str(corpo.get("nome", "")).strip()[:40]
-                    if nome not in operadores:
-                        return self._json({"ok": False, "motivo": "operador desconhecido"}, 400)
-                    if nome not in operadores_deste_pc(carregar_config(), liberado()):
-                        return self._json({"ok": False, "motivo": f"O usuário {nome} só pode ser usado no PC dele."}, 403)
-                    salvar_pref("agente", nome)
-                    return self._json({"ok": True})
-                if path == "/api/enviar":
-                    if e_principal(carregar_config()):   # aqui mesmo: rápido e com log direto da memória
-                        if not envio.iniciar_local(nome_do_agente()):
-                            return self._json({"ok": False, "motivo": "Já tem um envio em andamento."})
-                        return self._json({"ok": True, "modo": "local"})
-                    quando = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-                    escrever_linhas_status(estado.backend, cfg, {LINHA_COMANDO: "ENVIAR",
-                                                                 LINHA_PEDIDO: f"{nome_do_agente()} (Painel) | {quando}"})
-                    envio.iniciar_remoto()
-                    return self._json({"ok": True, "modo": "remoto"})
-                if path == "/api/envio_nf":
-                    return self._json(estado.pedir_envio(corpo, nome_do_agente()))
-                if path == "/api/cadastro/adicionar":
-                    return self._json(estado.adicionar_cadastro(corpo, nome_do_agente()))
-                if path == "/api/envio_nf/conferir":
-                    return self._json(estado.conferir_anexos(corpo))
-                if path == "/api/email/responder":
-                    return self._json(estado.responder_email(corpo, nome_do_agente()))
-                if path == "/api/email/novo":
-                    return self._json(estado.enviar_email_novo(corpo, nome_do_agente()))
-                if path == "/api/correio/evento":
-                    return self._json(estado.evento_correio([str(i) for i in corpo.get("ids", [])], str(corpo.get("acao", "")),
-                                                            nome_do_agente()))
-                if path == "/api/correio/excluir":
-                    return self._json(estado.excluir_email(str(corpo.get("id", "")), nome_do_agente(), corpo))
-                if path == "/api/correio/urgencia":
-                    return self._json(estado.marcar_urgencia(str(corpo.get("id", "")), str(corpo.get("marcar", "")), nome_do_agente()))
-                if path == "/api/correio/mover_nf":
-                    return self._json(estado.mover_email_nf(str(corpo.get("id", "")), nome_do_agente()))
-                if path == "/api/correio/concluir":
-                    return self._json(estado.concluir_conversa(str(corpo.get("id", "")), nome_do_agente()))
-                if path == "/api/robo/ligado":
-                    if not e_admin_aqui(estado.cfg, nome_do_agente(), liberado()):
-                        return self._json({"ok": False, "motivo": "Só o João liga ou pausa o robô, no PC dele."}, 403)
-                    return self._json(estado.definir_robo_ligado(bool(corpo.get("ligado")), nome_do_agente()))
-                if path == "/api/outlook/reiniciar":
-                    return self._json(estado.reiniciar_outlook(str(corpo.get("pc", "")), nome_do_agente()))
-                if path == "/api/enviar_receber":
-                    return self._json(estado.enviar_receber_todas(nome_do_agente()))
-                if path == "/api/ligacao":
-                    return self._json(estado.marcar_ligacao(str(corpo.get("id", "")), bool(corpo.get("marcar")), nome_do_agente()))
-                if path == "/api/correio/encaminhar":
-                    return self._json(estado.encaminhar_email(corpo, nome_do_agente()))
-                if path == "/api/comando":
-                    return self._json(estado.pedir_comando(str(corpo.get("para", "")), str(corpo.get("comando", "")),
-                                                           f"{nome_do_agente()} ({pc})"))
-                if path == "/api/atualizar":
-                    estado.atualizar()
-                    estado.atualizar_fi(forcar=True)
-                    return self._json({"ok": not estado.erro, "motivo": estado.erro})
+                resposta = rota(contexto, corpo)
+                if isinstance(resposta, tuple):   # (corpo, código HTTP)
+                    return self._json(*resposta)
+                return self._json(resposta)
             except KeyError as e:
                 return self._json({"ok": False, "motivo": str(e).strip("'\"")}, 409)
             except ValueError as e:
@@ -899,7 +792,6 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             except Exception as e:
                 logger.exception("erro na API")
                 return self._json({"ok": False, "motivo": f"Erro ao gravar na planilha: {e}"}, 500)
-            return self._json({"erro": "não encontrado"}, 404)
 
     for verbo in ("do_GET", "do_POST"):   # tempo de cada resposta à tela (só a rota, sem o que vem depois do "?")
         setattr(Handler, verbo, _cronometrado(getattr(Handler, verbo), verbo[3:]))

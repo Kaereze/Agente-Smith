@@ -114,6 +114,7 @@ tags: [cerebro/trabalho]
 | Os **blocos e as ligações** do mapa, os caminhos e os quadros | `app_ui/agentes/mapa.html`: `var N` (blocos), `var E` (ligações), `var FR` (quadros), `var PROD` (caminho de produção). Espelho editável: `3 Mapa do projeto/Mapa do sistema.drawio` |
 | **Quais agentes** aparecem na lista e como se chamam | `var AG` no script do `mapa.html` (o id é o nome do módulo em `src/`) |
 | O **estado ao vivo** (o que conta como ok, atenção, parado) | `src/agentes_smith.py` → `estado` (limites: `COPIA_ATENCAO_MIN`, `COPIA_PARADA_MIN`) |
+| **Rota nova da API (30/10)** | uma linha em `GET` ou `POST` de `src/rotas_api.py` (endereço → função do `Estado`); HTTP, token e erros ficam em `criar_handler`, em `src/app_servidor.py` |
 | **Quem pode ver** | `e_admin_aqui` em `src/app_servidor.py`; as rotas `/agentes/mapa` e `/api/agentes` ficam antes dos arquivos públicos (`ESTATICOS`) |
 | O botão no menu e o quadro | `app_ui/index.html` (`#nav-agentes`, `#v-agentes`, `#agentes-quadro`) e `agentesQuadro` em `app_ui/painel.js` |
 | Regras que seguram tudo | `testes/test_agentes_smith.py` (todo módulo de `src/` precisa de bloco no mapa) |

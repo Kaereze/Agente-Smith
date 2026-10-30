@@ -15,7 +15,7 @@ UI = RAIZ / "app_ui"
 HTML = (UI / "index.html").read_text(encoding="utf-8")
 JS = (UI / "pecas" / "caixas.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "caixas.css").read_text(encoding="utf-8")
-SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
 
 
 def test_avisos_de_outlook_parado_levam_o_tipo_caixa():
@@ -54,7 +54,7 @@ def test_reiniciar_em_teste_nao_mata_nenhum_outlook():
 
 
 def test_servidor_tem_as_rotas_do_botao():
-    assert 'url.path == "/api/caixas"' in SERVIDOR and 'path == "/api/outlook/reiniciar"' in SERVIDOR
+    assert '"/api/caixas"' in SERVIDOR and '"/api/outlook/reiniciar"' in SERVIDOR
     assert '"caixas": estado.rede_caixas' in SERVIDOR and '"reiniciar_outlook": estado.rede_reiniciar_outlook' in SERVIDOR
 
 

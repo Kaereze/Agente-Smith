@@ -8,7 +8,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 import app_servidor  # noqa: E402
 
 ROBO = (RAIZ / "app_ui" / "robo.js").read_text(encoding="utf-8")
-SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
 
 
 class _Backend:
@@ -42,6 +42,6 @@ def test_demo_e_so_leitura_nao_escrevem_na_planilha():
 
 
 def test_so_o_joao_liga_e_a_tela_pede_confirmacao_para_pausar():
-    assert 'path == "/api/robo/ligado"' in SERVIDOR and "Só o João liga ou pausa o robô" in SERVIDOR
+    assert '"/api/robo/ligado"' in SERVIDOR and "Só o João liga ou pausa o robô" in SERVIDOR
     assert 'data-rb-liga="0"' in ROBO and 'data-rb-liga="1"' in ROBO and "so-admin" in ROBO
     assert "Confirmar: pausar tudo" in ROBO and "rbz.confPausa" in ROBO

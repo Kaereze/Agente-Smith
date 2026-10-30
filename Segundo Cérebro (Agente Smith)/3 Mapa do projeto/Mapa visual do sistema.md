@@ -20,7 +20,6 @@ tags: [cerebro/mapa, diagrama]
 - **198 ligações de dados** (setas coloridas, tracejadas e animadas: por onde a informação anda) e **254 dependências** (quem usa quem, tiradas das importações do código). **As dependências ficam numa camada escondida**, chamada "Quem usa quem (dependências)": no draw.io, abra o painel de Camadas (Ctrl+Shift+L) e ligue a camada para vê-las.
 - **15 quadros** (etapas): 1 Fora do sistema, 2 Google e Outlook, 3 Cópia e envio, 4 Conferência de cada PC, 5 Planilha Central, 6 Arquivos deste PC, 7 Painel (dados e regras), 8 Painel (rede, saúde e manutenção), 9 Telas, 10 Ação e saída, Leitura da Gerência, Apoio comum, Instalar e manter os PCs, Qualidade e ferramentas, Os 4 computadores.
 - **Linha grossa** = a produção de ponta a ponta (do pedido do hóspede até a nota chegar nele). As outras cores de linha: pedido, e-mails e telas, nota e envio, os 4 PCs, código e testes, Gerência, faxina e saúde, instalação (legenda no canto do desenho). Sem verde ([[ADR-03 Telas novas na paleta da Auditoria, sem verde]]).
-- Dois módulos de `src/` são **ferramentas de linha de comando**, não código morto: `classificador` (só lê e mostra o que falta emitir) e `organizador_emails` (aplica as categorias do Outlook).
 
 ## A aba dentro do Painel (no ar na versão 2026.10.28.2)
 - Fica no grupo **Admin**, abaixo de Monitoramento, e **só o João vê, no PC principal** (`e_admin_aqui`). O servidor também recusa (403) quem pedir por fora, e o mapa não está na lista pública de arquivos. Ver [[ADR-11 Aba Agentes do Smith - só o administrador, só sinal real]].

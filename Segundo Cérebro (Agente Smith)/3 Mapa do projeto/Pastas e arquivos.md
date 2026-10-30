@@ -57,6 +57,6 @@ tags: [cerebro/mapa]
 | `outlook_vivo.py` | 160 | Guardião do Outlook (aberto com janela) e porta única do COM |
 | `sheets.py` · `config.py` · `cota_google.py` | 646 · 144 · 123 | Google Sheets (+ `BackendSoLeitura`) · configuração · cota |
 
-Pequenos: `prazos`, `hospedes`, `canceladas`, `tratamento`, `identidade`, `atualizador`, `cota_envio`, `vigia_outlook`, `avisos_windows`, `aviso_certificado`, `lock_execucao`, `diario_envios`, `historico`, `atividade`, `hoteis`, `fiscal_intelligence`, `robo_antigo`, `log_util`, `arquivos`, `rede_util`, `console_utf8`, `modelos`, `conferir_copia`, `classificador`, `organizador_emails`.
+Pequenos: `prazos`, `hospedes`, `canceladas`, `tratamento`, `identidade`, `atualizador`, `cota_envio`, `vigia_outlook`, `avisos_windows`, `aviso_certificado`, `lock_execucao`, `diario_envios`, `historico`, `atividade`, `hoteis`, `fiscal_intelligence`, `robo_antigo`, `log_util`, `arquivos`, `rede_util`, `console_utf8`, `modelos`, `conferir_copia`.
 
 **Tarefas do Windows:** `SolicitacoesNF_CopiaHoteis`, `SolicitacoesNF_Conferente`, `SolicitacoesNF_Painel`, `SolicitacoesNF_Reiniciar`.

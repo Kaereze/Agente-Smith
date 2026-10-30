@@ -15,7 +15,7 @@ Revisão só de leitura, feita com as skills `codebase-design` e `software-desig
 - Mais usados: `log_util` (34), `tratamento` (20), `config` (19), `arquivos` (15), `sheets` (14).
 - `index.html`: 3.448 linhas (2.160 de estilo, o resto tela e lógica). `painel.js` 1.269 e `correio.js` ~1.300, tudo em funções globais.
 - Guardado em 3 estilos: Planilha Central (10 abas), arquivos JSON/pkl em `estado/` e índice local (SQLite).
-- Sem nenhum importador: `classificador.py` e `organizador_emails.py` (só aparecem no CHANGELOG).
+- `classificador.py` e `organizador_emails.py` (sem importador) foram apagados em 30/10.
 
 ## Nota (software-design-philosophy): ~5/10
 Passa: peças únicas novas (`pecas/`), testes fortes, regras de negócio escritas no cofre. Falha: módulos rasos e vazamento (a `Estado` sabe de tudo), decomposição por tempo, configuração demais.
@@ -31,4 +31,5 @@ Cada etapa: uma versão, testes verdes, teste de tela, e só sobe com OK do Joã
 
 ## Andamento (29/10/2026)
 - Passo 1 (limpar) e passo 2 (partir a `Estado`): feitos no PC de casa, sem etiqueta. `app_servidor.py` 2.575 → 1.093 linhas. Falta a tabela de rotas.
+- Tabela de rotas (30/10): feita em `src/rotas_api.py`; `app_servidor.py` ~985 linhas, 709 testes (708 + mapa) ok. Faltam: pastas por assunto em `src/`, porta única de dados, CSS/JS fora do `index.html`.
 - Supabase: por último, não usar agora (decisão do João). Foco: só NF e e-mail.

@@ -1140,11 +1140,7 @@ Situação em **06/10/2026**.
   em outro PC**, que era a maior limitação de antes.
 - **Identidade do PC.** O `estado\maquina.json` passou a gravar o **nome do PC**. Um arquivo copiado de
   outra máquina não vale mais, e o PC se reconhece sozinho pelas caixas do Outlook (seção 6.10).
-- **Classificação dos e-mails.** O `src\organizador_emails.py` lê a caixa de entrada e marca cada
-  solicitação com as categorias do Outlook (`⏳ NF pendente`, `✅ NF concluído`, `💬 Tratativa`,
-  `Nota dividida`, `⚠️ Faltando dados`, `🔁 Duplicada`, `📨 Fora do padrão`). Ele **não cria pasta
-  nenhuma** e preserva as categorias que a equipe marcou à mão. As caixas saem do cruzamento entre o
-  Outlook do PC e o `Cadastro_Hoteis`, então o mesmo arquivo roda em qualquer máquina.
+- **Classificação dos e-mails.** A ferramenta `organizador_emails.py` foi apagada em 30/10/2026 (ninguém usava; o Painel espelha a caixa como ela é).
 
 ### Ainda em aberto
 
