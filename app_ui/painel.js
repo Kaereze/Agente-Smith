@@ -3,7 +3,7 @@
 let pn = { vista: "visao", janela: 30, rz: null, tabela: {}, resumo: "ontem" };   // resumo: a Visão geral abre no dia anterior   // tabela: gráfico mostrado como tabela
 const hojeIso = () => new Date().toLocaleDateString("sv-SE");
 
-const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", log: "Monitoramento / Log do robô", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
+const TITULOS = { visao: "Visão geral", fila: "Notas fiscais", maquinas: "Monitoramento / Máquinas", correio: "E-mails",
                   gerencia: "Gerência (em teste)", agentes: "Agentes do Smith" };
 // Aba Agentes do Smith (28/10/2026): o mapa do sistema roda num quadro à parte (/agentes/mapa, só o administrador no PC dele).
 // Só carrega quando a aba abre e descarrega ao sair: assim as animações não pesam quando ninguém está olhando.
@@ -53,12 +53,11 @@ const TIPOS_ATIV = {NOVA_SOLICITACAO: "Pedido novo", EMAIL_RECEBIDO: "E-mail rec
 // entrada = o que chegou · saída = o que a equipe/robô mandou ou confirmou · atualizações · Outlook e PCs
 const SENTIDO = {NOVA_SOLICITACAO: "entrada", EMAIL_RECEBIDO: "entrada", NF_ENVIADA: "saida", NF_DROPBOX: "saida",
   TRATATIVA: "saida", NOTA_UNICA: "saida", ATUALIZADO: "sistema", FALHA: "sistema", OUTLOOK_FECHADO: "maquina", OUTLOOK_ABERTO: "maquina"};
-const ABAS_LOG = [["tudo", "Tudo"], ["entrada", "Entradas"], ["saida", "Saídas"], ["sistema", "Atualizações"], ["maquina", "Outlook e PCs"]];
 let at = { dados: null, aba: "tudo", pc: "", timer: null };
 
 async function carregarAtividade() {
   const j = await api("/api/atividade").catch(() => null);
-  if (j && !j.erro) { at.dados = j; desenharLog(); desenharMaquinas(); }
+  if (j && !j.erro) { at.dados = j; desenharMaquinas(); }
   clearTimeout(at.timer);
   if (pn.vista === "log" || pn.vista === "maquinas") at.timer = setTimeout(carregarAtividade, 20000);
 }
@@ -68,47 +67,6 @@ function haQuanto(iso) {
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   return min < 1 ? "agora" : min < 60 ? `há ${min} min` : min < 1440 ? `há ${Math.round(min / 60)} h` : `há ${Math.round(min / 1440)} d`;
 }
-
-function desenharLog() {
-  const d = at.dados, el = $("log");
-  if (!d) { el.innerHTML = `<div class="vazio">Carregando…</div>`; return; }
-  const hoje = d.eventos.filter(e => e.quando.slice(0, 10) === hojeIso());
-  const nHoje = (...tipos) => hoje.filter(e => tipos.includes(e.tipo)).length;
-  const alertas = d.pcs.filter(p => !p.online || p.outlook === "fechado" || p.conferencia_atrasada);
-  const evs = d.eventos.filter(e => (at.aba === "tudo" || SENTIDO[e.tipo] === at.aba) && (!at.pc || e.pc === at.pc));
-  const pcsLista = [...new Set(d.eventos.map(e => e.pc))].sort();
-  el.innerHTML = `<div class="cab-pagina"><h1>Log do robô</h1>
-      <span class="dica">Tudo o que entrou e saiu em todos os PCs · atualiza sozinho a cada 20 s</span></div>
-    <div class="contas">
-      <div class="conta"><span class="rot">Entraram hoje</span><span class="v">${nHoje("NOVA_SOLICITACAO", "EMAIL_RECEBIDO")}</span>
-        <span class="s">${nHoje("NOVA_SOLICITACAO")} pelo formulário · ${nHoje("EMAIL_RECEBIDO")} por e-mail</span></div>
-      <div class="conta"><span class="rot">NFs hoje</span><span class="v">${nHoje("NF_ENVIADA", "NF_DROPBOX")}</span>
-        <span class="s">${nHoje("NF_ENVIADA")} enviadas por e-mail · ${nHoje("NF_DROPBOX")} achadas no Dropbox</span></div>
-      <div class="conta"><span class="rot">Tratativas hoje</span><span class="v">${nHoje("TRATATIVA")}</span><span class="s">e-mails ao hóspede sem nota</span></div>
-      <div class="conta"><span class="rot">Máquinas com alerta</span><span class="v" style="color:${alertas.length ? "var(--erro)" : "var(--ok)"}">${alertas.length}</span>
-        <span class="s">${alertas.length ? alertas.map(p => esc(p.agente || p.pc) + (!p.online ? " desligado" : p.outlook === "fechado" ? " com Outlook fechado" : " com conferência parada")).join(" · ")
-          : "todos os PCs no ar"}</span></div>
-    </div>
-    <div class="abas-log" role="tablist">${ABAS_LOG.map(([v, n]) => `<button class="aba ${at.aba === v ? "sel" : ""}" role="tab" aria-selected="${at.aba === v}" data-at-aba="${v}">${n}</button>`).join("")}
-</div>
-    <div class="log-filtros">${menuPcLog(d, pcsLista)}</div>
-    <div class="tabela-wrap"><table class="ativ-tab"><thead><tr><th>Quando</th><th>O quê</th><th>Máquina</th><th>Hotel / pedido</th><th>Detalhe</th></tr></thead>
-      <tbody>${evs.slice(0, 300).map(e => `<tr>
-        <td class="q">${esc(e.quando.slice(8, 10) + "/" + e.quando.slice(5, 7) + " " + e.quando.slice(11, 16))}</td>
-        <td><span class="tipo t-${esc(e.tipo)}">${esc(TIPOS_ATIV[e.tipo] || e.tipo)}</span></td>
-        <td>${esc(e.agente || "")}<div class="dica">${esc(e.pc)}</div></td>
-        <td>${esc(e.hotel || "")}<div class="dica">${esc(e.pedido || "")}</div></td>
-        <td>${esc(e.detalhe || "")}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nada por aqui ainda.</td></tr>`}</tbody></table></div>
-    <p class="dica">Mostra os ${d.eventos.length} registros mais recentes da aba Atividade_Robo da Planilha Central.</p>`;
-}
-// Escolher o PC do log: a peça única do Filtro (pecas/filtro.js), com a bolinha de ligado/desligado
-function menuPcLog(d, pcsLista) {
-  const info = p => d.pcs.find(x => x.pc === p) || {};
-  return pecaFiltro({ id: "log-pc", rotulo: "PC", valor: at.pc || "", nomePadrao: "Todos",
-    opcoes: [{ v: "", nome: "Todos os PCs", n: d.pcs.filter(x => x.online).length + " ligados" },
-             ...pcsLista.map(p => ({ v: p, nome: info(p).agente || p, n: info(p).online ? p : "desligado", bolinha: info(p).online ? "on" : "off" }))] });
-}
-registrarFiltro("log-pc", { escolher: v => { at.pc = v; desenharLog(); }, redesenhar: () => desenharLog() });
 
 // "aberto|E-mails|14:32": o Painel está aberto nesse PC agora, nessa tela
 function usoHtml(p) {

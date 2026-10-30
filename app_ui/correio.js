@@ -283,20 +283,6 @@ function tagsEmail(e, cinza) {   // a peça única das etiquetas (pecas/etiqueta
   const form = (e.classes || []).includes("formulario") ? `<span class="tg t-form">Formulário</span>` : "";
   return `<div class="it-tg">${etiquetasDoEmail(e)}${form}</div>`;
 }
-// Faixa do pedido ligado ao e-mail, acima dele (prévia v2): prazo, o que falta, quem cuida, abrir a ficha
-function faixaPedido(e) {
-  const s = pedidoDoEmail(e);
-  if (!s) return e.solicitacao ? `<div class="cx-pedido"><div><small>Pedido</small><b>do formulário de ${esc(String(e.solicitacao.data || "").split("-").reverse().join("/"))}</b></div>
-    <div><small>Hotel</small><b>${esc(e.solicitacao.hotel || "")}</b></div><div><small>Situação</small><b>pedido antigo, fora da lista de Notas fiscais</b></div></div>` : "";
-  const falta = typeof faltaDados === "function" ? faltaDados(s) : [];
-  return `<div class="cx-pedido" aria-label="Pedido ligado a este e-mail">
-    <div><small>Pedido</small><b>${esc(s.nome)}</b></div>
-    <div><small>Prazo</small>${s.prazo ? prazoHtml(s.prazo) : "<b>—</b>"}</div>
-    <div><small>Dados para emitir</small>${falta.length ? `<b class="atn">falta ${esc(falta.join(", "))}</b>` : `<b class="ok">completos</b>`}</div>
-    <div><small>Com</small><b>${esc(s.dono || "ninguém")}</b></div>
-    ${s.nfs?.length ? `<div><small>NF</small><b class="ok">${esc(s.nfs.join(", "))}</b></div>` : ""}
-    <button type="button" class="cx-abrir-ficha" data-abrir-ficha="${esc(s.chave)}">Abrir ficha</button></div>`;
-}
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-abrir-ficha]");
   if (!b || typeof abrirNotas !== "function") return;
@@ -929,13 +915,6 @@ function verificacaoHtml(e) {
     <div class="dica">O robô abriu a NF (anexada ou no Dropbox) e cruzou com o que o cliente escreveu. Confira antes de reenviar.</div></div>`;
 }
 
-function avisoNfJaEnviada(h) {
-  const nfs = h?.conv?.nfs_enviadas || [];
-  if (!nfs.length) return "";
-  return `<div class="cx-aviso-nf"><b>NF já enviada para este e-mail</b>${nfs.map(v => `<div>NF ${esc(v.nfs.join(", "))} · enviada para ${esc(v.para)} em ${esc(v.quando)} · ${esc(v.hotel)}</div>`).join("")}
-    <div class="dica">Conferido pelo robô no Outlook e no PDF da nota. Veja se o hóspede pede outra nota antes de reenviar.</div></div>`;
-}
-
 // Histórico do hóspede (usuário, 20/10/2026): no formulário o remetente é o Emissor Automático (o mesmo de todos os
 // hotéis), então o histórico vai pelo e-mail de quem preencheu e, quando dá, só desta hospedagem: mesmo hotel, desde
 // DIAS_ANTES_CHECKIN dias antes do check-in. Sem check-in: tudo do hóspede. Sem o e-mail de quem preencheu: sem histórico.
@@ -960,36 +939,6 @@ document.addEventListener("click", ev => {
   (cx.histTudo ||= {})[id] = !cx.histTudo[id];
   desenharLeituraCorreio();
 });
-function historicoHtml(h, atual, alvo = {}) {
-  if (h.carregando) return "";
-  const soEsta = !!alvo.desde && !cx.histTudo?.[atual.id];
-  const todosForms = (h.conv?.linha_do_tempo || []).filter(x => x.tipo === "formulario");
-  const todos = h.resultados.filter(x => x.id !== atual.id);
-  const forms = todosForms.filter(f => !soEsta || (String(f.quando || "") >= alvo.desde && (!alvo.hotel || f.hotel === alvo.hotel)));
-  const itens = todos.filter(x => !soEsta || (String(x.quando || "") >= alvo.desde && (!alvo.caixa || String(x.caixa || "").toLowerCase() === alvo.caixa)));
-  const alterna = alvo.desde ? ` <button type="button" class="link" data-hist-tudo="${esc(atual.id)}">${soEsta ? `ver tudo do hóspede (${todos.length + todosForms.length})` : "só esta hospedagem"}</button>` : "";
-  const sem = Object.entries(h.pcs).filter(([, s]) => !s.ok && s.erro !== "sem rede agora (usa a cópia)").map(([pc]) => h.agentes[pc] || pc);
-  const linhas = [...itens.map(x => ({ q: x.quando, html: linhaHist(x) })),
-    ...forms.map(f => ({ q: f.quando, html: `<div class="cx-h form"><span class="cx-h-tipo">Formulário</span><span class="cx-h-data">${dataBr(f.quando)}</span>
-      <span class="cx-h-ass">${esc(f.hotel)} · ${esc(nomeSituacao(f))}</span>
-      <button class="link" data-ver-pedido="${esc(f.chave)}">abrir pedido</button></div>` }))]
-    .sort((a, b) => String(b.q).localeCompare(String(a.q)));
-  const outros = h.conv?.enderecos || [];
-  return `<section class="cx-hist"><div class="cx-hist-t">${soEsta ? "Histórico deste hóspede nesta hospedagem" : "Histórico deste hóspede no Outlook"} <span>${linhas.length}</span>${alterna}</div>
-    ${outros.length ? `<p class="dica">Mesmo hóspede (mesmo CPF/CNPJ) também usa: ${esc(outros.join(", "))}</p>` : ""}
-    ${linhas.map(l => l.html).join("") || (h.parcial ? "" : `<p class="dica">${soEsta ? "Nenhum outro e-mail desta hospedagem no Outlook dos PCs ligados." : "Nenhum outro e-mail deste endereço no Outlook dos PCs ligados."}</p>`)}
-    ${h.parcial ? `<div class="cx-h-nota">Completando com o Outlook dos 4 PCs (e-mails antigos, outras pastas)…</div>` : ""}
-    ${sem.length ? `<p class="dica">Sem resposta de: ${esc(sem.join(", "))} (desligado).</p>` : ""}</section>`;
-}
-function linhaHist(x) {
-  const aberto = cx.hist.aberto === x.id;
-  return `<div class="cx-h ${aberto ? "aberto" : ""}" data-cx-hist="${esc(x.id)}" tabindex="0" role="button" aria-expanded="${aberto}">
-      <span class="cx-h-tipo t-${x.pasta}">${x.pasta === "enviado" ? "↗ Enviado" : x.pasta === "excluido" ? "✕ Excluído" : "↙ Recebido"}</span>
-      <span class="cx-h-data">${esc(quando(x.quando))}</span><span class="cx-h-ass">${esc(x.assunto || "(sem assunto)")}</span>
-      <span class="cx-h-pc">${esc(nomeAgente(x.pc))}</span></div>
-    ${aberto ? `<div class="cx-h-corpo">${corpoTexto(x.id)}${anexosHtml(x.anexos, { id: x.id, id_espelho: "", pc: x.pc, entry: x.entry || "" })}</div>` : ""}`;
-}
-
 // ---------- ações (rodam no Outlook do PC dono, sem abrir janela) ----------
 function encaminhar(id) {
   if (document.querySelector(".modal-fundo")) return;

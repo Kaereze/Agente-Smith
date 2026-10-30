@@ -63,7 +63,7 @@ def test_o_menu_so_e_montado_pela_peca():
     todo = "".join(a.read_text(encoding="utf-8") for a in [*UI.glob("*.js"), UI / "index.html"])
     for antigo in ("popAberto", "desenharPop", "function pilula", 'id="pop"', "nfFiltroAberto", "cx.filtroAberto", "at.pcAberto"):
         assert antigo not in todo, f"sobrou código do filtro antigo: {antigo}"
-    for id_ in ("cx-filtro", "cx-hotel", "nf-situacao", "nf-hotel", "log-pc"):
+    for id_ in ("cx-filtro", "cx-hotel", "nf-situacao", "nf-hotel"):
         assert f'registrarFiltro("{id_}"' in todo, f"o filtro {id_} não usa a peça"
 
 

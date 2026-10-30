@@ -36,7 +36,6 @@ from config import PASTA_ESTADO
 from analise_nf import VERSAO as VERSAO_ANALISE, ler_compacto
 from controle_nf import reclama_falta_nota
 from log_util import configurar_logging
-from tratamento import normalizar
 
 logger = configurar_logging("espelho_emails")
 
@@ -46,14 +45,6 @@ CABECALHO = ["ID", "Pasta", "Caixa", "Hotel", "De", "Nome", "Para", "Assunto", "
              "PC", "Atualizado", "Quartos", "Falta nota", "Classes", "Versão texto", "Análise", "Lido Outlook", "Via"]
 # Marca invisível nos e-mails que o Painel envia (usuário, 13/10/2026: saber se saiu do Painel ou do Outlook da pessoa)
 MARCA_PAINEL = "http://schemas.microsoft.com/mapi/string/{00020329-0000-0000-C000-000000000046}/PainelFiscal"
-
-
-def foi_pelo_painel(item):
-    """True se o e-mail (Itens Enviados) saiu pelo Painel Fiscal (tem a marca invisível)."""
-    try:
-        return bool(item.PropertyAccessor.GetProperty(MARCA_PAINEL))
-    except Exception:
-        return False
 
 
 def via_do_item(item):
@@ -888,7 +879,3 @@ def entry_do_email(id_email):
     """EntryID (só existe neste PC) do e-mail espelhado — pra responder, encaminhar ou excluir pelo próprio Outlook."""
     return item_local(id_email).get("entry_id", "")
 
-
-def chave_de_busca(e):
-    return normalizar(" ".join([e.get("nome", ""), e.get("de", ""), e.get("assunto", ""), e.get("hotel", ""),
-                                e.get("previa", "")]))

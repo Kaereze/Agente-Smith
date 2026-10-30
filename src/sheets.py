@@ -286,11 +286,6 @@ class BackendSoLeitura(BackendGoogle):
     garantir_colunas = anexar_linhas = apagar_linhas = apagar_aba = _ignorar
 
 
-def limitar_leitura():
-    """Pra quem chama a API do Google por fora do BackendGoogle (cópia das planilhas dos hotéis)."""
-    (cota_google.da_linha() or COTA).usar("leitura")
-
-
 @functools.lru_cache(maxsize=512)
 def _cabecalhos_normalizados(cabecalhos):
     """Os cabeçalhos de uma aba são os mesmos a cada linha lida: normaliza uma vez só (lista imutável: só leitura)."""

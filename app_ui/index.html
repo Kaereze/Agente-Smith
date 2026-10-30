@@ -779,11 +779,6 @@ textarea{width:100%;min-height:64px;resize:vertical}
 .cx-anexo b{font:600 10px var(--f-dado);color:var(--erro);background:var(--erro-fundo);border-radius:4px;padding:3px 4px}
 .cx-verifica{border:1px solid var(--erro);border-left-width:4px;border-radius:10px;background:var(--erro-fundo);padding:12px 14px;display:grid;gap:4px;font-size:13.5px}
 .cx-verifica b{color:var(--erro);font:600 12px var(--f-titulo);letter-spacing:.07em;text-transform:uppercase}
-.cx-aviso-nf{border:1px solid var(--ok);border-left-width:4px;border-radius:10px;background:var(--ok-fundo);padding:12px 14px;display:grid;gap:3px;font-size:13px}
-.cx-aviso-nf b{color:var(--ok)}
-.cx-hist{border-top:1px solid var(--linha);padding-top:12px}
-.cx-hist-t{font:600 12px/1 var(--f-titulo);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:8px}
-.cx-hist-t span{color:var(--verde-forte);margin-left:6px}
 .cx-h{display:grid;grid-template-columns:98px 112px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer}
 .cx-h:hover,.cx-h.aberto{background:var(--folha-2)}
 .cx-h.form{cursor:default}
@@ -942,7 +937,7 @@ textarea{width:100%;min-height:64px;resize:vertical}
 body{font-size:13.5px}
 /* formas: cantos de 6 px em tudo que é caixa; nada de pílula */
 button,input,select,textarea,.quadro,.cartao,.ficha,.leitura,.cx-quadro,.op-cartao,.fr-item,.faixa-resumo,.st-tab,.fp,.fp-on,.fp-on button,
-.seg,.seg button,.escopo,.escopo button,.st-alerta,.aviso-pcs,.saude,.no-outlook,.quadro-e2,.cx-verifica,.cx-aviso-nf,.outro-ped,.maq,
+.seg,.seg button,.escopo,.escopo button,.st-alerta,.aviso-pcs,.saude,.no-outlook,.quadro-e2,.cx-verifica,.outro-ped,.maq,
 .pop,.modal,.compor-inline,.editor,.soltar,.sug,.selo-op,.chips-anexo > *,.cx-ficha,.ger-dia > div,.ger-aviso,.versao-ref,.tabela-wrap{border-radius:var(--raio)!important}
 .quadro,.cartao,.op-cartao,.leitura,.maq{box-shadow:none!important}
 button{font-weight:500;padding:7px 12px}
@@ -1560,12 +1555,11 @@ html,body{background:#1f1f1f}
 .ol-ficha .fb button.p{background:#1f6b33;border-color:#1f6b33;color:#fff}
 .ol-corpo{padding:16px 22px;line-height:1.55;color:#d0d0d0;font-size:13.5px}
 .ol-corpo .cx-texto{color:#d0d0d0;font-size:13.5px;max-width:78ch}
-#v-correio.ol .cx-verifica,#v-correio.ol .cx-aviso-nf{margin:12px 22px 0}
+#v-correio.ol .cx-verifica{margin:12px 22px 0}
 #v-correio.ol .cx-anexos{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 #v-correio.ol .cx-anexo{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border:1px solid #4a4a4a;border-radius:8px;background:#2b2b2b;
   color:#f0f0f0;font:inherit;font-size:12.5px;cursor:pointer;min-width:200px;text-align:left}
 #v-correio.ol .cx-anexo b{width:38px;height:38px;border-radius:6px;display:grid;place-items:center;background:#3a3a3a;color:#6cb8f6;font-size:10.5px}
-#v-correio.ol .cx-hist{margin:4px 22px 22px}
 .ol-vazio{height:100%;display:grid;place-items:center;align-content:center;gap:10px;text-align:center;color:#a8a8a8;padding:40px}
 .ol-vazio svg{width:46px;height:46px;opacity:.5}
 .ol-vazio b{font-size:15px;color:#d0d0d0}
@@ -1756,8 +1750,7 @@ html,body{background:#1f1f1f}
 /* o texto do e-mail alinhado com o nome de quem mandou */
 .modo-ol .ol-corpo{padding:24px 32px 28px 86px;line-height:1.6;color:#f0f0f0;font-size:14.5px}
 .modo-ol .ol-corpo .cx-texto{color:#f0f0f0;font-size:14.5px;max-width:78ch}
-#v-correio.ol .cx-verifica,#v-correio.ol .cx-aviso-nf{margin:18px 28px 0 86px}
-#v-correio.ol .cx-hist{margin:8px 28px 28px 86px}
+#v-correio.ol .cx-verifica{margin:18px 28px 0 86px}
 /* formulário: igual ao e-mail do Emissor Automático (Enviado por · Dados para emissão · tabela · Enviado em) */
 .modo-ol .ol-form{max-width:1010px;margin:0}
 .modo-ol .ol-form .por{font-size:14.5px;font-weight:700}
@@ -2064,31 +2057,6 @@ html,body{background:#1f1f1f}
 .modo-ol .pf-menu .pf-lista{max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#4a4a4a transparent}
 .modo-ol .pf-menu .pf-grupo{padding:10px 12px 4px;font:600 11px "Segoe UI",system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#a8a8a8}
 .modo-ol .pf-menu .pf-vazio{padding:10px 12px;color:#a8a8a8;font-size:12.5px}
-/* Resumo fixo do hóspede (21/10/2026, desenho Pr1/Pr2): faixa parada no topo do e-mail */
-#v-correio.ol .ol-resumo{position:sticky;top:0;z-index:6;margin:0 0 4px;padding:12px 20px 10px;background:#262626;border-bottom:1px solid #3a3a3a;
-  box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:9px}
-.ol-resumo .rf1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.ol-resumo .rf-av{width:32px;height:32px;border-radius:50%;background:#b146c2;color:#fff;display:grid;place-items:center;font-weight:600;font-size:12.5px;flex:none}
-.ol-resumo .rf-nome{font-size:15px;font-weight:600;color:#f6efdc}
-.ol-resumo .rf-etq{display:inline-flex;flex-wrap:wrap;gap:4px}
-.ol-resumo .rf-prazo{font-size:12px;color:#bdbdbd}
-.ol-resumo .rf-prazo.perto{color:#f2c76b}
-.ol-resumo .rf-prazo.vencido{color:#ff8d95}
-.ol-resumo .rf-bts{margin-left:auto;display:flex;gap:8px}
-.ol-resumo .rf-bts button{height:30px;padding:0 12px!important;border:1px solid #4a4a4a!important;border-radius:6px!important;background:#2b2b2b!important;
-  color:#f0f0f0!important;font:13px "Segoe UI",system-ui,sans-serif!important;cursor:pointer}
-.ol-resumo .rf-bts button:hover{background:#3a3a3a!important}
-.ol-resumo .rf-bts button.p{background:#479ef5!important;border-color:#479ef5!important;color:#fff!important;font-weight:600!important}   /* 24/10/2026: azul como o Enviar NF da ficha (era verde) */
-.ol-resumo .rf-bts button:disabled{opacity:.45;cursor:default}
-.ol-resumo .rf2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.ol-resumo .rf-rot{font-size:11px;font-weight:700;letter-spacing:.06em;color:#a8a8a8;text-transform:uppercase}
-.ol-resumo .rf-chip{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:2px 10px;border-radius:6px;background:#1e3f2e;color:#f6efdc;font-size:12.5px;line-height:1.35}
-.ol-resumo .rf-chip b{font-weight:600}
-.ol-resumo .rf-chip.falta{background:#3d3212;color:#f2c76b}
-.ol-resumo .rf-chip.neutro{background:#2b2b2b;color:#bdbdbd}
-.ol-resumo .rf-ficha{margin-left:auto;border:0!important;background:none!important;color:#7fbf9a!important;font-size:12.5px!important;cursor:pointer;padding:0!important}
-.ol-resumo .rf-tab{max-height:46vh;overflow:auto;padding-top:2px}
-.ol-resumo .rf-tab .por,.ol-resumo .rf-tab h3,.ol-resumo .rf-tab .fg-pe{display:none!important}
 /* Pedido repetido no e-mail (21/10/2026, desenho Pr3): faixa laranja embaixo do resumo, comparar lado a lado */
 #v-correio.ol .ol-repetido{margin:10px 20px 4px;padding:12px 14px;border:1px solid #f0a04b;border-radius:8px;background:#3a2a14;display:flex;flex-direction:column;gap:10px}
 .ol-repetido .rp1{display:flex;gap:12px;align-items:flex-start}
@@ -2258,7 +2226,6 @@ html,body{background:#1f1f1f}
 
     <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
-    <section class="vista oculta monit" id="v-log"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="log"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
     <section class="vista oculta" id="v-agentes"><iframe id="agentes-quadro" title="Agentes do Smith: mapa do sistema" referrerpolicy="no-referrer"></iframe></section>
@@ -2855,25 +2822,6 @@ function desenharAbasNotas() {
   $("op-cartoes-notas").innerHTML = segOperadores(v => TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length);
   $("det-op-notas").innerHTML = detalheOperador();
 }
-function cartoesOperadores() {
-  const atual = escopoAtual();
-  const emails = (typeof cx !== "undefined" && cx.dados?.emails) || [];
-  const agenteDoPc = pc => (st.pcs || []).find(p => p.pc === pc)?.agente || pc;
-  const de = v => {
-    const solic = TODOS.filter(it => it.tipo === "form" && doAgente(agentesDo(it), v)).length;
-    const meus = emails.filter(e => doAgente([agenteDoPc(e.pc)], v));
-    return { solic, emails: meus.length, naoLidos: meus.filter(e => e.lido === false).length, urg: meus.filter(e => e.urgente).length };
-  };
-  return [["todos", "Todos"], ...agentesEquipe().map(a => [a, a])].map(([v, rotulo]) => {
-    const n = de(v), fmt = x => x.toLocaleString("pt-BR");
-    return `<button class="op-cartao" data-escopo="${esc(v)}" aria-pressed="${atual === v}" style="--cor-op:${v === "todos" ? "var(--linha-forte)" : corOp(v)}"
-        title="${v === "todos" ? "As Caixas de Entrada dos 4 PCs" : "A Caixa de Entrada do PC de " + esc(v)}: clique pra ver só ${v === "todos" ? "tudo" : "o dele(a)"}">
-      <span class="op-nome">${v === "todos" ? `<span class="op-av" style="background:var(--tinta-3)">4</span>` : `<span class="op-av" style="background:${corOp(v)}">${esc(inicial(v))}</span>`}${esc(rotulo)}</span>
-      <span class="op-linha"><b>${fmt(n.solic)}</b> ${n.solic === 1 ? "solicitação" : "solicitações"}</span>
-      <span class="op-linha"><b>${fmt(n.emails)}</b> e-mails · ${fmt(n.naoLidos)} não lidos${n.urg ? ` · <span class="op-urg">${fmt(n.urg)} urgente${n.urg > 1 ? "s" : ""}</span>` : ""}</span>
-    </button>`;
-  }).join("");
-}
 function desenharLateral() {   // como o Outlook: o número é de solicitações não lidas na Caixa de Entrada
   const n = TODOS.filter(it => it.tipo === "form" && !it.s.na_caixa?.lido && doAgente(agentesDo(it))).length;
   $("nav-notas-n").textContent = n ? n.toLocaleString("pt-BR") : "";
@@ -2956,10 +2904,6 @@ function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = 
 // Filtro de uma situação só: a coluna não repete a etiqueta, mostra quem está cuidando
 const visaoMista = () => origem === "email" ? filtroEmail === "todos"
   : ["aberto", "todas", "minhas", "envio_pendente", "atrasadas", "doc_diferente"].includes(filtro);
-function colunaSituacao(s) {
-  if (visaoMista()) return `<span>${pecaSituacao(situacaoDoPedido(s), { texto: nomeSituacao(s) })}</span>`;
-  return `<span class="resp ${s.dono ? "" : "livre"}">${s.dono ? "Com " + esc(s.dono) : "Livre"}${marcaEnvio(s)}</span>`;
-}
 function linhaHtml(it) {
   if (it.tipo === "form") {
     const s = it.s;
@@ -3425,7 +3369,7 @@ window.__painelOk = true;
 // parava na 3ª tentativa e ficava a tela verde sem função). window.__telaInteira: a janela (app_janela) confere isto.
 (function () {
   let n = 0; try { n = +sessionStorage.getItem("painel.recargas") || 0; } catch (e) {}
-  const ok = !!window.__painelOk && [typeof carregar, typeof desenharCorreio, typeof abrirEnvio, typeof desenharLog,
+  const ok = !!window.__painelOk && [typeof carregar, typeof desenharCorreio, typeof abrirEnvio, 
     typeof pecaFiltro, typeof etiquetasDoEmail, typeof coresDoTema].every(x => x === "function");
   window.__telaInteira = ok;
   if (ok) { try { sessionStorage.removeItem("painel.recargas"); } catch (e) {} carregar(); return; }

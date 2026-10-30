@@ -9,6 +9,26 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-10-29
+
+Reestruturação do servidor (pedido do João: Painel só de NF e e-mail, rápido, organizado). **Mesma lógica, nada muda na tela.**
+
+### Mudou
+
+- **A classe `Estado` foi partida em 4 módulos por assunto** (mixins, mesmo `self`): `src/estado_correio.py` (e-mails, busca, ações, conferência de NF),
+  `src/estado_rede.py` (o que os 4 PCs perguntam uns aos outros), `src/estado_envio.py` (pedir e conferir envio, ligações, Enviar/Receber todas,
+  caixas com problema, robô) e `src/estado_sistema.py` (versão e reinício, comandos, saúde, vigias). `app_servidor.py` caiu de 2.575 para 1.093 linhas.
+  O que fica nele: dados da Central, tratamento, fila e o servidor HTTP. Os nomes antigos (`app_servidor.NOTAS_EMAILS_SEGUNDOS` etc.) continuam valendo.
+- Mapa de Agentes do Smith e testes que leem o código acompanham os módulos novos (`estado_*.py` entram sozinhos nos testes).
+
+### Removido
+
+- Código sem uso: funções `foi_pelo_painel`, `chave_de_busca`, `limitar_leitura` (Python) e 8 funções de tela (`faixaPedido`, `avisoNfJaEnviada`,
+  `historicoHtml`, `linhaHist`, `graficoLinhas`, `graficoBarrasEmpilhadas`, `cartoesOperadores`, `colunaSituacao`), a tela antiga de Log
+  (`desenharLog`, `menuPcLog`; o Log é a janela do robô) e as regras de estilo do resumo antigo, do aviso "NF já enviada" e do histórico do hóspede.
+- **Não removidos de propósito:** o reconhecimento de NF (`nfCobreHtml`, `src/nf_cobre.py`), desligado em 29/10 mas pode voltar; e os programas
+  `classificador.py` e `organizador_emails.py`, que ninguém importa mas aparecem no mapa e nas pendências (decisão do João).
+
 ## [2026.10.29.7] — 2026-10-29
 
 ### Corrigido

@@ -28,3 +28,7 @@ Passa: peças únicas novas (`pecas/`), testes fortes, regras de negócio escrit
 5. **Tela em arquivos:** estilo fora do `index.html`; um arquivo de lógica por tela.
 6. **App completo:** relatórios (PDF/Excel), perfis de acesso, continuidade (segundo PC de envio) e, só depois, o assunto financeiro (boleto, caixa, faturamento) como contexto próprio.
 Cada etapa: uma versão, testes verdes, teste de tela, e só sobe com OK do João.
+
+## Andamento (29/10/2026)
+- Passo 1 (limpar) e passo 2 (partir a `Estado`): feitos no PC de casa, sem etiqueta. `app_servidor.py` 2.575 → 1.093 linhas. Falta a tabela de rotas.
+- Supabase: por último, não usar agora (decisão do João). Foco: só NF e e-mail.
