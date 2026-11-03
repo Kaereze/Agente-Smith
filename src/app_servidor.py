@@ -261,7 +261,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                 ([ligacoes.ABA] if ler_hoteis or self.ligacoes_linhas is None else [])   # muda pouco: junto com os hotéis
             # do fim conhecido em diante (a última linha de novo: confere que nada mudou por baixo, ex. faxina)
             faixas = {} if trat_inteira else {dados.ABA_TRATAMENTO: f"A{len(self.trat_linhas)}:H"}
-            lidas, erros = self.backend.ler_abas(self.central, nomes, faixas=faixas)
+            with desempenho.MEDIDOR.medir("painel.atualizar.ler_central", 15.0, logger):   # separa a espera do Google do cálculo (29/10/2026)
+                lidas, erros = self.backend.ler_abas(self.central, nomes, faixas=faixas)
             if not lidas:
                 raise RuntimeError(next(iter(erros.values()), "leitura vazia"))
             sumidas = [a for a in erros if a in self.abas_emails or a == espelho_emails.ABA_EVENTOS
@@ -278,8 +279,9 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
             trat, novas = self._juntar_tratamento(lidas_trat, trat_inteira)
             if ler_hoteis:
                 solicitacoes = []
-                for aba, hotel in abas.items():
-                    solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
+                with desempenho.MEDIDOR.medir("painel.atualizar.interpretar_hoteis", 10.0, logger):
+                    for aba, hotel in abas.items():
+                        solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
                 self.hoteis_lidos_em = agora
             else:
                 solicitacoes = self.solicitacoes
@@ -300,7 +302,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                 self.pedidos_caixa = pedidos_caixa
                 self.status = status
                 self.atualizado_em, self.erro = dados.agora(), ""
-            self._montar_correio()
+            with desempenho.MEDIDOR.medir("painel.atualizar.montar_correio", 10.0, logger):
+                self._montar_correio()
             try:
                 self._lido_no_outlook()
             except Exception:

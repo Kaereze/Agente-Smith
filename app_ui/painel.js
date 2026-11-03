@@ -81,6 +81,28 @@ function logDoPc(d, p) {
   return `<div class="maq-log"><span class="rot">O que fez por último</span>${ev.map(x => `<div><span>${esc(String(x.quando).slice(11, 16))}</span>
     <span title="${esc([TIPOS_ATIV[x.tipo] || x.tipo, x.hotel, x.pedido, x.detalhe].filter(Boolean).join(" · "))}">${esc(TIPOS_ATIV[x.tipo] || x.tipo)}${x.hotel ? " · " + esc(x.hotel) : ""}${x.pedido ? " · " + esc(x.pedido) : ""}</span></div>`).join("")}</div>`;
 }
+// "Atualizar PC" com animação simples (29/10/2026, pecas/atualizar_pc.js): o estado de cada pedido fica em atz (a página se redesenha a
+// cada poucos segundos e não pode perder o andamento). Um clique só enquanto anda; se o pedido falhar, o botão continua livre.
+const atz = {};   // "TODOS" ou o nome do PC -> acompanhamento
+let atzTimer = null;
+function botaoAtz(para, rotulo, d, extra = "") {
+  const a = atz[para], sit = a ? atzSituacao(a, d) : null;
+  const emTodos = para !== "TODOS" && atz.TODOS && atzSituacao(atz.TODOS, d).estado === "andando";   // "todos" em andamento já inclui este PC
+  const ocupado = (sit && sit.estado === "andando") || emTodos;
+  const botao = `<button type="button" data-at-atualizar="${esc(para)}" class="btn-atz${sit ? " " + sit.estado : ""}" ${ocupado ? 'disabled aria-busy="true"' : ""} ${extra}>
+    <svg class="ic"><use href="#i-sync"/></svg>${esc(sit ? sit.botao : rotulo)}</button>`;
+  const linha = sit ? `<div class="atz-linha ${sit.estado}" role="status"><i class="atz-barra"></i><span>${esc(sit.linha)}</span></div>` : "";
+  return para === "TODOS" ? `<span class="atz-grupo">${botao}${linha}</span>` : botao + linha;
+}
+function acompanharAtz() {
+  clearInterval(atzTimer);
+  atzTimer = setInterval(() => {
+    let pendente = false;
+    for (const [k, a] of Object.entries(atz)) { if (atzTerminou(a, atzSituacao(a, at.dados))) delete atz[k]; else pendente = true; }
+    if (!pendente) clearInterval(atzTimer);
+    carregarAtividade();   // traz as versões novas e redesenha as Máquinas
+  }, 3000);
+}
 function desenharMaquinas() {
   const d = at.dados, el = $("maquinas");
   carregarCadastro();
@@ -102,13 +124,13 @@ function desenharMaquinas() {
         <dt>Versão</dt><dd>${versao}</dd>
         <dt>Caixas</dt><dd class="dado">${p.caixas}</dd><dt>Papel</dt><dd>${esc(p.papel || "")}</dd></dl>
       ${usoHtml(p)}${logDoPc(d, p)}
-      ${p.online ? `<button data-at-atualizar="${esc(p.pc)}"><svg class="ic"><use href="#i-sync"/></svg>Atualizar este PC</button>` : ""}</article>`;
+      ${p.online || atz[p.pc] ? botaoAtz(p.pc, "Atualizar este PC", d) : ""}</article>`;
   }).join("");
   el.innerHTML = `<p class="dica-prof" style="margin-bottom:12px">Os 4 PCs da equipe: quem está ligado, se o Outlook está aberto (o robô precisa dele), se o Painel está aberto e o que cada um fez por último. "Atualizar" puxa a versão nova do GitHub.</p><div class="cab-pagina"><h1>Máquinas da equipe</h1>
       <span class="dica">${d.pcs.filter(p => p.online).length} de ${d.pcs.length} PCs no ar · atualiza sozinho a cada 20 s</span></div>
     <div class="versao-ref"><span class="rot">Este PC</span><span class="dado">${esc(d.versao)}</span>
       <span class="dica">${a.atras ? `o GitHub tem ${a.atras} commit(s) novo(s)` : esc(a.motivo || "")}${a.verificado_em ? " · conferido " + haQuanto(a.verificado_em) : ""}</span>
-      <button data-at-atualizar="TODOS" title="Cada PC puxa a versão nova do GitHub e reinicia"><svg class="ic"><use href="#i-sync"/></svg>Atualizar todos os PCs</button></div>
+      ${botaoAtz("TODOS", "Atualizar todos os PCs", d, 'title="Cada PC puxa a versão nova do GitHub e reinicia"')}</div>
     <div class="cartao" id="cad-faltando">${CAD.html}</div>
     <div class="maquinas">${cards || `<div class="vazio">Nenhum PC publicou ainda.</div>`}</div>`;
 }
@@ -118,9 +140,14 @@ document.addEventListener("click", async e => {
   if (!b) return;
   if (b.dataset.atAba) { at.aba = b.dataset.atAba; trocarVista("log"); return; }
   const para = b.dataset.atAtualizar;
+  if (b.disabled || (atz[para] && atzSituacao(atz[para], at.dados).estado === "andando")) return;   // um clique só enquanto anda
   if (!confirm(para === "TODOS" ? "Pedir pra TODOS os PCs puxarem a versão nova do GitHub e reiniciarem?" : `Pedir pro PC ${para} atualizar e reiniciar?`)) return;
   const r = await api("/api/comando", { para, comando: "atualizar" });
-  toast(r.ok ? "Pedido enviado — o PC responde em até 1 minuto (veja o Log)." : (r.motivo || r.erro || "falhou"), !r.ok);
+  if (!r.ok) return toast(r.motivo || r.erro || "falhou", true);   // não deu: nada fica travado, o botão segue livre
+  const d = at.dados || { pcs: [] };
+  atz[para] = atzNovo(para, para === "TODOS" ? d.pcs.filter(p => p.online) : d.pcs.filter(p => p.pc === para));
+  toast("Pedido enviado");
+  desenharMaquinas(); acompanharAtz();
 });
 
 // ---------- Visão geral: só os dados do próprio Painel (pedidos da Central + e-mails dos hóspedes) ----------

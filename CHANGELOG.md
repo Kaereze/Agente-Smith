@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.03] — 2026-11-03 (aguarda publicação)
+
+### Adicionado
+- **Animação simples do "Atualizar este PC" / "Atualizar todos os PCs"** (pedido do João). Depois do clique o botão vira "Pedido enviado…" com o ícone girando e,
+  embaixo, uma barrinha que corre e o que se espera ("Aguardando o PC reiniciar", ou "2 de 5 atualizados · aguardando"). Quando a versão do PC muda (ou aparece o
+  aviso ATUALIZADO), vira "✓ Atualizado" em azul por uns 3,5 s. Passou de 1 minuto sem mudar: âmbar, "Sem mudança em 1 min · veja o Log", e o botão fica livre.
+  Um clique só enquanto anda (cliques repetidos não pedem de novo; "todos" trava os botões de cada PC); se o pedido falhar, o botão continua livre.
+  Regras em `app_ui/pecas/atualizar_pc.js`, 6 testes novos (`testes/test_atualizar_pc.py`).
+- **Medição da volta lenta da leitura da Central:** `painel.atualizar.ler_central`, `.interpretar_hoteis` e `.montar_correio` entram em `/api/desempenho`
+  e no log (aviso se passar de 15, 10 e 10 s), para separar a espera do Google do cálculo.
+
 ## [2026.10.30.1] — 2026-10-30
 
 ### Mudou
