@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.03.1] — 2026-11-03 (aguarda publicação)
+
+### Mudou
+- **Chamada ao Google com limite de 30 s** (pedido do João). Cada tentativa espera no máximo 15 s (antes 30), até 3 tentativas com espera de 2 s, e a chamada inteira,
+  contando as esperas, não passa de 30 s (`rede_util.com_retry(orcamento=...)`, `sheets.LIMITE_CHAMADA_GOOGLE_SEGUNDOS`). Antes eram 5 tentativas de 30 s com esperas de
+  10, 20, 40 e 80 s: uma volta ruim chegava a ~5 min (278 s medidos). Se o Google falhar, a volta termina com erro e o Painel segue com o último dado bom. 4 testes novos.
+
 ## [2026.11.03] — 2026-11-03
 
 ### Adicionado

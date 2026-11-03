@@ -18,7 +18,8 @@ logger = configurar_logging(__name__)
 
 ESCOPOS = ["https://www.googleapis.com/auth/spreadsheets"]
 ESCOPOS_SO_LEITURA = ["https://www.googleapis.com/auth/spreadsheets.readonly"]   # SIMULACAO
-TIMEOUT_GOOGLE_SEGUNDOS = 30
+TIMEOUT_GOOGLE_SEGUNDOS = 15   # cada tentativa (era 30)
+LIMITE_CHAMADA_GOOGLE_SEGUNDOS = 30   # a chamada inteira, com as esperas entre tentativas (29/10/2026, João): antes chegava a ~5 min
 
 SEPARADOR = chr(31)   # nunca aparece numa resposta de formulário
 VALORES_PENDENTE = {"", "false", "falso"}
@@ -88,7 +89,7 @@ class BackendGoogle:
                 if e_cota_estourada(e):
                     cota.pausar()
                 raise
-        return com_retry(chamada, e_erro_passageiro_google)
+        return com_retry(chamada, e_erro_passageiro_google, tentativas=3, espera_inicial=2, orcamento=LIMITE_CHAMADA_GOOGLE_SEGUNDOS)
 
     def _planilha(self, planilha_id):
         if planilha_id not in self._planilhas:
