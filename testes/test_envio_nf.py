@@ -2,6 +2,8 @@ import os
 import datetime
 import time
 
+from pathlib import Path
+
 import envio_nf as en
 from conftest import CENTRAL
 
@@ -518,3 +520,27 @@ def test_selo_da_ingrid_entra_depois_da_equipe_e_vira_o_padrao_dela():
     assert lista[:5] == ["joao", "cristian", "clara", "bernardo", "ingrid"]
     assert en.selo_do_agente("Ingrid") == "ingrid" and en.caminho_selo("ingrid")
     assert [s["nome"] for s in en.selos()][4] == "Ingrid"
+
+
+def test_selo_so_de_texto_do_afonso_sem_imagem():
+    """03/11/2026 (João): assinatura do Afonso é a mensagem padrão + estas 3 linhas, exatamente, sem imagem."""
+    lista = en.selos()
+    assert [s["id"] for s in lista][:6] == ["joao", "cristian", "clara", "bernardo", "ingrid", "afonso"]
+    afonso = next(s for s in lista if s["id"] == "afonso")
+    assert afonso["nome"] == "Afonso Pereira" and afonso["texto"] == ["AFONSO PEREIRA", "AUXILIAR FINANCEIRO", "REDE ANDRADE HOTEIS"]
+    assert all(s["texto"] is None for s in lista if s["id"] != "afonso")                 # os outros continuam de imagem
+    assert en.selo_do_agente("Afonso Pereira") == "afonso" and en.selo_do_agente("Afonso") == "afonso"
+    assert en.selo_valido("afonso") and en.selo_valido("ingrid") and not en.selo_valido("fulano") and not en.selo_valido("")
+    assert en.caminho_selo("afonso") is None                                              # não há PNG: o e-mail não leva imagem
+
+
+def test_corpo_do_email_do_afonso_tem_a_mensagem_padrao_e_as_tres_linhas_sem_imagem():
+    html = en.corpo_com_selo("", "afonso")
+    assert "Prezado(a) hóspede" in html and "Atenciosamente," in html and "cid:" not in html and "<img" not in html
+    assert html.index("Atenciosamente,") < html.index("AFONSO PEREIRA<br>AUXILIAR FINANCEIRO<br>REDE ANDRADE HOTEIS")
+    assert "cid:selo_nf" in en.corpo_com_selo("", "ingrid")                                # o selo de imagem segue igual
+
+
+def test_tela_mostra_o_texto_do_selo_no_lugar_da_imagem():
+    js = (Path(__file__).resolve().parent.parent / "app_ui" / "painel.js").read_text(encoding="utf-8")
+    assert 'id="nf-selo-texto"' in js and "if (s && s.texto)" in js and "envNF.selos = o.selos;" in js

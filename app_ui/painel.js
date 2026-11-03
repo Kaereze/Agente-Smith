@@ -648,7 +648,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
     ${enc ? "" : linhaModelos()}
     <div class="editor ${o.assinatura_com_mensagem ? "curto" : ""}" id="nf-msg" contenteditable="true" spellcheck="true"
       data-dica="${o.assinatura_com_mensagem ? "Escreva aqui só se quiser acrescentar algo — a mensagem padrão já vem na assinatura abaixo." : ""}"></div>
-    ${o.selos.length ? `<div class="selo-previa"><img id="nf-selo-img" alt="Selo"></div>
+    ${o.selos.length ? `<div class="selo-previa"><img id="nf-selo-img" alt="Selo"><div id="nf-selo-texto" hidden></div></div>
       <div class="selos"><span class="dica">Assinatura:</span>${o.selos.map(s =>
         `<button class="selo-op" data-nf-selo="${esc(s.id)}">${esc(s.nome)}</button>`).join("")}</div>`
     : o.assinatura ? `<iframe class="assinatura" id="nf-ass" sandbox="allow-same-origin"></iframe>
@@ -684,6 +684,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   if (o.selos.length) {
     let salvo = null;
     try { salvo = localStorage.getItem("selo_nf"); } catch (e) { }
+    envNF.selos = o.selos;
     escolherSelo(o.selos.some(s => s.id === salvo) ? salvo : o.selo || o.selos[0].id);
   } else if (o.assinatura) {
     const ifr = $("nf-ass");
@@ -723,7 +724,10 @@ document.addEventListener("keydown", ev => {
 
 function escolherSelo(id) {
   envNF.selo = id;
-  $("nf-selo-img").src = `/assinaturas/${encodeURIComponent(id)}.png`;
+  const s = (envNF.selos || []).find(x => x.id === id), img = $("nf-selo-img"), txt = $("nf-selo-texto");
+  if (s && s.texto) {   // selo só de texto (sem imagem): as linhas que saem no e-mail, depois do "Atenciosamente,"
+    img.hidden = true; img.removeAttribute("src"); txt.hidden = false; txt.innerHTML = s.texto.map(esc).join("<br>");
+  } else { txt.hidden = true; img.hidden = false; img.src = `/assinaturas/${encodeURIComponent(id)}.png`; }
   document.querySelectorAll("[data-nf-selo]").forEach(b => b.classList.toggle("sel", b.dataset.nfSelo === id));
   try { localStorage.setItem("selo_nf", id); } catch (e) { }
 }

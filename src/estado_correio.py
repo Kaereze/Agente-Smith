@@ -672,7 +672,7 @@ class CorreioMixin:
         sol = {"aba": "", "carimbo": "", "email": e["de"], "hotel": e["hotel"], "nome": e["nome"] or e["de"]}
         selo = str(corpo.get("selo") or "")   # assinatura padrão também no encaminhar (13/10/2026)
         return self.envio_nf.pedir(sol, para, assunto, e["caixa"], [], quem, str(corpo.get("corpo", "")),
-                                   selo=selo if envio_nf.caminho_selo(selo) else "", responder=e["id"], acao=envio_nf.ENCAMINHAR)
+                                   selo=selo if envio_nf.selo_valido(selo) else "", responder=e["id"], acao=envio_nf.ENCAMINHAR)
 
     def opcoes_email(self, id_email):
         e = self._email(id_email)
@@ -743,7 +743,7 @@ class CorreioMixin:
         sol = {"aba": "", "carimbo": "", "email": para, "hotel": contas[conta]["hotel"], "nome": para}
         logger.info(f"✉️ Novo e-mail de {conta} para {para}: \"{assunto}\" — por {quem}")
         r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, str(corpo.get("corpo", "")), cc,
-                                selo if envio_nf.caminho_selo(selo) else "", livre=True, **_kw_ligacao(corpo))
+                                selo if envio_nf.selo_valido(selo) else "", livre=True, **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
 
     def responder_email(self, corpo, quem):
@@ -768,5 +768,5 @@ class CorreioMixin:
         cc = ";".join(x.strip() for x in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in x)
         selo = str(corpo.get("selo") or "")
         r = self.envio_nf.pedir(sol, para, assunto, e["caixa"], anexos, quem, str(corpo.get("corpo", "")), cc,
-                                selo if envio_nf.caminho_selo(selo) else "", responder=e["id"], **_kw_ligacao(corpo))
+                                selo if envio_nf.selo_valido(selo) else "", responder=e["id"], **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, e["hotel"] or sol["hotel"], e["caixa"], para, assunto)

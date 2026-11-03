@@ -225,7 +225,7 @@ class EnvioMixin:
         cc = ";".join(e.strip() for e in re.split(r"[;,]", str(corpo.get("cc", ""))) if "@" in e)
         selo = str(corpo.get("selo") or "")
         r = self.envio_nf.pedir(sol, para, assunto, conta, anexos, quem, corpo.get("corpo"), cc,
-                                selo if envio_nf.caminho_selo(selo) else "", **_kw_ligacao(corpo))
+                                selo if envio_nf.selo_valido(selo) else "", **_kw_ligacao(corpo))
         return self._marcar_ligacao_do_envio(r, corpo, quem, sol["hotel"], conta, para, assunto)
 
     # ---------- pedido por ligação (usuário, 22/10/2026) ----------

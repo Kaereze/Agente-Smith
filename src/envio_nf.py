@@ -201,19 +201,33 @@ CORPO_PADRAO = MENSAGEM_PADRAO
 # Trocar/incluir um selo = pôr o PNG na pasta (o nome do arquivo é o do operador).
 PASTA_SELOS = Path(__file__).resolve().parent.parent / "app_ui" / "assinaturas"
 NOMES_SELOS = {"joao": "João"}
-ORDEM_SELOS = ["joao", "cristian", "clara", "bernardo", "ingrid"]
+ORDEM_SELOS = ["joao", "cristian", "clara", "bernardo", "ingrid", "afonso"]
+# Selo só de texto (03/11/2026, pedido do João): sem imagem. Depois da mensagem padrão ("Atenciosamente,") entram estas linhas, exatamente assim.
+SELOS_TEXTO = {"afonso": {"nome": "Afonso Pereira", "linhas": ["AFONSO PEREIRA", "AUXILIAR FINANCEIRO", "REDE ANDRADE HOTEIS"]}}
 CID_SELO = "selo_nf"
 LARGURA_SELO = 520   # 13/10/2026: assinatura nova é mais larga (2400x760)
 
 
 def selos():
-    """[{"id": "joao", "nome": "João"}] dos PNGs da pasta, na ordem da equipe."""
+    """[{"id": "joao", "nome": "João", "texto": None | [linhas]}] dos PNGs da pasta e dos selos só de texto, na ordem da equipe."""
     try:
         ids = [p.stem.lower() for p in PASTA_SELOS.glob("*.png")]
     except OSError:
-        return []
-    ids.sort(key=lambda i: (ORDEM_SELOS.index(i) if i in ORDEM_SELOS else 99, i))
-    return [{"id": i, "nome": NOMES_SELOS.get(i, i.title())} for i in ids]
+        ids = []
+    ids = sorted(set(ids) | set(SELOS_TEXTO), key=lambda i: (ORDEM_SELOS.index(i) if i in ORDEM_SELOS else 99, i))
+    return [{"id": i, "nome": SELOS_TEXTO[i]["nome"] if i in SELOS_TEXTO else NOMES_SELOS.get(i, i.title()),
+             "texto": list(SELOS_TEXTO[i]["linhas"]) if i in SELOS_TEXTO else None} for i in ids]
+
+
+def texto_do_selo(selo_id):
+    """Linhas do selo só de texto, ou None (selo de imagem ou desconhecido)."""
+    item = SELOS_TEXTO.get(str(selo_id or "").lower())
+    return list(item["linhas"]) if item else None
+
+
+def selo_valido(selo_id):
+    """Selo que o Painel sabe montar: imagem na pasta ou só de texto."""
+    return bool(caminho_selo(selo_id) or texto_do_selo(selo_id))
 
 
 def caminho_selo(selo_id):
@@ -231,9 +245,14 @@ def selo_do_agente(agente):
     return next((s["id"] for s in lista if s["id"] == primeiro), lista[0]["id"] if lista else "")
 
 
-def corpo_com_selo(mensagem):
-    """Mensagem (padrão quando vazia, termina em "Atenciosamente,") + o selo embutido por cid."""
+def corpo_com_selo(mensagem, selo=""):
+    """Mensagem (padrão quando vazia, termina em "Atenciosamente,") + o selo: a imagem embutida por cid ou, no selo só de texto, as linhas dele."""
     texto = (mensagem or "").strip() or MENSAGEM_PADRAO
+    linhas = texto_do_selo(selo)
+    if linhas:
+        from html import escape
+        return (f'<html><body>{mensagem_html(texto)}<br>'
+                f'<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#222">{"<br>".join(escape(l) for l in linhas)}</div></body></html>')
     return (f'<html><body>{mensagem_html(texto)}<br>'
             f'<img src="cid:{CID_SELO}" width="{LARGURA_SELO}" alt="Andrade Hotéis"></body></html>')
 
@@ -676,9 +695,9 @@ def enviar_pelo_outlook(conta_de, para, cc, assunto, mensagem, anexos, agente=""
     mail.Subject = assunto
     html_assinatura, imagens = "", []
     arquivo_selo = caminho_selo(selo)
-    if arquivo_selo:
-        mail.HTMLBody = corpo_com_selo(mensagem)
-        imagens = [(arquivo_selo, CID_SELO)]
+    if arquivo_selo or texto_do_selo(selo):
+        mail.HTMLBody = corpo_com_selo(mensagem, selo)
+        imagens = [(arquivo_selo, CID_SELO)] if arquivo_selo else []
         if historico:
             mail.HTMLBody = re.sub(r"</body>\s*</html>\s*$", "", mail.HTMLBody) + "<br>" + historico
     else:
