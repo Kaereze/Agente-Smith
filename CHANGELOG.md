@@ -9,7 +9,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [2026.11.03.1] — 2026-11-03 (aguarda publicação)
+## [2026.11.03.1] — 2026-11-03
 
 ### Mudou
 - **Chamada ao Google com limite de 30 s** (pedido do João). Cada tentativa espera no máximo 15 s (antes 30), até 3 tentativas com espera de 2 s, e a chamada inteira,
