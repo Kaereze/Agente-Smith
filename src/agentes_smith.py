@@ -86,6 +86,8 @@ def estado(pcs, agora=None):
             pe("outlook_vivo", p, "ok", "Outlook aberto, com janela.")
         elif outlook == "fechado":
             pe("outlook_vivo", p, "parado", "Outlook fechado: nenhum e-mail entra nem sai deste PC.")
+        elif p.get("papel") == "so_painel" or outlook == "sem Outlook":
+            pass   # PC só com o Painel (Ingrid, Afonso): não tem Outlook de propósito; o guardião não se aplica e não é "atenção" (03/11/2026)
         elif outlook:
             pe("outlook_vivo", p, "atencao", f"Outlook {outlook}: não envia nem recebe e-mail.")
         if p.get("conferencia_atrasada"):

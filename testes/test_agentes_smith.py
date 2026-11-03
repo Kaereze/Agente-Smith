@@ -122,3 +122,14 @@ def test_mapa_lista_so_agentes_que_existem_e_nao_chama_a_internet():
     assert len(ids) >= 19 and not [i for i in ids if i not in blocos]
     assert "/api/agentes" in html
     assert not re.search(r"""(?:src|href)=["']https?://|fetch\(["']https?://|@import""", html)     # sem fonte nem script de fora
+
+
+def test_pc_so_painel_sem_outlook_nao_vira_atencao_no_guardiao():
+    """03/11/2026: Ingrid e Afonso não têm Outlook de propósito; o Guardião do Outlook não se aplica a eles (antes: "Atenção")."""
+    res = agentes_smith.estado([_pc("Clara"), _pc("Afonso", outlook="sem Outlook", papel="so_painel", conferencia="", conferencia_resumo="")], AGORA)
+    assert all(x["pc"] != "Afonso" for x in res["agentes"]["outlook_vivo"])             # sem linha: não se aplica
+    assert _est(res, "outlook_vivo", "Clara")["est"] == "ok"
+    for id_agente in ("app_servidor", "rede_pcs", "saude", "atualizador", "rede_local"):
+        assert _est(res, id_agente, "Afonso")["est"] == "ok", id_agente                 # o resto do PC dele segue sendo conferido
+    ruim = agentes_smith.estado([_pc("Cristian", outlook="aberto sem janela")], AGORA)  # PC com Outlook de verdade continua avisando
+    assert _est(ruim, "outlook_vivo", "Cristian")["est"] == "atencao"

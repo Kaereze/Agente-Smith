@@ -18,6 +18,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
   o número da Caixa de Entrada acompanha os hotéis marcados e entra o bloco **Prioridades (da seleção)** com a quantidade de Alta, Média e Baixa; clicar num nível marca todos os hotéis dele.
   "Meus hotéis" fica salvo **neste PC** (nada vai ao Google) e a tela abre já com essa lista. Peça nova: `app_ui/pecas/filtro_hoteis.js` e `.css`; 8 testes novos.
 
+### Corrigido
+- **Guardião do Outlook mostrava "Atenção: sem Outlook, não envia nem recebe e-mail" para a Ingrid e o Afonso.** Eles não têm Outlook de propósito (PC só com o Painel); agora o guardião
+  não se aplica a eles. O resto do PC deles continua sendo conferido. 1 teste novo.
+
 ### Mudou
 - O filtro de **um** hotel (`cx.hotel`, `nf-hotel`) saiu; o menu agora não é cortado pela coluna estreita da lista. Na tela de Notas fiscais a prioridade ordena a lista e o botão "Chegou ↑/↓" que já existia continua alternando a data.
 
