@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/pecas/caixas.css">
 <link rel="stylesheet" href="/pecas/busca_recente.css">
 <link rel="stylesheet" href="/pecas/etapas.css">
+<link rel="stylesheet" href="/pecas/filtro_hoteis.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
    Cores só por token: o tema claro/escuro segue o Windows. */
@@ -2320,6 +2321,7 @@ html,body{background:#1f1f1f}
 <script src="/pecas/busca_recente.js"></script>
 <script src="/pecas/etapas.js"></script>
 <script src="/pecas/atualizar_pc.js"></script>
+<script src="/pecas/filtro_hoteis.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
 const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
@@ -2343,7 +2345,7 @@ const PERIODOS_NF = [["7", "Últimos 7 dias"], ["15", "Últimos 15 dias"], ["30"
                      ["0", "Todo o período"]];
 const POR_PAGINA = 100;
 let st = {fila:[], agente:"", status:{}, emails:[], hoteis:[], pcs:[]}, timer = null, intervalo = 15;
-let filtro = "todas", filtroEmail = "todos", origem = "form", hotel = "", agenteF = "", envio = "todos", periodo = "45";
+let filtro = "todas", filtroEmail = "todos", origem = "form", agenteF = "", envio = "todos", periodo = "45";
 let pagina = 0, sel = null, emailSel = null, ordem = "";   // ordem "": automática
 let AG = {}, TODOS = [];   // hotel -> agente (Cadastro_Hoteis) · formulários + e-mails num formato só
 try { const p = JSON.parse(localStorage.getItem("painel.caixa2") || "{}");
@@ -2714,7 +2716,7 @@ function passa(it, ignorar = "", busca) {   // ignorar: "origem|sit"...
   if (!ignorar.includes("sit") && !passaSit(it, it.tipo === "form" ? filtro : filtroEmail)) return false;
   if (!ignorar.includes("agente") && agenteF && !agentesDo(it).includes(agenteF)) return false;
   if (!ignorar.includes("escopo") && !doAgente(agentesDo(it))) return false;
-  if (!ignorar.includes("hotel") && hotel && !it.hoteis.includes(hotel)) return false;
+  if (!ignorar.includes("hotel") && !fhPassa(it.hoteis)) return false;
   if (it.tipo === "form") return true;   // espelho da caixa: sem período nem "e-mail ao hotel" (está tudo no Outlook)
   if (!ignorar.includes("envio") && it.tipo === "form" && !ENVIO[envio][1](it.s)) return false;
   const corte = ignorar.includes("periodo") ? "" : corteDoPeriodo();
@@ -2879,30 +2881,23 @@ function desenharFiltros(busca, total) {
   $("status-cards").innerHTML = pecaFiltro({ id: "nf-situacao", rotulo: "Situação", valor: atual === "aberto" ? padraoSit : atual, padrao: padraoSit,
     nomePadrao: "Todas", opcoes: grupos.flatMap((g, gi) => g.map((f, i) => ({ v: f, nome: ["todas", "todos"].includes(f) ? "Todas as solicitações" : porF[f][1],
       n: porF[f][3], sep: gi > 0 && i === 0, classe: ["atrasadas", "doc_diferente"].includes(f) && porF[f][3] ? "r" : "" }))) });
-  const algum = hotel || agenteF;
-  $("filtros-linha").innerHTML = pecaFiltro({ id: "nf-hotel", rotulo: "Hotel", valor: hotel || "", nomePadrao: "Todos", busca: true,
-      placeholder: "Buscar hotel…", opcoes: opcoesHotelNotas() }) +
+  const algum = FH.sel.size || agenteF;
+  fhAtualizarContagem();
+  $("filtros-linha").innerHTML = fhHtml() +
     (algum ? `<button class="fp-limpar" data-limpa="tudo">Limpar filtros</button>` : "") +
     (busca ? `<span class="aviso-busca">Buscando em toda a aba: situação e filtros não valem enquanto pesquisa</span>` : "") +
     `<span class="resultado">${total.toLocaleString("pt-BR")} ${total === 1 ? "resultado" : "resultados"}</span>`;
   $("notas-cab").classList.toggle("buscando", !!busca);
 }
 
-function opcoesHotelNotas() {   // Todos + os hotéis de cada agente (do agente escolhido, se tiver), os com mais pedidos primeiro
-  const n = {}, grupos = {};
-  TODOS.forEach(it => { if (passa(it, "hotel", "")) it.hoteis.forEach(h => n[h] = (n[h] || 0) + 1); });
-  (st.hoteis || []).forEach(h => { if (!agenteF || h.agente === agenteF) (grupos[h.agente || "Sem agente"] ||= []).push(h.hotel); });
-  return [{ v: "", nome: "Todos os hotéis" }, ...Object.entries(grupos).flatMap(([a, hs]) =>
-    hs.sort((x, y) => (n[y] || 0) - (n[x] || 0) || x.localeCompare(y, "pt")).map(h => ({ v: h, nome: h, n: n[h] || 0, grupo: a })))];
-}
 registrarFiltro("nf-situacao", { escolher: v => { if (origem === "form") filtro = v; else filtroEmail = v; ordem = ""; pagina = 0; guardarCaixa(); desenhar(); },
                                  redesenhar: () => desenhar() });
-registrarFiltro("nf-hotel", { escolher: v => { hotel = v; pagina = 0; guardarCaixa(); desenhar(); }, redesenhar: () => desenhar() });
+fhOuvir(() => { pagina = 0; if (typeof pn !== "undefined" && pn.vista === "fila") desenhar(); });   // Notas fiscais: vários hotéis (pecas/filtro_hoteis.js)
 
 // Visão geral e outros atalhos abrem a tela de notas já filtrada
 function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = {}) {
   origem = o; if (o === "form") filtro = f; else filtroEmail = f;
-  agenteF = ""; if (agente) escopo = agente; hotel = ""; envio = "todos"; pagina = 0; sel = null; emailSel = null;
+  agenteF = ""; if (agente) escopo = agente; FH.sel = new Set(); envio = "todos"; pagina = 0; sel = null; emailSel = null;
   $("busca").value = ""; guardarCaixa(); trocarVista("fila");
 }
 
@@ -2941,6 +2936,7 @@ function desenhar(){
   // o mais recente primeiro (usuário, 09/10/2026); "Prazo" vira pro mais atrasado primeiro
   const ord = ordem || "recente";
   if (ord === "antigo") lista = lista.slice().reverse();
+  lista = fhAgrupar(lista, it => it.hoteis);   // prioridade do hotel primeiro (alta antes de baixa); a data segue a ordem escolhida acima
   const seta = o => ord === o ? (o === "antigo" ? " ↓" : " ↓") : "";
   $("linhas-cab").className = "nf-cab";
   $("linhas-cab").innerHTML = `<span class="c-nome">Hóspede</span><span class="c-hotel">Hotel</span><span class="c-op">Operador</span>
@@ -2957,12 +2953,12 @@ function desenhar(){
   $("lista").innerHTML = lista.length ? lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA).map(linhaHtml).join("")
     : busca ? `<div class="vazio">Nada com “${esc(busca)}” ${origem === "form" ? "nos formulários" + (periodo === "0" ? "" : " carregados") : "nos e-mails sem resposta"}.<br>
         Veja a outra aba${origem === "email" ? "; e-mail já respondido só aparece no Outlook" : ""}.</div>`
-    : filtro === "todas" && !hotel ? caixaEmDia(escopoAtual() === "todos"
+    : filtro === "todas" && !FH.sel.size ? caixaEmDia(escopoAtual() === "todos"
       ? "Nenhuma solicitação na Caixa de Entrada dos 4 PCs." : `Nenhuma solicitação na Caixa de Entrada de ${escopoAtual()}.`)
     : `<div class="vazio">Nada com esses filtros.<br>Escolha outra situação ou tire um filtro.</div>`;
   const de = lista.length ? pagina * POR_PAGINA + 1 : 0, ate = Math.min(lista.length, (pagina + 1) * POR_PAGINA);
   $("pag-txt").textContent = `Mostrando ${de.toLocaleString("pt-BR")}–${ate.toLocaleString("pt-BR")} de ${lista.length.toLocaleString("pt-BR")}` +
-    (busca ? " · busca na aba inteira" : hotel ? " · " + hotel : agenteF ? " · hotéis de " + agenteF : "");
+    (busca ? " · busca na aba inteira" : FH.sel.size ? " · " + (FH.sel.size === 1 ? [...FH.sel][0] : FH.sel.size + " hotéis") : agenteF ? " · hotéis de " + agenteF : "");
   // páginas: primeira, vizinhas da atual e última
   const nums = [...new Set([0, pagina - 1, pagina, pagina + 1, paginas - 1])].filter(p => p >= 0 && p < paginas).sort((a, b) => a - b);
   $("pags").innerHTML = paginas < 2 ? "" : nums.map((p, i) => (i && p - nums[i - 1] > 1 ? `<span style="align-self:center">…</span>` : "") +
@@ -3158,7 +3154,7 @@ document.addEventListener("click", async e => {
   if (d.abaO) { origem = d.abaO; pagina = 0; sel = null; emailSel = null; guardarCaixa(); return desenhar(); }
   if (d.st) { if (origem === "form") filtro = d.st; else filtroEmail = d.st; ordem = ""; pagina = 0; guardarCaixa(); return desenhar(); }
   if (d.limpa) {
-    if (d.limpa === "hotel" || d.limpa === "tudo") hotel = "";
+    if (d.limpa === "hotel" || d.limpa === "tudo") FH.sel = new Set();
     if (d.limpa === "agente" || d.limpa === "tudo") agenteF = "";
     if (d.limpa === "envio" || d.limpa === "tudo") envio = "todos";
     if ((d.limpa === "tudo" || d.limpa === "periodo") && periodo !== "45") { const antes = periodo; periodo = "45"; if (antes === "0") carregar(); }
@@ -3170,7 +3166,7 @@ document.addEventListener("click", async e => {
   if (t.id === "d-fechar") { sel = null; emailSel = null; return desenhar(); }
   if (d.resp) return abrirEnvioNF(null, { id: d.resp, comNF: false });
   if (d.respNf) return abrirEnvioNF(null, { id: d.respNf, comNF: true });
-  if (d.verPedido) { filtro = "todas"; origem = "form"; hotel = ""; agenteF = ""; sel = d.verPedido; emailSel = null; irPraCaixa(); return desenhar(); }
+  if (d.verPedido) { filtro = "todas"; origem = "form"; FH.sel = new Set(); agenteF = ""; sel = d.verPedido; emailSel = null; irPraCaixa(); return desenhar(); }
   if (d.a) {
     if (d.v === "forcar" && !confirm("Tirar esta solicitação de quem está tratando?")) return;
     return acao(d.a, d.v);

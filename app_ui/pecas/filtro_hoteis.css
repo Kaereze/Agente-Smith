@@ -1,0 +1,28 @@
+/* Filtro de vários hotéis (03/11/2026, prévia aprovada pelo João): reaproveita a pílula e o menu do filtro do Painel (ol-filtro, pf-menu) e só acrescenta
+   o que é novo: as ações do topo do menu, a lista com caixinhas agrupada por prioridade, o rodapé e o botão de ordem por data. */
+.modo-ol .ol-lcab .fh-wrap{margin-left:0}
+.modo-ol .ol-lcab .fh-wrap + .ol-filtro{margin-left:6px}
+.modo-ol .fh-mais{background:#479ef5;color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:0 6px;line-height:16px}
+.modo-ol .pf-menu.fh-menu{position:fixed;z-index:200;min-width:340px;max-width:400px}
+.modo-ol .ol-lcab{flex-wrap:wrap;row-gap:6px}
+.modo-ol .fh-acoes{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px 8px}
+.modo-ol .fh-menu .fh-acoes button{width:auto;display:inline-flex!important;padding:3px 10px!important;border:1px solid #4a4a4a!important;border-radius:6px!important;font-size:12.5px;background:transparent}
+.modo-ol .fh-menu .fh-acoes button:hover{border-color:#479ef5!important;background:transparent}
+.modo-ol .fh-menu .fh-acoes button.fh-bt-on{background:#173b63;border-color:#479ef5!important;color:#cfe5fb}
+.modo-ol .fh-lista{max-height:300px;overflow:auto;border-top:1px solid #3a3a3a;padding:4px 0}
+.modo-ol .fh-grupo{color:#8f8f8f;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:8px 10px 2px}
+.modo-ol .fh-op{display:grid;grid-template-columns:18px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer}
+.modo-ol .fh-op:hover{background:#3a3a3a}
+.modo-ol .fh-op input{accent-color:#479ef5;width:16px;height:16px;margin:0}
+.modo-ol .fh-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modo-ol .fh-op em{margin-left:0;min-width:22px;text-align:right}
+.modo-ol .fh-pri{font-size:11px;font-weight:600;border-radius:4px;padding:0 6px;line-height:18px;border:1px solid #4a4a4a;color:#8f8f8f}
+.modo-ol .fh-pri.alta{color:#ff8d95;border-color:#ff8d95;background:#4c2a27}
+.modo-ol .fh-pri.media{color:#f2c76b;border-color:#f2c76b;background:#45391d}
+.modo-ol .fh-rodape{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 4px 2px;border-top:1px solid #3a3a3a;color:#a8a8a8;font-size:12.5px}
+.modo-ol .fh-menu .fh-rodape button{width:auto;display:inline-flex!important;padding:3px 10px!important;border:1px solid #4a4a4a!important;border-radius:6px!important;font-size:12.5px;background:transparent}
+.modo-ol .fh-menu .fh-rodape button:hover{border-color:#479ef5!important;background:transparent}
+/* o botão de ordem fica sempre à vista (a regra do filtro escondia o "Por Data" quando havia filtro) */
+.modo-ol .ol-lcab .fh-ordem{display:inline-flex!important;align-items:center;height:28px;padding:0 10px;margin-left:10px;border:1px solid #4a4a4a;border-radius:14px;background:transparent;color:#e0e0e0;font-size:12.5px;cursor:pointer}
+.modo-ol .ol-lcab .fh-ordem:hover{background:#2d2d2d;border-color:#479ef5}
+.modo-ol .ol-fav[data-fh-nivel] .tx{padding-left:4px}

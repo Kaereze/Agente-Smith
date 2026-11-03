@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.03.3] — 2026-11-03 (aguarda publicação)
+
+### Adicionado
+- **Filtro de vários hotéis com prioridade** (pedido do João, prévia aprovada). Na Caixa de Entrada e em Notas fiscais o filtro de hotel aceita **vários hotéis** (caixinhas, busca,
+  "Meus hotéis", "Só prioridade alta", "Todos", "Limpar", "Salvar como meus hotéis"). A **prioridade vem da quantidade de e-mails** na caixa do hotel: Alta 10 ou mais, Média de 4 a 9, Baixa de 1 a 3.
+  A lista fica em blocos por prioridade (alta primeiro) e **um botão só alterna a data** dentro de cada nível: "mais antigo ↑" (padrão) ou "mais novo ↓". No painel da esquerda,
+  o número da Caixa de Entrada acompanha os hotéis marcados e entra o bloco **Prioridades (da seleção)** com a quantidade de Alta, Média e Baixa; clicar num nível marca todos os hotéis dele.
+  "Meus hotéis" fica salvo **neste PC** (nada vai ao Google) e a tela abre já com essa lista. Peça nova: `app_ui/pecas/filtro_hoteis.js` e `.css`; 8 testes novos.
+
+### Mudou
+- O filtro de **um** hotel (`cx.hotel`, `nf-hotel`) saiu; o menu agora não é cortado pela coluna estreita da lista. Na tela de Notas fiscais a prioridade ordena a lista e o botão "Chegou ↑/↓" que já existia continua alternando a data.
+
 ## [2026.11.03.2] — 2026-11-03
 
 ### Adicionado
