@@ -4,11 +4,12 @@ da Central (só se acrescenta; a última linha de cada chave vale). A chave é o
 que saiu direto do Outlook, o id dele no espelho. A marca nunca vai no e-mail do hóspede."""
 import datetime
 import socket
+import ajustes
 
 ABA = "Ligacoes"
 CABECALHO = ["Quando", "Chave", "Ação", "Agente", "PC", "Hotel", "Caixa", "Para", "Assunto"]
 MARCAR, DESMARCAR = "LIGACAO", "SEM_LIGACAO"
-DIAS_GUARDADOS = 400   # a faxina apaga o que passou disso (o cartão mostra até o mês)
+DIAS_GUARDADOS = ajustes.valor("limpeza.ligacoes_dias")   # a faxina apaga o que passou disso (o cartão mostra até o mês)
 
 
 def evento(chave, acao, agente, hotel="", caixa="", para="", assunto="", pc=None, quando=None):

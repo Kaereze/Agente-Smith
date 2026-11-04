@@ -11,12 +11,13 @@ import time
 
 import espelho_emails as ee
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("busca_outlook")
 
 PASTAS = ((6, "entrada"), (5, "enviado"), (3, "excluido"))   # Caixa de Entrada, Itens Enviados, Itens Excluídos
-LIMITE_POR_PC = 50
-TEMPO_MAXIMO = 10.0
+LIMITE_POR_PC = ajustes.valor("email.busca_limite_por_pc")
+TEMPO_MAXIMO = ajustes.valor("email.busca_tempo_maximo_segundos")
 CAMPOS = ("urn:schemas:httpmail:subject", "urn:schemas:httpmail:textdescription", "urn:schemas:httpmail:fromemail",
           "urn:schemas:httpmail:fromname", "urn:schemas:httpmail:displayto")
 CAMPOS_CURTOS = CAMPOS[0:1] + CAMPOS[2:]   # sem o corpo: o LIKE no corpo é lento
@@ -106,7 +107,7 @@ def buscar(namespace, caixas, termo, pc, limite=LIMITE_POR_PC, tempo_maximo=TEMP
     return {"resultados": achados, "completo": completo and len(candidatos) <= limite}
 
 
-LIMITE_ANEXO = 15 * 1024 * 1024   # anexo maior que isso: abrir no Outlook (não passa pela rede)
+LIMITE_ANEXO = ajustes.valor("email.busca_anexo_maximo_mb") * 1024 * 1024   # anexo maior que isso: abrir no Outlook (não passa pela rede)
 
 
 def tipo_do_anexo(nome):

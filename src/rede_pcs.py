@@ -12,13 +12,14 @@ import uuid
 
 import saude
 from config import PASTA_ESTADO
+import ajustes
 
 ABA_COMANDOS = "Comandos_PC"
 CAB_COMANDOS = ["Quando", "ID", "Para", "Comando", "Por", "Resposta"]
 COMANDOS = {"atualizar"}
-VALIDADE_COMANDO_MIN = 60          # pedido mais velho que isso não é executado (PC estava desligado)
-PC_ONLINE_SEGUNDOS = 180
-CONFERENCIA_ATRASADA_MIN = 10      # conferente parado: sem volta do Outlook há mais que isso
+VALIDADE_COMANDO_MIN = ajustes.valor("atualizacao.validade_comando_minutos")   # pedido mais velho que isso não é executado (PC estava desligado)
+PC_ONLINE_SEGUNDOS = ajustes.valor("rede.pc_online_segundos")
+CONFERENCIA_ATRASADA_MIN = ajustes.valor("rede.conferencia_atrasada_minutos")   # conferente parado: sem volta do Outlook há mais que isso
 CAMINHO_STATUS_CONFERENCIA = PASTA_ESTADO / "confirmar_status.json"
 
 

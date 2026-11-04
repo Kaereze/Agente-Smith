@@ -7,12 +7,13 @@ Central e grava. Sem novidade, a conferência segue no ritmo normal (a cada 2 mi
 import datetime
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging(__name__)
 
 PASTAS = {5: "enviado", 6: "recebido"}   # olFolderSentMail, olFolderInbox
-FOLGA_MINUTOS = 3          # olha um pouco antes da última vez (relógio do servidor, e-mail que demora a cair)
-MAX_VISTOS = 5000
+FOLGA_MINUTOS = ajustes.valor("email.vigia_folga_minutos")   # olha um pouco antes da última vez (relógio do servidor, e-mail que demora a cair)
+MAX_VISTOS = ajustes.valor("email.vigia_vistos_maximo")
 
 
 class Vigia:

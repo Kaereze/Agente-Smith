@@ -59,7 +59,7 @@ async function carregarAtividade() {
   const j = await api("/api/atividade").catch(() => null);
   if (j && !j.erro) { at.dados = j; desenharMaquinas(); }
   clearTimeout(at.timer);
-  if (pn.vista === "log" || pn.vista === "maquinas") at.timer = setTimeout(carregarAtividade, 20000);
+  if (pn.vista === "log" || pn.vista === "maquinas") at.timer = setTimeout(carregarAtividade, (globalThis.aj?.("tela.registro_atualiza_segundos") ?? 20) * 1000);
 }
 
 function haQuanto(iso) {
@@ -558,7 +558,7 @@ function assuntoDoArquivo(nomeArquivo, nome) {
 // (pecas/carregando.js: o K do João sendo desenhado) escuta "painel:acao-longa" e "painel:acao-longa-fim".
 // detail: { id, titulo, inicio, progresso(): 0..1, eta(): segundos, itens(): [{pc, agente, estado, res, aviso}] } e, no fim,
 // { id, ok, texto, duracao }. O api() liga isto sozinho em todo POST. `estado.limiteMs` troca os 3 s (0 = na hora).
-const LIMITE_ACAO_LONGA_MS = 3000;
+const LIMITE_ACAO_LONGA_MS = (globalThis.aj?.("tela.acao_longa_segundos") ?? 3) * 1000;
 let acaoLongaSeq = 0;
 function acaoLonga(titulo, estado = {}) {
   const acao = { id: "acao-" + (++acaoLongaSeq), titulo, inicio: Date.now(), progresso: () => null, eta: () => null, itens: () => [], ...estado };

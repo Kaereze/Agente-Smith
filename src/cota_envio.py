@@ -1,10 +1,11 @@
 """Cota por hora do servidor de e-mail, medida pelos Itens Enviados."""
 import datetime
 import json
+import ajustes
 
 JANELA = datetime.timedelta(hours=1)
 HISTORICO = datetime.timedelta(hours=24)
-MAX_ITENS_OLHADOS = 2000
+MAX_ITENS_OLHADOS = ajustes.valor("envio.cota_itens_olhados")
 
 
 def _data_outlook(valor):

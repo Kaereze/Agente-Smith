@@ -36,6 +36,7 @@ from config import PASTA_ESTADO
 from analise_nf import VERSAO as VERSAO_ANALISE, ler_compacto
 from controle_nf import reclama_falta_nota
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("espelho_emails")
 
@@ -78,27 +79,25 @@ def marca_das_categorias(categorias):
 def com_marca(classes, marca):
     return [c for c in (classes or []) if c not in MARCAS.values()] + ([marca] if marca else [])
 ENTRADA, ENVIADO, RESPOSTA = "entrada", "enviado", "resposta"
-JANELA_DIAS = 14                  # sem resposta há mais que isso: sai do espelho
-RECENTE_HORAS = 72                # Itens Enviados: as últimas 72 h (22/10/2026; eram 24 h). Mais antigo: pela pesquisa do hóspede
-URGENCIA_DIAS = 7                 # sem resposta há mais que isso: aba Urgência
-MAX_PDF_BYTES = 3 * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
-MAX_PDFS = 4
+JANELA_DIAS = ajustes.valor("email.sem_resposta_sai_apos_dias")   # sem resposta há mais que isso: sai do espelho
+RECENTE_HORAS = ajustes.valor("email.enviados_recentes_horas")   # Itens Enviados: as últimas 72 h (22/10/2026; eram 24 h). Mais antigo: pela pesquisa do hóspede
+URGENCIA_DIAS = ajustes.valor("email.urgencia_dias")   # sem resposta há mais que isso: aba Urgência
+MAX_PDF_BYTES = ajustes.valor("email.pdf_maximo_mb") * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
+MAX_PDFS = ajustes.valor("email.pdfs_por_email")
 CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
 VERSAO_ESTADO = 6   # 6: Itens Enviados de 72 h (22/10/2026) — relê tudo 1 vez; 5: espelho literal + data certa dos avisos
-MAX_TEXTO = 15000                 # célula do Sheets aceita 50 mil
-MAX_CITADO = 8000
-MAX_TEXTO_ENVIADO = 4000
-MAX_PREVIA = 220
-MAX_RESPOSTAS = 45000             # célula das respostas (limite do Sheets: 50 mil)
-REVARRER_HORAS = 24               # releitura completa 1x por dia
-RESPOSTAS_DIAS = 120              # até onde olha os Itens Enviados pra saber se um e-mail antigo da caixa já foi respondido
-LIDO_CONFIRMA_MINUTOS = 5         # lido no Outlook só passa pro Painel depois de 5 min lido (usuário, 11/10/2026)
-FOLGA_MINUTOS = 10
-CADASTRO_SEGUNDOS = 30 * 60       # Cadastro_Hoteis muda pouco: relido a cada 30 min (cota)
-REMETENTES_AUTOMATICOS = ("no-reply", "noreply", "naoresponda", "nao-responda", "nao_responda", "donotreply",
-                          "mailer-daemon", "postmaster", "notifica", "newsletter", "marketing", "bounce")
-DOMINIOS_AUTOMATICOS = ("booking.com", "decolar.com", "expedia", "airbnb", "hotels.com", "trivago", "omnibees",
-                        "hbook", "cloudbeds", "facebookmail", "google.com", "microsoft.com", "linkedin")
+MAX_TEXTO = ajustes.valor("email.texto_maximo_caracteres")   # célula do Sheets aceita 50 mil
+MAX_CITADO = ajustes.valor("email.citado_maximo_caracteres")
+MAX_TEXTO_ENVIADO = ajustes.valor("email.texto_enviado_maximo_caracteres")
+MAX_PREVIA = ajustes.valor("email.previa_maxima_caracteres")
+MAX_RESPOSTAS = ajustes.valor("email.respostas_maximo_caracteres")   # célula das respostas (limite do Sheets: 50 mil)
+REVARRER_HORAS = ajustes.valor("email.releitura_completa_horas")   # releitura completa 1x por dia
+RESPOSTAS_DIAS = ajustes.valor("email.respostas_olhar_dias")   # até onde olha os Itens Enviados pra saber se um e-mail antigo da caixa já foi respondido
+LIDO_CONFIRMA_MINUTOS = ajustes.valor("email.lido_confirma_minutos")   # lido no Outlook só passa pro Painel depois de 5 min lido (usuário, 11/10/2026)
+FOLGA_MINUTOS = ajustes.valor("email.folga_minutos")
+CADASTRO_SEGUNDOS = ajustes.valor("email.cadastro_hoteis_segundos")   # Cadastro_Hoteis muda pouco: relido a cada 30 min (cota)
+REMETENTES_AUTOMATICOS = tuple(ajustes.valor("email.remetentes_automaticos"))
+DOMINIOS_AUTOMATICOS = tuple(ajustes.valor("email.dominios_automaticos"))
 PR_CABECALHOS = "http://schemas.microsoft.com/mapi/proptag/0x007D001F"
 _HISTORICO = re.compile(   # "Em qui., 8 de out. ... <x@y>\nescreveu:" (o Gmail quebra a linha antes do "escreveu:")
     r"^\s*(?:De:|From:|-{2,}\s*(?:Mensagem original|Original Message)|_{5,}|"

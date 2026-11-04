@@ -7,8 +7,9 @@ import json
 
 from modelos import Hotel, Solicitacao
 from arquivos import salvar_json
+import ajustes
 
-MINUTOS_ATE_DESISTIR = 10   # sem aparecer em Enviados nem na Caixa de Saída após isso = não saiu
+MINUTOS_ATE_DESISTIR = ajustes.valor("envio.desistir_apos_minutos")   # sem aparecer em Enviados nem na Caixa de Saída após isso = não saiu
 
 
 class DiarioEnvios:

@@ -13,13 +13,14 @@ import cota_google
 from cota_google import COTA, e_cota_estourada
 from rede_util import com_retry, e_erro_passageiro_google
 from tratamento import campos_para_email, detectar_formato_data, ler_data, normalizar
+import ajustes
 
 logger = configurar_logging(__name__)
 
 ESCOPOS = ["https://www.googleapis.com/auth/spreadsheets"]
 ESCOPOS_SO_LEITURA = ["https://www.googleapis.com/auth/spreadsheets.readonly"]   # SIMULACAO
-TIMEOUT_GOOGLE_SEGUNDOS = 15   # cada tentativa (era 30)
-LIMITE_CHAMADA_GOOGLE_SEGUNDOS = 30   # a chamada inteira, com as esperas entre tentativas (29/10/2026, João): antes chegava a ~5 min
+TIMEOUT_GOOGLE_SEGUNDOS = ajustes.valor("google.tentativa_segundos")   # cada tentativa (era 30)
+LIMITE_CHAMADA_GOOGLE_SEGUNDOS = ajustes.valor("google.chamada_limite_segundos")   # a chamada inteira, com as esperas entre tentativas (29/10/2026, João): antes chegava a ~5 min
 
 SEPARADOR = chr(31)   # nunca aparece numa resposta de formulário
 VALORES_PENDENTE = {"", "false", "falso"}

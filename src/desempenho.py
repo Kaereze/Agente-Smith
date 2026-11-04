@@ -14,13 +14,14 @@ import logging
 import re
 import threading
 import time
+import ajustes
 
-LIMITE_LACO_S = 30.0       # volta do Painel ou do conferente que passa disso vira aviso (promessa feita ao João em 28/10/2026)
-LIMITE_HTTP_S = 1.0        # resposta do servidor à tela
-GUARDAR = 200              # últimos tempos de cada etapa (para a média e o p95)
-MAX_ETAPAS = 80            # trava contra nomes sem fim
-AVISO_A_CADA_S = 60        # no máximo 1 aviso por minuto para cada etapa
-RESUMO_A_CADA_S = 600
+LIMITE_LACO_S = ajustes.valor("saude.laco_lento_segundos")   # volta do Painel ou do conferente que passa disso vira aviso (promessa feita ao João em 28/10/2026)
+LIMITE_HTTP_S = ajustes.valor("saude.resposta_lenta_segundos")   # resposta do servidor à tela
+GUARDAR = ajustes.valor("saude.tempos_guardados")   # últimos tempos de cada etapa (para a média e o p95)
+MAX_ETAPAS = ajustes.valor("saude.etapas_maximo")   # trava contra nomes sem fim
+AVISO_A_CADA_S = ajustes.valor("saude.aviso_lento_a_cada_segundos")   # no máximo 1 aviso por minuto para cada etapa
+RESUMO_A_CADA_S = ajustes.valor("saude.resumo_a_cada_segundos")
 
 _PUBLICAS = re.compile(r"^/(fontes|pecas|assinaturas)/")
 

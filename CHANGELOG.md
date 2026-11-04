@@ -12,6 +12,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 ## [2026.11.03.3] — 2026-11-03 (aguarda publicação)
 
 ### Adicionado
+- **Ajustes em arquivo de chave e valor (`ajustes.json`)** (pedido do João): tempos, limites, assinaturas, mensagem padrão do e-mail, prazos e cores do e-mail podem ser trocados sem mexer no código. São **177 ajustes em 14 grupos**, cada um com explicação em português, mínimo e máximo. O arquivo fica **só no PC do administrador** (está no `.gitignore`, nunca sobe ao GitHub); `Bat\ajustes.bat` cria e abre no Bloco de Notas e depois confere o que foi digitado. Valor inválido ou chave com erro de digitação **não derruba o Painel**: vale o valor de fábrica e aparece um aviso na faixa de saúde. Assinaturas só de texto, nomes e ordem das assinaturas e a mensagem padrão também são ajustes (o que o João escreve soma ao de fábrica; `null` tira um item). A tela lê os tempos dela pela rota nova `/ajustes.js`. Novos: `src/ajustes.py`, `src/ajustes_tabela.py`, `ajustes.exemplo.json`, `Automacoes/gerar_ajustes_exemplo.py`, `Bat/ajustes.bat`; 18 testes novos. Guia no cofre: Ajustes (ajustes.json). O que **não** vira ajuste (portas, nomes de abas e colunas, identificadores do Windows e do Outlook) está explicado lá. Valem depois de reiniciar o Painel.
 - **Filtro de vários hotéis com prioridade** (pedido do João, prévia aprovada). Na Caixa de Entrada e em Notas fiscais o filtro de hotel aceita **vários hotéis** (caixinhas, busca,
   "Meus hotéis", "Só prioridade alta", "Todos", "Limpar", "Salvar como meus hotéis"). A **prioridade vem da quantidade de e-mails** na caixa do hotel: Alta 10 ou mais, Média de 4 a 9, Baixa de 1 a 3.
   A lista fica em blocos por prioridade (alta primeiro) e **um botão só alterna a data** dentro de cada nível: "mais antigo ↑" (padrão) ou "mais novo ↓". No painel da esquerda,
@@ -23,6 +24,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
   não se aplica a eles. O resto do PC deles continua sendo conferido. 1 teste novo.
 
 ### Mudou
+- Cerca de 170 constantes dos módulos Python (`LIMITE_TOTAL`, `TIMEOUT_GOOGLE_SEGUNDOS` etc.) e 14 da tela passam a ler de `ajustes.valor(...)` / `aj(...)`, **com o mesmo valor de fábrica de antes** (conferido por script antes da troca). Nada muda para quem não criar o `ajustes.json`.
 - O filtro de **um** hotel (`cx.hotel`, `nf-hotel`) saiu; o menu agora não é cortado pela coluna estreita da lista. Na tela de Notas fiscais a prioridade ordena a lista e o botão "Chegou ↑/↓" que já existia continua alternando a data.
 
 ## [2026.11.03.2] — 2026-11-03

@@ -25,6 +25,7 @@ from pathlib import Path
 from controle_nf import _tokens, ler_assunto_nf
 from log_util import configurar_logging
 import outlook_vivo
+import ajustes
 
 logger = configurar_logging("envio_nf")
 
@@ -41,31 +42,23 @@ CONFIRMADO = "CONFIRMADO"        # e-mail do robô: apareceu em Itens Enviados d
 # E-mail do formulário do robô (envio_pc_dono, 15/10/2026): o PC dono que a rede não alcança recebe pela fila. Vai
 # em "pc_formulario" (não em "pc_destino") de propósito: Painel de versão antiga ignora o pedido em vez de mandar errado.
 ACAO_FORMULARIO = "formulario"
-RECONFERIR_SEGUNDOS = 60
-TAMANHO_PARTE = 45_000            # limite de célula do Sheets é 50 mil caracteres
-MAX_ANEXO_BYTES = 8 * 1024 * 1024
-PC_ONLINE_SEGUNDOS = 180
-SEM_RESPOSTA_SEGUNDOS = 90
-FILA_ESPERA_HORAS = 24           # PC dono desligado: o pedido espera ele ligar por até 24 h; depois expira
-TEMPO_AVISO_DONO = 45            # envio direto: o PC dono envia e responde (Outlook + 2 gravações na planilha)
-RECONFERIR_ENVIO_APOS = 120      # e-mail do Painel ASSUMIDO aqui sem ENVIADO há mais que isso: o Painel caiu no meio
-FALHOU_SEM_ACHAR_APOS = 300      # ... e não está em Itens Enviados nem na Caixa de Saída depois disso: FALHOU (confira)
-MAX_ITENS_CONFERIDOS = 3000      # Itens Enviados é lido do mais novo até a hora do envio; isto é só o teto
+RECONFERIR_SEGUNDOS = ajustes.valor("envio.reconferir_segundos")
+TAMANHO_PARTE = ajustes.valor("envio.tamanho_parte_caracteres")   # limite de célula do Sheets é 50 mil caracteres
+MAX_ANEXO_BYTES = ajustes.valor("envio.anexo_maximo_mb") * 1024 * 1024
+PC_ONLINE_SEGUNDOS = ajustes.valor("rede.pc_online_segundos")
+SEM_RESPOSTA_SEGUNDOS = ajustes.valor("envio.sem_resposta_segundos")
+FILA_ESPERA_HORAS = ajustes.valor("envio.fila_espera_horas")   # PC dono desligado: o pedido espera ele ligar por até 24 h; depois expira
+TEMPO_AVISO_DONO = ajustes.valor("envio.aviso_dono_segundos")   # envio direto: o PC dono envia e responde (Outlook + 2 gravações na planilha)
+RECONFERIR_ENVIO_APOS = ajustes.valor("envio.reconferir_envio_apos_segundos")   # e-mail do Painel ASSUMIDO aqui sem ENVIADO há mais que isso: o Painel caiu no meio
+FALHOU_SEM_ACHAR_APOS = ajustes.valor("envio.falhou_sem_achar_apos_segundos")   # ... e não está em Itens Enviados nem na Caixa de Saída depois disso: FALHOU (confira)
+MAX_ITENS_CONFERIDOS = ajustes.valor("envio.itens_conferidos_maximo")   # Itens Enviados é lido do mais novo até a hora do envio; isto é só o teto
 EXCLUIR, ENCAMINHAR = "excluir", "encaminhar"   # ações no Outlook do PC dono (além de enviar/responder)
 URGENCIA = "urgencia"   # botão direito no Painel: categoria "Urgente (Painel)" / "Sem urgência (Painel)" no e-mail
 MOVER_NF = "mover_nf"   # botão Concluir: move o e-mail para a pasta "NF enviada" da caixa (27/10/2026)
 PASTA_NF_ENVIADA = "NF enviada"
 DISPID_SEND_USING_ACCOUNT = 64209
 
-MENSAGEM_PADRAO = (
-    "Prezado(a) hóspede,\n\n"
-    "Agradecemos por escolher a Rede Andrade para a sua estadia.\n\n"
-    "Conforme solicitado, segue em anexo a Nota Fiscal referente à sua hospedagem.\n\n"
-    "📢 Sua opinião é muito importante para nós!\n"
-    "Gostaríamos de saber como foi sua experiência com o processo de emissão da Nota Fiscal.\n"
-    "A pesquisa é anônima e leva menos de 2 minutos.\n\n"
-    "👉 Clique aqui para avaliar: https://forms.gle/LLkYN3hv2da6svhj7\n\n"
-    "Atenciosamente,")
+MENSAGEM_PADRAO = ajustes.valor("assinaturas.mensagem_padrao")
 
 
 def mensagem_padrao(cfg):
@@ -200,12 +193,12 @@ CORPO_PADRAO = MENSAGEM_PADRAO
 # Pedido do usuário (06/10/2026): a mensagem é sempre a mesma, só muda o selo de quem envia.
 # Trocar/incluir um selo = pôr o PNG na pasta (o nome do arquivo é o do operador).
 PASTA_SELOS = Path(__file__).resolve().parent.parent / "app_ui" / "assinaturas"
-NOMES_SELOS = {"joao": "João"}
-ORDEM_SELOS = ["joao", "cristian", "clara", "bernardo", "ingrid", "afonso"]
+NOMES_SELOS = ajustes.valor("assinaturas.nomes")
+ORDEM_SELOS = ajustes.valor("assinaturas.ordem")
 # Selo só de texto (03/11/2026, pedido do João): sem imagem. Depois da mensagem padrão ("Atenciosamente,") entram estas linhas, exatamente assim.
-SELOS_TEXTO = {"afonso": {"nome": "Afonso Pereira", "linhas": ["AFONSO PEREIRA", "AUXILIAR FINANCEIRO", "REDE ANDRADE HOTEIS"]}}
+SELOS_TEXTO = ajustes.valor("assinaturas.textos")
 CID_SELO = "selo_nf"
-LARGURA_SELO = 520   # 13/10/2026: assinatura nova é mais larga (2400x760)
+LARGURA_SELO = ajustes.valor("assinaturas.largura_imagem_pixels")   # 13/10/2026: assinatura nova é mais larga (2400x760)
 
 
 def selos():
@@ -324,7 +317,7 @@ def _nota(t, alvos, primeiros=()):
 
 
 _LISTAGEM = {"em": None, "chave": None, "itens": []}
-LISTAGEM_SEGUNDOS = 300
+LISTAGEM_SEGUNDOS = ajustes.valor("envio.listagem_segundos")
 
 
 def marca_das_pastas(cfg):
@@ -483,7 +476,7 @@ def notas_do_email(e, cfg):
 
 
 _TEXTOS_SUGESTAO = {}   # (caminho, mtime) -> texto do PDF
-CANDIDATAS_SUGESTAO = 8
+CANDIDATAS_SUGESTAO = ajustes.valor("envio.sugestoes_candidatas")
 JANELA_SUGESTAO_DIAS = (-3, 90)   # nota salva de 3 dias antes a 90 depois do pedido
 
 

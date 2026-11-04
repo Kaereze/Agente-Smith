@@ -25,16 +25,17 @@ import rede_pcs
 from arquivos import salvar_json
 from config import PASTA_ESTADO
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("faxina")
 
-DIAS_REGISTROS = 3
-DIAS_ATIVIDADE = 7
-DIAS_SOLICITACAO = 150
-DIAS_SEM_SOLICITACAO = 30         # evento de solicitação que não existe mais nas abas dos hotéis
-HORAS_ENTRE = 20
+DIAS_REGISTROS = ajustes.valor("limpeza.registros_dias")
+DIAS_ATIVIDADE = ajustes.valor("limpeza.atividade_dias")
+DIAS_SOLICITACAO = ajustes.valor("limpeza.solicitacao_dias")
+DIAS_SEM_SOLICITACAO = ajustes.valor("limpeza.sem_solicitacao_dias")   # evento de solicitação que não existe mais nas abas dos hotéis
+HORAS_ENTRE = ajustes.valor("limpeza.faxina_a_cada_horas")
 CAMINHO = PASTA_ESTADO / "faxina.json"
-BACKUPS = 3
+BACKUPS = ajustes.valor("limpeza.backups_guardados")
 ABAS_CURTAS = {envio_nf.ABA_FILA: DIAS_REGISTROS, rede_pcs.ABA_COMANDOS: DIAS_REGISTROS,
                espelho_emails.ABA_EVENTOS: DIAS_REGISTROS, atividade.ABA: DIAS_ATIVIDADE,
                ligacoes.ABA: ligacoes.DIAS_GUARDADOS}

@@ -10,12 +10,13 @@ import os
 import re
 import shutil
 from pathlib import Path
+import ajustes
 
 PERFIS_DA_JANELA = ("app_webview", "app_edge")
 PASTAS_DE_CACHE = {"cache", "code cache", "gpucache", "grshadercache", "shadercache", "dawncache", "dawngraphitecache",
                    "dawnwebgpucache", "cachestorage", "scriptcache", "component_crx_cache"}
-MINIMO_PARA_LIMPAR = 50_000_000   # abaixo disso não vale a pena mexer: abrir a janela continua rápido
-TETO_DO_REGISTRO = 5_000_000
+MINIMO_PARA_LIMPAR = ajustes.valor("limpeza.cache_janela_minimo_mb") * 1_000_000   # abaixo disso não vale a pena mexer: abrir a janela continua rápido
+TETO_DO_REGISTRO = ajustes.valor("limpeza.registro_teto_mb") * 1_000_000
 GIRADO = re.compile(r"\.(txt|log)\.\d+$", re.IGNORECASE)
 
 

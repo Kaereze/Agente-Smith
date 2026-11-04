@@ -4,7 +4,7 @@
 // (fecha à força e abre de novo, o que o João fazia à mão). O X só guarda o quadro: o botão nunca some sozinho.
 // Usa os globais do Painel: api(), acaoLonga(), esc().
 (() => {
-  const ATUALIZA_MS = 15000;
+  const ATUALIZA_MS = (globalThis.aj?.("tela.caixas_atualiza_segundos") ?? 15) * 1000;
   let bt, pn, aberto = false, dados = { pcs: [] }, lista = [], st = {}, lido = 0, buscando = false;
 
   function montar() {

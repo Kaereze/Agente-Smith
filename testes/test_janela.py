@@ -29,5 +29,5 @@ def test_uma_animacao_so_para_abrir_e_fechar():
 
 
 def test_saida_animada_troca_a_classe_antes_de_tirar():
-    assert 'classList.replace("modal-fundo", "janela-saindo")' in JS and "JANELA_SAIDA_MS = 150" in JS
+    assert 'classList.replace("modal-fundo", "janela-saindo")' in JS and 'JANELA_SAIDA_MS = globalThis.aj?.("tela.menu_saida_milissegundos") ?? 150' in JS
     assert 'n.classList?.contains("janela-saindo")' in HTML   # o foco volta também na saída animada

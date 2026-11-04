@@ -10,6 +10,7 @@ import subprocess
 import saude
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging(__name__)
 
@@ -47,7 +48,7 @@ def texto(p, sit, este_pc):
 # Alerta de Outlook parado (26/10/2026): repete enquanto não resolver, só no horário de trabalho
 HORARIO_ALERTA = {0: ("08:00", "18:00"), 1: ("08:00", "18:00"), 2: ("08:00", "18:00"), 3: ("08:00", "18:00"),
                   4: ("08:00", "18:00"), 5: ("08:00", "12:00")}   # seg-sex 8h-18h, sábado 8h-12h; domingo não
-REPETIR_MIN = 30
+REPETIR_MIN = ajustes.valor("saude.avisos_windows_repetir_minutos")
 
 
 def em_horario(agora):

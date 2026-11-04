@@ -62,6 +62,7 @@ import limpeza
 from log_util import configurar_logging
 from sheets import (STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
 from tratamento import normalizar
+import ajustes
 
 logger = configurar_logging("app")
 
@@ -97,18 +98,18 @@ def _pagina_inteira(tentativas=6):
     return html
 CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
 CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
-CANCELADAS_MINUTOS = 10
+CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
 CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
-SALVAR_CACHE_SEGUNDOS = 120
+SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
 VOLATEIS_TELA = {"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
 VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
-ACORDAR_MIN_SEGUNDOS = 12     # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
+ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
-HOTEIS_SEGUNDOS = 120              # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
-TRATAMENTO_COMPLETO_SEGUNDOS = 600 # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
-JANELA_PAINEL_DIAS = 120
-RESOLVIDA_HORAS = 24               # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
+HOTEIS_SEGUNDOS = ajustes.valor("google.reler_hoteis_segundos")   # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
+TRATAMENTO_COMPLETO_SEGUNDOS = ajustes.valor("google.reler_tratamento_inteiro_segundos")   # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
+JANELA_PAINEL_DIAS = ajustes.valor("limpeza.painel_janela_dias")
+RESOLVIDA_HORAS = ajustes.valor("limpeza.resolvida_horas")   # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
@@ -732,6 +733,14 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if gz:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Content-Length", str(len(corpo)))
+                self.end_headers()
+                return self.wfile.write(corpo)
+            if url.path == "/ajustes.js":   # tempos e limites que a tela usa, do ajustes.json (04/11/2026); nada de segredo
+                corpo = ajustes.js_da_tela().encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/javascript; charset=utf-8")
                 self.send_header("Cache-Control", "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()

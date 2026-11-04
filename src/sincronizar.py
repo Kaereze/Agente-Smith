@@ -28,11 +28,12 @@ from sheets import (VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _c
                     nome_intervalo)
 import robo_antigo
 from tratamento import detectar_formato_data, ler_data, normalizar
+import ajustes
 
 logger = configurar_logging("sincronizar")
 
 MIME_PLANILHA = "application/vnd.google-apps.spreadsheet"
-PAUSA_ENTRE_LEITURAS = 1.1   # cota da Sheets API: 60 leituras/min
+PAUSA_ENTRE_LEITURAS = ajustes.valor("google.pausa_entre_leituras_segundos")   # cota da Sheets API: 60 leituras/min
 
 
 def hotel_da_planilha(nome_arquivo, cfg, cadastro):
@@ -439,7 +440,7 @@ def mapear_fontes(backend, cfg, chave, arquivos=None):
 
 
 VERSOES = "sincronizacao_versoes.json"
-COMPLETA_HORAS = 3   # leitura de todas as planilhas, mesmo sem mudança de versão (rede de segurança)
+COMPLETA_HORAS = ajustes.valor("google.leitura_completa_horas")   # leitura de todas as planilhas, mesmo sem mudança de versão (rede de segurança)
 
 
 def hoteis_que_mudaram(por_hotel, versoes, completa):
@@ -625,7 +626,7 @@ def rodar_agendado():
 
 
 CICLO = PASTA_ESTADO / "_ciclo_copia.txt"   # a rodada das 10 em 10 está rodando: a vigia dos formulários espera
-CICLO_MAX_MINUTOS = 15                        # marca mais velha que isso = rodada que morreu no meio
+CICLO_MAX_MINUTOS = ajustes.valor("google.rodada_morta_minutos")   # marca mais velha que isso = rodada que morreu no meio
 
 
 def ciclo_rodando(agora=None):

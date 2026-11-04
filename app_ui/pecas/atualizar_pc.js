@@ -3,8 +3,8 @@
 // recebe a versão de cada PC a cada poucos segundos: quando a versão muda (ou aparece o aviso ATUALIZADO na atividade), vira "✓ Atualizado".
 // Passou de 1 minuto sem mudar: âmbar, "Sem mudança em 1 min · veja o Log", e o botão volta a ficar livre.
 // As regras ficam aqui, sem tocar na tela, para poderem ser testadas. Quem desenha é painel.js (desenharMaquinas).
-const ATZ_LIMITE_MS = 60000;   // sem mudança por tanto tempo: avisa
-const ATZ_FIM_MS = 3500;       // o resultado fica à vista por tanto tempo e o botão volta ao normal
+const ATZ_LIMITE_MS = (globalThis.aj?.("tela.atualizar_pc_limite_segundos") ?? 60) * 1000;   // sem mudança por tanto tempo: avisa
+const ATZ_FIM_MS = (globalThis.aj?.("tela.atualizar_pc_resultado_segundos") ?? 3.5) * 1000;       // o resultado fica à vista por tanto tempo e o botão volta ao normal
 
 // pcs: os PCs que vão atualizar ({pc, agente, versao}). Guarda a versão de antes de cada um.
 function atzNovo(para, pcs, agora = Date.now()) {

@@ -28,12 +28,13 @@ from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro,
 from log_util import configurar_logging
 import desempenho
 import outlook_vivo
+import ajustes
 
 logger = configurar_logging("conferente")
 
 CAMINHO_REGISTRO = PASTA_ESTADO / "controle_nf.json"
 CLASSE_EMAIL = 43
-MAX_ITENS_POR_CONTA = 3000
+MAX_ITENS_POR_CONTA = ajustes.valor("outlook.max_itens_por_conta")
 SOBREPOSICAO = datetime.timedelta(minutes=5)   # relê um pouco pra trás; aplicar é idempotente
 
 
@@ -128,7 +129,7 @@ def texto_de_arquivo_dropbox(caminho_original):
         shutil.rmtree(pasta, ignore_errors=True)
 
 
-MAX_NOTAS_DROPBOX_POR_VOLTA = 60
+MAX_NOTAS_DROPBOX_POR_VOLTA = ajustes.valor("outlook.max_notas_dropbox_por_volta")
 _proxima_dropbox = 0.0
 
 
@@ -385,11 +386,11 @@ def garantir_categorias(namespace):
         logger.debug(f"Não consegui criar as categorias coloridas ({e}) — o texto aparece do mesmo jeito.")
 
 
-NOTAS_DIVIDIDAS_SEGUNDOS = 10 * 60
-ESPELHO_EMAILS_SEGUNDOS = 2 * 60   # aba E-mails do Painel: pendentes das caixas deste PC
-CONFIRMAR_NFS_SEGUNDOS = 2 * 60   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
-VIGIA_SEGUNDOS = 10               # vigia_outlook: só olha; e-mail novo antecipa a conferência e o espelho (era 20 s)
-MIN_ENTRE_CONFERENCIAS = 30       # conferência completa leva ~15 s: no máximo uma a cada 30 s por PC
+NOTAS_DIVIDIDAS_SEGUNDOS = ajustes.valor("outlook.notas_divididas_segundos")
+ESPELHO_EMAILS_SEGUNDOS = ajustes.valor("outlook.espelho_emails_segundos")   # aba E-mails do Painel: pendentes das caixas deste PC
+CONFIRMAR_NFS_SEGUNDOS = ajustes.valor("outlook.confirmar_nfs_segundos")   # NF enviada / tratativa / e-mail do hóspede chegam na fila de todos em ~2 min
+VIGIA_SEGUNDOS = ajustes.valor("outlook.vigia_segundos")   # vigia_outlook: só olha; e-mail novo antecipa a conferência e o espelho (era 20 s)
+MIN_ENTRE_CONFERENCIAS = ajustes.valor("outlook.min_entre_conferencias_segundos")   # conferência completa leva ~15 s: no máximo uma a cada 30 s por PC
 _ja_olhados = set()
 
 
@@ -465,8 +466,8 @@ def _travar_instancia_unica():
 
 
 # --- Comandos do menu da planilha (aba Status) ---
-TICK_SEGUNDOS = 10
-SINAL_ONLINE_SEGUNDOS = 5 * 60
+TICK_SEGUNDOS = ajustes.valor("outlook.tick_segundos")
+SINAL_ONLINE_SEGUNDOS = ajustes.valor("outlook.sinal_online_segundos")
 PEDIDO_EXPIRA = datetime.timedelta(minutes=30)
 
 
@@ -474,7 +475,7 @@ def _agora_txt():
     return datetime.datetime.now().strftime("%d/%m %H:%M")
 
 
-IDENTIDADE_SEGUNDOS = 6 * 60 * 60
+IDENTIDADE_SEGUNDOS = ajustes.valor("outlook.identidade_segundos")
 
 
 def _identificar(cfg):

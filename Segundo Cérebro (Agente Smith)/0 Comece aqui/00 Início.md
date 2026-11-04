@@ -17,7 +17,10 @@ r# Segundo Cérebro — Projeto Notas Fiscais
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (28/10/2026)
+## Onde paramos (04/11/2026)
+- **04/11:** `ajustes.json` pronto e testado (177 ajustes, só no PC do administrador): [[Ajustes (ajustes.json)]], ver [[2026-11-04]]. Entra na 2026.11.03.3 junto com o filtro de hotéis e a correção do Guardião; **aguarda o PODE SUBIR** do João (e ele não estar mexendo no Painel). Aberto: servidor do Painel não liga no notebook do Afonso; contagem da Clara.
+
+## Antes (28/10/2026)
 - **Painel e PCs:** versão `2026.10.29` (fluidez: envio e Monitoramento respondem na hora, mapa mais leve: [[Otimização e desempenho]]); antes, o medidor de desempenho (2026.10.28.3) e a aba **Agentes do Smith** (2026.10.28.2). A **Auditoria** está em 6,8/10 e tem a revisão de segurança e LGPD; o caminho até dezembro está em **[[Plano até dezembro]]**. Nada da Fase 1 começou: aguarda o OK do João.
 - **Cofre:** passou a se chamar **Segundo Cérebro (Agente Smith)** ([[ADR-10 O cofre se chama Segundo Cérebro (Agente Smith)]]). Novidades: [[Incidentes]] (4 notas), uma nota por decisão ([[Decisões]]), [[Guia para quem chegou agora]] e a LGPD atualizada ([[Dados de hóspedes (LGPD)]]).
 - **27/10 (um dia cheio):** tela de carregamento com a logo K, Enviar/Receber todas, botão de caixas com problema, Ligar/Pausar o robô, NF achadas nas pastas (CPF/CNPJ), Concluir e Tirar da caixa de entrada. Ver [[2026-10-27]] e [[2026-10-28]].

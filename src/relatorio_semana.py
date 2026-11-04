@@ -7,12 +7,13 @@ guardada 30 min (cota do Google).
 """
 import datetime
 import time
+import ajustes
 
 PLANILHA_MAIL_ANALYTICS = "1e78L9EJeYzW_jWOZF5jqKPKu9vmKs1ZBstV_2FLZ_rY"
 ABAS = {"João": "Agente_Joao", "Clara": "Agente_Clara", "Cristian": "Agente_Cristian", "Bernardo": "Agente_Bernardo"}
 CAMPOS = [("recebidos", "Emails Recebidos"), ("enviados", "Emails Enviados"), ("ligacoes", "Ligações"),
           ("subst_canc", "Substituições/Cancelamentos"), ("nfs", "NFs Emitidas")]
-CACHE_SEGUNDOS = 30 * 60
+CACHE_SEGUNDOS = ajustes.valor("google.relatorio_semana_cache_segundos")
 _CACHE = {"em": -1e9, "dados": None}
 
 

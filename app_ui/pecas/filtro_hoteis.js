@@ -4,7 +4,7 @@
 // - A lista fica agrupada por prioridade (alta primeiro). Um botão só alterna a data dentro de cada nível: mais antigo primeiro / mais novo primeiro.
 // As regras são funções puras (testadas com Node); a tela é desenhada por fhHtml() e os cliques são tratados aqui. Cada tela registra o que
 // refazer quando algo muda com fhOuvir(() => ...).
-const FH_ALTA = 10, FH_MEDIA = 4;   // e-mails na caixa de entrada do hotel
+const FH_ALTA = globalThis.aj?.("filtro.prioridade_alta_a_partir_de") ?? 10, FH_MEDIA = globalThis.aj?.("filtro.prioridade_media_a_partir_de") ?? 4;   // e-mails na caixa de entrada do hotel
 const FH_PESO = { alta: 0, media: 1, baixa: 2, vazia: 3 };
 const FH_ROTULO = { alta: "Alta", media: "Média", baixa: "Baixa", vazia: "Sem e-mail" };
 const FH = { sel: new Set(), meus: new Set(), ordem: "antigo", aberto: false, busca: "", digitando: false, contagem: {}, ouvintes: [], hoteis: () => [] };

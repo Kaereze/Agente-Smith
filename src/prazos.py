@@ -6,8 +6,9 @@
 - O Painel recebe só "vence" e "horas" e calcula o que falta na tela (o selo anda sozinho entre as atualizações).
 """
 import datetime
+import ajustes
 
-HORAS = {"corrigir": 24, "cobranca": 24, "pedido": 48}
+HORAS = ajustes.valor("email.prazo_horas")
 NOMES = {"corrigir": "correção", "cobranca": "cobrança", "pedido": "pedido"}
 
 

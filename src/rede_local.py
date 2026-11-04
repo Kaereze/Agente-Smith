@@ -27,13 +27,14 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("rede_local")
 
 PORTA = 8766
-VALIDADE_ASSINATURA = 120
-TEMPO_RESPOSTA = 12
-MAX_CORPO = 2 * 1024 * 1024   # o /rede/enviar leva o HTML do e-mail (até ~40 KB)
+VALIDADE_ASSINATURA = ajustes.valor("rede.assinatura_validade_segundos")
+TEMPO_RESPOSTA = ajustes.valor("rede.resposta_maxima_segundos")
+MAX_CORPO = ajustes.valor("rede.corpo_maximo_mb") * 1024 * 1024   # o /rede/enviar leva o HTML do e-mail (até ~40 KB)
 
 
 ARQUIVO_SEGREDO_REDE = "segredo-rede.txt"

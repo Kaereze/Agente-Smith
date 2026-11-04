@@ -3,13 +3,14 @@ import time
 
 from log_util import configurar_logging
 import outlook_vivo
+import ajustes
 
 logger = configurar_logging(__name__)
 
 PASTA_CAIXA_SAIDA = 4    # olFolderOutbox
 PASTA_ENVIADOS = 5       # olFolderSentMail
 DISPID_SEND_USING_ACCOUNT = 64209  # MailItem.SendUsingAccount não aceita atribuição direta no pywin32
-MAX_ITENS_PROCURADOS = 200
+MAX_ITENS_PROCURADOS = ajustes.valor("outlook.itens_procurados_maximo")
 
 
 class ErroOutlook(Exception):

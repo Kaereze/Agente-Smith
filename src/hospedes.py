@@ -18,11 +18,12 @@ import types
 
 import prazos
 from controle_nf import provas_da_solicitacao
+import ajustes
 
-MAX_EMAILS_POR_CPF = 3
-MAX_EMAILS_POR_CNPJ = 2
-MAX_DOCS_POR_EMAIL = 6
-MAX_OUTROS = 8
+MAX_EMAILS_POR_CPF = ajustes.valor("email.max_emails_por_cpf")
+MAX_EMAILS_POR_CNPJ = ajustes.valor("email.max_emails_por_cnpj")
+MAX_DOCS_POR_EMAIL = ajustes.valor("email.max_documentos_por_email")
+MAX_OUTROS = ajustes.valor("email.max_outros_relacionados")
 ORDEM_SITUACAO = {"concluida": 0, "nf_parcial": 1, "em_tratamento": 2, "tratativa": 3, "na_fila": 4,
                   "aguardando_envio": 5}
 SEM_PRAZO = ("tratativa",)   # esperando o hóspede responder: o relógio para

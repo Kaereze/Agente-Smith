@@ -11,13 +11,14 @@ import win32con
 
 from config import PASTA_ESTADO
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging(__name__)
 
 ARQUIVO_LOCK = str(PASTA_ESTADO / "_execucao.lock")
 _ARQUIVO_MUTEX = ARQUIVO_LOCK + ".mutex"
 
-IDADE_MAXIMA_SEGUNDOS = 60 * 60   # execução normal leva minutos; mais que isso = trava órfã
+IDADE_MAXIMA_SEGUNDOS = ajustes.valor("limpeza.trava_orfa_segundos")   # execução normal leva minutos; mais que isso = trava órfã
 
 
 def _processo_esta_vivo(pid):

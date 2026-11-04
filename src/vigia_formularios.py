@@ -13,11 +13,12 @@ import threading
 import time
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("vigia_formularios")
 
-VIGIA_SEGUNDOS = 10
-MAPA_SEGUNDOS = 600   # cadastro e abas da Central: relidos a cada 10 min (a listagem do Drive é a de cada volta)
+VIGIA_SEGUNDOS = ajustes.valor("google.vigia_formularios_segundos")
+MAPA_SEGUNDOS = ajustes.valor("google.mapa_formularios_segundos")   # cadastro e abas da Central: relidos a cada 10 min (a listagem do Drive é a de cada volta)
 
 
 class VigiaFormularios:

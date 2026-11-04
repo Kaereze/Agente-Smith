@@ -56,6 +56,7 @@ tags: [cerebro/mapa]
 | `analise_nf.py` · `faxina.py` | 270 · 210 | Urgência · limpeza da Central |
 | `outlook_vivo.py` | 160 | Guardião do Outlook (aberto com janela) e porta única do COM |
 | `sheets.py` · `config.py` · `cota_google.py` | 646 · 144 · 123 | Google Sheets (+ `BackendSoLeitura`) · configuração · cota |
+| `ajustes.py` · `ajustes_tabela.py` | 190 · 230 | Lê o `ajustes.json` (valor de fábrica se faltar ou estiver errado) · tabela com os 177 ajustes. Ver [[Ajustes (ajustes.json)]] |
 
 Pequenos: `prazos`, `hospedes`, `canceladas`, `tratamento`, `identidade`, `atualizador`, `cota_envio`, `vigia_outlook`, `avisos_windows`, `aviso_certificado`, `lock_execucao`, `diario_envios`, `historico`, `atividade`, `hoteis`, `fiscal_intelligence`, `robo_antigo`, `log_util`, `arquivos`, `rede_util`, `console_utf8`, `modelos`, `conferir_copia`.
 

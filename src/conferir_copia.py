@@ -21,6 +21,7 @@ from sheets import VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _co
 from sincronizar import (PAUSA_ENTRE_LEITURAS, _chave_linha, _gravar_aba, _hora, _ler_planilha_hotel, juntar_planilhas,
                          mapear_fontes)
 from tratamento import detectar_formato_data, normalizar
+import ajustes
 
 logger = configurar_logging("conferir_copia")
 
@@ -31,7 +32,7 @@ CABECALHO_RESULTADO = [
     "Dados diferentes", "TRUE que sumiu", "Só na Central", "Conferido em",
 ]
 OK, NOVIDADE, PROBLEMA = "✔ Igual", "⏳ Novidade ainda não copiada", "✖ Diferente"
-MAX_EXEMPLOS = 3
+MAX_EXEMPLOS = ajustes.valor("outlook.copia_exemplos")
 
 
 def _linhas_com_dados(linhas):

@@ -15,13 +15,14 @@ from config import CAMINHO_MAQUINA, carregar_config, caminho_chave_google
 from log_util import configurar_logging
 import outlook_vivo
 from tratamento import normalizar
+import ajustes
 
 logger = configurar_logging(__name__)
 
 # Na dúvida, não atribui.
-MINIMO_CONTAS = 5        # perfil ainda carregando costuma mostrar só 1-2 contas
-MAIORIA = 0.80
-VANTAGEM = 5             # com poucas contas a porcentagem sozinha engana
+MINIMO_CONTAS = ajustes.valor("outlook.identidade_minimo_contas")   # perfil ainda carregando costuma mostrar só 1-2 contas
+MAIORIA = ajustes.valor("outlook.identidade_maioria")
+VANTAGEM = ajustes.valor("outlook.identidade_vantagem")   # com poucas contas a porcentagem sozinha engana
 
 
 def apurar(contas, cadastro):

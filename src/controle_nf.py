@@ -14,6 +14,7 @@ import time
 
 from tratamento import normalizar
 from arquivos import salvar_json
+import ajustes
 
 # "NF 1212 - NOME", "NFe 1212 - NOME - 363305", "RES: NF-1212 - NOME"
 PADRAO_ASSUNTO_NF = re.compile(
@@ -151,7 +152,7 @@ def nome_parecido(nome_assunto, nomes_solicitacao):
 
 
 # --- Conteúdo da nota (texto do PDF ou OCR do Windows) ---
-MINIMO_TEXTO_LEGIVEL = 200   # abaixo disso o PDF é imagem ou o OCR falhou
+MINIMO_TEXTO_LEGIVEL = ajustes.valor("notas.texto_minimo_legivel")   # abaixo disso o PDF é imagem ou o OCR falhou
 _DINHEIRO = re.compile(r"(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*|\d+),(\d{2})\b")
 _DATA = re.compile(r"\b(\d{2})[/f](\d{2})[/f](\d{4})\b")   # OCR lê "/" como "f"
 

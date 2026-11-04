@@ -13,15 +13,16 @@ import uuid
 from pathlib import Path
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("enviar_receber")
 
-MAX_ESPERA_PC = 25         # um PC que passa disso responde "continua" e o Painel segue
-TEMPO_REDE = 40            # espera pela resposta de outro PC
-INTERVALO_MIN = 3          # entre um pedido que deu tudo certo e o seguinte (evita apertar 2 vezes sem querer); com falha, libera na hora
-LIMITE_TOTAL = 10          # 29/10/2026 (João): o pedido nunca passa de 10 s; quem não respondeu vira aviso e "o que fez, fez"
-ESTIMATIVA_PADRAO = 8.0    # segundos, até ter histórico
-HISTORICO = 8              # últimos tempos guardados por PC
+MAX_ESPERA_PC = ajustes.valor("recarregar.espera_por_pc_segundos")   # um PC que passa disso responde "continua" e o Painel segue
+TEMPO_REDE = ajustes.valor("recarregar.espera_rede_segundos")   # espera pela resposta de outro PC
+INTERVALO_MIN = ajustes.valor("recarregar.intervalo_minutos")   # entre um pedido que deu tudo certo e o seguinte (evita apertar 2 vezes sem querer); com falha, libera na hora
+LIMITE_TOTAL = ajustes.valor("recarregar.limite_segundos")   # 29/10/2026 (João): o pedido nunca passa de 10 s; quem não respondeu vira aviso e "o que fez, fez"
+ESTIMATIVA_PADRAO = ajustes.valor("recarregar.estimativa_segundos")   # segundos, até ter histórico
+HISTORICO = ajustes.valor("recarregar.historico_pedidos")   # últimos tempos guardados por PC
 
 
 # ---------- neste PC ----------

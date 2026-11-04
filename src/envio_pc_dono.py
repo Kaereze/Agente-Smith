@@ -19,18 +19,19 @@ import urllib.error
 
 import rede_local
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging(__name__)
 
 ABA_PCS = "PCs_Painel"
 DISPID_SEND_USING_ACCOUNT = 64209   # MailItem.SendUsingAccount (mesmo truque do outlook.py)
 PASTA_CAIXA_SAIDA, PASTA_ENVIADOS = 4, 5
-MAX_ITENS_PROCURADOS = 200
-TEMPO_PING = 5
-TEMPO_ENVIO = 60
-TEMPO_CONFERIR = 30
-ESPERA_CONFIRMACAO = 30     # no PC dono, pela fila: até 30 s esperando aparecer em Itens Enviados
-RELER_FILA_SEGUNDOS = 8
+MAX_ITENS_PROCURADOS = ajustes.valor("outlook.itens_procurados_maximo")
+TEMPO_PING = ajustes.valor("envio.pc_dono_ping_segundos")
+TEMPO_ENVIO = ajustes.valor("envio.pc_dono_envio_segundos")
+TEMPO_CONFERIR = ajustes.valor("envio.pc_dono_conferir_segundos")
+ESPERA_CONFIRMACAO = ajustes.valor("envio.pc_dono_confirmacao_segundos")   # no PC dono, pela fila: até 30 s esperando aparecer em Itens Enviados
+RELER_FILA_SEGUNDOS = ajustes.valor("envio.pc_dono_reler_fila_segundos")
 CODIGO = re.compile(r"NF-[0-9A-F]{10}")
 
 

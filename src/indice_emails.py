@@ -25,24 +25,25 @@ import busca_outlook
 import espelho_emails as ee
 from config import PASTA_ESTADO
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("indice_emails")
 
 ARQUIVO = PASTA_ESTADO / "indice_emails.sqlite"
-DIAS = 365
+DIAS = ajustes.valor("email.indice_dias")
 TEXTO_MAX = {"entrada": 1500, "enviado": 300, "excluido": 600}   # o que o hóspede escreveu pesa mais que a nossa resposta
-PREVIA_TABELA = 255           # a tabela do Outlook corta o texto aqui
+PREVIA_TABELA = ajustes.valor("email.indice_previa_caracteres")   # a tabela do Outlook corta o texto aqui
 CAMPOS = ("id", "entry", "pasta", "caixa", "hotel", "de", "nome", "para", "assunto", "quando", "previa", "anexos")
 COLUNAS = ("EntryID", "Subject", "SenderName", "SenderEmailAddress", "To", "ReceivedTime", "SentOn",
            "urn:schemas:httpmail:textdescription", "urn:schemas:httpmail:hasattachment",
            "http://schemas.microsoft.com/mapi/proptag/0x5D01001F")   # PR_SENDER_SMTP_ADDRESS
-LINHAS_POR_VEZ = 200
-PASSO_SEGUNDOS = 1.0          # tempo de Outlook por passo enquanto monta (depois vem a pausa)
-PAUSA_MONTANDO = 4            # 1 s lendo, 4 s parado
-PAUSA_PRONTO = 20             # pronto: só o que mudou, a cada 20 s
-CONFERIR_SAIDOS_SEGUNDOS = 30 * 60
-FAXINA_SEGUNDOS = 24 * 60 * 60
-FOLGA_MINUTOS = 2
+LINHAS_POR_VEZ = ajustes.valor("email.indice_linhas_por_vez")
+PASSO_SEGUNDOS = ajustes.valor("email.indice_passo_segundos")   # tempo de Outlook por passo enquanto monta (depois vem a pausa)
+PAUSA_MONTANDO = ajustes.valor("email.indice_pausa_montando_segundos")   # 1 s lendo, 4 s parado
+PAUSA_PRONTO = ajustes.valor("email.indice_pausa_pronto_segundos")   # pronto: só o que mudou, a cada 20 s
+CONFERIR_SAIDOS_SEGUNDOS = ajustes.valor("email.indice_conferir_saidos_segundos")
+FAXINA_SEGUNDOS = ajustes.valor("email.indice_faxina_segundos")
+FOLGA_MINUTOS = ajustes.valor("email.indice_folga_minutos")
 
 
 def _data_outlook(d):

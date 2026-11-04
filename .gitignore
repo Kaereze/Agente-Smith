@@ -23,3 +23,6 @@ chave*.json
 *.pem
 *.key
 .env
+
+# ajustes do administrador: só neste PC, nunca sobem (04/11/2026)
+ajustes.json

@@ -5,12 +5,13 @@ Saída do Outlook já travou com 5 e-mails sem ninguém perceber. Cada PC public
 quantos e-mails estão presos na Caixa de Saída dele e (o PC principal) quando foi a última cópia que deu certo.
 """
 import datetime
+import ajustes
 
-COPIA_ATRASADA_MIN = 35          # a cópia roda a cada 10 min (15/10/2026): duas voltas perdidas + folga
-SAIDA_TRAVADA_MIN = 10           # e-mail parado na Caixa de Saída há mais que isso
+COPIA_ATRASADA_MIN = ajustes.valor("saude.copia_atrasada_minutos")   # a cópia roda a cada 10 min (15/10/2026): duas voltas perdidas + folga
+SAIDA_TRAVADA_MIN = ajustes.valor("saude.saida_travada_minutos")   # e-mail parado na Caixa de Saída há mais que isso
 HORARIO_COPIA = ("07:00", "23:30")
-SEM_EMAIL_HORAS = 3              # caixa deste PC sem e-mail novo há mais que isso... (era 6; 26/10/2026)
-OUTRO_RECEBEU_HORAS = 2          # ...enquanto outro PC recebeu há menos que isso = Outlook não está baixando
+SEM_EMAIL_HORAS = ajustes.valor("saude.sem_email_horas")   # caixa deste PC sem e-mail novo há mais que isso... (era 6; 26/10/2026)
+OUTRO_RECEBEU_HORAS = ajustes.valor("saude.outro_pc_recebeu_horas")   # ...enquanto outro PC recebeu há menos que isso = Outlook não está baixando
 HORARIO_EMAIL = ("08:00", "22:00")
 
 
@@ -282,7 +283,12 @@ def problemas(pcs, agora=None):
     return sorted(saida, key=lambda x: x["nivel"] != "erro")
 
 
-PEDIDO_SEM_ENVIO_HORAS = 2       # ciclo de 10 min + até 75 min esperando o robô antigo: passou disso, está parado
+def ajustes_com_erro():
+    """ajustes.json com chave errada ou valor fora do aceito (04/11/2026): o Painel segue com o valor de fábrica, mas avisa o que corrigir."""
+    return [{"nivel": "aviso", "pc": "", "texto": e} for e in ajustes.erros()[:3]]
+
+
+PEDIDO_SEM_ENVIO_HORAS = ajustes.valor("saude.pedido_sem_envio_horas")   # ciclo de 10 min + até 75 min esperando o robô antigo: passou disso, está parado
 
 
 def pedidos_sem_envio(solicitacoes, agora=None, horas=PEDIDO_SEM_ENVIO_HORAS):

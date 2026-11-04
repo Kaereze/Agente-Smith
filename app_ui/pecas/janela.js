@@ -2,7 +2,7 @@
 // toda janela (.modal-fundo no body) ganha a SAÍDA animada sem mexer em cada uma: o .remove() dela vira fecharJanela.
 // Ao fechar, ela troca .modal-fundo por .janela-saindo (as telas param de vê-la como aberta na hora) e só sai do body
 // depois da animação.
-const JANELA_SAIDA_MS = 150;
+const JANELA_SAIDA_MS = globalThis.aj?.("tela.menu_saida_milissegundos") ?? 150;
 function fecharJanela(fundo, remover) {
   if (!fundo?.classList.contains("modal-fundo")) return;
   const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;

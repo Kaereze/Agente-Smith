@@ -21,6 +21,7 @@ import socket
 from arquivos import salvar_json
 from config import PASTA_ESTADO
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("contagem_painel")
 
@@ -28,8 +29,8 @@ AGENTES_FIM_DE_SEMANA = ("João", "Cristian")
 DIAS_DO_BLOCO = (4, 5, 6)          # sexta, sábado, domingo (o Mail Analytics soma os 3 na linha do domingo)
 PREFIXO_ABA = "ContagemPainel_"
 CAB = ["Data", "Agente", "Hotel", "Caixa", "Recebidos", "Enviados", "NFs", "Ligações", "Contado em"]
-MANTER_DIAS = 14
-RECONTAR_HOJE_MIN = 60
+MANTER_DIAS = ajustes.valor("limpeza.contagem_painel_dias")
+RECONTAR_HOJE_MIN = ajustes.valor("limpeza.recontar_hoje_minutos")
 CAMINHO = PASTA_ESTADO / "contagem_painel.json"
 _NF = re.compile(r"\bNF\s*n?[º°o.]*\s*(\d{2,7})\b", re.I)
 _RESPOSTA = re.compile(r"^\s*(re|res|enc|fw|fwd|encaminhad[ao])\s*[:\]]", re.I)

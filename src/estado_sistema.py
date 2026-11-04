@@ -14,12 +14,13 @@ import rede_pcs
 import saude
 from config import PASTA_ESTADO, e_principal
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("app")
 
 
-DROPBOX_OLHAR_SEGUNDOS = 10   # pasta de notas do Dropbox: mudou = NF nova, refaz a lista e as NFs dos e-mails já
-REINICIO_PENDENTE_MIN = 5          # código novo na pasta e o Painel ainda no velho por mais que isso: pede o reinício de novo
+DROPBOX_OLHAR_SEGUNDOS = ajustes.valor("atualizacao.dropbox_olhar_segundos")   # pasta de notas do Dropbox: mudou = NF nova, refaz a lista e as NFs dos e-mails já
+REINICIO_PENDENTE_MIN = ajustes.valor("atualizacao.reinicio_pendente_minutos")   # código novo na pasta e o Painel ainda no velho por mais que isso: pede o reinício de novo
 
 
 class SistemaMixin:
@@ -39,6 +40,7 @@ class SistemaMixin:
         """Faixa de saúde: o que os PCs publicam + o atraso do Mail Analytics (do relatório guardado)."""
         lista = saude.problemas(self.pcs())
         lista += saude.pedidos_sem_envio(list(getattr(self, "solicitacoes", []) or []))   # pedido parado (15/10/2026)
+        lista += saude.ajustes_com_erro()   # ajustes.json com chave errada ou valor fora do aceito (04/11/2026)
         rel = getattr(self, "_ultimo_relatorio", None)
         if rel:
             lista += saude.mail_analytics_atrasado(rel.get("ultimo_dia"), datetime.date.today())

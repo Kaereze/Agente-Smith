@@ -18,14 +18,15 @@ import rede_pcs
 import saude
 from config import e_principal, sem_outlook
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("app")
 
-VERIFICAR_ATUALIZACAO_MINUTOS = 15
+VERIFICAR_ATUALIZACAO_MINUTOS = ajustes.valor("atualizacao.verificar_github_minutos")
 TELAS = {"visao": "Visão geral", "fila": "Notas fiscais", "correio": "E-mails", "log": "Log", "maquinas": "Máquinas"}   # pra Máquinas mostrar onde cada um está
-SEM_REDE_SEGUNDOS = 300      # PC que não respondeu pela rede: 5 min usando a cópia, sem esperar
-JANELA_ABERTA_SEGUNDOS = 90     # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
-ATIVIDADE_CACHE_SEGUNDOS = 20
+SEM_REDE_SEGUNDOS = ajustes.valor("rede.pc_sem_resposta_segundos")   # PC que não respondeu pela rede: 5 min usando a cópia, sem esperar
+JANELA_ABERTA_SEGUNDOS = ajustes.valor("rede.janela_fechada_apos_segundos")   # a janela pede dados a cada 15 s; sem pedido há 90 s = fechada
+ATIVIDADE_CACHE_SEGUNDOS = ajustes.valor("rede.atividade_cache_segundos")
 
 
 

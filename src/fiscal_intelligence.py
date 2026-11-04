@@ -13,6 +13,7 @@ import datetime
 import re
 
 from tratamento import normalizar
+import ajustes
 
 ABA_POR_OPERADOR = {"Agente_Joao": "João", "Agente_Clara": "Clara", "Agente_Cristian": "Cristian",
                     "Agente_Bernardo": "Bernardo"}
@@ -20,7 +21,7 @@ ABAS_FIXAS = ["Log_Eventos", "Status_Execucao", "Status_Operadores", "Painel_Con
 METRICAS = ("recebidos", "enviados", "ligacoes", "cancelamentos", "nfs")
 _COLUNAS = {"data": ["data"], "hotel": ["hotel"], "recebidos": ["emails recebidos"], "enviados": ["emails enviados"],
             "ligacoes": ["ligacoes"], "cancelamentos": ["substituicoes/cancelamentos"], "nfs": ["nfs emitidas"]}
-FRESCOR_SINAL_SEGUNDOS = 40
+FRESCOR_SINAL_SEGUNDOS = ajustes.valor("google.fiscal_intelligence_sinal_segundos")
 
 
 def _data(texto):

@@ -37,20 +37,21 @@ from controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
 import outlook_vivo
 from sheets import ler_hoteis
+import ajustes
 
 logger = configurar_logging("confirmar_nfs")
 
 CAMINHO_VISTOS = PASTA_ESTADO / "confirmar_nfs.json"
 CAMINHO_STATUS = PASTA_ESTADO / "confirmar_status.json"   # última volta (o Painel publica pros outros PCs)
-RECEBIDOS_DIAS = 2
-MAX_ATIVIDADES_POR_TIPO = 25   # acima disso vira uma linha de resumo (ex.: conferência do ano)
+RECEBIDOS_DIAS = ajustes.valor("notas.recebidos_dias")
+MAX_ATIVIDADES_POR_TIPO = ajustes.valor("notas.atividades_por_tipo")   # acima disso vira uma linha de resumo (ex.: conferência do ano)
 # Sobe quando a regra muda e e-mails já vistos precisam ser lidos de novo: na 1ª volta depois de atualizar,
 # cada PC relê os enviados sozinho. 2 = tratativas e NF anexada em assunto fora do padrão (07/10/2026).
 VERSAO_REGRAS = 4   # 3/4: registra os e-mails com NF já enviados, até pra outro endereço (envio pendente x enviada)
 CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
 AGENTE = "Robô"
 PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
-MAX_ITENS_POR_CONTA = 3000
+MAX_ITENS_POR_CONTA = ajustes.valor("outlook.max_itens_por_conta")
 
 
 class CacheTextos:
@@ -390,8 +391,8 @@ def varrer_dropbox(indice, cfg, limite, vistos, textos):
 # Leitura leve (08/10/2026): a conferência roda a cada 2 min em cada PC e relia ~11 MB (abas dos hotéis +
 # Tratamento inteira). Agora as abas dos hotéis valem 5 min e a Tratamento vem só pelo fim (as linhas novas).
 _CACHE_CENTRAL = {"hoteis_em": -1e9, "hoteis": {}, "trat": None, "trat_em": -1e9}
-HOTEIS_CACHE_SEGUNDOS = 300
-TRATAMENTO_INTEIRA_SEGUNDOS = 1800
+HOTEIS_CACHE_SEGUNDOS = ajustes.valor("google.hoteis_cache_segundos")
+TRATAMENTO_INTEIRA_SEGUNDOS = ajustes.valor("google.tratamento_inteira_conferencia_segundos")
 
 
 def ler_central(backend, central, abas_hoteis, relogio=None):

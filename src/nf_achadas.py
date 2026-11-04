@@ -20,16 +20,17 @@ import types
 from arquivos import salvar_json, so_na_nuvem
 from controle_nf import conferir_conteudo, documento_tomador, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("nf_achadas")
 
-FRESCA_HORAS = 72           # nota lida há menos que isso dispara o gatilho (recalcular a etiqueta "NF pronta" dos e-mails)
-NOTA_PRONTA_HORAS = 168     # a etiqueta "NF pronta" dos e-mails usa notas dos últimos 7 dias
-JANELA_DIAS = 30            # notas dos últimos 30 dias (também as que já estavam nas pastas)
-INTERVALO_SEGUNDOS = 45     # entre uma olhada e outra nas pastas
-MAX_LIDAS_POR_VOLTA = 12    # PDF escaneado (OCR) leva segundos: uma fatia por volta, sem pesar
-MAX_TEXTO = 8000            # do texto de cada nota (o resto não serve pra conferir)
-LIMITE_SUGESTOES = 6
+FRESCA_HORAS = ajustes.valor("notas.fresca_horas")   # nota lida há menos que isso dispara o gatilho (recalcular a etiqueta "NF pronta" dos e-mails)
+NOTA_PRONTA_HORAS = ajustes.valor("notas.pronta_horas")   # a etiqueta "NF pronta" dos e-mails usa notas dos últimos 7 dias
+JANELA_DIAS = ajustes.valor("notas.janela_dias")   # notas dos últimos 30 dias (também as que já estavam nas pastas)
+INTERVALO_SEGUNDOS = ajustes.valor("notas.olhar_pastas_segundos")   # entre uma olhada e outra nas pastas
+MAX_LIDAS_POR_VOLTA = ajustes.valor("notas.lidas_por_volta")   # PDF escaneado (OCR) leva segundos: uma fatia por volta, sem pesar
+MAX_TEXTO = ajustes.valor("notas.texto_maximo_caracteres")   # do texto de cada nota (o resto não serve pra conferir)
+LIMITE_SUGESTOES = ajustes.valor("notas.sugestoes_maximo")
 
 
 class Indice:

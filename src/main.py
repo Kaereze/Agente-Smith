@@ -23,10 +23,11 @@ from montar_email import montar_emails
 from tratamento import normalizar
 from sheets import (ErroPlanilha, gravar_status, interpretar_aba, ler_hoteis, ler_pendentes, marcar_enviados,
                     nome_do_hotel_pela_aba, registrar_central, robo_ligado)
+import ajustes
 
 logger = configurar_logging("main")
 
-INTERVALO_CONFERENCIA_SEGUNDOS = 10
+INTERVALO_CONFERENCIA_SEGUNDOS = ajustes.valor("outlook.intervalo_conferencia_segundos")
 
 
 def _marcar_e_registrar(backend, cfg, solicitacoes, registrar=True):

@@ -23,10 +23,11 @@ import rede_local
 import saude
 from arquivos import salvar_json
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("app")
-NOTAS_EMAILS_SEGUNDOS = 120   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
-ENVIADOS_RAPIDO_SEGUNDOS = 1.0   # consulta rápida nos Itens Enviados do Outlook quando o índice ainda não tem o envio do hóspede
+NOTAS_EMAILS_SEGUNDOS = ajustes.valor("email.notas_dos_emails_segundos")   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
+ENVIADOS_RAPIDO_SEGUNDOS = ajustes.valor("email.enviados_rapido_segundos")   # consulta rápida nos Itens Enviados do Outlook quando o índice ainda não tem o envio do hóspede
 
 
 def _kw_ligacao(corpo):

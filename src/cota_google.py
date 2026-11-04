@@ -19,6 +19,7 @@ import threading
 import time
 
 from config import PASTA_ESTADO
+import ajustes
 
 LIMITE_GOOGLE = 60
 PERFIS = {   # perfil: (leituras/min, escritas/min)
@@ -30,8 +31,8 @@ PERFIS = {   # perfil: (leituras/min, escritas/min)
     "padrao": (4, 4),
 }
 PASTA_CONSUMO = PASTA_ESTADO / "cota_google"
-GRAVAR_CONSUMO_SEGUNDOS = 30
-PAUSA_APOS_429 = 20
+GRAVAR_CONSUMO_SEGUNDOS = ajustes.valor("google.gravar_consumo_segundos")
+PAUSA_APOS_429 = ajustes.valor("google.pausa_apos_bloqueio_segundos")
 
 
 class Cota:

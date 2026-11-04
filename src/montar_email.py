@@ -7,13 +7,14 @@ import controle_nf
 from controle_nf import paragrafo_status
 from modelos import EmailMontado
 from tratamento import converter_data, normalizar
+import ajustes
 
-COR_PRIMARIA = "#00786c"
-COR_CREME = "#d5bda1"
-COR_TEXTO_TABELA = "#173f39"
-COR_BORDA_TABELA = "#bfa27c"
+COR_PRIMARIA = ajustes.valor("email.cor_primaria")
+COR_CREME = ajustes.valor("email.cor_creme")
+COR_TEXTO_TABELA = ajustes.valor("email.cor_texto_tabela")
+COR_BORDA_TABELA = ajustes.valor("email.cor_borda_tabela")
 FONTE = "font-family:Segoe UI,Arial,sans-serif;"
-TAMANHO_MAXIMO_ASSUNTO = 200
+TAMANHO_MAXIMO_ASSUNTO = ajustes.valor("envio.assunto_maximo_caracteres")
 
 
 def ordenar_para_email(solicitacoes):

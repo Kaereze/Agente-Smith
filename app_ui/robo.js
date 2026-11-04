@@ -272,7 +272,7 @@ async function rbCarregarAtividade() {
   clearTimeout(rbz.timerAt);
   const j = await api("/api/atividade").catch(() => null);
   if (j && !j.erro) { at.dados = j; if (rbz.vivo) rbz.foto = null; }
-  if (rbz.aberta) { rbRender(); rbz.timerAt = setTimeout(rbCarregarAtividade, 20000); }
+  if (rbz.aberta) { rbRender(); rbz.timerAt = setTimeout(rbCarregarAtividade, (globalThis.aj?.("tela.registro_atualiza_segundos") ?? 20) * 1000); }
 }
 
 // ---------- chip na barra de baixo, gaveta e aviso de rodada concluída ----------

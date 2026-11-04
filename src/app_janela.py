@@ -23,6 +23,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO
+import ajustes
 
 PORTA = 8765
 TITULO = "Painel Notas Fiscais"
@@ -30,9 +31,9 @@ ICONE = PASTA_PROJETO / "app_ui" / "icone.ico"
 APP_ID = "RedeAndrade.PainelNotasFiscais"   # agrupa na barra de tarefas como app próprio, não como Python
 EVENTO_MOSTRAR = "Local\\RedeAndrade.PainelNotasFiscais.Mostrar"   # o atalho clicado de novo pede pra mostrar
 ESTADO = {"sair": False, "janela": None}
-VIGIAR_SEGUNDOS = 30          # de quanto em quanto a janela confere se a tela está viva
-RESPOSTA_SEGUNDOS = 3         # tela que não responde nesse tempo conta como parada
-PERGUNTAS_PRESAS_MAX = 20     # perguntas sem resposta acumuladas: para de perguntar (não enche de linhas presas)
+VIGIAR_SEGUNDOS = ajustes.valor("janela.vigiar_segundos")   # de quanto em quanto a janela confere se a tela está viva
+RESPOSTA_SEGUNDOS = ajustes.valor("janela.resposta_segundos")   # tela que não responde nesse tempo conta como parada
+PERGUNTAS_PRESAS_MAX = ajustes.valor("janela.perguntas_presas_maximo")   # perguntas sem resposta acumuladas: para de perguntar (não enche de linhas presas)
 
 
 def servidor_no_ar():

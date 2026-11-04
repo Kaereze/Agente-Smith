@@ -16,16 +16,17 @@ import threading
 import time
 
 from log_util import configurar_logging
+import ajustes
 
 logger = configurar_logging("outlook_vivo")
 
 ABERTO, SEM_JANELA, FECHADO = "aberto", "sem_janela", "fechado"
-INTERVALO_SEGUNDOS = 60
-ESPERA_ABRIR_SEGUNDOS = 90
-PAUSA_DEPOIS_DE_FALHAS_SEGUNDOS = 30 * 60   # 3 tentativas sem janela: para de insistir por 30 min (não fica em laço)
+INTERVALO_SEGUNDOS = ajustes.valor("outlook.vivo_intervalo_segundos")
+ESPERA_ABRIR_SEGUNDOS = ajustes.valor("outlook.espera_abrir_segundos")
+PAUSA_DEPOIS_DE_FALHAS_SEGUNDOS = ajustes.valor("outlook.pausa_depois_de_falhas_segundos")   # 3 tentativas sem janela: para de insistir por 30 min (não fica em laço)
 CLASSE_JANELA_OUTLOOK = "rctrl_renwnd32"     # janela principal do Outlook clássico
 _SEM_JANELA_PRETA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-REINICIO_TEMPO_REDE = 240   # o PC de outro agente demora: fecha, abre, espera as contas e manda o que estava preso
+REINICIO_TEMPO_REDE = ajustes.valor("outlook.reinicio_espera_rede_segundos")   # o PC de outro agente demora: fecha, abre, espera as contas e manda o que estava preso
 _reinicio = threading.Lock()
 _cache = {"em": -1e9, "estado": None}
 _falhas = {"n": 0, "pausa_ate": 0.0}

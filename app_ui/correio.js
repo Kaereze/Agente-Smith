@@ -13,7 +13,7 @@ const RECONHECE_NF = false;
 const CLASSES = { corrigir: ["Corrigir / cancelar NF", "erro"], complementar: ["Nota complementar", "atencao"],
   cobranca: ["Cobrança", "atencao"], dados_tomador: ["Dados do tomador", "info"], pedido_nf: ["Pedido de NF", "ok"] };
 const PASTAS = { entrada: "Recebido", enviado: "Enviado", excluido: "Excluído" };
-const RESOLVENDO_MS = 4 * 60 * 1000;   // cinza até o espelho do PC dono confirmar (até ~2 min) e a linha sumir
+const RESOLVENDO_MS = (globalThis.aj?.("tela.linha_resolvendo_minutos") ?? 4) * 60 * 1000;   // cinza até o espelho do PC dono confirmar (até ~2 min) e a linha sumir
 
 async function carregarCorreio(soSeMudou = false) {   // soSeMudou: volta automática, igual = não redesenha (velocidade 3)
   try {
@@ -512,7 +512,7 @@ function pintarSync() {
 }
 // Ícone ⟳ da barra (29/10/2026): "rodando" = a tela grande está aberta; "em-espera" = passou de 5 s, o K pequeno segue carregando;
 // "fim-ok" / "fim-aviso" = resultado por uns 2,6 s. Travado só enquanto roda; erro ou fim libera na hora.
-const LIMITE_PEDIDO_MS = 10500;   // o Painel corta o pedido em 10 s (enviar_receber.LIMITE_TOTAL)
+const LIMITE_PEDIDO_MS = ((globalThis.aj?.("recarregar.limite_segundos") ?? 10) + 0.5) * 1000;   // o Painel corta o pedido em 10 s (enviar_receber.LIMITE_TOTAL)
 let recEmCurso = false;
 function pintarTopo(estado) {
   const b = $("btn-atualizar");
@@ -528,7 +528,7 @@ async function enviarReceberTodas() {
   if (recEmCurso || (cx.er && !cx.er.fim)) return;
   recEmCurso = true; pintarTopo("rodando");
   // a tela do K abre na hora (limiteMs: 0); depois de 5 s ela sai de cena e o ícone segue (standbyMs)
-  const longa = acaoLonga("Enviar/Receber todas", { limiteMs: 0, standbyMs: 5000, progresso: () => cx.er?.progresso ?? 0, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
+  const longa = acaoLonga("Enviar/Receber todas", { limiteMs: 0, standbyMs: (globalThis.aj?.("tela.k_standby_segundos") ?? 5) * 1000, progresso: () => cx.er?.progresso ?? 0, eta: () => cx.er?.eta ?? 0, itens: () => cx.er?.pcs ?? [] });
   const aoStandby = e => { if (e.detail.id === longa.acao.id) pintarTopo("em-espera"); };
   window.addEventListener("painel:acao-standby", aoStandby);
   try { api("/api/atualizar", {}).then(() => (typeof carregar === "function" ? carregar() : null)).catch(() => {}); } catch (e) { /* relê a planilha em paralelo */ }
@@ -906,7 +906,7 @@ function verificacaoHtml(e) {
 // Histórico do hóspede (usuário, 20/10/2026): no formulário o remetente é o Emissor Automático (o mesmo de todos os
 // hotéis), então o histórico vai pelo e-mail de quem preencheu e, quando dá, só desta hospedagem: mesmo hotel, desde
 // DIAS_ANTES_CHECKIN dias antes do check-in. Sem check-in: tudo do hóspede. Sem o e-mail de quem preencheu: sem histórico.
-const DIAS_ANTES_CHECKIN = 30;
+const DIAS_ANTES_CHECKIN = globalThis.aj?.("tela.dias_antes_checkin") ?? 30;
 function alvoHistorico(e) {
   if (!e || e.pasta === "enviado") return null;
   if (!(e.classes || []).includes("formulario")) return e.de ? { de: e.de } : null;

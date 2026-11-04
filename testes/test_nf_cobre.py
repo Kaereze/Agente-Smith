@@ -133,5 +133,5 @@ def test_tela_de_carregamento_trava_a_tela_ate_terminar_e_nao_prende_para_sempre
     css = (RAIZ / "app_ui" / "pecas" / "carregando.css").read_text(encoding="utf-8")
     assert ".cg-veu.trava{pointer-events:auto" in css and "z-index:100" in css and "z-index:101" in css   # acima de avisos, caixas e janelas
     assert 'veu.classList.add("on", "trava")' in js and 'veu.classList.remove("trava");   // terminou: destrava' in js
-    assert "e.stopImmediatePropagation(); e.preventDefault();" in js and "DESTRAVA_MS = 90000" in js   # atalhos travam; 90 s de segurança
+    assert "e.stopImmediatePropagation(); e.preventDefault();" in js and 'DESTRAVA_MS = (globalThis.aj?.("tela.k_trava_maxima_segundos") ?? 90) * 1000' in js   # atalhos travam; 90 s de segurança
     assert "mask" in js and 'url(#cg-mascara)' in js and ".cg-k .tr" not in css                       # aquarela: tinta cheia por máscara, sem linhas duplas

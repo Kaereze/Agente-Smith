@@ -12,9 +12,10 @@ Estados: "ok" | "atencao" | "parado" | "desligado". Resposta de estado(): {"atua
 import datetime
 
 import rede_pcs
+import ajustes
 
-COPIA_ATENCAO_MIN = 30      # cópia dos hotéis e robô de envio rodam de 10 em 10 min: passou de 30 já merece olhar
-COPIA_PARADA_MIN = 120      # duas horas sem rodar: parado
+COPIA_ATENCAO_MIN = ajustes.valor("saude.agente_copia_atencao_minutos")   # cópia dos hotéis e robô de envio rodam de 10 em 10 min: passou de 30 já merece olhar
+COPIA_PARADA_MIN = ajustes.valor("saude.agente_copia_parada_minutos")   # duas horas sem rodar: parado
 OUTLOOK_OK = "aberto"
 
 

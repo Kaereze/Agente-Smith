@@ -2,8 +2,9 @@
 import json
 import os
 import time
+import ajustes
 
-TENTATIVAS = 6
+TENTATIVAS = ajustes.valor("limpeza.tentativas_gravar_arquivo")
 
 
 def salvar_json(caminho, dados, indent=1):

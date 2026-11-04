@@ -149,7 +149,7 @@ def test_botao_chama_o_pedido_aos_pcs_e_nao_so_recarrega():
 
 
 def test_gancho_de_acao_longa_avisa_depois_de_3_s_e_o_api_liga_sozinho():
-    assert "LIMITE_ACAO_LONGA_MS = 3000" in PAINEL and "painel:acao-longa" in PAINEL and "painel:acao-longa-fim" in PAINEL
+    assert 'LIMITE_ACAO_LONGA_MS = (globalThis.aj?.("tela.acao_longa_segundos") ?? 3) * 1000' in PAINEL and "painel:acao-longa" in PAINEL and "painel:acao-longa-fim" in PAINEL
     assert "const longa = corpo && !SEM_TELA_K.some(" in HTML and HTML.count("longa?.fim(") == 3
     assert "acao.limiteMs ?? LIMITE_ACAO_LONGA_MS" in PAINEL and "limiteMs: 0" in CORREIO   # o Enviar/Receber abre na hora
 
@@ -221,10 +221,10 @@ def test_tela_um_clique_loop_de_5_s_standby_no_icone_e_10_s_no_maximo():
     ui = Path(__file__).resolve().parents[1] / "app_ui"
     js = (ui / "pecas" / "carregando.js").read_text(encoding="utf-8")
     css = (ui / "pecas" / "carregando.css").read_text(encoding="utf-8")
-    assert "const VOLTA_MS = 5000;" in js and "VOLTA_MS - 300" in js                                # o K se desenha em loop de 5 s
+    assert 'const VOLTA_MS = (globalThis.aj?.("tela.k_volta_segundos") ?? 5) * 1000;' in js and "VOLTA_MS - 300" in js                                # o K se desenha em loop de 5 s
     assert "painel:acao-standby" in js and "a.standbyMs" in js and "window.cgMiniK" in js           # passou de 5 s: sai de cena, o ícone assume
     assert ".cg-mini" in css and ".cg-pcs li.atraso" in css
-    assert "standbyMs: 5000" in CORREIO and "LIMITE_PEDIDO_MS = 10500" in CORREIO                   # 10 s no máximo (+ folga da rede)
+    assert 'standbyMs: (globalThis.aj?.("tela.k_standby_segundos") ?? 5) * 1000' in CORREIO and 'LIMITE_PEDIDO_MS = ((globalThis.aj?.("recarregar.limite_segundos") ?? 10) + 0.5) * 1000' in CORREIO                   # 10 s no máximo (+ folga da rede)
     assert 'pintarTopo("rodando")' in CORREIO and 'pintarTopo("")' in CORREIO and "recEmCurso" in CORREIO
     assert "if (recEmCurso || (cx.er && !cx.er.fim)) return;" in CORREIO                           # um clique só enquanto roda
     assert 'api("/api/atualizar", {})' in CORREIO                                                   # o mesmo clique relê a planilha
@@ -235,7 +235,7 @@ def test_tela_um_clique_loop_de_5_s_standby_no_icone_e_10_s_no_maximo():
 def test_toda_acao_sai_da_tela_grande_em_5_s_e_nao_fica_em_loop_infinito():
     """29/10/2026 (João): o POST /api/atualizar levou 79 s e a tela do K ficou em loop. Agora nenhuma ação segura a tela além do stand-by."""
     js = (UI / "pecas" / "carregando.js").read_text(encoding="utf-8")
-    assert "const STANDBY_PADRAO_MS = 5000;" in js and "a.standbyMs ?? STANDBY_PADRAO_MS" in js        # vale para qualquer ação, não só o recarregar
+    assert 'const STANDBY_PADRAO_MS = (globalThis.aj?.("tela.k_standby_segundos") ?? 5) * 1000;' in js and "a.standbyMs ?? STANDBY_PADRAO_MS" in js        # vale para qualquer ação, não só o recarregar
     assert "if (a.standbyMs) espera" not in js                                                       # o stand-by não depende de a ação pedir
     assert 'painel:espera' in js and "emEspera.delete(id)" in js and "emEspera.clear()" in js          # o ícone sabe quando ainda há ação em andamento
     assert 'window.addEventListener("painel:espera"' in HTML and 'b.classList.toggle("em-espera", e.detail.n > 0)' in HTML
