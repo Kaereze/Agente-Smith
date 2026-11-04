@@ -18,7 +18,7 @@ r# Segundo Cérebro — Projeto Notas Fiscais
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
 ## Onde paramos (04/11/2026)
-- **04/11:** `ajustes.json` pronto e testado (177 ajustes, só no PC do administrador): [[Ajustes (ajustes.json)]], ver [[2026-11-04]]. Entra na 2026.11.03.3 junto com o filtro de hotéis e a correção do Guardião; **aguarda o PODE SUBIR** do João (e ele não estar mexendo no Painel). Aberto: servidor do Painel não liga no notebook do Afonso; contagem da Clara.
+- **04/11:** `ajustes.json` pronto e testado (177 ajustes, só no PC do administrador): [[Ajustes (ajustes.json)]], ver [[2026-11-04]]. Entra na 2026.11.03.3 junto com o filtro de hotéis e a correção do Guardião. **PODE SUBIR dado em 04/11**, mas o João pediu para não mexer no PC do Afonso (ele estava usando): o código foi para `main` e as 3 branches (commit `903beb7`) **sem a etiqueta** `2026.11.03.3`, então nenhum PC se atualiza sozinho (a atualização automática só vai até a última etiqueta). **Falta criar a etiqueta** quando o Afonso terminar, ou o João atualizar o PC dele pelo botão do Painel. Aberto: servidor do Painel não liga no notebook do Afonso; contagem da Clara.
 
 ## Antes (28/10/2026)
 - **Painel e PCs:** versão `2026.10.29` (fluidez: envio e Monitoramento respondem na hora, mapa mais leve: [[Otimização e desempenho]]); antes, o medidor de desempenho (2026.10.28.3) e a aba **Agentes do Smith** (2026.10.28.2). A **Auditoria** está em 6,8/10 e tem a revisão de segurança e LGPD; o caminho até dezembro está em **[[Plano até dezembro]]**. Nada da Fase 1 começou: aguarda o OK do João.
