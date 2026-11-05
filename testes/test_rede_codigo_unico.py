@@ -63,6 +63,23 @@ def test_servidor_aceita_uma_vez_e_recusa_a_copia():
         assert _post(porta, cab)[0] == 200
         assert _post(porta, cab)[0] == 403
         sem = {"X-Quando": quando, "X-Assinatura": rede_local.assinar(SEGREDO, quando, "/rede/ping", b"{}")}
+        assert _post(porta, sem)[0] == 200      # formato antigo (PC na versão anterior) ainda passa, uma vez só
+        assert _post(porta, sem)[0] == 403      # a cópia é barrada pela própria assinatura
+    finally:
+        s.http.shutdown()
+
+
+def test_formato_antigo_tem_a_mesma_assinatura_de_antes_e_pode_ser_exigido_novo(monkeypatch):
+    import hashlib
+    import hmac
+    import time
+    antiga = hmac.new(SEGREDO, b"1000.0" + chr(10).encode() + b"/rede/ping" + chr(10).encode() + b"{}", hashlib.sha256).hexdigest()
+    assert rede_local.assinar(SEGREDO, "1000.0", "/rede/ping", b"{}") == antiga
+    monkeypatch.setattr(rede_local, "EXIGIR_CODIGO", True)
+    s, porta = _servidor()
+    try:
+        quando = f"{time.time():.3f}"
+        sem = {"X-Quando": quando, "X-Assinatura": rede_local.assinar(SEGREDO, quando, "/rede/ping", b"{}")}
         assert _post(porta, sem)[0] == 403
     finally:
         s.http.shutdown()
@@ -71,8 +88,8 @@ def test_servidor_aceita_uma_vez_e_recusa_a_copia():
 def test_perguntar_e_o_servidor_conversam():
     s, porta = _servidor()
     try:
-        assert rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {}, tempo=5) == {"ok": True}
-        assert rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {}, tempo=5) == {"ok": True}
+        for _ in range(3):   # 1ª vez formato antigo, depois novo e cifrado: todas funcionam
+            assert rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {}, tempo=5) == {"ok": True}
     finally:
         s.http.shutdown()
 
@@ -110,6 +127,7 @@ def test_cifra_vai_e_volta_e_recusa_adulteracao_ou_outro_segredo():
 
 def test_pedido_e_resposta_andam_cifrados_pela_rede(monkeypatch):
     visto = {}
+    monkeypatch.setattr(rede_local, "_PCS_SEGUROS", set())
     s = rede_local.Servidor(SEGREDO, {"ping": lambda corpo: visto.setdefault("corpo", corpo) and {"cpf": "111.444.777-35"}}, porta=0)
     assert s.iniciar()
     porta = s.http.server_address[1]
@@ -139,10 +157,13 @@ def test_pedido_e_resposta_andam_cifrados_pela_rede(monkeypatch):
         return Resp(dados, headers)
     monkeypatch.setattr(rede_local.urllib.request, "urlopen", espiar)
     try:
+        rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {"q": "primeiro"}, tempo=5)   # 1º: formato antigo, aprende que o PC é novo
+        assert f"127.0.0.1:{porta}" in rede_local._PCS_SEGUROS
+        del brutos[:]
         r = rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {"q": "Marcos Exemplo 111.444.777-35"}, tempo=5)
     finally:
         s.http.shutdown()
-    assert r == {"cpf": "111.444.777-35"} and visto["corpo"] == {"q": "Marcos Exemplo 111.444.777-35"}
+    assert r == {"cpf": "111.444.777-35"}
     assert all(b"111.444" not in b and b"Marcos" not in b for b in brutos)
 
 

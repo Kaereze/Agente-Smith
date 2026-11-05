@@ -84,6 +84,8 @@ def gerar_arquivo_segredo(caminho_chave, destino):
 
 
 def assinar(segredo, quando, caminho, corpo, codigo=""):
+    if not codigo:   # formato antigo (PC ainda na versão anterior): continua igual, para as duas versões se entenderem
+        return hmac.new(segredo, f"{quando}\n{caminho}\n".encode() + corpo, hashlib.sha256).hexdigest()
     return hmac.new(segredo, f"{quando}\n{caminho}\n{codigo}\n".encode() + corpo, hashlib.sha256).hexdigest()
 
 
@@ -130,6 +132,8 @@ except ImportError:   # pragma: no cover - depende de como o PC foi instalado
     AESGCM = None
 CIFRA_DISPONIVEL = AESGCM is not None
 EXIGIR_CIFRA = False
+EXIGIR_CODIGO = False   # idem para o código único; com False, pedido do formato antigo ainda passa (e não pode ser repetido)
+_PCS_SEGUROS = set()   # endereços que já provaram falar o formato novo (resposta com X-Seguro); só a eles se manda cifrado
 
 
 def _chave_de_cifra(segredo):
@@ -211,6 +215,7 @@ class Servidor:
             def _responder(self, codigo, corpo, cifrar_para=None):
                 dados = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
                 self.send_response(codigo)
+                self.send_header("X-Seguro", "1")   # "falo o formato novo": quem pergunta passa a mandar cifrado e com código
                 if cifrar_para:   # resposta cifrada para o pedido que veio cifrado (Fase 2)
                     dados = cifrar(servidor.segredo, dados, _associado_resposta(cifrar_para))
                     self.send_header("X-Cifrado", "1")
@@ -235,7 +240,10 @@ class Servidor:
                 if not assinatura_ok(servidor.segredo, self.headers.get("X-Quando", ""), self.path, corpo,
                                      self.headers.get("X-Assinatura", ""), codigo=codigo):
                     return self._responder(403, {"erro": "assinatura"})
-                if not servidor.codigos.usar(codigo):
+                if not codigo and EXIGIR_CODIGO:
+                    return self._responder(403, {"erro": "código ausente"})
+                # formato antigo: a própria assinatura (única por pedido) serve de código para barrar a cópia
+                if not servidor.codigos.usar(codigo or self.headers.get("X-Assinatura", "")):
                     return self._responder(403, {"erro": "código repetido ou ausente"})
                 cifrado = self.headers.get("X-Cifrado") == "1"
                 if not cifrado and EXIGIR_CIFRA:
@@ -278,14 +286,19 @@ def perguntar(segredo, endereco, acao, corpo, tempo=TEMPO_RESPOSTA):
     caminho = f"/rede/{acao}"
     dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8")
     quando = f"{time.time():.3f}"
-    codigo = secrets.token_hex(16)
-    cabecalhos = {"Content-Type": "application/json", "X-Quando": quando, "X-Codigo": codigo}
-    if CIFRA_DISPONIVEL:
+    cabecalhos = {"Content-Type": "application/json", "X-Quando": quando}
+    seguro = CIFRA_DISPONIVEL and endereco in _PCS_SEGUROS   # o 1º pedido a um PC vai no formato antigo, que as duas versões entendem
+    if seguro:
+        codigo = secrets.token_hex(16)
         dados = cifrar(segredo, dados, _associado_pedido(quando, caminho, codigo))
-        cabecalhos["X-Cifrado"] = "1"
+        cabecalhos.update({"X-Codigo": codigo, "X-Cifrado": "1"})
+    else:
+        codigo = ""
     cabecalhos["X-Assinatura"] = assinar(segredo, quando, caminho, dados, codigo)
     pedido = urllib.request.Request(f"http://{endereco}{caminho}", data=dados, method="POST", headers=cabecalhos)
     with urllib.request.urlopen(pedido, timeout=tempo) as r:
+        if r.headers.get("X-Seguro") == "1":
+            _PCS_SEGUROS.add(endereco)
         resposta = r.read() or b"{}"
         if r.headers.get("X-Cifrado") == "1":
             resposta = decifrar(segredo, resposta, _associado_resposta(codigo))

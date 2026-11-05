@@ -2,6 +2,8 @@
 # Python 3.14 + Git (baixa se faltar) -> projeto na Area de Trabalho -> .venv + bibliotecas
 # -> chave do Google -> identidade do PC -> conferente (todo PC) / copia+envio (so no principal)
 # Uso: INSTALAR_OU_ATUALIZAR.bat   (-SoConferir = so verifica, nao agenda nem reinicia nada)
+# REGRA (pedido do Joao, 05/11/2026): toda seguranca nova entra aqui E em Automacoes\testar_pc_novo.py na mesma entrega.
+# O passo 7 instala/libera os requisitos de seguranca e o passo 11 reconhece e verifica o PC inteiro.
 param([switch]$SoConferir)
 
 $PY_VERSAO = "3.14.6"
@@ -9,7 +11,7 @@ $PY_URL = "https://www.python.org/ftp/python/$PY_VERSAO/python-$PY_VERSAO-amd64.
 $pasta = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $env:PYTHONIOENCODING = "utf-8"
 
-function Passo($n, $texto) { Write-Host ""; Write-Host "[$n/9] $texto" -ForegroundColor Cyan }
+function Passo($n, $texto) { Write-Host ""; Write-Host "[$n/11] $texto" -ForegroundColor Cyan }
 function Ok($texto) { Write-Host "   OK  $texto" -ForegroundColor Green }
 function Aviso($texto) { Write-Host "   --  $texto" -ForegroundColor Yellow }
 function Falha($texto) { Write-Host "   !!  $texto" -ForegroundColor Red; Read-Host "Aperte Enter pra fechar"; exit 1 }
@@ -144,10 +146,32 @@ if ($LASTEXITCODE -ne 0) { Aviso "Nao identifiquei agora (Outlook fechado?). O c
 $papel = (& $venvPy -c "import sys; sys.path.insert(0,'src'); from config import carregar_config; print(carregar_config()['papel'])").Trim()
 Ok "Papel deste PC: $papel"
 
-if ($SoConferir) { Write-Host ""; Aviso "So conferencia (-SoConferir): nada foi agendado nem reiniciado."; exit 0 }
+# 7. Seguranca: segredo da rede, biblioteca de cifra, firewall e relogio (so mexe no PC se NAO for -SoConferir)
+Passo 7 "Seguranca da rede entre os PCs"
+$segredoDestino = Join-Path $chaveDir "segredo-rede.txt"
+if (-not (Test-Path $segredoDestino) -and $pendrive) {
+    $segPen = @((Join-Path (Split-Path $pendrive -Parent) "segredo-rede.txt"), (Join-Path $pendrive "segredo-rede.txt")) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($segPen) { Copy-Item $segPen $segredoDestino; Aviso "segredo-rede.txt copiado do pen drive - APAGUE ele do pen drive depois." }
+}
+if (Test-Path $segredoDestino) { Ok "segredo-rede.txt no lugar (este PC fala com os outros pelo segredo proprio da rede)" }
+else { Aviso "Sem segredo-rede.txt: vale o segredo derivado da chave do Google (serve se a chave for a mesma dos outros PCs)." }
+& $venvPy -c "import cryptography; print('cifra ok', cryptography.__version__)"
+if ($LASTEXITCODE -ne 0) { Aviso "Biblioteca de cifra ausente: o conteudo entre os PCs iria aberto. Rode este instalador de novo com internet." } else { Ok "Biblioteca de cifra instalada" }
+if (-not $SoConferir) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\liberar_rede.ps1")
+    try { & w32tm /resync /nowait | Out-Null; Ok "Pedido de acerto do relogio enviado (a rede entre os PCs exige relogio certo)" } catch { Aviso "Nao consegui pedir o acerto do relogio." }
+} else { Aviso "-SoConferir: firewall e relogio so serao conferidos, nao alterados." }
+
+function Verificar-Pc {
+    Passo 11 "Reconhecer e verificar este PC (chave, rede, cifra, relogio, firewall, BitLocker, ajustes)"
+    & $venvPy -W ignore (Join-Path $pasta "Automacoes\testar_pc_novo.py")
+    if ($LASTEXITCODE -ne 0) { Aviso "O teste achou falhas (!!). O Painel ja esta instalado, mas resolva-as antes de usar este PC." }
+}
+
+if ($SoConferir) { Verificar-Pc; Write-Host ""; Aviso "So conferencia (-SoConferir): nada foi agendado nem reiniciado."; exit 0 }
 
 # 7. Conferente: agenda e reinicia com a versao nova (espera o robo terminar o que estiver fazendo)
-Passo 7 "Conferente (liga sozinho com o Windows)"
+Passo 8 "Conferente (liga sozinho com o Windows)"
 $i = 0; while ((Test-Path (Join-Path $pasta "estado\_execucao.lock")) -and $i -lt 60) { Start-Sleep 5; $i++ }
 Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
     Where-Object { $_.CommandLine -like "*$pasta*conferente*" } |
@@ -156,7 +180,7 @@ Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
 Ok "Tarefa SolicitacoesNF_Conferente ligada"
 
 # 8. Copia + envio: so no PC principal
-Passo 8 "Copia das planilhas + envio"
+Passo 9 "Copia das planilhas + envio"
 if ($papel -eq "principal") {
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_sincronizacao.ps1") -Minutos 10 | Out-Null
     Ok "Tarefa SolicitacoesNF_CopiaHoteis (a cada 10 min)"
@@ -165,13 +189,15 @@ if ($papel -eq "principal") {
 }
 
 # 9. App (atalho na Area de Trabalho, todo PC)
-Passo 9 "Painel Notas Fiscais"
+Passo 10 "Painel Notas Fiscais"
 Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
     Where-Object { $_.CommandLine -like "*$pasta*app_servidor*" } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -Confirm:$false }
 & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_painel.ps1") | Out-Null
 & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\criar_atalho_app.ps1") | Out-Null
 Ok "Painel em segundo plano (tarefa SolicitacoesNF_Painel) + atalho na Area de Trabalho"
+
+Verificar-Pc
 
 Write-Host ""
 Write-Host "PRONTO. Pasta: $pasta  |  Papel: $papel" -ForegroundColor Green
