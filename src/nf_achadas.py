@@ -18,7 +18,7 @@ import time
 import types
 
 from arquivos import salvar_json, so_na_nuvem
-from controle_nf import conferir_conteudo, documento_tomador, ler_assunto_nf, provas_da_solicitacao
+from controle_nf import _CHAVE_ACESSO, conferir_conteudo, documento_tomador, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
 import ajustes
 
@@ -33,6 +33,23 @@ MAX_TEXTO = ajustes.valor("notas.texto_maximo_caracteres")   # do texto de cada 
 LIMITE_SUGESTOES = ajustes.valor("notas.sugestoes_maximo")
 
 
+_EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+_TELEFONE = re.compile(r"(?<!\d)(?:\(\d{2}\)\s?|\d{2}\s)?9?\d{4}-\d{4}(?!\d)")
+
+
+def enxugar_texto(texto, doc):
+    """Texto da nota como fica guardado (Fase 1, 05/11/2026): continua todo o texto que a conferência usa (valores, datas,
+    serviços, descrição, CPF/CNPJ do tomador), mas sem chave de acesso, e-mail, telefone e sem os outros CPF/CNPJ escritos
+    na nota (o do prestador, por exemplo). Se tirar isso mudasse o documento do tomador, guarda o texto como veio."""
+    def outro_doc(m):
+        return m.group(0) if re.sub(r"\D", "", m.group(1)) == doc else "[doc omitido]"
+    novo = _DOC_FORMATADO.sub(outro_doc, texto or "")
+    novo = _CHAVE_ACESSO.sub("[chave omitida]", novo)
+    novo = _EMAIL.sub("[e-mail omitido]", novo)
+    novo = _TELEFONE.sub("[telefone omitido]", novo)
+    return novo if documento_tomador(novo) == doc else (texto or "")
+
+
 class Indice:
     """{caminho: {"mtime", "nome", "nf", "doc", "texto", "sem_texto"}} guardado em estado/nf_achadas.json."""
 
@@ -43,6 +60,14 @@ class Indice:
             self.dados = json.load(open(caminho, encoding="utf-8"))
         except (OSError, ValueError):
             self.dados = {}
+        mudou = False
+        for e in self.dados.values():   # notas guardadas antes da Fase 1 também são enxugadas (uma vez)
+            antigo = e.get("texto", "")
+            if antigo and not e.get("enxuto"):
+                e["texto"], e["enxuto"] = enxugar_texto(antigo, e.get("doc", "")), True
+                mudou = True
+        if mudou:
+            self.salvar()
 
     def salvar(self):
         with self.lock:
@@ -98,7 +123,7 @@ def varrer(cfg, indice, ler_texto, agora=None, listar=None, na_nuvem=so_na_nuvem
         with indice.lock:
             indice.dados[caminho] = {"mtime": mtime, "nome": nome, "nf": str(nf[0]) if nf else "",
                                      "doc": documento_tomador(texto), "sem_texto": len(texto.strip()) < 30,
-                                     "texto": texto[:MAX_TEXTO]}
+                                     "texto": enxugar_texto(texto, documento_tomador(texto))[:MAX_TEXTO], "enxuto": True}
         lidas += 1
         frescas = frescas or mtime >= corte_fresca
     with indice.lock:   # esquece o que saiu da janela ou foi apagado

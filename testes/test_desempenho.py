@@ -119,3 +119,19 @@ def test_resumo_so_para_o_administrador():
     trecho = servidor[servidor.index('if url.path in ("/agentes/mapa", "/api/agentes", "/api/desempenho")'):]
     trecho = trecho[:trecho.index("estatico = ESTATICOS.get(url.path)")]
     assert trecho.index("e_admin_aqui") < trecho.index("desempenho.MEDIDOR.resumo()")
+
+
+def test_volta_lenta_diz_onde_foi_o_tempo_e_volta_rapida_fica_quieta():
+    m, perf, _ = _medidor()
+    with m.medir("painel.volta_completa"):
+        with m.medir("painel.atualizar"):
+            perf.t += 60
+        with m.medir("painel.notas_emails"):
+            perf.t += 50
+        with m.medir("painel.canceladas"):
+            perf.t += 0.01
+    linha = m.quebra_da_volta("painel.volta_completa", ("painel.atualizar", "painel.notas_emails", "painel.canceladas"))
+    assert "110.0 s" in linha and linha.index("atualizar 60.0 s") < linha.index("notas_emails 50.0 s") and "canceladas" not in linha
+    with m.medir("painel.volta_completa"):
+        perf.t += 2
+    assert m.quebra_da_volta("painel.volta_completa", ("painel.atualizar",)) == ""

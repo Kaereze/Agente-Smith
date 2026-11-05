@@ -6,6 +6,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
+import controle_nf  # noqa: E402
 import nf_achadas  # noqa: E402
 
 AGORA = datetime.datetime(2026, 10, 27, 12, 0)
@@ -207,3 +208,21 @@ def test_cpf_so_na_parte_citada_e_resposta_herda_o_documento_do_original(tmp_pat
     est.__dict__["_docs_do_email"] = {}
     est.emails = [est.emails[0]]
     assert est._notas_por_documento() == {}
+
+
+def test_texto_guardado_sai_sem_chave_email_telefone_e_outros_documentos():
+    texto = ("PRESTADOR HOTEL EXEMPLO CNPJ 98.765.432/0001-10 contato reservas@hotelexemplo.com.br (11) 91234-5678 "
+             "Chave 12345678901234567890123456789012345678901234 TOMADOR MARCOS EXEMPLO CPF 111.444.777-35 "
+             "DATA DE CHECK-IN: 30/09/2026 DATA DE CHECK-OUT: 02/10/2026 VALOR DA DIARIA: R$ 1.480,00")
+    enxuto = nf_achadas.enxugar_texto(texto, "11144477735")
+    alvo = {"documentos": ["11144477735"], "valores": ["1480,00"], "datas": ["30/09/2026"], "nomes": ["MARCOS EXEMPLO"], "servicos": ["diaria"]}
+    for fora in ("98.765.432/0001-10", "reservas@hotelexemplo", "91234-5678", "12345678901234567890123456789012345678901234"):
+        assert fora not in enxuto
+    assert "111.444.777-35" in enxuto and nf_achadas.documento_tomador(enxuto) == "11144477735"
+    assert "R$ 1.480,00" in enxuto and "CHECK-IN: 30/09/2026" in enxuto
+    assert controle_nf.conferir_conteudo(alvo, enxuto) == controle_nf.conferir_conteudo(alvo, texto)
+
+
+def test_se_enxugar_perder_o_documento_do_tomador_guarda_como_veio():
+    texto = "TOMADOR sem documento legivel valor R$ 10,00 " * 5
+    assert nf_achadas.enxugar_texto(texto, "11144477735") == texto

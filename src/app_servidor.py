@@ -12,6 +12,7 @@ import gzip
 import hashlib
 import json
 import os
+import io
 import pickle
 import re
 import secrets
@@ -102,7 +103,27 @@ CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
 CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
 SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
-VOLATEIS_TELA = {"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
+# Cache em disco (Fase 1, 05/11/2026): lê só estes tipos. Um arquivo trocado por outro com código dentro não roda nada: é recusado
+# (o Painel então lê tudo de novo do Google, como sempre fez sem cache).
+_TIPOS_DO_CACHE = {("datetime", "datetime"), ("datetime", "date"), ("datetime", "timezone"), ("datetime", "timedelta"),
+                   ("hoteis", "CadastroHoteis"), ("modelos", "Hotel"), ("modelos", "Solicitacao"),
+                   ("collections", "OrderedDict"), ("collections", "defaultdict"), ("builtins", "set"), ("builtins", "frozenset")}
+
+
+class _LeitorDoCache(pickle.Unpickler):
+    def find_class(self, modulo, nome):
+        if (modulo, nome) not in _TIPOS_DO_CACHE:
+            raise pickle.UnpicklingError(f"tipo fora da lista no cache: {modulo}.{nome}")
+        return super().find_class(modulo, nome)
+
+
+def ler_cache_seguro(dados):
+    return _LeitorDoCache(io.BytesIO(dados)).load()
+
+
+ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.notas_emails", "painel.fiscal_intelligence", "painel.canceladas",
+                   "painel.atividade", "painel.salvar_cache")
+VOLATEIS_TELA ={"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
 VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
 ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
@@ -519,8 +540,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
 
     def carregar_cache(self):
         try:
-            c = pickle.loads(CAMINHO_CACHE.read_bytes())
-        except (FileNotFoundError, OSError, pickle.UnpicklingError, EOFError, AttributeError, ImportError):
+            c = ler_cache_seguro(CAMINHO_CACHE.read_bytes())
+        except (FileNotFoundError, OSError, pickle.UnpicklingError, EOFError, AttributeError, ImportError, ValueError, IndexError, TypeError):
             return False
         if c.get("versao") != VERSAO_CACHE:
             return False
@@ -972,6 +993,10 @@ def main():
                 with medir("painel.salvar_cache", logger=logger):
                     estado.salvar_cache()
             estado.versao_tela += 1
+            quebra = desempenho.MEDIDOR.quebra_da_volta("painel.volta_completa", ETAPAS_DA_VOLTA)   # volta lenta: diz onde o tempo foi
+            if quebra:
+                logger.warning(quebra)
+            desempenho.MEDIDOR.talvez_resumir(logger)   # de tempos em tempos: as etapas mais pesadas, com média e p95
             esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)
 
     threading.Thread(target=laco, daemon=True).start()

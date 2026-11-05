@@ -9,7 +9,10 @@ Serve pro que é ao vivo e não deve passar pela planilha (nem gastar cota do Go
 Segurança:
 - Só aceita pedido de IP da rede local (10.x, 172.16-31.x, 192.168.x).
 - Todo pedido vem assinado (HMAC) com um segredo tirado da chave do Google — só os 4 PCs do financeiro têm. A
-  assinatura leva a hora: um pedido copiado da rede não serve de novo depois de 2 minutos.
+  assinatura leva a hora e um código único: um pedido copiado da rede não serve de novo (o código só vale uma vez)
+  e perde a validade em 30 s (Fase 1 do plano, 05/11/2026).
+- Teto de tamanho do pedido, tempo-limite de leitura por conexão (quem fica parado é cortado) e Content-Length
+  inválido é recusado.
 - Só e-mail das caixas dos hotéis sai (nunca uma caixa pessoal). Fora o /rede/enviar, só leitura; e o /rede/enviar
   só manda o e-mail do robô (código NF-) da caixa do hotel para ela mesma, nunca para fora.
 O endereço de cada PC (ip:porta) vai na aba PCs_Painel.
@@ -18,6 +21,7 @@ import hashlib
 import hmac
 import ipaddress
 import json
+import secrets
 import socket
 import threading
 import time
@@ -35,6 +39,7 @@ PORTA = 8766
 VALIDADE_ASSINATURA = ajustes.valor("rede.assinatura_validade_segundos")
 TEMPO_RESPOSTA = ajustes.valor("rede.resposta_maxima_segundos")
 MAX_CORPO = ajustes.valor("rede.corpo_maximo_mb") * 1024 * 1024   # o /rede/enviar leva o HTML do e-mail (até ~40 KB)
+TEMPO_LEITURA = 10   # segundos que uma conexão pode ficar parada antes de o servidor largar (pedido lento não prende o Painel)
 
 
 ARQUIVO_SEGREDO_REDE = "segredo-rede.txt"
@@ -77,11 +82,32 @@ def gerar_arquivo_segredo(caminho_chave, destino):
     return True
 
 
-def assinar(segredo, quando, caminho, corpo):
-    return hmac.new(segredo, f"{quando}\n{caminho}\n".encode() + corpo, hashlib.sha256).hexdigest()
+def assinar(segredo, quando, caminho, corpo, codigo=""):
+    return hmac.new(segredo, f"{quando}\n{caminho}\n{codigo}\n".encode() + corpo, hashlib.sha256).hexdigest()
 
 
-def assinatura_ok(segredo, quando, caminho, corpo, assinatura, agora=None):
+class CodigosUsados:
+    """Guarda os códigos já vistos pelo tempo em que a assinatura ainda valeria: o mesmo pedido copiado da rede é recusado."""
+
+    def __init__(self, validade=None, relogio=time.time):
+        self.validade, self.relogio = validade or VALIDADE_ASSINATURA, relogio
+        self._vistos, self._trava = {}, threading.Lock()
+
+    def usar(self, codigo):
+        """-> True se o código é novo (e fica anotado); False se vazio, malformado ou repetido."""
+        if not isinstance(codigo, str) or not 16 <= len(codigo) <= 64:
+            return False
+        agora = self.relogio()
+        with self._trava:
+            for velho in [c for c, t in self._vistos.items() if agora - t > 2 * self.validade]:
+                del self._vistos[velho]
+            if codigo in self._vistos:
+                return False
+            self._vistos[codigo] = agora
+            return True
+
+
+def assinatura_ok(segredo, quando, caminho, corpo, assinatura, agora=None, codigo=""):
     if not segredo or not assinatura:
         return False
     try:
@@ -89,7 +115,7 @@ def assinatura_ok(segredo, quando, caminho, corpo, assinatura, agora=None):
             return False
     except ValueError:
         return False
-    return hmac.compare_digest(assinar(segredo, quando, caminho, corpo), assinatura)
+    return hmac.compare_digest(assinar(segredo, quando, caminho, corpo, codigo), assinatura)
 
 
 def ip_da_rede_local(ip):
@@ -120,6 +146,7 @@ class Servidor:
     def __init__(self, segredo, acoes, porta=PORTA):
         self.segredo, self.acoes, self.porta = segredo, acoes, porta
         self.http = None
+        self.codigos = CodigosUsados()
 
     def iniciar(self):
         if not self.segredo:
@@ -128,6 +155,8 @@ class Servidor:
         servidor = self
 
         class Handler(BaseHTTPRequestHandler):
+            timeout = TEMPO_LEITURA
+
             def log_message(self, *_):
                 pass
 
@@ -142,13 +171,21 @@ class Servidor:
             def do_POST(self):
                 if not ip_da_rede_local(self.client_address[0]):
                     return self._responder(403, {"erro": "fora da rede"})
-                tamanho = int(self.headers.get("Content-Length") or 0)
+                try:
+                    tamanho = int(self.headers.get("Content-Length") or 0)
+                except ValueError:
+                    tamanho = -1
+                if tamanho < 0:
+                    return self._responder(400, {"erro": "tamanho inválido"})
                 if tamanho > MAX_CORPO:
                     return self._responder(413, {"erro": "grande demais"})
                 corpo = self.rfile.read(tamanho)
+                codigo = self.headers.get("X-Codigo", "")
                 if not assinatura_ok(servidor.segredo, self.headers.get("X-Quando", ""), self.path, corpo,
-                                     self.headers.get("X-Assinatura", "")):
+                                     self.headers.get("X-Assinatura", ""), codigo=codigo):
                     return self._responder(403, {"erro": "assinatura"})
+                if not servidor.codigos.usar(codigo):
+                    return self._responder(403, {"erro": "código repetido ou ausente"})
                 acao = servidor.acoes.get(self.path.removeprefix("/rede/"))
                 if acao is None:
                     return self._responder(404, {"erro": "não encontrado"})
@@ -180,8 +217,10 @@ def perguntar(segredo, endereco, acao, corpo, tempo=TEMPO_RESPOSTA):
     caminho = f"/rede/{acao}"
     dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8")
     quando = f"{time.time():.3f}"
+    codigo = secrets.token_hex(16)
     pedido = urllib.request.Request(f"http://{endereco}{caminho}", data=dados, method="POST", headers={
-        "Content-Type": "application/json", "X-Quando": quando, "X-Assinatura": assinar(segredo, quando, caminho, dados)})
+        "Content-Type": "application/json", "X-Quando": quando, "X-Codigo": codigo,
+        "X-Assinatura": assinar(segredo, quando, caminho, dados, codigo)})
     with urllib.request.urlopen(pedido, timeout=tempo) as r:
         return json.loads(r.read() or b"{}")
 

@@ -17,7 +17,10 @@ r# Segundo Cérebro — Projeto Notas Fiscais
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (04/11/2026)
+## Onde paramos (05/11/2026)
+- **05/11:** Fase 1 do [[Plano até dezembro]] feita e enviada ao GitHub **sem etiqueta** (código único na rede entre PCs e validade de 30 s, limites de rede, `nf_achadas.json` enxuto, medição de volta lenta, cache só com tipos conhecidos, Actions fixadas, Dependabot). Ver [[2026-11-05]]. A etiqueta `2026.11.03.3` agora leva também isso: **criar só quando o João disser e sem mexer no PC do Afonso**. Os 4 PCs precisam subir juntos.
+
+## Antes (04/11/2026)
 - **04/11:** `ajustes.json` pronto e testado (177 ajustes, só no PC do administrador): [[Ajustes (ajustes.json)]], ver [[2026-11-04]]. Entra na 2026.11.03.3 junto com o filtro de hotéis e a correção do Guardião. **PODE SUBIR dado em 04/11**, mas o João pediu para não mexer no PC do Afonso (ele estava usando): o código foi para `main` e as 3 branches (commit `903beb7`) **sem a etiqueta** `2026.11.03.3`, então nenhum PC se atualiza sozinho (a atualização automática só vai até a última etiqueta). **Falta criar a etiqueta** quando o Afonso terminar, ou o João atualizar o PC dele pelo botão do Painel. Aberto: servidor do Painel não liga no notebook do Afonso; contagem da Clara.
 
 ## Antes (28/10/2026)

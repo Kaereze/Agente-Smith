@@ -172,7 +172,7 @@ ENTRADAS = [
     ('rede.pc_online_segundos', 180, 30, 1800, 'PC com sinal de vida mais novo que isso conta como ligado.', None),
     ('rede.conferencia_atrasada_minutos', 10, 2, 120, 'Conferente parado: sem volta do Outlook há mais que isso.', None),
     ('rede.assinatura_validade_segundos',
-     120,
+     30,
      30,
      600,
      'Por quanto tempo vale a assinatura de um pedido entre PCs (segurança).',

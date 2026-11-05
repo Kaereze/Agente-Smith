@@ -1,5 +1,7 @@
 import datetime
 
+import pytest
+
 import app_dados as d
 from app_servidor import Estado
 from conftest import ESTRELA
@@ -160,3 +162,17 @@ def test_tema_e_operador_ficam_juntos_nas_preferencias_do_pc(tmp_path, monkeypat
     app_servidor.salvar_pref("tema", "dark")
     assert app_servidor.ler_prefs() == {"agente": "Clara", "tema": "dark"}   # trocar o tema não apaga o operador
     assert app_servidor.nome_do_agente() == "Clara"
+
+
+def test_cache_em_disco_recusa_tipo_de_fora_e_nao_roda_codigo():
+    import os
+    import pickle
+    import app_servidor
+
+    class Perigo:
+        def __reduce__(self):
+            return (os.system, ("echo nao-pode-rodar",))
+    with pytest.raises(pickle.UnpicklingError):
+        app_servidor.ler_cache_seguro(pickle.dumps({"versao": 1, "x": Perigo()}))
+    ok = {"versao": 1, "quando": datetime.datetime(2026, 11, 5, 9, 0), "conjunto": {1, 2}}
+    assert app_servidor.ler_cache_seguro(pickle.dumps(ok)) == ok

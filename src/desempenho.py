@@ -88,6 +88,18 @@ class Medidor:
                             "p95_ms": round(p95 * 1000), "max_ms": round(maior * 1000), "lentas": lentas}
         return dict(sorted(saida.items(), key=lambda kv: -kv[1]["medio_ms"]))
 
+    def quebra_da_volta(self, volta, etapas, limite=LIMITE_LACO_S):
+        """Volta lenta: a linha que diz onde o tempo foi (Fase 1, 05/11/2026). -> "" se a última volta foi rápida.
+        Só nomes de etapa e segundos: nada de hóspede."""
+        with self._lock:
+            total = self._totais.get(volta, [0, 0.0, 0, 0.0])[3]
+            partes = [(e, self._totais.get(e, [0, 0.0, 0, 0.0])[3]) for e in etapas]
+        if total <= limite:
+            return ""
+        partes.sort(key=lambda p: -p[1])
+        return f"⏱️ Volta de {total:.1f} s (limite {limite:.0f} s). Onde foi o tempo: " + "; ".join(
+            f"{e.removeprefix('painel.')} {s:.1f} s" for e, s in partes if s >= 0.1)
+
     def linha_de_resumo(self, topo=6):
         itens = list(self.resumo().items())[:topo]
         return "; ".join(f"{e}: média {v['medio_ms']} ms, p95 {v['p95_ms']} ms, máx {v['max_ms']} ms ({v['n']}×)" for e, v in itens)
