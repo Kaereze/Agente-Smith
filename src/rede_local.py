@@ -11,6 +11,7 @@ Segurança:
 - Todo pedido vem assinado (HMAC) com um segredo tirado da chave do Google — só os 4 PCs do financeiro têm. A
   assinatura leva a hora e um código único: um pedido copiado da rede não serve de novo (o código só vale uma vez)
   e perde a validade em 30 s (Fase 1 do plano, 05/11/2026).
+- O conteúdo do pedido e da resposta vai cifrado (AES-GCM, Fase 2, 05/11/2026); detalhes perto de `cifrar`.
 - Teto de tamanho do pedido, tempo-limite de leitura por conexão (quem fica parado é cortado) e Content-Length
   inválido é recusado.
 - Só e-mail das caixas dos hotéis sai (nunca uma caixa pessoal). Fora o /rede/enviar, só leitura; e o /rede/enviar
@@ -118,6 +119,53 @@ def assinatura_ok(segredo, quando, caminho, corpo, assinatura, agora=None, codig
     return hmac.compare_digest(assinar(segredo, quando, caminho, corpo, codigo), assinatura)
 
 
+# ---------- cifra do conteúdo (Fase 2, 05/11/2026) ----------
+# O texto de e-mail e o CPF passavam abertos na rede do escritório. Agora o corpo do pedido e da resposta vai cifrado
+# (AES-256-GCM, chave tirada do segredo da rede). A assinatura continua valendo. PC sem a biblioteca `cryptography`
+# segue falando como antes (aberto, assinado). EXIGIR_CIFRA fica desligado até os 4 PCs estarem na versão nova;
+# depois é só trocar para True e a rede recusa pedido aberto.
+try:
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+except ImportError:   # pragma: no cover - depende de como o PC foi instalado
+    AESGCM = None
+CIFRA_DISPONIVEL = AESGCM is not None
+EXIGIR_CIFRA = False
+
+
+def _chave_de_cifra(segredo):
+    return hashlib.sha256(b"painel-fiscal-cifra|" + segredo).digest()
+
+
+def cifrar(segredo, dados, associado):
+    nonce = secrets.token_bytes(12)
+    return nonce + AESGCM(_chave_de_cifra(segredo)).encrypt(nonce, dados, associado)
+
+
+def decifrar(segredo, dados, associado):
+    """-> bytes, ou levanta ValueError se foi adulterado, veio com outro segredo ou está curto demais."""
+    if len(dados) < 12 + 16:
+        raise ValueError("curto demais")
+    try:
+        return AESGCM(_chave_de_cifra(segredo)).decrypt(dados[:12], dados[12:], associado)
+    except Exception as e:
+        raise ValueError("não decifrou") from e
+
+
+def _associado_pedido(quando, caminho, codigo):
+    return f"{quando}|{caminho}|{codigo}".encode()
+
+
+def _associado_resposta(codigo):
+    return f"resposta|{codigo}".encode()
+
+
+def gerar_segredo_novo(destino):
+    """Grava em destino um segredo novo, aleatório e independente da chave do Google (Fase 2). O mesmo arquivo
+    (segredo-rede.txt) precisa ir para a pasta da chave dos 4 PCs; sem ele, vale o segredo derivado da chave. Nunca mostra o valor."""
+    Path(destino).write_text(secrets.token_hex(32), encoding="utf-8")
+    return True
+
+
 def ip_da_rede_local(ip):
     try:
         endereco = ipaddress.ip_address(ip)
@@ -160,9 +208,12 @@ class Servidor:
             def log_message(self, *_):
                 pass
 
-            def _responder(self, codigo, corpo):
+            def _responder(self, codigo, corpo, cifrar_para=None):
                 dados = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
                 self.send_response(codigo)
+                if cifrar_para:   # resposta cifrada para o pedido que veio cifrado (Fase 2)
+                    dados = cifrar(servidor.segredo, dados, _associado_resposta(cifrar_para))
+                    self.send_header("X-Cifrado", "1")
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(dados)))
                 self.end_headers()
@@ -186,6 +237,16 @@ class Servidor:
                     return self._responder(403, {"erro": "assinatura"})
                 if not servidor.codigos.usar(codigo):
                     return self._responder(403, {"erro": "código repetido ou ausente"})
+                cifrado = self.headers.get("X-Cifrado") == "1"
+                if not cifrado and EXIGIR_CIFRA:
+                    return self._responder(403, {"erro": "pedido sem cifra"})
+                if cifrado:
+                    if not CIFRA_DISPONIVEL:
+                        return self._responder(501, {"erro": "este PC não tem a biblioteca de cifra"})
+                    try:
+                        corpo = decifrar(servidor.segredo, corpo, _associado_pedido(self.headers.get("X-Quando", ""), self.path, codigo))
+                    except ValueError:
+                        return self._responder(403, {"erro": "cifra"})
                 acao = servidor.acoes.get(self.path.removeprefix("/rede/"))
                 if acao is None:
                     return self._responder(404, {"erro": "não encontrado"})
@@ -195,7 +256,7 @@ class Servidor:
                 except ImportError:
                     pass
                 try:
-                    return self._responder(200, acao(json.loads(corpo or b"{}")))
+                    return self._responder(200, acao(json.loads(corpo or b"{}")), cifrar_para=codigo if cifrado else None)
                 except PermissionError as e:
                     return self._responder(403, {"erro": str(e)})
                 except Exception as e:
@@ -218,11 +279,17 @@ def perguntar(segredo, endereco, acao, corpo, tempo=TEMPO_RESPOSTA):
     dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8")
     quando = f"{time.time():.3f}"
     codigo = secrets.token_hex(16)
-    pedido = urllib.request.Request(f"http://{endereco}{caminho}", data=dados, method="POST", headers={
-        "Content-Type": "application/json", "X-Quando": quando, "X-Codigo": codigo,
-        "X-Assinatura": assinar(segredo, quando, caminho, dados, codigo)})
+    cabecalhos = {"Content-Type": "application/json", "X-Quando": quando, "X-Codigo": codigo}
+    if CIFRA_DISPONIVEL:
+        dados = cifrar(segredo, dados, _associado_pedido(quando, caminho, codigo))
+        cabecalhos["X-Cifrado"] = "1"
+    cabecalhos["X-Assinatura"] = assinar(segredo, quando, caminho, dados, codigo)
+    pedido = urllib.request.Request(f"http://{endereco}{caminho}", data=dados, method="POST", headers=cabecalhos)
     with urllib.request.urlopen(pedido, timeout=tempo) as r:
-        return json.loads(r.read() or b"{}")
+        resposta = r.read() or b"{}"
+        if r.headers.get("X-Cifrado") == "1":
+            resposta = decifrar(segredo, resposta, _associado_resposta(codigo))
+        return json.loads(resposta)
 
 
 def perguntar_a_todos(segredo, enderecos, acao, corpo, tempo=TEMPO_RESPOSTA):

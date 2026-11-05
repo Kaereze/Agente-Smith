@@ -90,3 +90,80 @@ def test_content_length_invalido_e_gigante_sao_recusados():
 
 def test_conexao_parada_e_cortada():
     assert rede_local.TEMPO_LEITURA <= 10
+
+
+# ---------- Fase 2: cifra do conteúdo ----------
+def test_cifra_vai_e_volta_e_recusa_adulteracao_ou_outro_segredo():
+    c = rede_local.cifrar(SEGREDO, b'{"cpf": "111.444.777-35"}', b"x")
+    assert b"111.444" not in c
+    assert rede_local.decifrar(SEGREDO, c, b"x") == b'{"cpf": "111.444.777-35"}'
+    import pytest
+    with pytest.raises(ValueError):
+        rede_local.decifrar(SEGREDO, c, b"outro-associado")
+    with pytest.raises(ValueError):
+        rede_local.decifrar(bytes(32), c, b"x")
+    with pytest.raises(ValueError):
+        rede_local.decifrar(SEGREDO, c[:-1] + bytes([c[-1] ^ 1]), b"x")
+    with pytest.raises(ValueError):
+        rede_local.decifrar(SEGREDO, b"curto", b"x")
+
+
+def test_pedido_e_resposta_andam_cifrados_pela_rede(monkeypatch):
+    visto = {}
+    s = rede_local.Servidor(SEGREDO, {"ping": lambda corpo: visto.setdefault("corpo", corpo) and {"cpf": "111.444.777-35"}}, porta=0)
+    assert s.iniciar()
+    porta = s.http.server_address[1]
+    brutos = []
+    abrir = rede_local.urllib.request.urlopen
+
+    def espiar(pedido, timeout=None):
+        brutos.append(pedido.data)
+        r = abrir(pedido, timeout=timeout)
+        brutos.append(r.read())
+        r.close()
+        return abrir_de_novo(brutos[-1], r.headers)
+    import io
+
+    class Resp(io.BytesIO):
+        def __init__(self, dados, headers):
+            super().__init__(dados)
+            self.headers = headers
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def abrir_de_novo(dados, headers):
+        return Resp(dados, headers)
+    monkeypatch.setattr(rede_local.urllib.request, "urlopen", espiar)
+    try:
+        r = rede_local.perguntar(SEGREDO, f"127.0.0.1:{porta}", "ping", {"q": "Marcos Exemplo 111.444.777-35"}, tempo=5)
+    finally:
+        s.http.shutdown()
+    assert r == {"cpf": "111.444.777-35"} and visto["corpo"] == {"q": "Marcos Exemplo 111.444.777-35"}
+    assert all(b"111.444" not in b and b"Marcos" not in b for b in brutos)
+
+
+def test_servidor_recusa_pedido_aberto_quando_a_cifra_for_exigida(monkeypatch):
+    import time
+    monkeypatch.setattr(rede_local, "EXIGIR_CIFRA", True)
+    s, porta = _servidor()
+    try:
+        quando, codigo = f"{time.time():.3f}", "f" * 32
+        cab = {"X-Quando": quando, "X-Codigo": codigo, "X-Assinatura": rede_local.assinar(SEGREDO, quando, "/rede/ping", b"{}", codigo)}
+        assert _post(porta, cab)[0] == 403
+    finally:
+        s.http.shutdown()
+
+
+def test_segredo_novo_e_aleatorio_e_vale_como_arquivo_da_rede(tmp_path):
+    import json as j
+    chave = tmp_path / "chave-api.json"
+    chave.write_text(j.dumps({"private_key_id": "a", "private_key": "FICTICIA"}), encoding="utf-8")
+    assert rede_local.gerar_segredo_novo(tmp_path / "segredo-rede.txt")
+    novo = rede_local.segredo_da_chave(chave)
+    assert len(novo) == 32 and novo != rede_local._segredo_calculado(chave)
+    rede_local.gerar_segredo_novo(tmp_path / "segredo-rede.txt")
+    assert rede_local.segredo_da_chave(chave) != novo
