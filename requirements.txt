@@ -1,7 +1,7 @@
 pywin32==312
 gspread==6.2.1
 google-auth==2.57.0
-pypdf==6.16.2
+pypdf==6.21.4
 pytest==9.1.1
 pywebview==6.2.1
 cryptography==50.0.1
