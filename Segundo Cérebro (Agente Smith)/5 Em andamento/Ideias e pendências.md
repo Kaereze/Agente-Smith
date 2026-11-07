@@ -121,3 +121,12 @@ tags: [cerebro/andamento]
     dos formulários a cada 1-2 min** (olhar a cota do Google).
 
 - **Otimização e desempenho (28/10/2026):** medidor no ar; ganhos seguros aguardam o OK do João. Ver [[Otimização e desempenho]].
+
+## NFS-e Nacional (07/11/2026)
+Projeto de emissão automática com conferência humana. Código em `nfse/` (branch `NFS-EaUTOMATIC`). Pendências completas no projeto "NFS-E AUTOMATIC" (Claude).
+- [ ] Rodar o roteiro de `nfse/LEIA-ME.md` com o certificado do Boa Viagem (passos 1 a 3 primeiro).
+- [ ] Baixar os XSD oficiais (DPS e pedido de evento) no portal do Emissor Nacional (**P-34**).
+- [ ] **P-19:** descobrir se o governo aceita SHA-256, SHA-1 ou os dois (passo `emitir`).
+- [ ] Consumo e estacionamento dentro da nota (P-01/P-22/P-24/P-26): perguntar ao contador; o programa não decide.
+- [ ] Abrir `CONTROLE CERTIFICADOS.xlsx` com o João e conferir validade e CNPJ dos certificados (P-23).
+- [ ] Decidir quando juntar a branch com a `main` e etiquetar (só com o OK do João).

@@ -1,0 +1,19 @@
+{
+  "_aviso": "Dados INVENTADOS. Copie para nfse/dados_teste.json (que fica fora do GitHub), troque o CNPJ pelo do hotel do certificado e mantenha o tomador inventado.",
+  "prestador_cnpj": "11222333000181",
+  "cod_municipio": "2611606",
+  "serie": "1",
+  "n_dps": 900001,
+  "dh_emi": "2026-11-07T10:00:00-03:00",
+  "competencia": "2026-11-07",
+  "tomador_doc": "11144477735",
+  "tomador_nome": "MARCOS EXEMPLO",
+  "descricao": "TESTE EM PRODUCAO RESTRITA - HOSPEDAGEM 2 DIARIAS - VALOR DA DIARIA: R$ 100,00",
+  "valor": "200.00",
+  "cod_trib_nac": "090101",
+  "cod_trib_mun": "501",
+  "nbs": "103031100",
+  "op_simp_nac": 1,
+  "reg_esp_trib": 0,
+  "aliquota_iss": "5.00"
+}

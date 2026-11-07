@@ -128,3 +128,15 @@ tags: [cerebro/trabalho]
 | Ver quanto cada etapa demora | `/api/desempenho` (só o administrador) e os avisos `⏱️ Lento` em `logs/painel.log` e `logs/conferente.log`; nota [[Otimização e desempenho]] |
 | Cronometrar uma etapa nova | `with desempenho.MEDIDOR.medir("nome.da.etapa", logger=logger):` (`src/desempenho.py`); só o nome da etapa, nunca dado de hóspede |
 | Mudar os limites de aviso | `LIMITE_LACO_S` (30 s) e `LIMITE_HTTP_S` (1 s) em `src/desempenho.py` |
+
+## NFS-e Nacional (pasta `nfse/`, desde 07/11/2026)
+| Quero mexer em… | Arquivo |
+|---|---|
+| Endereços permitidos, `tpAmb`, parar se o governo disser que é produção | `nfse/trava.py` (mudar de propósito, com decisão do João) |
+| Abrir o `.pfx`, CNPJ, validade, "Autenticação do Cliente" | `nfse/certificado.py` |
+| Assinatura XMLDSIG (SHA-256 / SHA-1), conferência | `nfse/assinatura.py` |
+| Montar DPS e cancelamento, validar no XSD | `nfse/dps.py` (rascunho até o XSD oficial) |
+| Conversa com o governo (certificado, repetição só em consulta) | `nfse/cliente.py` |
+| CPF, CNPJ, dinheiro, datas, Id da DPS | `nfse/validacao.py` |
+| Roteiro do primeiro teste e tabela de erros | `nfse/primeiro_teste.py`, guia `nfse/LEIA-ME.md` |
+Testes: `testes/test_nfse_*.py`. **Certificado e senha nunca no repositório.**

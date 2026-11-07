@@ -22,7 +22,13 @@ chave*.json
 *service_account*.json
 *.pem
 *.key
+*.pfx
+*.p12
 .env
 
 # ajustes do administrador: só neste PC, nunca sobem (04/11/2026)
 ajustes.json
+
+# NFS-e: saída dos testes e dados de teste do PC (07/11/2026). Certificado e senha NUNCA sobem.
+saida_nfse_teste/
+nfse/dados_teste.json

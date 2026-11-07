@@ -9,6 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Sem etiqueta] — 2026-11-07 (só na branch NFS-EaUTOMATIC; nada disso roda no Painel)
+
+### Adicionado
+- **Pacote novo `nfse/`: primeiro teste com a produção restrita da NFS-e Nacional** (Emissor Nacional). Trava que só aceita os endereços de teste do governo (`trava.py`), leitura e checagem do certificado A1 (`certificado.py`), assinatura XMLDSIG com SHA-256 ou SHA-1 conferida de volta (`assinatura.py`), cliente HTTP com certificado que nunca repete envio (`cliente.py`), montagem de DPS e cancelamento em rascunho até o XSD oficial (`dps.py`) e o roteiro `python -m nfse.primeiro_teste` (certificado, assinatura, conexao, emitir, consultar, cancelar). Guia em `nfse/LEIA-ME.md`. 81 testes novos (`testes/test_nfse_*.py`), todos com dados e certificado inventados.
+
+### Segurança
+- `*.pfx` e `*.p12` entram no `.gitignore` e na trava de nomes de credencial (`test_segredos.py`, gancho de commit). Saída dos testes (`saida_nfse_teste/`) e `nfse/dados_teste.json` também ficam de fora.
+
 ## [2026.11.03.3] — 2026-11-03 (aguarda publicação)
 
 ### Adicionado

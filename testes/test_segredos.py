@@ -15,7 +15,7 @@ PADROES = {
     "token do GitHub": re.compile(r"\b(?:ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{20,}"),
     "chave de API do Google": re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),
 }
-NOMES_PROIBIDOS = re.compile(r"(?:^|/)(?:chave[^/]*\.json|[^/]*service[-_]?account[^/]*\.json|[^/]*\.pem|[^/]*\.key|\.env)$",
+NOMES_PROIBIDOS = re.compile(r"(?:^|/)(?:chave[^/]*\.json|[^/]*service[-_]?account[^/]*\.json|[^/]*\.pem|[^/]*\.key|[^/]*\.pfx|[^/]*\.p12|\.env)$",
                              re.IGNORECASE)
 
 

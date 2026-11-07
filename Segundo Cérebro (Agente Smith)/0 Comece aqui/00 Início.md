@@ -17,7 +17,10 @@ r# Segundo Cérebro — Projeto Notas Fiscais
 4. [[Onde mexer]] → a tarefa aponta o arquivo e a função. **Só então** abrir o código.
 5. Ao terminar: [[Como entregar]] e atualizar o cofre ([[Como usar este cérebro]]).
 
-## Onde paramos (05/11/2026)
+## Onde paramos (07/11/2026)
+- **07/11:** começou o projeto **NFS-e automática** (emitir nota pelo Emissor Nacional com o certificado A1 de cada hotel, sempre com conferência humana). Repositório em **clone separado**, branch `NFS-EaUTOMATIC`, pasta nova `nfse/` (nada disso entra no Painel que roda). Primeiro programa de teste pronto, **só produção restrita**: [[2026-11-07]], guia em `nfse/LEIA-ME.md`. Falta rodar no PC da empresa com o certificado do Boa Viagem (senha só no teclado do João) e baixar os XSD oficiais.
+
+## Antes (05/11/2026)
 - **05/11:** Fase 1 do [[Plano até dezembro]] feita e enviada ao GitHub **sem etiqueta** (código único na rede entre PCs e validade de 30 s, limites de rede, `nf_achadas.json` enxuto, medição de volta lenta, cache só com tipos conhecidos, Actions fixadas, Dependabot). Ver [[2026-11-05]]. A etiqueta `2026.11.03.3` agora leva também isso: **criar só quando o João disser e sem mexer no PC do Afonso**. Mesmo dia: Fase 2 em código (conteúdo cifrado entre os PCs, `EXIGIR_CIFRA` desligado até os 4 subirem). Os 4 PCs precisam subir juntos.
 
 ## Antes (04/11/2026)

@@ -1,0 +1,2 @@
+# Só para o pacote nfse (validar o XML contra o XSD oficial). Fora do requirements.txt do Painel de propósito (07/11/2026).
+lxml==6.1.3
