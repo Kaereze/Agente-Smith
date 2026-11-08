@@ -82,8 +82,11 @@ def test_o_html_do_filtro_mostra_o_primeiro_hotel_e_quantos_mais():
 
 
 def test_as_telas_usam_o_filtro_de_varios_hoteis_e_o_botao_de_ordem():
-    assert "fhPassa(e.hotel)" in CORREIO and 'if (cx.caixa === "entrada") return fhAgrupar(fhPorData(' in CORREIO
-    assert "fhHtml() + filtroDaListaHtml() + (cx.caixa === \"entrada\" ? fhBotaoOrdem()" in CORREIO and "data-fh-nivel" in CORREIO
+    assert "fhPassa(e.hotel)" in CORREIO and 'if (cx.caixa === "entrada") return fhPorData(lista, e => e.quando)' in CORREIO
+    assert "fhHtml() + (cx.caixa === \"entrada\" ? fhBotaoOrdem()" in CORREIO and "ol-quebra" in CORREIO
+    # sem "Prioridades (da seleção)" no menu, sem blocos "Prioridade alta" na lista e sem o menu "Filtro: Todos" (João, 07/11/2026)
+    assert "data-fh-nivel" not in CORREIO and "Prioridades (da seleção)" not in CORREIO and "fhAgrupar(lista, e =>" not in CORREIO
+    assert "filtroDaListaHtml" not in CORREIO and "FILTROS_LISTA" not in CORREIO
     assert "cx.hotel" not in CORREIO and "pecaFiltro({ id: \"cx-hotel\"" not in CORREIO                    # o filtro de um hotel só saiu
     assert 'id: "nf-hotel"' not in HTML and "fhPassa(it.hoteis)" in HTML and "fhAgrupar(lista, it => it.hoteis)" in HTML
     assert '<script src="/pecas/filtro_hoteis.js"></script>' in HTML and '<link rel="stylesheet" href="/pecas/filtro_hoteis.css">' in HTML

@@ -78,35 +78,15 @@ function itensDaTela(busca) {
   fhAtualizarContagem();
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(e => !cx.escondidos[e.id] && doEscopo(e)) : emailsDa(cx.caixa);
   const lista = base.filter(e => fhPassa(e.hotel) && (!cx.soNaoLidos || e.lido === false)
-    && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario"))
-    && (!cx.filtroL || FILTROS_LISTA[cx.filtroL]?.[1](e)));
-  // Caixa de Entrada (03/11/2026, filtro de hotéis aprovado): agrupada por prioridade do hotel (alta primeiro); a data dentro do nível é a do botão
-  if (cx.caixa === "entrada") return fhAgrupar(fhPorData(lista, e => e.quando), e => e.hotel);
+    && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario")));
+  // Caixa de Entrada: uma lista só, na ordem do botão Data (João, 07/11/2026: sem blocos de prioridade)
+  if (cx.caixa === "entrada") return fhPorData(lista, e => e.quando);
   return lista;   // o mais recente primeiro também na Urgência (usuário, 09/10/2026)
 }
 // Quantos e-mails cada hotel tem na Caixa de Entrada (decide a prioridade); os hotéis vêm do Cadastro
 FH.hoteis = () => [...new Set((st.hoteis || []).map(h => h.hotel).filter(Boolean))];
 function fhAtualizarContagem() { FH.contagem = fhContar((cx.dados?.emails || []).filter(e => !cx.escondidos[e.id])); }
 fhOuvir(() => { if (typeof pn !== "undefined" && pn.vista === "correio") desenharCorreio(); });
-// Filtro da lista (usuário, 20/10/2026: "coloque um filtro aonde eu clico e aparecem os filtros: Pedido de correção, Sem
-// resposta"; o resto ficou a critério do Claude): um por vez, com quantos e-mails cada um tem na caixa aberta
-const FILTROS_LISTA = {
-  correcao: ["Pedido de correção", e => (e.classes || []).includes("corrigir") || /corre/i.test(e.motivo_urgencia || "")],
-  semresp: ["Sem resposta", e => e.pasta !== "enviado" && !e.respondido && !cx.resolvendo[e.id]],
-  anexo: ["Com anexo", e => (e.anexos || []).length > 0],
-  dividida: ["Nota dividida", e => (e.quartos?.[0] || e.quartos || 0) >= 2],
-  ligacao: ["Só ligações", e => !!e.ligacao],   // 22/10/2026: só aparece em Itens Enviados
-};
-function filtroDaListaHtml() {   // a peça única do Filtro (pecas/filtro.js)
-  const atual = cx.filtroL; cx.filtroL = "";
-  const base = itensDaTela("");
-  cx.filtroL = atual;
-  return pecaFiltro({ id: "cx-filtro", rotulo: "Filtro", valor: cx.filtroL || "", padrao: "", nomePadrao: "Todos", alinhar: "direita",
-    opcoes: [{ v: "", nome: "Todos os e-mails", n: base.length },
-             ...Object.entries(FILTROS_LISTA).filter(([k]) => k !== "ligacao" || cx.caixa === "enviados")
-               .map(([k, [nome, f]]) => ({ v: k, nome, n: base.filter(f).length }))] });
-}
-registrarFiltro("cx-filtro", { escolher: v => { cx.filtroL = v; cx.sel = null; desenharCorreio(); }, redesenhar: () => desenharCorreio() });
 
 function desenharCorreio() {
   if (!$("v-correio")) return;
@@ -133,7 +113,7 @@ function desenharCorreio() {
   if ($("cx-lcab")) $("cx-lcab").innerHTML = `<div class="ol-lcab">` + (busca ? `<span class="ol-ord">no Outlook dos 4 PCs</span>` :
     `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos}">Todas</button>` +
     (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
-    fhHtml() + filtroDaListaHtml() + (cx.caixa === "entrada" ? fhBotaoOrdem() : `<span class="ol-ord">Por Data ↓</span>`)) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${cx.filtroL ? " · " + esc(FILTROS_LISTA[cx.filtroL][0]) : ""}${FH.sel.size ? " · " + FH.sel.size + (FH.sel.size === 1 ? " hotel" : " hotéis") : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
+    `<span class="ol-quebra"></span>` + fhHtml() + (cx.caixa === "entrada" ? fhBotaoOrdem() : `<span class="ol-ord">Por Data ↓</span>`)) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${FH.sel.size ? " · " + FH.sel.size + (FH.sel.size === 1 ? " hotel" : " hotéis") : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
     (naoLidos ? ` · ${naoLidos.toLocaleString("pt-BR")} não lidos` : "") + `</div>`;
   if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span title="Itens na caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-7h14l2 7v5H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>${lista.length.toLocaleString("pt-BR")}<i class="so-leitor"> itens</i></span><span title="Não lidos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>${naoLidos.toLocaleString("pt-BR")}<i class="so-leitor"> não lidos</i></span>`;
   $("v-correio").classList.toggle("sem-pastas", !!cx.semPastas);
@@ -141,11 +121,8 @@ function desenharCorreio() {
   const focada = document.activeElement?.closest?.("#cx-lista .cx-l");
   const idFoco = focada?.dataset.id;
   let grupo = "", html = "";
-  const porNivel = fhContarNiveis(lista, e => e.hotel), ehPrioridade = cx.caixa === "entrada" && !busca;   // Caixa de Entrada: blocos por prioridade
   for (const e of lista) {
-    const k = fhNivelDe(e.hotel);
-    const g = ehPrioridade ? `${k === "vazia" ? "Sem e-mail" : "Prioridade " + FH_ROTULO[k].toLowerCase()} · ${porNivel[k].toLocaleString("pt-BR")} e-mails`
-      : cx.caixa === "urgencia" && !busca ? "" : grupoData(e.quando);
+    const g = cx.caixa === "urgencia" && !busca ? "" : grupoData(e.quando);
     if (g && g !== grupo) { html += `<div class="cx-grupo">▾ ${g}</div>`; grupo = g; }
     html += linhaEmail(e);
   }
@@ -582,9 +559,7 @@ function desenharFaixa() {
   el.innerHTML = cx.aba === "enviar" ? bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas as pastas") + bt('data-ol-acao="pendentes"', "env", "Enviar solicitações pendentes")
     : cx.aba === "exibir" ? bt('data-ol-acao="pastas"', "pastas", cx.semPastas ? "Mostrar as pastas" : "Esconder as pastas") +
       bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
-    : `<button type="button" class="p" id="cx-novo" title="Escrever um e-mail novo ao hóspede, saindo da caixa do hotel">${SVG(IC.novo)} Novo e-mail</button><span class="sep"></span>` +
-      bt('data-cx-faixa="exc"', "lixo", "Excluir", 'title="Delete"') + bt("", "arq", "Arquivar", nao) + bt("", "mover", "Mover ▾", nao) + `<span class="sep"></span>` +
-      bt('data-cx-faixa="resp"', "resp", "Responder", 'title="Ctrl+R"') + bt('data-cx-faixa="resp"', "todos", "Responder a todos") + bt('data-cx-faixa="enc"', "enc", "Encaminhar", 'title="Ctrl+F"') +
+    : bt('data-cx-faixa="resp"', "resp", "Responder", 'title="Ctrl+R"') + bt('data-cx-faixa="resp"', "todos", "Responder a todos") + bt('data-cx-faixa="enc"', "enc", "Encaminhar", 'title="Ctrl+F"') +
       `<span class="sep"></span>` + bt('data-cx-faixa="lido"', "lido", "Não lido/Lido", 'title="Ctrl+U / Ctrl+Q"') + bt("", "band", "Sinalizar", nao) +
       `<div class="dir">${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
   pintarSync();
@@ -595,7 +570,7 @@ function desenharFaixaGlobal() {
   document.querySelectorAll("[data-ol-aba]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.olAba === cx.aba)));
   const bt = (attr, ic, txt, cls = "") => `<button type="button" class="${cls}" ${attr}>${SVG(IC[ic])} ${txt}</button>`;
   // as abas Página Inicial/Enviar/Receber/Exibir só aparecem nos e-mails (usuário, 20/10/2026): aqui, sempre os comandos principais
-  el.innerHTML = bt('data-ol-acao="novo"', "novo", "Novo e-mail", "p") + `<span class="sep"></span>` + bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
+  el.innerHTML = bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
       bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
   pintarSync();
@@ -1035,10 +1010,6 @@ function desenharPastas() {
       fav("urgencia", "alerta", "Urgência", emailsDa("urgencia").length, semPasta && cx.caixa === "urgencia", "r") +
       fav("form", "form", "Formulários do robô", entrada.filter(e => (e.classes || []).includes("formulario") && e.lido === false).length, semPasta && cx.soForm) +
       fav("enviados", "env", "Itens Enviados", 0, semPasta && cx.caixa === "enviados") : "");
-  // Prioridades da seleção (03/11/2026): quantos e-mails de cada nível; clicar marca todos os hotéis daquele nível
-  const priAberto = !cx.fechados.__pri, porN = fhContarNiveis(entrada, e => e.hotel);
-  h += `<button type="button" class="ol-gr" data-cx-grupo="__pri" aria-expanded="${priAberto}">${chev}Prioridades (da seleção)</button>` +
-    (priAberto ? ["alta", "media", "baixa"].map(k => `<button type="button" class="ol-fav ${FH.sel.size && fhHoteisDoNivel(k).length && fhHoteisDoNivel(k).length === FH.sel.size && fhHoteisDoNivel(k).every(x => FH.sel.has(x)) ? "on" : ""}" data-fh-nivel="${k}" title="E-mails na Caixa de Entrada${FH.sel.size ? " dos hotéis marcados" : ""}"><span class="tx">${FH_ROTULO[k]}</span>${n(porN[k], k === "alta" ? "r" : "") || "<em>0</em>"}</button>`).join("") : "");
   h += `<hr class="ol-hr">`;
   const pcs = (st.pcs || []).filter(p => doAgente([p.agente]));
   const meu = cx.dados?.este_pc || "";
@@ -1075,7 +1046,6 @@ document.addEventListener("click", ev => {
     if (d.olAcao === "pastas") { cx.semPastas = !cx.semPastas; desenharCorreio(); }
     if (d.olAcao === "tema") $("btn-tema")?.click();
     if (d.olAcao === "prof") $("btn-prof")?.click();
-    if (d.olAcao === "novo") abrirEnvioNF(null, { novo: true });
     return;
   }
   if (d.olMenu !== undefined) { cx.menu = !cx.menu; return desenharLeituraCorreio(); }
@@ -1267,9 +1237,4 @@ document.addEventListener("keydown", e => {
     prox?.focus(); if (prox?.dataset.id) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
   }
   if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { cx.sel = null; desenharCorreio(); }
-});
-
-// Novo e-mail ao hóspede (usuário, 13/10/2026): como no Outlook, com a solicitação de dados já pronta
-document.addEventListener("click", e => {
-  if (e.target.closest("#cx-novo")) abrirEnvioNF(null, { novo: true });
 });

@@ -149,7 +149,7 @@ def test_tela_botao_embaixo_do_enviar_comeca_desligado_e_vai_no_pedido():
     assert "rascunho.ligacao" in PAINEL and "function pecaLigacao" in ETIQUETA
 
 
-def test_itens_enviados_lista_de_novo_com_etiqueta_filtro_e_botao_direito():
+def test_itens_enviados_lista_de_novo_com_etiqueta_e_botao_direito():
     assert ".filter(doEscopo)" not in CORREIO                               # o índice virava o "alvo" e a pasta ficava vazia
-    assert 'ligacao: ["Só ligações"' in CORREIO and 'k !== "ligacao" || cx.caixa === "enviados"' in CORREIO
+    assert "FILTROS_LISTA" not in CORREIO and "filtroDaListaHtml" not in CORREIO   # o menu "Filtro: Todos" saiu (João, 07/11/2026)
     assert '"/api/ligacao"' in CORREIO and "Marcar como ligação" in CORREIO

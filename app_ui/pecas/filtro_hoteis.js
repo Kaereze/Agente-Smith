@@ -103,7 +103,7 @@ function fhPosRender() {
   if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
 // O botão de ordem (um só): alterna a data entre mais antigo e mais novo
-const fhBotaoOrdem = () => `<button type="button" class="ol-ord fh-ordem" data-fh-ordem title="Ordem por data dentro de cada prioridade: clique para alternar entre mais antigo e mais novo">Data: ${fhRotuloOrdem()}</button>`;
+const fhBotaoOrdem = () => `<button type="button" class="ol-ord fh-ordem" data-fh-ordem title="Ordem por data: clique para alternar entre mais antigo e mais novo">Data: ${fhRotuloOrdem()}</button>`;
 
 // ---------- cliques ----------
 function fhAcao(a) {

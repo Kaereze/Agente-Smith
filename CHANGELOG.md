@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-11-07 (design pedido pelo João)
+
+### Mudou
+- **E-mail, faixa de cima:** saíram Novo e-mail, Excluir, Arquivar e Mover (o contato com o hóspede já está no botão Enviar NF e na resposta de dentro do e-mail). Ficam Responder, Responder a todos, Encaminhar, Não lido/Lido, Sinalizar, Enviar NF e Enviar/Receber.
+- **Assunto pelo arquivo da NF:** ao anexar o PDF da nota (resposta, encaminhamento ou e-mail novo), o assunto vira o nome do arquivo ("NF 1234 - NOME - 5678"), no lugar de "Re: Dados para emissão da NF". Tirou o anexo: volta o de antes. Digitou o assunto à mão: o Painel não troca mais.
+- **Filtros da Caixa de Entrada:** saíram o grupo "Prioridades (da seleção)" do menu, os blocos "Prioridade alta/média/baixa" da lista e o menu "Filtro: Todos". Ficam o filtro de **vários hotéis** e o botão **Data: mais antigo/mais novo**. A lista agrupa por Hoje, Ontem, Esta semana…
+- **Cabeçalho da lista responsivo:** Todas e Não lidos numa linha; Hotel e Data na seguinte; nada é cortado, nem com vários hotéis marcados (teste novo no `test_telas.py`).
+- **Notas fiscais em espera:** a página mostra "Emissão de notas fiscais — em construção" (vai receber a emissão automática). O conteúdo antigo ficou guardado e escondido, funcionando, em `#fila-guardada` (`index.html`). A contagem no menu foi escondida.
+
 ## [2026.11.07] — 2026-11-07 (auditoria de segurança; leva junto tudo o que estava sem etiqueta desde 2026.11.03.2, inclusive a seção abaixo)
 
 ### Segurança

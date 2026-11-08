@@ -1501,6 +1501,13 @@ html,body{background:#1f1f1f}
 .ol-mais-cx{display:flex;align-items:center;gap:6px;width:100%;padding:5px 10px 5px 20px;border:0;background:none;color:#d0d0d0;font:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left}
 .ol-mais-cx.fechado{color:#d0d0d0}
 /* lista */
+.em-espera{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:60vh;padding:24px 16px;text-align:center}
+.em-espera .ic{width:34px;height:34px;color:var(--tinta-3,#a8a8a8)}
+.em-espera h1{margin:0;font-size:20px;font-weight:600}
+.em-espera p{margin:0;max-width:46ch;color:var(--tinta-3,#a8a8a8);font-size:14px;line-height:1.5}
+.em-espera button{margin-top:6px;padding:8px 16px;border-radius:var(--raio,6px);border:1px solid var(--linha-forte,#4a4a4a);background:transparent;color:var(--tinta,#f0f0f0);font:inherit;cursor:pointer}
+.em-espera button:hover{border-color:#479ef5}
+#nav-notas-n{display:none!important}   /* a contagem de pedidos não vale na página em espera */
 .ol-lcab{display:flex;align-items:center;gap:4px;padding:8px 14px 6px;border-bottom:1px solid #333333}
 .ol-lcab button{border:0;background:none;padding:5px 8px;font:inherit;font-size:13px;color:#d0d0d0;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
 .ol-lcab button[aria-pressed="true"]{color:#6cb8f6;font-weight:600;border-color:#479ef5}
@@ -2268,6 +2275,15 @@ html,body{background:#1f1f1f}
     </section>
 
     <section class="vista" id="v-fila">
+      <!-- Em espera (João, 07/11/2026): esta página vai virar a emissão automática de NF. O que era "Notas fiscais" fica guardado
+           aqui embaixo, escondido e funcionando (outras telas e testes leem os mesmos dados), para voltar ou reaproveitar. -->
+      <div class="em-espera" role="status">
+        <svg class="ic" aria-hidden="true"><use href="#i-nf"/></svg>
+        <h1>Emissão de notas fiscais</h1>
+        <p>Esta página está reservada para a emissão automática de NF, que está em construção.<br>As solicitações dos hóspedes continuam na Caixa de Entrada.</p>
+        <button type="button" data-vista="correio" data-caixa="entrada">Ir para a Caixa de Entrada</button>
+      </div>
+      <div hidden id="fila-guardada">
       <div class="cabecalho notas-cab" id="notas-cab">
         <div class="notas-topo">
           <h1><span id="titulo-caixa">Notas fiscais</span> <span class="n oculta" id="titulo-n"></span></h1>
@@ -2290,6 +2306,7 @@ html,body{background:#1f1f1f}
           <div class="paginacao"><span id="pag-txt"></span><div class="pags" id="pags"></div></div>
         </section>
         <article class="leitura oculta" id="detalhe" aria-live="polite"></article>
+      </div>
       </div>
     </section>
     <footer class="rodape-status" aria-label="Situação do sistema">

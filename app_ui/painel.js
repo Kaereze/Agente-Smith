@@ -554,6 +554,20 @@ function assuntoDoArquivo(nomeArquivo, nome) {
   const num = (base.match(/\d{2,}/) || [""])[0];
   return (num ? `NF ${num} - ` : "NF - ") + nome.toUpperCase();
 }
+// Assunto pelo arquivo da NF (João, 07/11/2026): ao anexar o PDF da nota, o assunto vira o nome do arquivo ("NF 1234 - NOME - 5678"), na
+// resposta, no encaminhamento e no e-mail novo, em vez de "Re: Dados para emissão da NF". Tirou o anexo: volta o assunto de antes.
+// Se a pessoa escrever o assunto à mão, o Painel não mexe mais.
+function assuntoComAnexos() {
+  if (envNF.assuntoManual) return;
+  const nf = envNF.anexos.find(a => /\.pdf$/i.test(a.nome)) || envNF.anexos[0];
+  if (nf) {
+    if (envNF.assuntoAntes === null) envNF.assuntoAntes = $("nf-assunto").value;
+    $("nf-assunto").value = assuntoDoArquivo(nf.nome, envNF.o.nome);
+  } else if (envNF.assuntoAntes !== null) {
+    $("nf-assunto").value = envNF.assuntoAntes;
+    envNF.assuntoAntes = null;
+  }
+}
 // Ação longa (27/10/2026): toda ação que passa de LIMITE_ACAO_LONGA_MS avisa a tela com um evento. A tela de carregamento
 // (pecas/carregando.js: o K do João sendo desenhado) escuta "painel:acao-longa" e "painel:acao-longa-fim".
 // detail: { id, titulo, inicio, progresso(): 0..1, eta(): segundos, itens(): [{pc, agente, estado, res, aviso}] } e, no fim,
@@ -610,7 +624,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
     o.assunto = /^(enc|fw|fwd):/i.test(orig) ? orig : "ENC: " + orig;
     o.para = []; o.sugestoes = []; o.corpo = "";   // assinatura padrão continua (13/10/2026: em todo tipo de envio)
   }
-  envNF = { chave, resp, alvo, fechar, o, anexos: [], assuntoAuto: !resp };
+  envNF = { chave, resp, alvo, fechar, o, anexos: [], assuntoManual: false, assuntoAntes: null };   // assunto: ver assuntoComAnexos
   $("nf-sub").textContent = novo ? "sai da caixa do hotel, pelo Outlook do PC dono" : `${o.nome} · ${o.hotel}`;
   const de = novo
     ? `<div class="de-novo"><div class="combo-de">
@@ -697,7 +711,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   ["dragleave", "drop"].forEach(t => zona.addEventListener(t, e => { e.preventDefault(); zona.classList.remove("sobre"); }));
   zona.addEventListener("drop", e => adicionarArquivos(e.dataTransfer.files));
   $("nf-arq").onchange = e => { adicionarArquivos(e.target.files); e.target.value = ""; };
-  $("nf-assunto").addEventListener("input", () => { envNF.assuntoAuto = !$("nf-assunto").value.trim(); validarEnvioNF(); });
+  $("nf-assunto").addEventListener("input", ev => { if (ev.isTrusted) envNF.assuntoManual = !!$("nf-assunto").value.trim(); validarEnvioNF(); });   // digitou: o Painel não troca mais
   $("nf-para").addEventListener("input", validarEnvioNF);
   $("nf-ir").onclick = () => enviarNF();
   $("nf-lig")?.addEventListener("click", () => alternarLigacao());
@@ -760,8 +774,7 @@ function desenharAnexos() {
     `<span class="chip-anexo">📄 ${esc(a.nome)}<span class="dica">${a.bytes ? tamanho(a.bytes) : "Dropbox"}</span>
       <button class="x" data-tirar="${i}" title="Tirar">×</button></span>`).join("");
   $("nf-soltar").classList.toggle("tem", envNF.anexos.length > 0);
-  if (envNF.assuntoAuto && envNF.anexos.length) $("nf-assunto").value = assuntoDoArquivo(envNF.anexos[0].nome, envNF.o.nome);
-  if (!envNF.anexos.length && envNF.assuntoAuto) $("nf-assunto").value = "";
+  assuntoComAnexos();
   validarEnvioNF();
 }
 

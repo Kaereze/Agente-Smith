@@ -146,3 +146,24 @@ def test_janela_do_robo_abre_sem_erro(painel_demo, pagina):
     pagina.evaluate("rbAbrir('agora')")
     pagina.wait_for_timeout(1200)
     confere_a_tela(pagina)
+
+
+@pytest.mark.parametrize("largura", [1440, 1100])
+def test_cabecalho_da_lista_de_emails_nao_corta_nenhuma_letra(painel_demo, navegador, largura):
+    """João (07/11/2026): o filtro de hotel e a data apareciam cortados. Nada do cabeçalho da lista passa da coluna, nem com vários hotéis marcados."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": 900})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.wait_for_selector(".ol-lcab .ol-ord", timeout=10000)
+        for marcar in ("", "FH.sel = new Set(['BOA VIAGEM', 'ESTRELA CENTRO', 'PORTO SEGURO', 'MINI HOTEL']); desenharCorreio()"):
+            if marcar:
+                pg.evaluate(marcar)
+                pg.wait_for_timeout(400)
+            cortados = pg.evaluate("""() => { const col = document.querySelector('.ol-lcab').getBoundingClientRect();
+              return [...document.querySelectorAll('.ol-lcab *')].filter(el => { const r = el.getBoundingClientRect();
+                return r.width && (r.right > col.right + 1 || r.left < col.left - 1 || (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).display !== 'inline')); })
+                .map(el => el.tagName + '.' + el.className + ' ' + (el.textContent || '').trim().slice(0, 30)); }""")
+            assert cortados == [], (marcar, cortados)
+    finally:
+        contexto.close()
