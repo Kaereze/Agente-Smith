@@ -9,7 +9,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Em preparação, sem etiqueta] — 2026-11-07 (2: estrutura e acabamento)
+## [2026.11.08] — 2026-11-08 (estrutura, LGPD, armazém dos dados e Resumo novo; inclui a seção logo abaixo)
 
 ### Mudou
 - **`index.html` dividido** (a Auditoria cobrava): de 3.398 para 227 linhas. O estilo foi para `app_ui/estilo.css` (2.137 linhas) e a lógica das telas para `app_ui/telas.js` (1.034 linhas). Ficam inline só o tema, o token e o guardião da página pela metade (de propósito: se um arquivo externo falhar, é ele que recarrega). Os testes que conferem o código da tela leem os três juntos (`testes/tela_texto.py`).
@@ -29,7 +29,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 ### Removido
 - Código sem uso: `assunto_sugerido`, `sem_historico`, `e_automatico` e as constantes `CORPO_PADRAO`, `PR_CABECALHOS`, `CONFERENCIA`, `VALORES_DESLIGADO` (e os testes que só conferiam essas funções).
 
-## [Em preparação, sem etiqueta] — 2026-11-07 (Resumo do dia novo)
+## [2026.11.08] — parte: Resumo do dia novo (2026-11-07)
 
 ### Mudou
 - **Resumo de ontem / de hoje virou um painel de números e gráficos que se mexem** (desenho aprovado em `Designs/2026-11-07 Resumo de ontem (dashboard).html`), numa peça única nova: `app_ui/pecas/resumo_dia.js` e `.css`.
