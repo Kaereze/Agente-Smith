@@ -50,3 +50,10 @@ def test_resumo_lista_tudo_com_tamanho(monkeypatch, tmp_path):
     (tmp_path / "app.json").write_text("{}", encoding="utf-8")
     linhas = {l["arquivo"]: l for l in armazem.resumo()}
     assert set(linhas) == set(armazem.DADOS) and linhas["app.json"]["bytes"] == 2 and linhas["nf_achadas.json"]["bytes"] == 0
+
+
+def test_o_mapa_dos_dados_do_cofre_lista_todo_arquivo_do_catalogo():
+    """O documento é gerado por ferramentas/mapa_dos_dados.py; este teste avisa quando alguém muda o catálogo e esquece de gerar de novo."""
+    doc = (SRC.parent / "Segundo Cérebro (Agente Smith)" / "6 Documentos" / "Mapa dos dados.md").read_text(encoding="utf-8")
+    faltam = [d.arquivo for d in [*armazem.DADOS.values(), *armazem.BACKUPS] if f"`{d.arquivo}`" not in doc]
+    assert not faltam, f"rode: python ferramentas\mapa_dos_dados.py (faltam no mapa: {faltam})"
