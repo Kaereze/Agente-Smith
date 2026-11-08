@@ -143,7 +143,7 @@ function menuOperador(abrir) {
   op.classList.toggle("aberto", aberto);
   $("op-btn").setAttribute("aria-expanded", aberto);
   if (aberto) {   // ao lado da barra, alinhada pelo pé do avatar (a barra corta o que passa dela: posição fixa)
-    const barra = document.querySelector(".lateral").getBoundingClientRect(), b = $("op-btn").getBoundingClientRect(), m = $("op-menu");
+    const barra = (document.querySelector(".lateral .capsula") || document.querySelector(".lateral")).getBoundingClientRect(), b = $("op-btn").getBoundingClientRect(), m = $("op-menu");
     m.style.left = Math.round(barra.right + 10) + "px";
     m.style.bottom = Math.max(8, Math.round(innerHeight - b.bottom)) + "px";
   }

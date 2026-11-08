@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/estilo.css">
 <link rel="stylesheet" href="/pecas/avisos.css">
 <link rel="stylesheet" href="/pecas/visao_geral.css">
+<link rel="stylesheet" href="/pecas/barra_flutuante.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -50,37 +51,39 @@
 <a class="pular" href="#lista">Pular para a lista</a>
 <div class="app modo-ol menu-fechado">
   <aside class="lateral" aria-label="Navegação">
+   <div class="capsula">
     <div class="marca"><div class="selo" aria-hidden="true">NF</div><div><b>Painel Fiscal</b><small>Notas fiscais dos hotéis</small></div></div>
 
     <nav class="navega">
     <div class="principal" role="group" aria-labelledby="rot-geral"><span class="rot-nav" id="rot-geral">Geral</span>
-      <button class="ln raiz" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
-      <button class="ln raiz" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n" title="Pedidos sem NF emitida"></span></button>
-      <button class="ln raiz" data-abrir-robo title="O que o robô está fazendo e onde está cada pedido (abre uma janela grande)"><svg class="ic"><use href="#i-sync"/></svg>Robô</button>
-      <button class="ln raiz" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
+      <button class="ln raiz" aria-label="Visão geral" data-vista="visao"><svg class="ic"><use href="#i-painel"/></svg>Visão geral</button>
+      <button class="ln raiz" aria-label="Notas fiscais" data-vista="fila"><svg class="ic"><use href="#i-nf"/></svg>Notas fiscais<span class="n" id="nav-notas-n" title="Pedidos sem NF emitida"></span></button>
+      <button class="ln raiz" aria-label="Robô" data-abrir-robo title="O que o robô está fazendo e onde está cada pedido (abre uma janela grande)"><svg class="ic"><use href="#i-sync"/></svg>Robô</button>
+      <button class="ln raiz" aria-label="Gerência" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
-      <button class="ln raiz" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
-      <button class="ln raiz" data-vista="correio" data-caixa="urgencia" title="Pedido de correção de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
-      <button class="ln raiz" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 72 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
+      <button class="ln raiz" aria-label="Caixa de entrada" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
+      <button class="ln raiz" aria-label="Urgência" data-vista="correio" data-caixa="urgencia" title="Pedido de correção de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
+      <button class="ln raiz" aria-label="Itens enviados" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 72 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
     </div>
     <div class="nav-grupo so-admin" role="group" aria-labelledby="rot-admin"><span class="rot-nav" id="rot-admin">Admin</span>
-      <button class="ln raiz" data-vista="maquinas" id="nav-maquinas" title="Máquinas e log do robô (só o administrador vê)"><svg class="ic"><use href="#i-log"/></svg>Monitoramento</button>
-      <button class="ln raiz" data-vista="agentes" id="nav-agentes" title="O mapa do sistema e os agentes (só o administrador vê)"><svg class="ic"><use href="#i-rede"/></svg>Agentes do Smith</button>
+      <button class="ln raiz" aria-label="Monitoramento" data-vista="maquinas" id="nav-maquinas" title="Máquinas e log do robô (só o administrador vê)"><svg class="ic"><use href="#i-log"/></svg>Monitoramento</button>
+      <button class="ln raiz" aria-label="Agentes do Smith" data-vista="agentes" id="nav-agentes" title="O mapa do sistema e os agentes (só o administrador vê)"><svg class="ic"><use href="#i-rede"/></svg>Agentes do Smith</button>
     </div>
     </nav>
     <div class="rodape">
-      <button class="creme" id="btn-enviar" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes às caixas dos hotéis"><svg class="ic"><use href="#i-enviar"/></svg>Enviar pendentes</button>
+      <button class="creme" id="btn-enviar" aria-label="Enviar pendentes" title="Pede ao robô (PC principal) pra enviar as solicitações pendentes às caixas dos hotéis"><svg class="ic"><use href="#i-enviar"/></svg>Enviar pendentes</button>
       <div class="op" id="op">
-        <button class="op-btn" id="op-btn" aria-haspopup="listbox" aria-expanded="false" title="Operador deste PC (aparece pros outros nas ações)">
+        <button class="op-btn" id="op-btn" aria-label="Quem está neste PC" aria-haspopup="listbox" aria-expanded="false" title="Operador deste PC (aparece pros outros nas ações)">
           <span class="av" id="op-av">?</span><span class="op-nome"><span id="op-nome">…</span><small id="op-pc"></small></span>
           <svg class="op-seta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 7.5 6 4l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="op-menu" id="op-menu" role="listbox"></div>
       </div>
     </div>
-    <button type="button" class="recolher-menu" id="btn-recolher" aria-expanded="false" title="Mostrar os nomes das abas">
+    <button type="button" class="recolher-menu" id="btn-recolher" aria-label="Mostrar os nomes das abas" aria-expanded="false" title="Mostrar os nomes das abas">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Mostrar os nomes</span></button>
+   </div>
   </aside>
 
   <div class="palco" role="main">

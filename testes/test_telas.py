@@ -219,3 +219,26 @@ def test_filtros_rapidos_da_lista_de_email_filtram_contam_e_nao_cortam(painel_de
         .map(el => el.tagName + '.' + el.className + ' ' + (el.textContent || '').trim().slice(0, 30)); }""")
     assert cortados == [], cortados
     confere_a_tela(pagina)
+
+
+def test_barra_lateral_e_uma_capsula_flutuante_no_meio_da_altura_com_tudo_junto(painel_demo, pagina):
+    """João (08/11/2026): barra de borda espelhada, centralizada na altura, com enviar, operador e o botão dos nomes juntos (sem linha antes deles)."""
+    abrir(pagina, painel_demo, "visao")
+    pagina.wait_for_selector(".capsula", timeout=10000)
+    pagina.wait_for_timeout(900)
+    cx = pagina.locator(".capsula").bounding_box()
+    centro = cx["y"] + cx["height"] / 2
+    assert abs(centro - 450) <= 3, f"cápsula fora do meio da altura: centro {centro:.0f} de 450"   # a janela do teste tem 900 px de altura
+    assert 50 <= cx["width"] <= 64 and cx["x"] >= 8
+    dentro = pagina.evaluate("""() => { const c = document.querySelector('.capsula').getBoundingClientRect();
+      return ['.marca', '.navega', '#btn-enviar', '#op-btn', '#btn-recolher'].map(s => { const r = document.querySelector(s).getBoundingClientRect();
+        return r.left >= c.left - 1 && r.right <= c.right + 1 && r.top >= c.top - 1 && r.bottom <= c.bottom + 1; }); }""")
+    assert all(dentro), dentro
+    # separador só entre os grupos (geral | e-mails | admin): nada entre as abas e o pé da barra
+    assert pagina.evaluate("getComputedStyle(document.querySelector('.capsula .rodape')).borderTopWidth") == "0px"
+    assert pagina.evaluate("[...document.querySelectorAll('.capsula .navega > div')].filter(d => getComputedStyle(d, '::before').content !== 'none' && getComputedStyle(d, '::before').width === '24px').length") >= 1
+    # o nome aparece ao passar o mouse
+    pagina.locator('.capsula .ln[aria-label="Visão geral"]').hover()
+    pagina.wait_for_timeout(350)
+    assert pagina.evaluate("getComputedStyle(document.querySelector('.capsula .ln[aria-label=\"Visão geral\"]'), '::after').opacity") == "1"
+    confere_a_tela(pagina)

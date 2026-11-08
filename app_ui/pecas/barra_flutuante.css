@@ -1,0 +1,79 @@
+/* Barra lateral flutuante, desenho 3 "borda espelhada" (João, 08/11/2026): uma cápsula só, no meio da altura da lateral, com tudo junto
+   (logo, abas, enviar pendentes, operador e o botão de mostrar os nomes). Separador só entre os grupos (geral, e-mails, admin).
+   Vidro escuro com borda de espelho e um reflexo lento que se desliga com "reduzir movimento". Vem depois do estilo.css: vence as camadas antigas. */
+
+.app.modo-ol .lateral{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;overflow:visible;
+  display:flex;align-items:center;justify-content:center;position:relative;z-index:60;white-space:nowrap}
+.app.modo-ol.menu-fechado{grid-template-columns:84px minmax(0,1fr)!important}
+.app.modo-ol:not(.menu-fechado){grid-template-columns:252px minmax(0,1fr)!important}   /* com os nomes, a barra empurra a tela, como antes */
+/* um brilho fraco atrás da cápsula, para o vidro ter o que desfocar */
+.app.modo-ol .lateral::before{content:"";position:absolute;left:-30px;top:18%;width:150px;height:64%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(71,158,245,.16),rgba(71,158,245,0));filter:blur(26px)}
+
+.app.modo-ol .capsula{position:relative;width:60px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;
+  border-radius:32px;background:rgba(14,14,14,.58);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  box-shadow:0 22px 48px rgba(0,0,0,.55);animation:capsula-entra .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes capsula-entra{from{opacity:0;transform:translateX(-14px) scale(.96)}to{opacity:1;transform:none}}
+/* a borda de espelho: clara nos cantos de cima e de baixo, quase apagada no meio */
+.app.modo-ol .capsula::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(255,255,255,.06) 28%,rgba(255,255,255,.02) 60%,rgba(255,255,255,.55));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+/* o reflexo que cruza a cápsula de vez em quando */
+.app.modo-ol .capsula::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%) -200% 0/200% 100% no-repeat;animation:capsula-brilho 7s ease-in-out 1.2s infinite}
+@keyframes capsula-brilho{0%,70%,100%{background-position:-200% 0}85%{background-position:200% 0}}
+
+/* logo */
+.app.modo-ol .capsula .marca{padding:0!important;margin:0 0 6px!important;justify-content:center;border:0!important}
+.app.modo-ol .capsula .selo{width:34px;height:34px;border-radius:9px;background:#0f6cbd;color:#fff;font-size:12px;font-weight:700}
+
+/* abas: os três grupos, com uma linha fina entre eles */
+.app.modo-ol .capsula .navega{flex:0 0 auto;min-height:0;overflow:visible;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:0!important;margin:0!important}
+.app.modo-ol .capsula .navega > div{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:0!important;margin:0!important;border:0!important}
+.app.modo-ol .capsula .navega > div + div::before{content:"";width:24px;height:1px;background:rgba(255,255,255,.14);margin:4px 0 6px;flex:none}
+.app.modo-ol .capsula .navega > div.so-admin[hidden]::before,.app.modo-ol .capsula .navega > div.oculta::before{display:none}
+.app.modo-ol .capsula .rot-nav{display:none!important}
+
+/* um item (aba, enviar, mostrar nomes): o mesmo desenho para todos */
+.app.modo-ol.menu-fechado .capsula :is(.ln,#btn-enviar,.recolher-menu){position:relative;width:42px!important;height:40px!important;margin:0!important;padding:0!important;border:0;border-radius:12px;
+  background:transparent!important;color:rgba(255,255,255,.72)!important;display:grid;place-items:center;font-size:0!important;box-shadow:none!important;cursor:pointer;
+  transition:background .2s,color .2s}
+.app.modo-ol.menu-fechado .capsula :is(.ln,#btn-enviar,.recolher-menu) :is(.ic,svg){width:20px!important;height:20px!important;margin:0!important}
+.app.modo-ol.menu-fechado .capsula :is(.ln,#btn-enviar,.recolher-menu):hover{background:rgba(255,255,255,.07)!important;color:#fff!important}
+.app.modo-ol .capsula :is(.ln,#btn-enviar,.recolher-menu,.op-btn):focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.app.modo-ol .capsula .ln[aria-current="true"]{background:rgba(71,158,245,.16)!important;color:#fff!important;box-shadow:none!important}
+.app.modo-ol .capsula .ln[aria-current="true"] .ic{color:#fff!important;filter:drop-shadow(0 0 6px rgba(71,158,245,.9))}
+.app.modo-ol.menu-fechado .capsula .recolher-menu span{display:none!important}
+.app.modo-ol.menu-fechado .capsula .recolher-menu .ic{transform:none}
+
+/* o pé da barra fica colado nas abas (sem linha nem espaço): enviar, operador e mostrar os nomes */
+.app.modo-ol .capsula .rodape{padding:0!important;margin:0!important;border:0!important;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;background:transparent}
+.app.modo-ol .capsula .op{width:auto}
+.app.modo-ol.menu-fechado .capsula .op-btn{width:38px;height:38px;padding:0!important;border:0!important;background:transparent!important;justify-content:center;margin:2px 0;position:relative}
+.app.modo-ol.menu-fechado .capsula .op-btn .av{width:34px;height:34px;border-radius:50%;background:#555;color:#fff;font-size:13px;border:2px solid #479ef5;box-sizing:border-box;display:grid;place-items:center;transition:border-color .2s}
+.app.modo-ol.menu-fechado .capsula .op-btn:hover .av{border-color:#8cc4ff}
+.app.modo-ol .capsula .recolher-menu{margin:0!important}
+
+/* contador de e-mails: o vermelho de sempre, no canto do ícone */
+.app.modo-ol.menu-fechado .capsula .ln .n:not(:empty):not(.em-teste){display:block!important;position:absolute;top:1px;right:-3px;min-width:20px;height:17px;padding:0 5px;border-radius:9px;
+  background:#e8484f!important;color:#fff!important;font:700 10.5px/17px "Segoe UI",sans-serif;text-align:center;box-shadow:0 0 0 2px rgba(24,24,24,.9)}
+
+/* o nome aparece ao passar o mouse (com os ícones só, ninguém precisa decorar) */
+.app.modo-ol.menu-fechado .capsula :is(.ln,#btn-enviar,.recolher-menu,.op-btn)::after{content:attr(aria-label);position:absolute;left:calc(100% + 14px);top:50%;transform:translate(-4px,-50%);
+  font:12px "Segoe UI",sans-serif;color:#f0f0f0;white-space:nowrap;background:rgba(20,20,20,.92);border:1px solid rgba(255,255,255,.14);padding:5px 10px;border-radius:8px;
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:90;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.app.modo-ol.menu-fechado .capsula :is(.ln,#btn-enviar,.recolher-menu,.op-btn):is(:hover,:focus-visible)::after{opacity:1;transform:translate(0,-50%)}
+.app.modo-ol.menu-fechado .capsula .ln .n::after{display:none}
+
+/* com os nomes abertos: a cápsula fica larga, com os nomes e os títulos dos grupos no lugar das linhas */
+.app.modo-ol:not(.menu-fechado) .capsula{width:224px;align-items:stretch;padding:10px 6px}
+.app.modo-ol:not(.menu-fechado) .capsula .navega > div{align-items:stretch}
+.app.modo-ol:not(.menu-fechado) .capsula .navega > div + div::before{display:none}
+.app.modo-ol:not(.menu-fechado) .capsula .rot-nav{display:block!important;margin:8px 14px 2px}
+.app.modo-ol:not(.menu-fechado) .capsula .rodape{align-items:stretch}
+.app.modo-ol:not(.menu-fechado) .capsula .selo{margin-left:10px}
+.app.modo-ol:not(.menu-fechado) .capsula #btn-enviar{justify-content:flex-start;gap:12px;height:40px;margin:0 8px!important;padding:0 12px!important;background:transparent!important;border:0;color:#c8c8c8!important;font-size:14px}
+
+/* janela baixa: a cápsula rola dentro de si e perde a dica */
+@media (max-height:640px){.app.modo-ol .capsula{overflow-y:auto;border-radius:24px}.app.modo-ol .capsula :is(.ln,#btn-enviar,.recolher-menu,.op-btn)::after{display:none}}
+@media (prefers-reduced-motion:reduce){.app.modo-ol .capsula,.app.modo-ol .capsula::after{animation:none}}

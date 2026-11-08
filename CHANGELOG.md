@@ -9,9 +9,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Em preparação, sem etiqueta] — 2026-11-08 (2: organização, segurança e design)
+## [2026.11.08.1] — 2026-11-08 (organização, segurança, design e barra flutuante)
 
 ### Mudou
+- **Barra lateral flutuante, "borda espelhada"** (desenho 3 escolhido pelo João): uma cápsula de vidro escuro com borda de espelho e um reflexo lento, **no meio da altura da lateral**, com logo, abas, Enviar pendentes, operador e o botão dos nomes **todos juntos**; linha fina só entre os grupos (geral, e-mails, admin). O nome de cada aba aparece ao passar o mouse; o botão do pé abre a versão larga, com os nomes, que empurra a tela como antes. O reflexo se desliga com "reduzir movimento". Arquivo novo: `app_ui/pecas/barra_flutuante.css`.
 - **Projeto organizado por assunto.** Os 58 módulos de `src/` foram para 7 pastas: `painel`, `emails`, `notas`, `central`, `rede`, `sistema`, `privacidade`. Ficam soltos em `src/` só os 12 programas que os PCs abrem pelo caminho (`app_servidor.py`, `conferente.py`, `sincronizar.py`...). Cada pasta tem um `__init__.py` que diz, em português simples, quando mexer ali. Os imports foram reescritos por ferramenta (492) e os 820 testes confirmam. Mapa em `COMECE_AQUI.md` (raiz) e índice de módulos gerado do código em `3 Mapa do projeto/Módulos por pasta.md`. O `CLAUDE.md` ganhou atalhos e as decisões já tomadas, para o Claude não gastar pergunta à toa.
 - **Resumo do dia, 2º ajuste (a partir da foto com dados reais):** o ponto do risquinho agora cola no fim da linha; o último cartão mostra a divisão do que ficou em aberto; mudanças viram pílulas coloridas; o gráfico ficou mais baixo, com o pico escrito direto; a barra de "NF pronta" não fica mais espremida.
 - **Aviso do sistema** saiu de cima do conteúdo (cobria os números) e virou uma pastilha na barra de baixo, junto do botão de caixas com problema. A lista sobe dali com animação curta, mostra os graves primeiro, fecha com Esc ou clicando fora, e pulsa só quando entra aviso novo. O texto técnico virou frase ("O Outlook de Maria não está enviando").
