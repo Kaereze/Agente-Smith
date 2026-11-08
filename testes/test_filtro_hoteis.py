@@ -5,11 +5,12 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 PECA = (UI / "pecas" / "filtro_hoteis.js").read_text(encoding="utf-8")
 CORREIO = (UI / "correio.js").read_text(encoding="utf-8")
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 CSS = (UI / "pecas" / "filtro_hoteis.css").read_text(encoding="utf-8")
 
 # o arquivo mexe em document/localStorage ao carregar: no Node entram só os mínimos para ele subir

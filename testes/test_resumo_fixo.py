@@ -7,10 +7,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 JS = (UI / "correio.js").read_text(encoding="utf-8")
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 PECA = (UI / "pecas" / "etapas.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "etapas.css").read_text(encoding="utf-8")
 

@@ -134,6 +134,8 @@ RESOLVIDA_HORAS = ajustes.valor("limpeza.resolvida_horas")   # solicitação res
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
+    "/estilo.css": ("estilo.css", "text/css; charset=utf-8"),
+    "/telas.js": ("telas.js", "text/javascript; charset=utf-8"),
     "/graficos.js": ("graficos.js", "text/javascript; charset=utf-8"),
     "/painel.js": ("painel.js", "text/javascript; charset=utf-8"),
     "/correio.js": ("correio.js", "text/javascript; charset=utf-8"),

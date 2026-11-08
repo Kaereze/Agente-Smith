@@ -10,9 +10,10 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 import outlook_vivo  # noqa: E402
 import saude  # noqa: E402
+from tela_texto import pagina
 
 UI = RAIZ / "app_ui"
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 JS = (UI / "pecas" / "caixas.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "caixas.css").read_text(encoding="utf-8")
 SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])

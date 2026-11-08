@@ -1,8 +1,9 @@
 """Menu da lateral v2 (22/10/2026): só ícones ou com os nomes, e "Quem está neste PC" ao lado da barra."""
 from pathlib import Path
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
 
 

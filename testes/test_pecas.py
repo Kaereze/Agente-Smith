@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 PECA = (UI / "pecas" / "filtro.js").read_text(encoding="utf-8")
@@ -68,7 +69,7 @@ def test_o_menu_so_e_montado_pela_peca():
 
 
 def test_a_peca_carrega_antes_das_telas_e_o_servidor_entrega():
-    html = (UI / "index.html").read_text(encoding="utf-8")
+    html = pagina(UI)
     assert html.index('<script src="/pecas/filtro.js"></script>') < html.index("<script>\nconst TOKEN") < html.index('<script src="/correio.js">')
     import app_servidor
     assert app_servidor.ESTATICOS["/pecas/filtro.js"][0] == "pecas/filtro.js"

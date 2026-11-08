@@ -5,10 +5,11 @@ import sys
 import threading
 import time
 from pathlib import Path
+from tela_texto import pagina
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
-HTML = (RAIZ / "app_ui" / "index.html").read_text(encoding="utf-8")
+HTML = pagina(RAIZ / "app_ui")
 
 
 def test_servidor_aguenta_a_rajada_da_tela():

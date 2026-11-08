@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 PECA = (UI / "pecas" / "regras_nf.js").read_text(encoding="utf-8")
@@ -65,7 +66,7 @@ def test_extra_so_vale_se_o_formulario_tem_o_campo():
 
 
 def test_tela_usa_a_peca_e_o_marcar_tratativa_saiu():
-    html = (UI / "index.html").read_text(encoding="utf-8")
+    html = pagina(UI)
     assert '/pecas/regras_nf.js' in html and "function faltaDados" not in html
     assert "[...faltaDados(s), ...faltaExtras(s)]" in html
     assert 'texto: "Marcar tratativa"' not in (UI / "pecas" / "etapas.js").read_text(encoding="utf-8")   # o botão saiu

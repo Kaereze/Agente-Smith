@@ -1,9 +1,10 @@
 """Verdes antigos fora do modo cinza (usuário, 21/10/2026: "pode fazer tudo"). As cores de situação (etiquetas, ponto
 de PC no ar, gráficos) e a tabela verde/creme do formulário ficam: não entram aqui."""
 from pathlib import Path
+from tela_texto import pagina
 
 RAIZ = Path(__file__).resolve().parents[1]
-HTML = (RAIZ / "app_ui" / "index.html").read_text(encoding="utf-8")
+HTML = pagina(RAIZ / "app_ui")
 
 
 def test_a_tela_ja_nasce_no_cinza():

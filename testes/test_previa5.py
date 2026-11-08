@@ -6,13 +6,14 @@ O nome repetido entre arquivos da tela derruba o arquivo inteiro no navegador (a
 import re
 from collections import Counter
 from pathlib import Path
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 TOPO = re.compile(r"^(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=)", re.M)
 
 
 def _scripts():
-    html = (UI / "index.html").read_text(encoding="utf-8")
+    html = pagina(UI)
     blocos = re.findall(r"<script>([\s\S]*?)</script>", html)
     return blocos + [(UI / f).read_text(encoding="utf-8") for f in ("graficos.js", "correio.js", "painel.js", "robo.js")]
 
@@ -24,8 +25,7 @@ def test_nenhum_nome_repetido_entre_os_arquivos_da_tela():
 
 
 def test_camada_da_previa5_no_fim_do_estilo():
-    html = (UI / "index.html").read_text(encoding="utf-8")
-    estilo = html[html.index("<style>"):html.index("</style>")]
+    estilo = (UI / "estilo.css").read_text(encoding="utf-8")   # o estilo saiu do index.html em 07/11/2026
     i = estilo.index("Prévia 5 no Painel")
     assert i > estilo.index("E-mails EXATAMENTE como a prévia aprovada")   # vem depois: vence as camadas antigas
     assert "#3da755" not in estilo[estilo.index("E-mails EXATAMENTE"):i].lower()   # verde da camada antiga trocado

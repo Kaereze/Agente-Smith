@@ -2,9 +2,10 @@
 para todas as janelas."""
 import re
 from pathlib import Path
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 CSS = (UI / "pecas" / "janela.css").read_text(encoding="utf-8")
 JS = (UI / "pecas" / "janela.js").read_text(encoding="utf-8")
 

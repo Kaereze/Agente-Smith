@@ -1,10 +1,11 @@
 """Histórico da pesquisa (28/10/2026): últimas 24 h, só neste PC, sem CPF/CNPJ."""
 from pathlib import Path
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 JS = (UI / "pecas" / "busca_recente.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "busca_recente.css").read_text(encoding="utf-8")
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 
 
 def test_peca_entra_na_pagina_depois_da_caixa_de_busca():

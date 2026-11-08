@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 PECA = (UI / "pecas" / "etiqueta.js").read_text(encoding="utf-8")
@@ -56,6 +57,6 @@ def test_as_telas_so_usam_a_peca():
     todo = "".join(a.read_text(encoding="utf-8") for a in [*UI.glob("*.js"), UI / "index.html"])
     for antigo in ('class="tg t-urg', 'class="tg t-falta', 'class="tg t-div', "pilula p-${", "NOMES[s.situacao]", "NOMES[f.situacao]", "NOMES[o.situacao]"):
         assert antigo not in todo, f"sobrou etiqueta montada fora da peça: {antigo}"
-    html = (UI / "index.html").read_text(encoding="utf-8")
+    html = pagina(UI)
     assert '<link rel="stylesheet" href="/pecas/etiqueta.css">' in html and '<script src="/pecas/etiqueta.js"></script>' in html
     assert html.index('<script src="/pecas/etiqueta.js"></script>') < html.index('<script src="/correio.js">')

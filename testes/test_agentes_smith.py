@@ -6,6 +6,7 @@ from pathlib import Path
 
 import agentes_smith
 import app_servidor
+from tela_texto import pagina
 
 RAIZ = Path(__file__).resolve().parents[1]
 AGORA = datetime.datetime(2026, 10, 28, 14, 0, 0)
@@ -93,7 +94,7 @@ def test_rota_so_do_administrador_e_arquivo_fora_da_lista_publica():
 
 
 def test_botao_so_no_grupo_admin_e_quadro_carrega_so_ao_abrir():
-    html = (RAIZ / "app_ui" / "index.html").read_text(encoding="utf-8")
+    html = pagina(RAIZ / "app_ui")
     grupo = html[html.index('id="rot-admin"'):]
     grupo = grupo[:grupo.index("</nav>")]
     assert 'data-vista="agentes"' in grupo and "Agentes do Smith" in grupo

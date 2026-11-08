@@ -4,11 +4,12 @@ import time
 from pathlib import Path
 
 import enviar_receber as er
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 CORREIO = (UI / "correio.js").read_text(encoding="utf-8")
 PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 
 PCS = [{"pc": "PC-J", "agente": "João", "online": True, "rede": "10.0.0.1:8766"},
        {"pc": "PC-C", "agente": "Clara", "online": True, "rede": "10.0.0.2:8766"},

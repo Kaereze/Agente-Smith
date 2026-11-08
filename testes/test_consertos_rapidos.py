@@ -4,9 +4,10 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
-HTML = (UI / "index.html").read_text(encoding="utf-8")
+HTML = pagina(UI)
 PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
 
 

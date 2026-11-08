@@ -6,6 +6,7 @@ de tamanho fixo (regra solta com width e height) não pode ser usada como estado
 """
 import re
 from pathlib import Path
+from tela_texto import pagina
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 
@@ -37,7 +38,7 @@ def test_detector_pega_o_erro_do_bloco_nf_enviada():
 
 
 def test_nenhuma_classe_de_caixa_vira_estado_no_painel():
-    css = (UI / "index.html").read_text(encoding="utf-8")
+    css = pagina(UI)
     for arq in UI.rglob("*.css"):
         css += arq.read_text(encoding="utf-8")
     caixas = caixas_de_tamanho_fixo(css)
