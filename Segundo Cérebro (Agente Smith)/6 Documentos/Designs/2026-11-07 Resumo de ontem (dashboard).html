@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resumo de ontem · proposta de dashboard</title>
+<style>
+/* Proposta de design (07/11/2026), dados 100% fictícios. Paleta da Prévia 5 (escuro) + séries validadas com o validador do dataviz (modo escuro, fundo #242424). */
+:root{
+  --fundo:#1f1f1f; --cartao:#242424; --borda:#333; --linha:#3a3a3a; --grade:#2e2e2e;
+  --tinta:#f0f0f0; --tinta2:#d0d0d0; --tinta3:#a8a8a8;
+  --azul:#3b8fe3; --ouro:#b8862f; --destaque:#479ef5; --selecao:#173b63;
+  --urgente:#e8484f; --urgente-fundo:#3a2326; --urgente-texto:#ff8d95; --ambar:#d9a441;
+  --raio:6px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:14px/1.4 "Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:1280px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:20px;margin:0;font-weight:600}
+.cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-bottom:16px}
+.cab .sub{color:var(--tinta3);font-size:13px;flex:1 1 260px}
+.seg{display:inline-flex;border:1px solid var(--borda);border-radius:var(--raio);overflow:hidden}
+.seg button,.acao{font:inherit;color:var(--tinta2);background:transparent;border:0;padding:6px 14px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--selecao);color:#fff;font-weight:600}
+.acao{border:1px solid var(--borda);border-radius:var(--raio)}
+.acao:hover,.seg button:hover{background:#2b2b2b}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--destaque);outline-offset:2px}
+
+.rotulo{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta3)}
+.cartao{background:var(--cartao);border:1px solid var(--borda);border-radius:var(--raio);padding:16px;min-width:0}
+.cartao h2{margin:0 0 2px;font-size:14px;font-weight:600}
+.cartao .dica{color:var(--tinta3);font-size:12px;margin-bottom:12px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:10px}
+.kpi{position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.kpi:hover{border-color:#4a4a4a;transform:translateY(-1px)}
+.kpi b{display:block;font-size:34px;line-height:1.1;margin:6px 0 4px;font-weight:600}
+.delta{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--tinta3)}
+.delta i{font-style:normal;padding:1px 7px;border-radius:999px;font-weight:600}
+.delta .sobe{background:#173b63;color:#cfe5fb}
+.delta .desce{background:var(--urgente-fundo);color:var(--urgente-texto)}
+.delta .igual{background:#333;color:var(--tinta2)}
+.kpi svg.spark{display:block;width:100%;height:34px;margin-top:10px;overflow:visible}
+.kpi .meta{color:var(--tinta3);font-size:12px}
+
+/* grade */
+.grade{display:grid;gap:10px;margin-bottom:10px;grid-template-columns:repeat(12,1fr)}
+.g8{grid-column:span 8}.g4{grid-column:span 4}.g6{grid-column:span 6}.g12{grid-column:span 12}
+@media (max-width:1000px){.g8,.g4,.g6{grid-column:span 12}}
+
+/* gráficos */
+.leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 8px;color:var(--tinta2);font-size:12px}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{display:inline-block;width:12px;height:3px;border-radius:2px}
+.leg i.cx{height:10px;width:10px;border-radius:2px}
+svg text{font:11px "Segoe UI",sans-serif;fill:var(--tinta3)}
+.eixo line{stroke:var(--grade)} .eixo .base{stroke:#4a4a4a}
+.linha{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.area{opacity:.12}
+.ponto{stroke:var(--cartao);stroke-width:2}
+.cruz{stroke:#6b6b6b;stroke-width:1;stroke-dasharray:3 3}
+.graf{position:relative}
+.graf svg{display:block;width:100%;height:auto}
+.hit{fill:transparent;cursor:crosshair}
+
+/* barras */
+.barras{display:grid;gap:10px}
+.br{display:grid;grid-template-columns:minmax(80px,120px) 1fr auto;gap:10px;align-items:center;border-radius:4px;padding:2px 4px;cursor:default}
+.br:hover,.br:focus-visible{background:#2b2b2b}
+.br .nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tinta2)}
+.br .trilho{display:grid;gap:3px}
+.br .barra{height:8px;border-radius:0 4px 4px 0;background:var(--azul);transform-origin:left;transform:scaleX(0);transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+.br .barra.o{background:var(--ouro)}
+.br .val{min-width:2.4em;text-align:right;font-weight:600}
+.pronto .br .barra{transform:scaleX(1)}
+
+/* meter e segmentado */
+.meter{height:10px;border-radius:5px;background:#333;overflow:hidden;margin:8px 0 6px}
+.meter div{height:100%;width:0;background:var(--azul);border-radius:5px;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.seg-bar{display:flex;gap:2px;height:28px;margin:8px 0}
+.seg-bar div{flex:0 1 0%;min-width:0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;transition:flex-basis .9s cubic-bezier(.2,.7,.2,1),filter .15s}
+.seg-bar div:hover{filter:brightness(1.18)}
+.lista-seg{display:grid;gap:4px;margin-top:8px}
+.lista-seg div{display:flex;justify-content:space-between;gap:12px;color:var(--tinta2);font-size:13px}
+.lista-seg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+
+/* atenção */
+.lin{display:grid;grid-template-columns:1fr auto auto;gap:6px 12px;align-items:center;padding:10px 8px;border-top:1px solid var(--linha);cursor:pointer;border-radius:4px;opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s,background .15s}
+.pronto .lin{opacity:1;transform:none}
+.lin:first-of-type{border-top:0}
+.lin:hover,.lin:focus-visible{background:#2b2b2b}
+.lin b{display:block;font-weight:600}.lin small{color:var(--tinta3)}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#173b63;color:#cfe5fb;white-space:nowrap}
+.tag.venc{background:transparent;border:1px solid var(--urgente);color:var(--urgente-texto)}
+.pz{color:var(--urgente-texto);font-size:12px;white-space:nowrap;font-weight:600}
+@media (max-width:640px){.lin{grid-template-columns:1fr}}
+
+/* tooltip */
+#dica{position:fixed;z-index:10;pointer-events:none;background:#2b2b2b;border:1px solid #4a4a4a;border-radius:8px;padding:8px 10px;font-size:12px;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .12s}
+#dica.on{opacity:1}
+#dica .t{color:var(--tinta3);margin-bottom:4px}
+#dica .l{display:flex;align-items:center;gap:8px;justify-content:space-between}
+#dica .l span{display:inline-flex;align-items:center;gap:6px;color:var(--tinta2)}
+#dica .l i{display:inline-block;width:10px;height:3px;border-radius:2px}
+#dica .l b{color:var(--tinta);font-size:13px}
+
+/* tabela */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta3);text-align:right;font-weight:500;padding:6px 8px;border-bottom:1px solid var(--linha)}
+td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--grade)}
+th:first-child,td:first-child{text-align:left}
+.oculta{display:none!important}
+#toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:#2b2b2b;border:1px solid #4a4a4a;border-radius:8px;padding:8px 14px;opacity:0;transition:.25s;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.br .barra{transform:scaleX(1)}.lin{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<main id="raiz">
+  <div class="cab">
+    <h1>Resumo de <span id="dia-nome">ontem</span></h1>
+    <span class="sub" id="sub"></span>
+    <div class="seg" role="group" aria-label="Dia do resumo">
+      <button type="button" data-dia="ontem" aria-pressed="true">Ontem</button>
+      <button type="button" data-dia="hoje" aria-pressed="false">Hoje</button>
+    </div>
+    <button type="button" class="acao" id="ver-tabela" aria-pressed="false">Ver como tabela</button>
+  </div>
+
+  <div id="painel">
+    <section class="kpis" id="kpis" aria-label="Números do dia"></section>
+
+    <section class="grade">
+      <div class="cartao g8">
+        <h2>Pedidos e NFs ao longo do dia</h2>
+        <div class="dica">por hora · passe o mouse para ver cada hora</div>
+        <div class="leg"><span><i style="background:var(--azul)"></i>Pedidos recebidos</span><span><i style="background:var(--ouro)"></i>NFs enviadas</span></div>
+        <div class="graf" id="g-linha"></div>
+      </div>
+      <div class="cartao g4">
+        <h2>Prazo das NFs</h2>
+        <div class="dica">enviadas dentro de 48 h</div>
+        <div class="rotulo" id="m-rot"></div>
+        <div class="meter" role="img" aria-label="Porcentagem enviada no prazo"><div id="m-barra"></div></div>
+        <div class="dica" id="m-txt" style="margin:0 0 14px"></div>
+        <h2 style="margin-top:14px">O que ficou para hoje</h2>
+        <div class="dica" id="s-sub"></div>
+        <div class="seg-bar" id="s-barra" role="img" aria-label="Pedidos em aberto por situação"></div>
+        <div class="lista-seg" id="s-lista"></div>
+      </div>
+    </section>
+
+    <section class="grade">
+      <div class="cartao g6">
+        <h2>Equipe</h2>
+        <div class="dica">pedidos recebidos e NFs enviadas por agente</div>
+        <div class="leg"><span><i class="cx" style="background:var(--azul)"></i>Recebidos</span><span><i class="cx" style="background:var(--ouro)"></i>NFs enviadas</span></div>
+        <div class="barras" id="b-equipe"></div>
+      </div>
+      <div class="cartao g6">
+        <h2>Hotéis com mais pedidos</h2>
+        <div class="dica">os 6 maiores do dia</div>
+        <div class="barras" id="b-hoteis"></div>
+      </div>
+    </section>
+
+    <section class="cartao g12" id="atencao">
+      <h2>Precisa de atenção hoje</h2>
+      <div class="dica">urgentes e com dado faltando · clique para abrir a ficha</div>
+      <div id="atencao-lista"></div>
+    </section>
+  </div>
+
+  <section class="cartao oculta" id="tabelas" aria-label="Os mesmos números em tabela">
+    <h2>Os mesmos números, em tabela</h2>
+    <div class="dica">para ler sem gráfico, copiar ou imprimir</div>
+    <table id="t-hora"></table><br><table id="t-equipe"></table>
+  </section>
+</main>
+<div id="dica" role="tooltip"></div>
+<div id="toast" role="status"></div>
+
+<script>
+/* Dados inventados. No Painel, estes números vêm do mesmo lugar de hoje (painel.js). */
+const DADOS = {
+  ontem: { nome: "ontem", sub: "sexta-feira, 06/11 · comparado com a sexta passada",
+    kpis: [
+      { r: "Pedidos recebidos", v: 35, ant: 10, fmt: "n", spark: [18,22,15,26,20,9,35], cmp: "sexta passada" },
+      { r: "NFs enviadas", v: 4, ant: 0, fmt: "n", spark: [9,12,8,14,11,2,4], cmp: "sexta passada" },
+      { r: "Enviadas no prazo", v: 100, ant: 92, fmt: "p", spark: [88,90,85,94,92,92,100], cmp: "sexta passada" },
+      { r: "Tempo até a NF", v: 28, ant: 31, fmt: "h", spark: [34,30,33,29,31,31,28], cmp: "sexta passada", melhorMenor: true },
+      { r: "Ficaram para hoje", v: 93, ant: 81, fmt: "n", spark: [70,74,79,77,81,81,93], cmp: "sexta passada", melhorMenor: true, nota: "53 já vencidos" } ],
+    horas: [8,9,10,11,12,13,14,15,16,17,18,19],
+    ped: [1,3,5,6,4,2,4,3,3,2,1,1], nfs: [0,0,1,0,1,0,1,0,0,1,0,0],
+    prazo: 100, prazoTxt: "4 de 4 saíram em até 48 h",
+    abertos: [["Sem NF", 61, "#3b8fe3"], ["Falta dado", 18, "#7fb8f0"], ["NF pronta, falta enviar", 14, "#b8862f"]], vencidos: 53,
+    equipe: [["Bernardo", 9, 0], ["Clara", 12, 3], ["Cristian", 6, 0], ["João", 8, 1]],
+    hoteis: [["San Martin", 7], ["Estrela Centro", 6], ["Coimbra", 5], ["Porto Seguro", 4], ["Bahia", 3], ["Hangar", 3]] },
+  hoje: { nome: "hoje", sub: "sábado, 07/11 · até agora, comparado com o sábado passado",
+    kpis: [
+      { r: "Pedidos recebidos", v: 12, ant: 9, fmt: "n", spark: [18,22,15,26,20,9,12], cmp: "sábado passado" },
+      { r: "NFs enviadas", v: 2, ant: 1, fmt: "n", spark: [9,12,8,14,11,2,2], cmp: "sábado passado" },
+      { r: "Enviadas no prazo", v: 100, ant: 100, fmt: "p", spark: [88,90,85,94,92,100,100], cmp: "sábado passado" },
+      { r: "Tempo até a NF", v: 22, ant: 26, fmt: "h", spark: [34,30,33,29,31,26,22], cmp: "sábado passado", melhorMenor: true },
+      { r: "Em aberto agora", v: 96, ant: 90, fmt: "n", spark: [70,74,79,77,81,90,96], cmp: "sábado passado", melhorMenor: true, nota: "55 já vencidos" } ],
+    horas: [8,9,10,11,12,13,14,15,16,17,18,19],
+    ped: [2,4,3,2,1,0,0,0,0,0,0,0], nfs: [0,1,0,1,0,0,0,0,0,0,0,0],
+    prazo: 100, prazoTxt: "2 de 2 saíram em até 48 h",
+    abertos: [["Sem NF", 63, "#3b8fe3"], ["Falta dado", 19, "#7fb8f0"], ["NF pronta, falta enviar", 14, "#b8862f"]], vencidos: 55,
+    equipe: [["Bernardo", 3, 0], ["Clara", 4, 1], ["Cristian", 2, 0], ["João", 3, 1]],
+    hoteis: [["San Martin", 3], ["Estrela Centro", 2], ["Coimbra", 2], ["Bahia", 2], ["Hangar", 1], ["Lapa", 1]] }
+};
+const ATENCAO = [
+  ["Ana Exemplo Carvalho", "Plaza Recife · Clara", "Sem NF", "venceu há 27 dias"],
+  ["Juliana Exemplo Oliveira", "Bahia · João", "Sem NF", "venceu há 27 dias"],
+  ["Daniel Exemplo Nascimento", "Araras · Bernardo", "Falta dado: CPF/CNPJ", "venceu há 23 dias"],
+  ["Larissa Exemplo Moreira", "Lagoa · João", "Sem NF", "venceu há 18 dias"]
+];
+const REDUZ = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, at = {}, pai) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (pai) pai.appendChild(e); return e; };
+let dia = "ontem";
+
+/* tooltip: sempre textContent (os nomes podem vir de planilha) */
+const dica = $("#dica");
+function mostrarDica(x, y, titulo, linhas) {
+  dica.textContent = "";
+  const t = document.createElement("div"); t.className = "t"; t.textContent = titulo; dica.appendChild(t);
+  for (const [cor, nome, valor] of linhas) {
+    const l = document.createElement("div"); l.className = "l";
+    const s = document.createElement("span"); const i = document.createElement("i"); i.style.background = cor; s.append(i, nome);
+    const b = document.createElement("b"); b.textContent = valor; l.append(s, b); dica.appendChild(l);
+  }
+  dica.classList.add("on");
+  const w = dica.offsetWidth, h = dica.offsetHeight;
+  dica.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + "px";
+  dica.style.top = Math.max(8, Math.min(innerHeight - h - 8, y - h - 10)) + "px";
+}
+const esconderDica = () => dica.classList.remove("on");
+function toast(txt) { const t = $("#toast"); t.textContent = txt; t.classList.add("on"); clearTimeout(toast.id); toast.id = setTimeout(() => t.classList.remove("on"), 1800); }
+
+/* números que sobem até o valor */
+function contar(alvo, v, fmt) {
+  const f = x => fmt === "p" ? Math.round(x) + "%" : fmt === "h" ? Math.round(x) + " h" : Math.round(x).toLocaleString("pt-BR");
+  if (REDUZ) { alvo.textContent = f(v); return; }
+  const t0 = performance.now(), dur = 800;
+  const passo = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); alvo.textContent = f(v * e); if (k < 1) requestAnimationFrame(passo); };
+  requestAnimationFrame(passo);
+}
+
+function kpis(d) {
+  const raiz = $("#kpis"); raiz.textContent = "";
+  d.kpis.forEach((k, i) => {
+    const c = document.createElement("div"); c.className = "cartao kpi";
+    const dif = k.v - k.ant, bom = k.melhorMenor ? dif < 0 : dif > 0;
+    const un = k.fmt === "p" ? " pontos" : k.fmt === "h" ? " h" : "";
+    const chip = dif === 0 ? `<i class="igual">igual</i>` : `<i class="${bom ? "sobe" : "desce"}">${dif > 0 ? "+" : "−"}${Math.abs(dif)}${un}</i>`;
+    c.innerHTML = `<div class="rotulo"></div><b></b><span class="delta">${chip}<span class="cmp"></span></span><svg class="spark" viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"></svg><div class="meta"></div>`;
+    c.querySelector(".rotulo").textContent = k.r;
+    c.querySelector(".cmp").textContent = `${k.cmp} (${k.fmt === "p" ? k.ant + "%" : k.fmt === "h" ? k.ant + " h" : k.ant})`;
+    c.querySelector(".meta").textContent = k.nota || "";
+    c.querySelector(".meta").style.display = k.nota ? "" : "none";
+    raiz.appendChild(c);
+    contar(c.querySelector("b"), k.v, k.fmt);
+    const sv = c.querySelector("svg"), max = Math.max(...k.spark), min = Math.min(...k.spark), n = k.spark.length;
+    const pts = k.spark.map((v, j) => [j * 200 / (n - 1), 30 - (max === min ? 15 : (v - min) / (max - min) * 26)]);
+    const p = el("path", { d: "M" + pts.map(q => q.join(",")).join("L"), class: "linha", stroke: "var(--azul)", "vector-effect": "non-scaling-stroke" }, sv);
+    if (!REDUZ) { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.getBoundingClientRect(); p.style.transition = `stroke-dashoffset .9s ${i * 80}ms cubic-bezier(.2,.7,.2,1)`; requestAnimationFrame(() => p.style.strokeDashoffset = 0); }
+    const ult = pts[n - 1]; const pt = el("circle", { cx: ult[0], cy: ult[1], r: 3, fill: "var(--azul)", class: "ponto" }, sv);
+    pt.setAttribute("vector-effect", "non-scaling-stroke");
+  });
+}
+
+function graficoLinha(d) {
+  const raiz = $("#g-linha"); raiz.textContent = "";
+  const W = 720, H = 260, m = { e: 34, d: 14, t: 12, b: 26 };
+  const sv = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Pedidos recebidos e NFs enviadas por hora" }); raiz.appendChild(sv);
+  const max = Math.max(4, ...d.ped, ...d.nfs), topo = Math.ceil(max / 4) * 4, n = d.horas.length;   // topo múltiplo de 4: a grade cai em números inteiros
+  const X = i => m.e + i * (W - m.e - m.d) / (n - 1), Y = v => H - m.b - v / topo * (H - m.b - m.t);
+  const eixo = el("g", { class: "eixo" }, sv);
+  for (let v = 0; v <= topo; v += topo / 4) { el("line", { x1: m.e, x2: W - m.d, y1: Y(v), y2: Y(v), class: v === 0 ? "base" : "" }, eixo); el("text", { x: m.e - 8, y: Y(v) + 4, "text-anchor": "end" }, eixo).textContent = Math.round(v); }
+  d.horas.forEach((h, i) => { if (i % 2 === 0) el("text", { x: X(i), y: H - 6, "text-anchor": "middle" }, eixo).textContent = h + "h"; });
+  const serie = (vals, cor, comArea) => {
+    const pts = vals.map((v, i) => [X(i), Y(v)]);
+    if (comArea) el("path", { d: `M${pts[0][0]},${Y(0)}L` + pts.map(q => q.join(",")).join("L") + `L${pts[n - 1][0]},${Y(0)}Z`, fill: cor, class: "area" }, sv);
+    const p = el("path", { d: "M" + pts.map(q => q.join(",")).join("L"), stroke: cor, class: "linha" }, sv);
+    if (!REDUZ) { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.getBoundingClientRect(); p.style.transition = "stroke-dashoffset 1s cubic-bezier(.2,.7,.2,1)"; requestAnimationFrame(() => p.style.strokeDashoffset = 0); }
+  };
+  serie(d.ped, "var(--azul)", true); serie(d.nfs, "var(--ouro)", false);
+  const cruz = el("line", { y1: m.t, y2: H - m.b, class: "cruz", opacity: 0 }, sv);
+  const pa = el("circle", { r: 4, fill: "var(--azul)", class: "ponto", opacity: 0 }, sv), pb = el("circle", { r: 4, fill: "var(--ouro)", class: "ponto", opacity: 0 }, sv);
+  const hit = el("rect", { x: m.e, y: m.t, width: W - m.e - m.d, height: H - m.t - m.b, class: "hit", tabindex: 0, role: "group", "aria-label": "Use as setas para percorrer as horas" }, sv);
+  let atual = 0;
+  const ir = (i, ev) => {
+    atual = Math.max(0, Math.min(n - 1, i));
+    cruz.setAttribute("x1", X(atual)); cruz.setAttribute("x2", X(atual)); cruz.setAttribute("opacity", 1);
+    pa.setAttribute("cx", X(atual)); pa.setAttribute("cy", Y(d.ped[atual])); pa.setAttribute("opacity", 1);
+    pb.setAttribute("cx", X(atual)); pb.setAttribute("cy", Y(d.nfs[atual])); pb.setAttribute("opacity", 1);
+    const r = sv.getBoundingClientRect(), px = ev ? ev.clientX : r.left + X(atual) / W * r.width, py = ev ? ev.clientY : r.top + 40;
+    mostrarDica(px, py, `${d.horas[atual]}h`, [["var(--azul)", "Pedidos", d.ped[atual]], ["var(--ouro)", "NFs enviadas", d.nfs[atual]]]);
+  };
+  hit.addEventListener("pointermove", ev => { const r = sv.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * W; ir(Math.round((x - m.e) / ((W - m.e - m.d) / (n - 1))), ev); });
+  hit.addEventListener("pointerleave", () => { cruz.setAttribute("opacity", 0); pa.setAttribute("opacity", 0); pb.setAttribute("opacity", 0); esconderDica(); });
+  hit.addEventListener("keydown", ev => { if (ev.key === "ArrowRight") { ev.preventDefault(); ir(atual + 1); } if (ev.key === "ArrowLeft") { ev.preventDefault(); ir(atual - 1); } });
+  hit.addEventListener("focus", () => ir(atual)); hit.addEventListener("blur", () => { cruz.setAttribute("opacity", 0); pa.setAttribute("opacity", 0); pb.setAttribute("opacity", 0); esconderDica(); });
+}
+
+function prazoEAbertos(d) {
+  $("#m-rot").textContent = d.prazo + "% no prazo"; $("#m-txt").textContent = d.prazoTxt;
+  const mb = $("#m-barra"); mb.style.width = "0"; requestAnimationFrame(() => requestAnimationFrame(() => mb.style.width = d.prazo + "%"));
+  const tot = d.abertos.reduce((s, a) => s + a[1], 0);
+  $("#s-sub").textContent = `${tot} pedidos em aberto · ${d.vencidos} já vencidos`;
+  const sb = $("#s-barra"), sl = $("#s-lista"); sb.textContent = ""; sl.textContent = "";
+  d.abertos.forEach(([nome, n, cor]) => {
+    const seg = document.createElement("div"); seg.style.background = cor; seg.textContent = n; seg.tabIndex = 0; seg.setAttribute("aria-label", `${nome}: ${n}`);
+    sb.appendChild(seg); requestAnimationFrame(() => requestAnimationFrame(() => seg.style.flexBasis = (n / tot * 100) + "%"));
+    const mover = ev => mostrarDica(ev.clientX || seg.getBoundingClientRect().left, ev.clientY || seg.getBoundingClientRect().top, nome, [[cor, "Pedidos", n + " (" + Math.round(n / tot * 100) + "%)"]]);
+    seg.addEventListener("pointermove", mover); seg.addEventListener("pointerleave", esconderDica); seg.addEventListener("focus", mover); seg.addEventListener("blur", esconderDica);
+    const li = document.createElement("div"); const a = document.createElement("span"); const i = document.createElement("i"); i.style.background = cor; a.append(i, nome);
+    const b = document.createElement("b"); b.textContent = n; li.append(a, b); sl.appendChild(li);
+  });
+}
+
+function barras(raiz, linhas, duas) {
+  raiz.textContent = ""; raiz.classList.remove("pronto");
+  const max = Math.max(...linhas.map(l => Math.max(l[1], l[2] || 0)), 1);
+  linhas.forEach(l => {
+    const r = document.createElement("div"); r.className = "br"; r.tabIndex = 0;
+    const nome = document.createElement("span"); nome.className = "nome"; nome.textContent = l[0];
+    const trilho = document.createElement("div"); trilho.className = "trilho";
+    const b1 = document.createElement("div"); b1.className = "barra"; b1.style.width = (l[1] / max * 100) + "%"; trilho.appendChild(b1);
+    if (duas) { const b2 = document.createElement("div"); b2.className = "barra o"; b2.style.width = (l[2] / max * 100) + "%"; b2.style.transitionDelay = ".08s"; trilho.appendChild(b2); }
+    const v = document.createElement("span"); v.className = "val"; v.textContent = duas ? `${l[1]} · ${l[2]}` : l[1];
+    r.append(nome, trilho, v); raiz.appendChild(r);
+    const mover = ev => { const q = r.getBoundingClientRect(); mostrarDica(ev.clientX || q.left + 120, ev.clientY || q.top, l[0], duas ? [["var(--azul)", "Recebidos", l[1]], ["var(--ouro)", "NFs enviadas", l[2]]] : [["var(--azul)", "Pedidos", l[1]]]); };
+    r.addEventListener("pointermove", mover); r.addEventListener("pointerleave", esconderDica); r.addEventListener("focus", mover); r.addEventListener("blur", esconderDica);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => raiz.classList.add("pronto")));
+}
+
+function atencao() {
+  const raiz = $("#atencao-lista"); raiz.textContent = ""; raiz.classList.remove("pronto");
+  ATENCAO.forEach(([nome, onde, tag, pz], i) => {
+    const l = document.createElement("div"); l.className = "lin"; l.tabIndex = 0; l.setAttribute("role", "button"); l.style.transitionDelay = (i * 70) + "ms";
+    const a = document.createElement("div"); const b = document.createElement("b"); b.textContent = nome; const s = document.createElement("small"); s.textContent = onde; a.append(b, s);
+    const t = document.createElement("span"); t.className = "tag"; t.textContent = tag;
+    const p = document.createElement("span"); p.className = "pz"; p.textContent = pz;
+    l.append(a, t, p); raiz.appendChild(l);
+    const abrir = () => toast("No Painel isto abre a ficha de " + nome.split(" ")[0]);
+    l.addEventListener("click", abrir); l.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } });
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => raiz.classList.add("pronto")));
+  $("#atencao").classList.add("pronto");
+}
+
+function tabelas(d) {
+  $("#t-hora").innerHTML = "<thead><tr><th>Hora</th><th>Pedidos recebidos</th><th>NFs enviadas</th></tr></thead>";
+  const tb = document.createElement("tbody");
+  d.horas.forEach((h, i) => { const tr = document.createElement("tr"); [h + "h", d.ped[i], d.nfs[i]].forEach(x => { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }); tb.appendChild(tr); });
+  $("#t-hora").appendChild(tb);
+  $("#t-equipe").innerHTML = "<thead><tr><th>Agente</th><th>Recebidos</th><th>NFs enviadas</th></tr></thead>";
+  const te = document.createElement("tbody");
+  d.equipe.forEach(l => { const tr = document.createElement("tr"); l.forEach(x => { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }); te.appendChild(tr); });
+  $("#t-equipe").appendChild(te);
+}
+
+function desenhar() {
+  const d = DADOS[dia];
+  $("#dia-nome").textContent = d.nome; $("#sub").textContent = d.sub;
+  document.querySelectorAll("[data-dia]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.dia === dia)));
+  esconderDica(); kpis(d); graficoLinha(d); prazoEAbertos(d);
+  barras($("#b-equipe"), d.equipe, true); barras($("#b-hoteis"), d.hoteis, false); atencao(); tabelas(d);
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-dia]"); if (b) { dia = b.dataset.dia; desenhar(); } });
+$("#ver-tabela").addEventListener("click", e => {
+  const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+  e.currentTarget.setAttribute("aria-pressed", String(on)); e.currentTarget.textContent = on ? "Ver os gráficos" : "Ver como tabela";
+  $("#painel").classList.toggle("oculta", on); $("#tabelas").classList.toggle("oculta", !on);
+});
+desenhar();
+</script>
+</body>
+</html>
