@@ -13,16 +13,25 @@
 .rs-vazio{color:var(--tinta-3);font-size:13px;padding:8px 0}
 
 /* KPIs */
-.rs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.rs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(166px,1fr));gap:10px}
 .rs-kpi{display:flex;flex-direction:column;gap:2px;transition:border-color .2s,transform .2s}
 .rs-kpi:hover{border-color:var(--linha-forte,#4a4a4a);transform:translateY(-1px)}
 .rs-kpi small{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-3)}
 .rs-kpi b{font-size:32px;line-height:1.15;font-weight:600;color:var(--tinta);font-variant-numeric:tabular-nums}
 .rs-delta{font-size:12px;color:var(--tinta-2);min-height:1.4em}
-.rs-delta em{font-style:normal;font-weight:600}
+.rs-delta em{font-style:normal;font-weight:600;display:inline-block;padding:1px 8px;margin-right:4px;border-radius:999px;background:#333;color:#d0d0d0}
+.rs-delta em.sobe{background:#173b63;color:#cfe5fb}
+.rs-delta em.desce{background:#3a2326;color:#ff8d95}
 .rs-nota{font-size:12px;color:var(--tinta-3)}
-.rs-spark{display:block;width:100%;height:34px;margin-top:8px;overflow:visible}
-.rs-spark path,.rs-fio{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rs-fio{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rs-spark{position:relative;height:34px;margin-top:10px;clip-path:inset(-6px -8px -6px 0);transition:clip-path 1s cubic-bezier(.2,.7,.2,1)}
+.rs-spark svg{display:block;width:100%;height:100%;overflow:visible}
+.rs-sp-linha{fill:none;stroke:var(--rs-a);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.rs-sp-area{fill:var(--rs-a);opacity:.1;stroke:none}
+.rs-ponto-fim{position:absolute;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--rs-a);transform:translateY(-50%);box-shadow:0 0 0 3px var(--folha,#242424)}
+.rs-mini{display:flex;gap:2px;height:10px;margin-top:14px;border-radius:5px;overflow:hidden}
+.rs-mini span{min-width:6px}
+.rs-kpi .rs-nota{margin-top:6px}
 
 /* grade */
 .rs-grade{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
@@ -55,7 +64,7 @@
 .rs-meter{height:10px;border-radius:5px;background:var(--linha,#333);overflow:hidden;margin:8px 0 6px}
 .rs-meter div{height:100%;width:var(--p);background:var(--rs-a);border-radius:5px;transition:width .9s cubic-bezier(.2,.7,.2,1)}
 .rs-segbar{display:flex;gap:2px;height:28px;margin:8px 0}
-.rs-seg{flex:0 1 auto;min-width:0;background:var(--cor);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;transition:flex-basis .9s cubic-bezier(.2,.7,.2,1),filter .15s}
+.rs-seg{flex:0 1 auto;min-width:26px;background:var(--cor);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;transition:flex-basis .9s cubic-bezier(.2,.7,.2,1),filter .15s}
 .rs-seg:hover,.rs-seg:focus-visible{filter:brightness(1.18);outline:none}
 .rs-lista-seg{display:grid;gap:4px;margin-top:8px}
 .rs-lista-seg div{display:flex;justify-content:space-between;gap:12px;color:var(--tinta-2);font-size:13px}
@@ -84,6 +93,7 @@
 /* animação de entrada: só quando o Painel acrescenta .rs-pre (números novos ou tela recém-aberta) */
 .rs-tr{stroke-dasharray:1;stroke-dashoffset:0;transition:stroke-dashoffset 1s cubic-bezier(.2,.7,.2,1)}
 .rs-pre .rs-tr{stroke-dashoffset:1;transition:none}
+.rs-pre .rs-spark{clip-path:inset(-6px 100% -6px 0);transition:none}
 .rs-pre .rs-barra{transform:scaleX(0);transition:none}
 .rs-pre .rs-meter div{width:0;transition:none}
 .rs-pre .rs-seg{flex-basis:0!important;transition:none}
@@ -98,3 +108,7 @@
 .rs-btn{font:inherit;font-size:12.5px;color:var(--tinta-2);background:transparent;border:1px solid var(--linha-forte,#4a4a4a);border-radius:7px;padding:6px 12px;cursor:pointer}
 .rs-btn:hover{background:var(--folha-2,#2b2b2b);color:var(--tinta)}
 .rs-btn:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+
+/* rótulo do pico no gráfico de linha */
+.rs-linha-svg .rs-pico{font:600 11px var(--f-texto,"Segoe UI",sans-serif);fill:var(--tinta);paint-order:stroke;stroke:var(--folha,#242424);stroke-width:4px;stroke-linejoin:round}
+.rs-pt{stroke:var(--folha,#242424);stroke-width:2}

@@ -110,22 +110,32 @@ function toast(msg, erro){ const t = $("toast"); t.textContent = msg; t.classNam
 
 // Cabeçalho: PCs da equipe — Outlook fechado ou conferente parado em algum PC acende o aviso
 // Avisos do sistema (usuário, 14/10/2026): em vez da faixa no topo, uma caixinha no canto direito de baixo; clique abre
+// Aviso em frase de gente: título e uma linha de apoio (rbFrase, em robo.js, conhece os avisos mais comuns); o resto aparece como veio
+function avisoEmFrase(texto) {
+  const f = typeof rbFrase === "function" ? rbFrase(texto) : null;
+  return f ? `<b>${esc(f[0])}</b><small>${esc(f[1])}</small>` : esc(texto);
+}
 function desenharSaude(lista) {
   const el = $("saude");
   el.classList.toggle("oculta", !lista.length);
   if (!lista.length) { el.classList.remove("aberta"); el.innerHTML = ""; return; }
+  lista = [...lista].sort((a, b) => (a.nivel === "warn") - (b.nivel === "warn"));   // o que é grave vem primeiro
   const aberta = el.classList.contains("aberta"), grave = lista.some(p => p.nivel !== "warn");
   el.classList.toggle("grave", grave);
+  const antes = +el.dataset.n || 0; el.dataset.n = lista.length;
+  if (lista.length > antes) { el.classList.add("nova"); clearTimeout(el._nova); el._nova = setTimeout(() => el.classList.remove("nova"), 3600); }   // pulsa só quando aparece aviso novo
   el.removeAttribute("title");
   el.innerHTML = `<div class="s-painel" ${aberta ? "" : "hidden"}><div class="s-cab"><b>Avisos do sistema</b>
       <button type="button" class="s-fechar" aria-label="Fechar avisos">×</button></div>
-      ${lista.map(p => `<div class="s-linha ${p.nivel}"><svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><span>${esc(p.texto)}</span></div>`).join("")}
+      ${lista.map(p => `<div class="s-linha ${p.nivel}"><svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><span>${avisoEmFrase(p.texto)}</span></div>`).join("")}
       <button type="button" class="s-ver so-admin">Ver no Monitoramento</button></div>
     <button type="button" class="s-bolha" aria-expanded="${aberta}" aria-label="${lista.length} aviso${lista.length > 1 ? "s" : ""} do sistema">
       <svg class="ic" aria-hidden="true"><use href="#i-alerta"/></svg><b>${lista.length}</b><span>aviso${lista.length > 1 ? "s" : ""}</span></button>`;
 }
+document.addEventListener("keydown", e => { const el = $("saude"); if (e.key === "Escape" && el?.classList.contains("aberta")) { el.classList.remove("aberta"); el.querySelector(".s-painel").hidden = true; el.querySelector(".s-bolha")?.setAttribute("aria-expanded", "false"); } });
 document.addEventListener("click", e => {
   const el = $("saude");
+  if (el.classList.contains("aberta") && !e.target.closest("#saude")) { el.classList.remove("aberta"); el.querySelector(".s-painel").hidden = true; el.querySelector(".s-bolha")?.setAttribute("aria-expanded", "false"); }   // clicou fora: fecha
   if (e.target.closest("#saude .s-bolha")) { el.classList.toggle("aberta"); el.querySelector(".s-painel").hidden = !el.classList.contains("aberta");
     e.target.closest(".s-bolha").setAttribute("aria-expanded", el.classList.contains("aberta")); return; }
   if (e.target.closest("#saude .s-fechar")) { el.classList.remove("aberta"); el.querySelector(".s-painel").hidden = true; return; }

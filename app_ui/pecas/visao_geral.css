@@ -1,0 +1,27 @@
+/* Visão geral centralizada e a parte de baixo no mesmo desenho do Resumo (João, 08/11/2026): sem peso, sem poluição.
+   Só estilo: nenhuma conta mudou. A animação reaproveita a entrada que a Visão já tem (classe .anima, que o Painel só liga ao abrir a tela). */
+#visao > *{max-width:1380px;margin-left:auto;margin-right:auto}
+
+/* título de cada bloco com uma linha fina que separa, em vez de texto solto */
+#visao .sec-tit{display:flex;align-items:center;gap:12px;margin:22px auto 10px}
+#visao .sec-tit::after{content:"";flex:1;height:1px;background:#2f2f2f}
+
+/* "Agora": cinco cartões separados (como os do Resumo) em vez de uma faixa colada */
+#visao .faixa-resumo{gap:10px;background:transparent!important;border:0!important;box-shadow:none}
+#visao .fr-item{background:#242424!important;border:1px solid #333!important;border-radius:8px!important;padding:14px 16px;transition:border-color .2s,transform .2s}
+#visao .fr-item:hover{border-color:#4a4a4a!important;transform:translateY(-1px)}
+#visao .fr-item .kpi-v{font-size:30px}
+
+/* cartões e tabelas: mesma borda e o mesmo realce suave ao passar o mouse */
+#visao .cartao{border-color:#333;transition:border-color .2s}
+#visao .cartao:hover{border-color:#404040}
+#visao .tabela tbody tr{transition:background .12s}
+#visao .tabela tbody tr:hover td{background:#2a2a2a}
+
+/* ligações: a mesma cor azul dos gráficos do Resumo (antes um verde-água que não combinava) */
+#visao .lig-bl .tr i{background:var(--rs-a,#3b8fe3)}
+
+/* entrada suave dos blocos de baixo, só quando a tela abre (nunca a cada atualização) */
+.anima .sec-tit,.anima .cartao,.anima .tabela-wrap{animation:subir .45s ease both}
+.anima .cartao{animation-delay:.1s}
+@media (prefers-reduced-motion:reduce){.anima .sec-tit,.anima .cartao,.anima .tabela-wrap{animation:none}#visao .fr-item,#visao .cartao{transition:none}}

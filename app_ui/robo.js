@@ -68,7 +68,7 @@ function rbLinha(x, tipo) {
   const t = rbTrilha(x), agente = (typeof AG !== "undefined" && AG[x.hotel]) || "";
   const ultimoEnvio = (x.envios || []).slice(-1)[0]?.quando || "";
   const onde = tipo === "and" ? `<b>Enviando agora</b>${agente ? ` pelo PC de ${esc(agente)}` : ""}`
-    : tipo === "env" ? `<b>Esperando o envio ao hotel</b>`
+    : tipo === "env" ? `<b>Na fila para ir ao hotel</b>`
     : tipo === "ok" ? `Concluído${ultimoEnvio ? " às " + esc(ultimoEnvio.slice(11, 16)) : ""}`
     : (x.nfs || []).length ? `<b>NF emitida</b> · falta enviar ao hóspede` : `Enviado ao hotel · <b>esperando a NF</b>`;
   const icone = tipo === "and" ? rbGira(14) : tipo === "ok" ? rbIc("ok", 16, "rb-ok") : rbIc("rel", 16, "rb-cz");
@@ -90,9 +90,17 @@ function rbAjuda(texto) {   // o que fazer, por tipo de aviso (mantém simples: 
   if (/sem envio ao hotel/i.test(texto)) return { ver: true };
   return {};
 }
+function rbFrase(t) {   // os dois avisos mais comuns, dito do jeito que a equipe fala
+  let q;
+  if ((q = t.match(/^Caixa de Sa[ií]da do Outlook de (.+?) travada: (\d+) e-mail\(s\) parado\(s\) há mais de (\d+) min/)))
+    return [`O Outlook de ${q[1]} não está enviando`, `${q[2]} ${+q[2] === 1 ? "e-mail preso" : "e-mails presos"} na Caixa de Saída há mais de ${q[3]} min`];
+  if ((q = t.match(/^PC de (.+?) rodando outra vers[ãa]o \(/)))
+    return [`O PC de ${q[1]} está com uma versão diferente do Painel`, `Em Máquinas, use "Atualizar todos os PCs"`];
+  return null;
+}
 function rbAvisos(m) {
   return m.avisos.slice(0, 4).map((a, i) => {
-    const mt = String(a.texto || "").match(/^(.*?)(?:: |\. )(.*)$/), titulo = mt ? mt[1] : a.texto, sub = mt ? mt[2] : "", aj = rbAjuda(a.texto || "");
+    const mt = String(a.texto || "").match(/^(.*?)(?:: |\. )(.*)$/), [titulo, sub] = rbFrase(a.texto || "") || [mt ? mt[1] : a.texto, mt ? mt[2] : ""], aj = rbAjuda(a.texto || "");
     const aberta = !!rbz.ajuda[i];
     const botao = aj.passos ? `<button type="button" class="rb-bt" data-rb-ajuda="${i}" aria-expanded="${aberta}">Como resolver ${rbIc("ch", 14)}</button>`
       : aj.ver ? `<button type="button" class="rb-bt" data-rb-ver-pedidos>Ver os pedidos</button>`
@@ -102,10 +110,34 @@ function rbAvisos(m) {
     return `<div class="rb-aviso">${rbIc("al", 18, "rb-vm")}<p>${esc(titulo)}${sub ? `<small>${esc(sub)}</small>` : ""}</p>${botao}${passos}</div>`;
   }).join("");
 }
+// O robô escreve o resultado da rodada numa frase só ("0 e-mail(s) enviado(s), 0 solicitação(ões) marcada(s) TRUE; 3 e-mail(s) falharam; avisos: ...").
+// Aqui vira número e lista, em português simples (João, 08/11/2026: "não dá pra entender nada do que está escrito").
+function rbLerResumo(txt) {
+  const t = String(txt || "").replace(/^\W+\s*/u, "");
+  const m = t.match(/(\d+) e-mail\(s\) enviado\(s\), (\d+) solicita[çc][ãa]o\(ões\) marcada\(s\) TRUE/);
+  if (!m) return null;
+  const f = t.match(/(\d+) e-mail\(s\) falharam/), av = t.match(/avisos: (.*)$/);
+  const avisos = av ? av[1].split("; ").map(x => {
+    const q = x.match(/^E-mail \S+ \(Solicita[çc][ãa]o NF - (.+?) - (.+)\) parado na Caixa de Sa[ií]da há (\d+) min$/);
+    return q ? { hotel: q[1], hospede: q[2], min: +q[3] } : { texto: x };
+  }) : [];
+  return { enviados: +m[1], marcadas: +m[2], falharam: f ? +f[1] : 0, avisos };
+}
+const rbHa = min => min < 60 ? `${min} min` : min < 1440 ? `${Math.floor(min / 60)} h` : `${Math.floor(min / 1440)} ${Math.floor(min / 1440) === 1 ? "dia" : "dias"}`;
 function rbRodada(m) {
   if (!m.env.modo) {
-    const t = m.ultima ? `Terminou às ${rbHora(m.ultima)}${m.s.resumo ? ". " + esc(String(m.s.resumo).replace(/^\W+\s*/u, "")) : "."}` : "Ainda não há rodada registrada neste PC.";
-    return `<div class="rb-bloco"><h4>Última rodada</h4><p class="rb-txt">${t}</p></div>`;
+    if (!m.ultima) return `<div class="rb-bloco"><h4>Última rodada</h4><p class="rb-txt">Ainda não há rodada registrada neste PC.</p></div>`;
+    const r = rbLerResumo(m.s.resumo);
+    if (!r) return `<div class="rb-bloco"><h4>Última rodada · ${esc(rbHora(m.ultima))}</h4><p class="rb-txt">${esc(String(m.s.resumo || "").replace(/^\W+\s*/u, ""))}</p></div>`;
+    const presos = r.avisos.filter(a => a.hotel).sort((a, b) => b.min - a.min), outros = r.avisos.filter(a => !a.hotel);
+    const aberto = !!rbz.abertos.pr, vistos = aberto ? presos : presos.slice(0, 4);
+    const lista = presos.length ? `<h5>Parados na Caixa de Saída <em>${presos.length}</em></h5>${vistos.map(a => `<div class="rb-pr"><div><b>${esc(a.hotel)}</b><span>${esc(a.hospede)}</span></div><time>há ${rbHa(a.min)}</time></div>`).join("")}
+      ${presos.length > 4 ? `<button type="button" class="rb-mais" data-rb-mais="pr">${aberto ? "Ver menos" : `Ver os outros ${presos.length - 4}`}</button>` : ""}
+      <p class="rb-leg">Parado quer dizer: o e-mail foi escrito, mas o Outlook não conseguiu enviar. A causa costuma ser o Outlook sem internet ou pedindo senha.</p>` : "";
+    return `<div class="rb-bloco"><h4>Última rodada · ${esc(rbHora(m.ultima))}</h4>
+      <div class="rb-nums"><div><b>${r.enviados}</b><span>e-mails enviados ao hotel</span></div><div><b>${r.marcadas}</b><span>pedidos marcados como enviados</span></div>
+        <div class="${r.falharam ? "vm" : ""}"><b>${r.falharam}</b><span>${r.falharam === 1 ? "e-mail falhou" : "e-mails falharam"}</span></div></div>
+      ${lista}${outros.map(a => `<p class="rb-txt">${esc(a.texto)}</p>`).join("")}</div>`;
   }
   const e = rbEtapaDaRodada(m.env);
   const li = ETAPAS_ENVIO.map(([nome], k) => {
@@ -137,6 +169,9 @@ function rbSkeleton() {
 }
 
 // ---------- aba Agora ----------
+// As quatro barrinhas de cada pedido (verde = feito, azul = agora, cinza = falta) nunca foram explicadas na tela (João, 08/11/2026)
+const rbLegendaTrilha = () => `<div class="rb-leg-tri"><span>Cada pedido tem 4 barrinhas:</span>${["Pedido recebido", "Enviado ao hotel", "NF emitida", "NF enviada ao hóspede"].map((n, i) =>
+  `<span class="rb-lt"><i class="${i < 2 ? "f" : ""}"></i>${n}</span>`).join("")}<span>· verde = feito · azul = agora · cinza = falta</span></div>`;
 function rbAgora(m) {
   if (m.carregando) return `<div class="rb-corpo"><div class="rb-main"><p class="rb-frase">Lendo os pedidos…</p>${rbSkeleton()}</div></div>`;
   if (!m.ligado) return `<div class="rb-corpo"><div class="rb-main"><div class="rb-vazio" style="padding-top:88px"><b>O robô está desligado.</b>Ele parou de copiar e enviar os pedidos. Os pedidos que chegarem ficam esperando.
@@ -149,12 +184,12 @@ function rbAgora(m) {
   else frase = "Tudo certo. Nenhum pedido esperando.";
   const sub = [m.ultima ? `Última rodada às ${rbHora(m.ultima)}` : "", m.rodando && m.env.inicio ? `começou às ${rbHora(new Date(m.env.inicio))}` : "",
     !m.rodando && m.proxima ? `próxima por volta das ${rbHora(m.proxima)}` : ""].filter(Boolean).join(" · ");
-  const grupos = rbGrupo("and", m.rodando ? "Em andamento" : "Esperando o envio ao hotel", m.esperando, m.rodando ? "and" : "env", m.rodando ? 12 : 8)
+  const grupos = rbGrupo("and", m.rodando ? "Em andamento" : "Na fila para ir ao hotel", m.esperando, m.rodando ? "and" : "env", m.rodando ? 12 : 8)
     + rbGrupo("nf", "Esperando a NF", m.espNF, "nf", 5, m.antigos ? `<button type="button" class="rb-mais rb-antigos" data-rb-ver-pedidos>${m.antigos} mais antigos (mais de 7 dias) ficam em Notas fiscais ${rbIc("cr", 14)}</button>` : "")
     + rbGrupo("ok", "Concluídos hoje", m.concluidos, "ok", 3);
   const vazio = !grupos ? `<div class="rb-vazio"><b>Nenhum pedido hoje até agora.</b>Quando chegar um formulário, ele aparece aqui sozinho, com o caminho completo.</div>` : "";
   return `<div class="rb-corpo"><div class="rb-main"><p class="rb-frase">${frase}</p><p class="rb-fsub">${esc(sub)}</p>${m.env.modo ? rbSeg(m) : ""}
-    ${rbAvisos(m)}${grupos || vazio}</div>${rbLado(m)}</div>`;
+    ${rbAvisos(m)}${grupos ? rbLegendaTrilha() : ""}${grupos || vazio}</div>${rbLado(m)}</div>`;
 }
 
 // ---------- aba Registro: o log em frases ----------

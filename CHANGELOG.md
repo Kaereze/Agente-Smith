@@ -9,6 +9,19 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-11-08 (2: organização, segurança e design)
+
+### Mudou
+- **Projeto organizado por assunto.** Os 58 módulos de `src/` foram para 7 pastas: `painel`, `emails`, `notas`, `central`, `rede`, `sistema`, `privacidade`. Ficam soltos em `src/` só os 12 programas que os PCs abrem pelo caminho (`app_servidor.py`, `conferente.py`, `sincronizar.py`...). Cada pasta tem um `__init__.py` que diz, em português simples, quando mexer ali. Os imports foram reescritos por ferramenta (492) e os 820 testes confirmam. Mapa em `COMECE_AQUI.md` (raiz) e índice de módulos gerado do código em `3 Mapa do projeto/Módulos por pasta.md`. O `CLAUDE.md` ganhou atalhos e as decisões já tomadas, para o Claude não gastar pergunta à toa.
+- **Resumo do dia, 2º ajuste (a partir da foto com dados reais):** o ponto do risquinho agora cola no fim da linha; o último cartão mostra a divisão do que ficou em aberto; mudanças viram pílulas coloridas; o gráfico ficou mais baixo, com o pico escrito direto; a barra de "NF pronta" não fica mais espremida.
+- **Aviso do sistema** saiu de cima do conteúdo (cobria os números) e virou uma pastilha na barra de baixo, junto do botão de caixas com problema. A lista sobe dali com animação curta, mostra os graves primeiro, fecha com Esc ou clicando fora, e pulsa só quando entra aviso novo. O texto técnico virou frase ("O Outlook de Maria não está enviando").
+- **Central do Robô em português simples:** a "Última rodada" deixou de ser um parágrafo e virou 3 números mais a lista dos e-mails parados (hotel, hóspede, "há 8 dias"); "Esperando o envio ao hotel" virou "Na fila para ir ao hotel"; as 4 barrinhas de cada pedido ganharam legenda.
+- **Visão geral centralizada** (coluna de no máximo 1.380 px) e a parte de baixo no mesmo desenho do Resumo: cartões separados no "Agora", títulos com linha fina, realce suave ao passar o mouse, ligações na mesma cor azul, entrada suave só ao abrir a tela.
+
+### Segurança
+- Token do Painel comparado em tempo constante; teto de 64 MB no corpo dos pedidos (recusa com 413); cliente que fecha a janela no meio da resposta deixou de gerar erro no log.
+- **bandit** (análise estática) limpo para problema médio ou grave; os 14 casos conhecidos foram marcados com a justificativa (SHA-1 só como identificador, SQL só de colunas fixas, bind da rede). **pip-audit**: nenhuma falha conhecida. Os dois passaram a rodar no GitHub (`testes.yml`), junto do teste.
+
 ## [2026.11.08] — 2026-11-08 (estrutura, LGPD, armazém dos dados e Resumo novo; inclui a seção logo abaixo)
 
 ### Mudou

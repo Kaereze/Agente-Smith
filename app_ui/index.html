@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="/pecas/resumo_dia.css">
 <link rel="stylesheet" href="/pecas/filtro_hoteis.css">
 <link rel="stylesheet" href="/estilo.css">
+<link rel="stylesheet" href="/pecas/avisos.css">
+<link rel="stylesheet" href="/pecas/visao_geral.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -98,7 +100,6 @@
       <div class="ol-faixa-g" id="ol-faixa-g" role="toolbar" aria-label="Comandos"></div>
     </header>
 
-    <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
@@ -161,6 +162,8 @@
       <span class="ol-contagem" id="ol-contagem"></span>
       <span class="pill demo oculta" id="pill-demo">Modo demonstração · dados fictícios</span>
       <span class="pill demo oculta" id="pill-casa" title="Este PC só vê os dados reais: responder, enviar NF e marcar lido ficam nos PCs do trabalho">Modo casa · só visualização</span>
+      <span class="rodape-esp" aria-hidden="true"></span>
+      <div class="saude oculta" id="saude" role="alert" aria-live="polite"></div>
       <div class="sync">
         <span class="pill rb-chip" id="robo" role="button" tabindex="0">Robô</span>
         <span class="pill rs-ic" id="sync" title="Central"><span class="dot" id="sync-dot"></span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/></svg><span class="so-leitor" id="sync-txt">conectando…</span></span>

@@ -15,7 +15,9 @@
     bt.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h5l1 3h6l1-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg><span class="cp-n"></span>`;
     pn = document.createElement("aside");
     pn.className = "cp-pn"; pn.hidden = true; pn.setAttribute("role", "dialog"); pn.setAttribute("aria-label", "Caixas com problema");
-    document.body.append(bt, pn);
+    const sync = document.querySelector(".rodape-status .sync");   // o botão mora na barra de baixo, junto dos avisos (08/11/2026)
+    if (sync) sync.before(bt); else document.body.append(bt);
+    document.body.append(pn);
     bt.addEventListener("click", () => { aberto = !aberto; pn.hidden = !aberto; if (aberto) { buscar(true); pintar(); } });
     pn.addEventListener("click", e => {
       const b = e.target.closest("button"); if (!b) return;

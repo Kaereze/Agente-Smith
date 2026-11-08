@@ -187,6 +187,7 @@ function resumoDiaHtml() {
           <span class="tags-nf">${tagsPedido(it.s)}</span><span class="rd-pz">${it.s.prazo ? prazoHtml(it.s.prazo) : ""}</span></button>`).join("")
       : `<div class="vazio">Nada urgente nem com dado faltando.</div>`,
   };
+  dados.kpis[4].mini = dados.abertos;   // o último cartão não tem série de 7 dias: mostra a divisão do que ficou em aberto
   // a animação roda quando os números mudam ou a tela acabou de abrir (mais de 20 s sem desenhar); no refresh de 15 s, não repete
   const assinatura = JSON.stringify([pn.resumo, kpis.map(k => k.v), horas, dados.abertos, dados.equipe, dados.hoteis]);
   pn.rsAnimar = assinatura !== pn.rsAssinatura || Date.now() - (pn.rsDesenhado || 0) > 20000;

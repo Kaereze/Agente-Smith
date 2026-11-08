@@ -16,21 +16,27 @@ const rsDados = obj => rsEsc(JSON.stringify(obj));
 function rsSpark(vals) {
   if (!vals || vals.length < 2) return "";
   const max = Math.max(...vals), min = Math.min(...vals), n = vals.length;
-  const pts = vals.map((v, i) => [i * 200 / (n - 1), 30 - (max === min ? 15 : (v - min) / (max - min) * 26)]);
-  const ult = pts[n - 1];
-  return `<svg class="rs-spark" viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true">
-    <path class="rs-tr" pathLength="1" d="M${pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L")}" stroke="var(--rs-a)" vector-effect="non-scaling-stroke"/>
-    <circle cx="${ult[0]}" cy="${ult[1].toFixed(1)}" r="3" fill="var(--rs-a)"/></svg>`;
+  const pts = vals.map((v, i) => [i * 200 / (n - 1), 4 + 26 - (max === min ? 13 : (v - min) / (max - min) * 26)]);
+  const linha = "M" + pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L");
+  // o ponto do fim é um elemento HTML (e não um círculo dentro do SVG esticado): fica redondo e colado no fim da linha em qualquer largura
+  return `<div class="rs-spark" aria-hidden="true"><svg viewBox="0 0 200 34" preserveAspectRatio="none"><path class="rs-sp-area" d="${linha}L200,34L0,34Z"/><path class="rs-sp-linha" d="${linha}"/></svg>
+    <i class="rs-ponto-fim" style="top:${(pts[n - 1][1] / 34 * 100).toFixed(1)}%"></i></div>`;
+}
+
+function rsMini(abertos) {   // cartão sem série de 7 dias: mostra a divisão do que ficou em aberto
+  const tot = abertos.reduce((s, a) => s + a.n, 0) || 1;
+  return `<div class="rs-mini" aria-hidden="true">${abertos.filter(a => a.n > 0).map(a => `<span style="flex:${a.n} 1 0;background:${RS_COR[a.k]}"></span>`).join("")}</div>
+    <span class="rs-nota">${abertos.filter(a => a.n > 0).map(a => `${a.n} ${a.k === "a" ? "sem NF" : a.k === "c" ? "falta dado" : "NF pronta"}`).join(" · ")}</span>`;
 }
 
 function rsKpis(d) {
   return `<div class="rs-kpis">${d.kpis.map((k, i) => `<div class="rs-cartao rs-kpi" style="--i:${i}">
     <small>${rsEsc(k.r)}</small><b data-cnt="${k.v == null ? "" : k.v}" data-fmt="${k.fmt}">${k.v == null ? "—" : rsNum(k.v, k.fmt)}</b>
-    <span class="rs-delta">${k.delta || ""}</span>${rsSpark(k.spark)}${k.nota ? `<span class="rs-nota">${rsEsc(k.nota)}</span>` : ""}</div>`).join("")}</div>`;
+    <span class="rs-delta">${k.delta || ""}</span>${k.mini ? rsMini(k.mini) : rsSpark(k.spark)}${k.nota ? `<span class="rs-nota">${rsEsc(k.nota)}</span>` : ""}</div>`).join("")}</div>`;
 }
 
 function rsLinha(d) {
-  const W = 720, H = 250, m = { e: 34, d: 14, t: 12, b: 26 }, hs = d.horas, n = hs.length;
+  const W = 720, H = 200, m = { e: 34, d: 14, t: 18, b: 26 }, hs = d.horas, n = hs.length;
   const max = Math.max(4, ...hs.map(x => x.ped), ...hs.map(x => x.nfs)), topo = Math.ceil(max / 4) * 4;
   const X = i => m.e + i * (W - m.e - m.d) / Math.max(1, n - 1), Y = v => H - m.b - v / topo * (H - m.b - m.t);
   let eixo = "";
@@ -38,6 +44,12 @@ function rsLinha(d) {
   hs.forEach((x, i) => { if (i % 2 === 0) eixo += `<text x="${X(i)}" y="${H - 6}" text-anchor="middle">${x.h}h</text>`; });
   const trilha = vals => "M" + vals.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join("L");
   const area = `${trilha(hs.map(x => x.ped))}L${X(n - 1)},${Y(0)}L${X(0)},${Y(0)}Z`;
+  const pico = (vals, cor) => {   // rótulo direto no ponto mais alto (só dele: não se escreve número em todo ponto)
+    const v = Math.max(...vals), i = vals.indexOf(v);
+    if (v <= 0) return "";
+    const ancora = i < 2 ? "start" : i > n - 3 ? "end" : "middle";
+    return `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.5" fill="${cor}" class="rs-pt"/><text class="rs-pico" x="${X(i).toFixed(1)}" y="${(Y(v) - 8).toFixed(1)}" text-anchor="${ancora}">${v} · ${hs[i].h}h</text>`;
+  };
   const colunas = hs.map((x, i) => {
     const larg = (W - m.e - m.d) / Math.max(1, n - 1);
     return `<rect class="rs-hit" x="${(X(i) - larg / 2).toFixed(1)}" y="${m.t}" width="${larg.toFixed(1)}" height="${H - m.t - m.b}" data-i="${i}" data-x="${X(i).toFixed(1)}" data-ya="${Y(x.ped).toFixed(1)}" data-yb="${Y(x.nfs).toFixed(1)}"
@@ -48,7 +60,7 @@ function rsLinha(d) {
     <path d="${area}" fill="var(--rs-a)" class="rs-area"/>
     <path class="rs-tr rs-fio" pathLength="1" d="${trilha(hs.map(x => x.ped))}" stroke="var(--rs-a)"/>
     <path class="rs-tr rs-fio" pathLength="1" d="${trilha(hs.map(x => x.nfs))}" stroke="var(--rs-b)"/>
-    <line class="rs-cruz" y1="${m.t}" y2="${H - m.b}" opacity="0"/><circle class="rs-pa" r="4" fill="var(--rs-a)" opacity="0"/><circle class="rs-pb" r="4" fill="var(--rs-b)" opacity="0"/>${colunas}</svg>`;
+    ${pico(hs.map(x => x.ped), "var(--rs-a)")}${pico(hs.map(x => x.nfs), "var(--rs-b)")}<line class="rs-cruz" y1="${m.t}" y2="${H - m.b}" opacity="0"/><circle class="rs-pa" r="4" fill="var(--rs-a)" opacity="0"/><circle class="rs-pb" r="4" fill="var(--rs-b)" opacity="0"/>${colunas}</svg>`;
 }
 
 function rsBarras(linhas, duas) {

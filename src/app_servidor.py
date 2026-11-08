@@ -10,6 +10,7 @@ sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 import datetime
 import gzip
 import hashlib
+import hmac
 import json
 import os
 import io
@@ -99,6 +100,7 @@ def _pagina_inteira(tentativas=6):
             return html
         time.sleep(0.25)
     return html
+CORPO_MAXIMO_BYTES = 64 * 1024 * 1024   # 64 MB: cabe o maior anexo (em base64) e nada além disso
 CAMINHO_CACHE = armazem.caminho("painel_cache.pkl")
 CAMINHO_CANCELADAS = armazem.caminho("canceladas.json")
 CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
@@ -712,21 +714,24 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                     junto = {k: corpo[k] for k in VOLATEIS_JUNTO if isinstance(corpo, dict) and k in corpo}
                     dados_ = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str).encode("utf-8")
             dados_, gz = comprimir_se_vale(dados_, self.headers.get("Accept-Encoding"))
-            self.send_response(codigo)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Cache-Control", "no-store")
-            if versao:
-                self.send_header("X-Versao", versao)
-            if gz:
-                self.send_header("Content-Encoding", "gzip")
-                self.send_header("Vary", "Accept-Encoding")
-            self.send_header("Content-Length", str(len(dados_)))
-            self.end_headers()
-            self.wfile.write(dados_)
+            try:
+                self.send_response(codigo)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                if versao:
+                    self.send_header("X-Versao", versao)
+                if gz:
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
+                self.send_header("Content-Length", str(len(dados_)))
+                self.end_headers()
+                self.wfile.write(dados_)
+            except (ConnectionError, TimeoutError):   # a janela fechou ou trocou de tela no meio da resposta: não é erro do Painel
+                logger.debug("cliente saiu antes do fim da resposta")
 
         def _autorizado(self):
             # Host fixo barra DNS rebinding; token barra POST vindo de outra página aberta no navegador
-            return self.headers.get("Host") in hosts_ok and self.headers.get("X-Token") == token
+            return self.headers.get("Host") in hosts_ok and hmac.compare_digest(str(self.headers.get("X-Token") or ""), token)   # tempo constante
 
         def do_GET(self):
             ultimo_uso[0] = time.monotonic()
@@ -814,7 +819,12 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             ultimo_uso[0] = time.monotonic()
             if not self._autorizado():
                 return self._json({"erro": "não autorizado"}, 403)
-            tamanho = int(self.headers.get("Content-Length") or 0)
+            try:
+                tamanho = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                return self._json({"erro": "tamanho inválido"}, 400)
+            if tamanho < 0 or tamanho > CORPO_MAXIMO_BYTES:   # teto do que a tela pode mandar (anexo vai em base64): barra pedido enorme na memória
+                return self._json({"erro": "pedido grande demais"}, 413)
             try:
                 corpo = json.loads(self.rfile.read(tamanho) or b"{}")
             except ValueError:

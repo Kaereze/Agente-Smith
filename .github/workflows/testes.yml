@@ -38,5 +38,11 @@ jobs:
       - name: Conferir erros com o ruff (nome indefinido, import sem uso; ver ruff.toml)
         run: python -m ruff check --output-format github .
 
+      - name: Segurança do código (bandit: só problema médio ou grave; os casos conhecidos estão justificados no próprio código)
+        run: python -m bandit -r src -ll -q
+
+      - name: Falhas conhecidas nas bibliotecas (pip-audit): falha o teste se alguma tiver correção publicada
+        run: python -m pip_audit -r requirements.txt -r requirements-dev.txt --disable-pip --no-deps --progress-spinner off
+
       - name: Rodar os testes (inclui a trava contra vazamento de credenciais)
         run: python -m pytest -q -p no:cacheprovider

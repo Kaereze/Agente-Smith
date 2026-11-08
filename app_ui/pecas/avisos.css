@@ -1,0 +1,41 @@
+/* Avisos do sistema na barra de baixo (João, 08/11/2026): antes a bolha flutuava em cima do conteúdo e cobria os números.
+   Agora é uma pastilha dentro do rodapé; a lista sobe dela, com uma animação curta, e fecha com Esc ou clicando fora. */
+.rodape-status .rodape-esp{flex:1 1 auto}
+.rodape-status .sync{margin-left:0}
+.rodape-status #saude{position:relative!important;right:auto!important;bottom:auto!important;z-index:90;margin:0!important;padding:0!important;max-width:none;
+  display:flex!important;flex-direction:row;align-items:center;gap:0;background:transparent!important;border:0!important}
+body.tem-caixas .rodape-status #saude{bottom:auto!important}
+.rodape-status #saude.oculta{display:none!important}
+.rodape-status #saude .s-bolha{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 11px 0 9px;border-radius:12px;border:1px solid #5a4a1c;
+  background:#3a3220;color:#e6c067;font:inherit;font-size:12px;cursor:pointer;box-shadow:none;transition:filter .15s}
+.rodape-status #saude.grave .s-bolha{background:#3a2326;color:#ff8d95;border-color:#5a2c31}
+.rodape-status #saude .s-bolha:hover{filter:brightness(1.15)}
+.rodape-status #saude .s-bolha:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.rodape-status #saude .s-bolha[aria-expanded="true"]{box-shadow:0 0 0 1px currentColor}
+.rodape-status #saude .s-bolha .ic{width:14px;height:14px}
+.rodape-status #saude.nova .s-bolha{animation:av-pulso 1.6s ease-out 2}
+@keyframes av-pulso{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 55%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
+
+.rodape-status #saude .s-painel{position:absolute;right:0;bottom:calc(100% + 12px);width:min(420px,calc(100vw - 32px));max-height:min(62vh,440px);overflow:auto;
+  background:#242424;border:1px solid #4a4a4a;border-radius:10px;box-shadow:0 18px 44px rgba(0,0,0,.5);padding:2px 0 10px;transform-origin:bottom right;
+  animation:av-sobe .2s cubic-bezier(.2,.8,.2,1)}
+.rodape-status #saude .s-painel[hidden]{display:none}
+@keyframes av-sobe{from{opacity:0;transform:translateY(10px) scale(.98)}}
+.rodape-status #saude .s-cab{padding:10px 14px 8px;border-bottom:1px solid #333}
+.rodape-status #saude .s-cab b{font-size:13px;color:#f0f0f0}
+.rodape-status #saude .s-linha{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;font-size:12.5px;line-height:1.45;color:#e8e8e8;border-top:1px solid #2f2f2f!important}
+.rodape-status #saude .s-cab + .s-linha{border-top:0!important}
+.rodape-status #saude .s-linha b{display:block;font-weight:600}
+.rodape-status #saude .s-linha small{display:block;color:#a8a8a8;font-size:12px;margin-top:1px}
+.rodape-status #saude .s-linha .ic{width:15px;height:15px;flex:none;margin-top:2px;color:#ff8d95}
+.rodape-status #saude .s-linha.warn .ic{color:#e6c067}
+.rodape-status #saude .s-ver{margin:8px 14px 0;border:1px solid #4a4a4a;background:#2d2d2d;color:#f0f0f0;border-radius:6px;padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.rodape-status #saude .s-ver:hover{border-color:#479ef5}
+
+/* botão de caixas com problema: junto dos avisos, na barra de baixo */
+.rodape-status .cp-bt{position:relative;right:auto;bottom:auto;width:30px;height:24px;border-radius:12px;margin-right:6px;z-index:90}
+.rodape-status .cp-bt svg{width:16px;height:16px}
+.rodape-status .cp-bt .cp-n{right:-5px;top:-6px}
+.rodape-status .cp-bt.pisca{animation-iteration-count:3}
+.cp-pn{right:22px;bottom:46px;transform-origin:bottom right}
+@media (prefers-reduced-motion:reduce){.rodape-status #saude .s-painel,.rodape-status #saude.nova .s-bolha,.rodape-status .cp-bt.pisca,.cp-pn{animation:none}}
