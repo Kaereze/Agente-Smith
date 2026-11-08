@@ -1,6 +1,6 @@
 import datetime
 
-import espelho_emails as ee
+from emails import espelho_emails as ee
 
 D = datetime.datetime
 
@@ -54,7 +54,7 @@ def test_eventos_lido_nao_lido_excluir():
 
 
 def test_voucher_com_dois_quartos_e_nota_dividida():
-    from controle_nf import quartos_da_reserva
+    from notas.controle_nf import quartos_da_reserva
     recibo = ("Recibo\nN° do itinerário da Hoteis.com: 72077571275512\n2 quartos para 3 diárias\nQuarto duplo econômico\n"
               "Reserva feita para: Lorena Perego Mendonça\nQuarto duplo econômico\nReserva feita para: José Eduardo Canteli\n"
               "Preço do quarto 1\nPreço do quarto 2\nTotal R$ 1.218,75")
@@ -76,7 +76,7 @@ def test_quartos_vao_e_voltam_pela_aba():
 
 
 def test_hospede_dizendo_que_falta_nota():
-    from controle_nf import reclama_falta_nota
+    from notas.controle_nf import reclama_falta_nota
     assert reclama_falta_nota("Bom dia,\nFicou faltando a nf referente a esse outro pagamento.") == \
         "Ficou faltando a nf referente a esse outro pagamento."
     assert reclama_falta_nota("Referente ao dia 29/09 e 30/09, ele ficou mais duas diárias além da que foi enviada.")
@@ -86,7 +86,7 @@ def test_hospede_dizendo_que_falta_nota():
 
 
 def test_resposta_do_hospede_nao_e_o_email_do_robo():
-    from controle_nf import e_email_do_robo
+    from notas.controle_nf import e_email_do_robo
     cod = "NF-CBC1B39537"
     assert e_email_do_robo("[1/1 ✅] Solicitação NF - JANGADEIRO - GERALDO", "...\nCódigo de envio: NF-CBC1B39537", cod)
     assert not e_email_do_robo("[1/1 ✅] RE: NF 196 - GERALDO", "Ficou faltando\n____\nDe: nf\nCódigo de envio: NF-CBC1B39537", cod)
@@ -227,8 +227,8 @@ def test_espelho_nao_regrava_a_aba_se_nada_mudou(tmp_path, monkeypatch):
 
 
 def test_nf_no_dropbox_vira_etiqueta_no_email_do_hospede(tmp_path, monkeypatch):
-    import envio_nf
-    from controle_nf import CATEGORIA_NF_EMITIDA
+    from emails import envio_nf
+    from notas.controle_nf import CATEGORIA_NF_EMITIDA
     monkeypatch.setattr(ee, "CAMINHO_ESTADO", tmp_path / "espelho.json")
     cfg = {"planilha_central_id": "C", "aba_cadastro_hoteis": "Cadastro_Hoteis"}
     central, ol = Central(), OutlookFalso("nf@luxor.com")
@@ -248,8 +248,8 @@ def test_nf_no_dropbox_vira_etiqueta_no_email_do_hospede(tmp_path, monkeypatch):
 
 def test_etiqueta_nf_emitida_errada_sai_do_email(tmp_path, monkeypatch):
     """Usuário, 21/10/2026: "o robô tira sozinho" a etiqueta que não passa mais na regra. Dados inventados."""
-    import envio_nf
-    from controle_nf import CATEGORIA_NF_EMITIDA
+    from emails import envio_nf
+    from notas.controle_nf import CATEGORIA_NF_EMITIDA
     monkeypatch.setattr(ee, "CAMINHO_ESTADO", tmp_path / "espelho.json")
     cfg = {"planilha_central_id": "C", "aba_cadastro_hoteis": "Cadastro_Hoteis"}
     central, ol = Central(), OutlookFalso("nf@luxor.com")

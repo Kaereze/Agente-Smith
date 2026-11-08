@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-import titular  # noqa: E402
+from privacidade import titular  # noqa: E402
 
 
 def main(argv):

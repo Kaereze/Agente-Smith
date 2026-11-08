@@ -2,12 +2,12 @@
 import datetime
 
 from conftest import CABECALHO_HOTEL, linha_hotel
-from controle_nf import (Registro, abrir_registro, assunto_com_contador, categorias_atualizadas, ler_assunto_nf,
+from notas.controle_nf import (Registro, abrir_registro, assunto_com_contador, categorias_atualizadas, ler_assunto_nf,
                          paragrafo_status, situacao, tem_anexo_nf, trocar_paragrafo_status)
 from main import executar
-from modelos import Hotel
-from montar_email import montar_emails
-from sheets import interpretar_aba
+from notas.modelos import Hotel
+from emails.montar_email import montar_emails
+from central.sheets import interpretar_aba
 
 EXT = ["pdf", "xml", "zip"]
 DIA = datetime.datetime(2026, 9, 24, 14, 30)
@@ -155,7 +155,7 @@ def test_robo_de_envio_anota_no_registro(cfg, planilha, outlook, pastas_temporar
 
 
 def test_mesma_solicitacao_em_dois_emails_fica_igual_nos_dois():
-    from controle_nf import Registro
+    from notas.controle_nf import Registro
     base = {"aba": "A", "carimbo": "25/09/2026 20:34:48", "emails": ["x@y.com"], "tratativas": {}}
     reg = Registro({"solicitacoes": {"NF-1-01": {**base, "codigo": "NF-1", "nfs": {"1201": {"data": "2026-09-27T13:54"}}},
                                      "NF-2-01": {**base, "codigo": "NF-2", "nfs": {}}},

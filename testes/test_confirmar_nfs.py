@@ -1,6 +1,6 @@
 import datetime
 
-import app_dados as d
+from painel import app_dados as d
 import confirmar_nfs as c
 
 NOTA = ("NOTA FISCAL DE SERVIÇO " * 12 +

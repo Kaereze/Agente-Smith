@@ -1,7 +1,7 @@
 """Segredo da rede entre os PCs (29/10/2026): arquivo segredo-rede.txt ao lado da chave vale mais que o cálculo pela chave."""
 import json
 
-import rede_local
+from rede import rede_local
 
 
 def _chave(pasta, nome="chave-api.json", id_="abc123", privada="PRIVADA-FICTICIA"):

@@ -2,6 +2,7 @@
 de PC no ar, gráficos) e a tabela verde/creme do formulário ficam: não entram aqui."""
 from pathlib import Path
 from tela_texto import pagina
+from codigo_fonte import fonte
 
 RAIZ = Path(__file__).resolve().parents[1]
 HTML = pagina(RAIZ / "app_ui")
@@ -10,7 +11,7 @@ HTML = pagina(RAIZ / "app_ui")
 def test_a_tela_ja_nasce_no_cinza():
     assert '<div class="app modo-ol menu-fechado">' in HTML   # sem o instante da tela antiga verde ao abrir
     assert "html,body{background:#1f1f1f}" in HTML
-    assert 'background_color="#1f1f1f"' in (RAIZ / "src" / "app_janela.py").read_text(encoding="utf-8")
+    assert 'background_color="#1f1f1f"' in fonte(RAIZ, "app_janela")
 
 
 def test_modo_cinza_sem_o_verde_escuro():

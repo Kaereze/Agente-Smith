@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 import ajustes
-from ajustes_tabela import ENTRADAS, GRUPOS
+from sistema.ajustes_tabela import ENTRADAS, GRUPOS
 
 RAIZ = Path(__file__).resolve().parents[1]
 POR_CHAVE = {e[0]: e for e in ENTRADAS}

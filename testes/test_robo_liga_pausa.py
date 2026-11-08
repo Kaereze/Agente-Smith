@@ -6,9 +6,10 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
 import app_servidor  # noqa: E402
+from codigo_fonte import fonte_servidor
 
 ROBO = (RAIZ / "app_ui" / "robo.js").read_text(encoding="utf-8")
-SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+SERVIDOR = fonte_servidor(RAIZ)
 
 
 class _Backend:

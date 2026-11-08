@@ -2,9 +2,9 @@
 A marca fica no Outlook do PC dono (categoria) e vale na hora pelo evento da equipe."""
 import datetime
 
-import correio
-import envio_nf
-import espelho_emails as ee
+from emails import correio
+from emails import envio_nf
+from emails import espelho_emails as ee
 from test_correio_acoes import SEM_FORM, _espelho_do_dono, _servico
 from test_envio_nf import CAIXA, Relogio, _ler, _prep
 

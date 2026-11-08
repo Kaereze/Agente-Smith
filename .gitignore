@@ -26,3 +26,6 @@ chave*.json
 
 # ajustes do administrador: só neste PC, nunca sobem (04/11/2026)
 ajustes.json
+
+# pasta antiga do Obsidian (só tinha a configuração da janela): o cofre é "Segundo Cérebro (Agente Smith)"
+Segundo Cérebro/

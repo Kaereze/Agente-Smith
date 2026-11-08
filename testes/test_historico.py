@@ -2,7 +2,7 @@
 import csv
 
 from conftest import ARACAJU, CABECALHO_HOTEL, ESTRELA, Relogio
-from historico import (ABA_LOG, ATENCAO, CABECALHO_LOG, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_CLAUDIO,
+from notas.historico import (ABA_LOG, ATENCAO, CABECALHO_LOG, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_CLAUDIO,
                        ORIGEM_SEPARADO, SUCESSO, Execucao, _faixas, texto_simples)
 from main import executar, ler_selecao
 

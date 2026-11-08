@@ -4,9 +4,11 @@ from pathlib import Path
 
 import pytest
 
-import armazem
+from sistema import armazem
 
 SRC = Path(__file__).resolve().parents[1] / "src"
+from codigo_fonte import modulos  # noqa: E402
+RAIZ = SRC.parent
 
 
 def test_nome_fora_do_catalogo_e_erro():
@@ -23,13 +25,13 @@ def test_caminho_usa_a_pasta_de_estado_na_hora(monkeypatch, tmp_path):
 def test_todo_dado_tem_descricao_formato_e_dono_e_nome_unico():
     for nome, d in armazem.DADOS.items():
         assert nome == d.arquivo and d.para_que.strip() and d.quem.strip() and d.formato in {"json", "sqlite", "cache", "texto", "trava", "pasta"}, nome
-        assert (SRC / f"{d.quem}.py").exists(), f"{nome}: o módulo '{d.quem}' não existe"
+        assert d.quem in modulos(RAIZ), f"{nome}: o módulo '{d.quem}' não existe"
 
 
 def test_ninguem_monta_caminho_de_estado_por_conta_propria():
     """Arquivo novo em estado/: declare em src/armazem.py e use armazem.caminho(). Só armazem.py e config.py podem montar o caminho."""
     fora = []
-    for f in sorted(SRC.glob("*.py")):
+    for f in sorted(SRC.rglob("*.py")):
         if f.name in ("armazem.py", "config.py"):
             continue
         for n, linha in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
@@ -56,4 +58,4 @@ def test_o_mapa_dos_dados_do_cofre_lista_todo_arquivo_do_catalogo():
     """O documento é gerado por ferramentas/mapa_dos_dados.py; este teste avisa quando alguém muda o catálogo e esquece de gerar de novo."""
     doc = (SRC.parent / "Segundo Cérebro (Agente Smith)" / "6 Documentos" / "Mapa dos dados.md").read_text(encoding="utf-8")
     faltam = [d.arquivo for d in [*armazem.DADOS.values(), *armazem.BACKUPS] if f"`{d.arquivo}`" not in doc]
-    assert not faltam, f"rode: python ferramentas\mapa_dos_dados.py (faltam no mapa: {faltam})"
+    assert not faltam, f"rode: python ferramentas/mapa_dos_dados.py (faltam no mapa: {faltam})"

@@ -1,12 +1,12 @@
 """Etapa 2 (09/10/2026): prazo por tipo, hóspede único, pedido repetido, CPF/CNPJ da NF e motivo principal."""
 import datetime
 
-import analise_nf
-import app_dados as dados
-import correio
-import hospedes
-import prazos
-from controle_nf import conferir_conteudo, documento_diferente, documento_tomador, documento_valido
+from notas import analise_nf
+from painel import app_dados as dados
+from emails import correio
+from notas import hospedes
+from notas import prazos
+from notas.controle_nf import conferir_conteudo, documento_diferente, documento_tomador, documento_valido
 
 AGORA = datetime.datetime(2026, 10, 9, 12, 0)
 

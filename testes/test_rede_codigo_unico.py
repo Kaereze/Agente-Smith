@@ -2,8 +2,8 @@
 import http.client
 import json
 
-import ajustes_tabela
-import rede_local
+from sistema import ajustes_tabela
+from rede import rede_local
 
 SEGREDO = bytes(range(32))
 

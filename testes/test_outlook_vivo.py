@@ -1,8 +1,8 @@
 """Guardião do Outlook (13/10/2026): Outlook sem janela (aberto pelo COM) não baixa e-mail POP3 — o caso do PC do Cristian."""
 import datetime
 
-import outlook_vivo as ov
-import saude
+from emails import outlook_vivo as ov
+from painel import saude
 
 
 def _sem_cache(monkeypatch):

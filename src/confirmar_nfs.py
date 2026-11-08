@@ -26,18 +26,18 @@ import types
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-import app_dados as dados
-from arquivos import salvar_json, so_na_nuvem
-import armazem
+from painel import app_dados as dados
+from sistema.arquivos import salvar_json, so_na_nuvem
+from sistema import armazem
 from config import caminho_chave_google, carregar_config
-from controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
-from log_util import configurar_logging
-import outlook_vivo
-from sheets import ler_hoteis
+from notas.controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
+from sistema.log_util import configurar_logging
+from emails import outlook_vivo
+from central.sheets import ler_hoteis
 import ajustes
 
 logger = configurar_logging("confirmar_nfs")
@@ -230,7 +230,7 @@ def _itens_enviados(pasta, limite):
 
 def numeros_de_nf_enviados(assunto, anexos, extensoes):
     """Nºs das NFs que um e-mail levou: "NF 590 - NOME" no assunto (com anexo de NF) e/ou PDF/XML "NF 590 - NOME"."""
-    from controle_nf import tem_anexo_nf
+    from notas.controle_nf import tem_anexo_nf
     numeros = set()
     nf = ler_assunto_nf(assunto or "")
     if nf and tem_anexo_nf(anexos, extensoes):
@@ -345,7 +345,7 @@ def _agente_deste_pc():
 
 def _atividades(tipo, itens, montar, agente):
     """Uma linha por item; muitos de uma vez (conferência do ano) viram uma linha de resumo."""
-    import atividade
+    from painel import atividade
     if len(itens) > MAX_ATIVIDADES_POR_TIPO:
         return [atividade.linha(tipo, detalhe=f"{len(itens)} de uma vez (conferência em lote)", agente=agente)]
     return [atividade.linha(tipo, *montar(i), agente=agente) for i in itens]
@@ -536,7 +536,7 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
     if unicas:
         achadas = achadas + [(k, "nota única", f"“{frase}” ({origem})") for k, (frase, origem) in unicas.items()]
 
-    import atividade
+    from painel import atividade
     agente = _agente_deste_pc()
     atividades = []
     nfs_email = [(por_chave[k], n, p) for k, n, p in achadas if n != "nota única" and "e-mail" in p]
@@ -565,13 +565,13 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
 
 def rodar(namespace, cfg, usar_dropbox):
     """Chamado pelo conferente."""
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     backend = BackendGoogle(caminho_chave_google(cfg))
     return confirmar(backend, cfg, namespace, usar_dropbox=usar_dropbox, gravar=True)
 
 
 if __name__ == "__main__":
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     cfg = carregar_config()
     gravar = "--gravar" in sys.argv
     ns = None if "--sem-email" in sys.argv else outlook_vivo.aplicativo().GetNamespace("MAPI")

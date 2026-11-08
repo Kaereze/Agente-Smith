@@ -8,11 +8,11 @@ import time
 import pytest
 
 import app_servidor
-import cota_google
-import lock_execucao
+from central import cota_google
+from sistema import lock_execucao
 import sincronizar
-from vigia_formularios import VigiaFormularios
-import armazem
+from central.vigia_formularios import VigiaFormularios
+from sistema import armazem
 
 CAB = ["Carimbo de data/hora", "Endereço de e-mail", "Nome", "Enviado"]
 
@@ -112,7 +112,7 @@ def copia(cfg, tmp_path, monkeypatch):
         def ler_abas(self, planilha, abas, faixas=None):
             return {a: [list(l) for l in central.get(a, [])] for a in abas}, {}
 
-    import sheets
+    from central import sheets
     monkeypatch.setattr(sheets, "BackendGoogle", Backend)
     monkeypatch.setattr(sincronizar, "PAUSA_ENTRE_LEITURAS", 0)
     monkeypatch.setattr(sincronizar, "_ler_planilha_hotel", lambda cli, a, c: (lidos.append(a["id"]) or "Respostas", hoteis[a["id"]]))

@@ -7,22 +7,22 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-from controle_nf import abrir_registro
-from historico import (ATENCAO, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_MANUAL, SUCESSO, Execucao,
+from notas.controle_nf import abrir_registro
+from notas.historico import (ATENCAO, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_MANUAL, SUCESSO, Execucao,
                        JaEnviadas, explicar_aba_pulada, texto_simples)
-import armazem
+from sistema import armazem
 from config import e_principal, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, caminho_chave_google, carregar_config
-import robo_antigo
-from envio_pc_dono import NaoEnviado, com_pc_dono
-from diario_envios import MINUTOS_ATE_DESISTIR, DiarioEnvios, idade_minutos, solicitacoes_da_entrada
-from log_util import configurar_logging
-from montar_email import montar_emails
-from tratamento import normalizar
-from sheets import (ErroPlanilha, gravar_status, interpretar_aba, ler_hoteis, ler_pendentes, marcar_enviados,
+from notas import robo_antigo
+from emails.envio_pc_dono import NaoEnviado, com_pc_dono
+from emails.diario_envios import MINUTOS_ATE_DESISTIR, DiarioEnvios, idade_minutos, solicitacoes_da_entrada
+from sistema.log_util import configurar_logging
+from emails.montar_email import montar_emails
+from central.tratamento import normalizar
+from central.sheets import (ErroPlanilha, gravar_status, interpretar_aba, ler_hoteis, ler_pendentes, marcar_enviados,
                     nome_do_hotel_pela_aba, registrar_central, robo_ligado)
 import ajustes
 
@@ -404,9 +404,9 @@ OCUPADO = 3   # exit code quando a trava está com outra execução
 
 
 def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_lock=0):
-    from lock_execucao import adquirir_lock, liberar_lock
-    from outlook import OutlookNF
-    from sheets import BackendGoogle
+    from sistema.lock_execucao import adquirir_lock, liberar_lock
+    from emails.outlook import OutlookNF
+    from central.sheets import BackendGoogle
 
     agendado = "--agendado" in sys.argv
     origem = origem or (ORIGEM_AGENDADO if agendado else ORIGEM_MANUAL)

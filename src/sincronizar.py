@@ -14,21 +14,21 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-from arquivos import salvar_json
-import armazem
+from sistema.arquivos import salvar_json
+from sistema import armazem
 from config import PASTA_ESTADO, carregar_config, caminho_chave_google, e_principal
-from log_util import configurar_logging
-from sheets import BackendGoogle as _Backend
+from sistema.log_util import configurar_logging
+from central.sheets import BackendGoogle as _Backend
 
 _api = _Backend._api   # conta na cota deste programa (cota_google)
-from sheets import (VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha, nome_do_hotel_pela_aba,
+from central.sheets import (VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha, nome_do_hotel_pela_aba,
                     nome_intervalo)
-import robo_antigo
-from tratamento import detectar_formato_data, ler_data, normalizar
+from notas import robo_antigo
+from central.tratamento import detectar_formato_data, ler_data, normalizar
 import ajustes
 
 logger = configurar_logging("sincronizar")
@@ -459,7 +459,7 @@ def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
     mapear_fontes já pronto (a vigia guarda por 10 min e troca só a listagem do Drive)."""
     cfg = carregar_config()
     chave = caminho_chave_google(cfg)
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     backend = BackendGoogle(chave, somente_leitura=not gravar)
     cliente, central = backend._cliente, cfg["planilha_central_id"]
     m = mapa or mapear_fontes(backend, cfg, chave)
@@ -599,7 +599,7 @@ def _gravar_aba(backend, cliente, central, aba, linhas, criar):
 
 
 def rodar_agendado():
-    from lock_execucao import adquirir_lock, liberar_lock
+    from sistema.lock_execucao import adquirir_lock, liberar_lock
     if not e_principal(carregar_config()):
         logger.warning("⛔ Este PC está como conferente (config.local.json) — a cópia só roda no PC principal.")
         return 0
@@ -658,7 +658,7 @@ def _copiar_e_enviar():
     codigo = rodar_agendado()
     try:
         import main as robo_envio
-        from historico import ORIGEM_SOLICITACAO_NOVA
+        from notas.historico import ORIGEM_SOLICITACAO_NOVA
         logger.info("📨 Cópia feita — conferindo se tem solicitação pendente pra disparar...")
         codigo_envio = robo_envio.rodar(codigo_se_ocupado=0, origem=ORIGEM_SOLICITACAO_NOVA,
                                         quem="Robô (a cada 10 min)", esperar_lock=45)
@@ -669,7 +669,7 @@ def _copiar_e_enviar():
 
 
 if __name__ == "__main__":
-    import cota_google
+    from central import cota_google
     cota_google.configurar("sincronizar")
     if "--agendado" in sys.argv:
         sys.exit(copiar_e_enviar() if "--enviar" in sys.argv else rodar_agendado())

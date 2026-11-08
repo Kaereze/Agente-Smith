@@ -1,7 +1,7 @@
 import datetime
 import types
 
-import vigia_outlook as v
+from emails import vigia_outlook as v
 
 
 class Caixa:

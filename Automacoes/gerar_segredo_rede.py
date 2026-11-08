@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-import rede_local  # noqa: E402
+from rede import rede_local  # noqa: E402
 from config import caminho_chave_google, carregar_config  # noqa: E402
 
 

@@ -1,7 +1,7 @@
 from conftest import CABECALHO_HOTEL, linha_hotel
-from modelos import Hotel
-from montar_email import montar_assunto, montar_emails
-from sheets import interpretar_aba
+from notas.modelos import Hotel
+from emails.montar_email import montar_assunto, montar_emails
+from central.sheets import interpretar_aba
 
 
 def _solicitacoes(cfg, quantidade, hoteis):

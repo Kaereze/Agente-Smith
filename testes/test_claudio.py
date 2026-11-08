@@ -5,7 +5,7 @@ import json
 import conferente
 import main
 from conftest import CENTRAL
-from sheets import STATUS_LINHAS, config_publica, garantir_rotulos_status, ler_comando
+from central.sheets import STATUS_LINHAS, config_publica, garantir_rotulos_status, ler_comando
 
 
 def _status(planilha):
@@ -89,6 +89,6 @@ def test_sinal_de_vida_publica_agentes_sem_segredos(cfg, planilha):
 
 def test_status_criado_do_zero_ja_vem_com_as_linhas_novas(cfg, planilha):
     del planilha.planilhas[CENTRAL]["Status"]
-    from sheets import robo_ligado
+    from central.sheets import robo_ligado
     robo_ligado(planilha, cfg)
     assert len(planilha.aba("Status")) == len(STATUS_LINHAS) == 16

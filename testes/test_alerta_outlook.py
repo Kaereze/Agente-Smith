@@ -2,7 +2,7 @@
 import datetime
 
 import avisos_windows as aw
-import saude
+from painel import saude
 
 SEG = datetime.datetime(2026, 10, 26, 9, 50)          # segunda 09:50
 

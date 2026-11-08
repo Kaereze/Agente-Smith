@@ -1,8 +1,8 @@
 """Chamada ao Google com limite de tempo (29/10/2026, João: a volta lenta tem que levar no máximo 30 s)."""
 import pytest
 
-import rede_util
-import sheets
+from central import rede_util
+from central import sheets
 
 
 class Relogio:

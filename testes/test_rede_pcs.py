@@ -1,8 +1,8 @@
 import datetime
 
-import atividade
+from painel import atividade
 import confirmar_nfs as c
-import rede_pcs as r
+from rede import rede_pcs as r
 from test_confirmar_nfs import sol
 
 AGORA = datetime.datetime(2026, 10, 6, 18, 0, 0)
@@ -67,6 +67,6 @@ def test_horario_sem_zero_que_a_planilha_devolve():
 
 
 def test_envio_de_nf_acha_o_pc_mesmo_com_hora_sem_zero():
-    import envio_nf
+    from emails import envio_nf
     linhas = [envio_nf.CAB_PCS, ["PC-A", "João", "nf@hotel.com", "2026-10-06 9:59:30"]]
     assert envio_nf.pcs_online(linhas, datetime.datetime(2026, 10, 6, 10, 0, 0)) == {"nf@hotel.com": "PC-A"}

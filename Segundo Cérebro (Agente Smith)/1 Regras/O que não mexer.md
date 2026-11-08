@@ -20,8 +20,8 @@ Ordem de importância: ver [[Hierarquia de prioridades]]. Credenciais: ver [[Cre
 | Não mexer | Onde | Pode? |
 |---|---|---|
 | **Mail Analytics: código** | `Desktop\Mail Analitycs` (outro sistema, em produção nos 4 PCs) | **Nada.** Nem abrir para editar |
-| **Mail Analytics: planilha** | abas `Agente_Joao/Clara/Cristian/Bernardo` | **Só ler** (`src/relatorio_semana.py`) |
-| **Fiscal Intelligence** | planilha gravada pelo Mail Analytics | **Só ler** (`src/fiscal_intelligence.py`) |
+| **Mail Analytics: planilha** | abas `Agente_Joao/Clara/Cristian/Bernardo` | **Só ler** (`src/painel/relatorio_semana.py`) |
+| **Fiscal Intelligence** | planilha gravada pelo Mail Analytics | **Só ler** (`src/central/fiscal_intelligence.py`) |
 | **Planilhas dos hotéis** | pasta do Drive (outra conta) | **Só ler**, com **uma exceção autorizada pelo João em 15/10/2026**: o robô escreve **TRUE na coluna Enviado** depois do envio confirmado (`sincronizar.espelhar_true_nos_hoteis`). Nenhuma outra coluna, nunca criar coluna, nunca apagar |
 | **TRUE na coluna "Enviado" dos hotéis** | vem de um script do próprio João | Não mexer nem questionar |
 | **Dropbox** (pastas de NF dos agentes) | `%USERPROFILE%\Dropbox...` | **Só olhar**; não abrir PDF "somente online" |

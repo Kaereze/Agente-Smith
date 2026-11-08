@@ -33,8 +33,8 @@ O que o projeto garante:
 |---|---|
 | Nunca envia duas vezes | Anota antes de enviar (`estado/envios_pendentes.json`) e confere o código `NF-…` em Itens Enviados antes de tentar de novo |
 | TRUE só depois do envio confirmado | A coluna "Enviado" da planilha do hotel só é marcada quando o e-mail aparece em Itens Enviados. É a única escrita nas planilhas dos hotéis |
-| Remetente certo | Cada e-mail sai da caixa do próprio hotel, no PC dono dela (`src/envio_pc_dono.py`). PC desligado = não envia e tenta na próxima rodada |
-| Cota do Google respeitada | Cada programa tem uma fatia fixa: 57 de 60 leituras por minuto somando os 4 PCs (`src/cota_google.py`) |
+| Remetente certo | Cada e-mail sai da caixa do próprio hotel, no PC dono dela (`src/emails/envio_pc_dono.py`). PC desligado = não envia e tenta na próxima rodada |
+| Cota do Google respeitada | Cada programa tem uma fatia fixa: 57 de 60 leituras por minuto somando os 4 PCs (`src/central/cota_google.py`) |
 | Pode desligar | Aba Status, célula B1 desmarcada: nada é enviado |
 
 ## Estrutura

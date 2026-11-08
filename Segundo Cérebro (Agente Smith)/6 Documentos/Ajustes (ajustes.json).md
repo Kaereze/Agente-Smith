@@ -61,11 +61,11 @@ Ficou de fora de propósito, porque trocar quebraria o sistema:
 - Nomes das abas e colunas das planilhas: o Google e as cópias antigas dependem do nome exato.
 - **Hotéis, agentes, apelidos, planilhas, e-mail de teste e modo (SIMULAÇÃO/TESTE/PRODUÇÃO)** já são chave e valor no **`config.json`** (com `_ajuda` em cada um). Esse arquivo vai ao GitHub e vale para todos os PCs. O papel de cada PC (`so_painel` etc.) fica no `config.local.json`.
 
-Se quiser que outra coisa vire ajuste, peça ao Claude: ele acrescenta uma linha na tabela (`src/ajustes_tabela.py`), liga ao código e o teste confere o resto.
+Se quiser que outra coisa vire ajuste, peça ao Claude: ele acrescenta uma linha na tabela (`src/sistema/ajustes_tabela.py`), liga ao código e o teste confere o resto.
 
 ## Para o Claude (como funciona por dentro)
 - `src/ajustes.py` lê e valida o arquivo uma vez por inicialização (cache). `valor("grupo.chave")` devolve o ajustado ou o de fábrica; **nunca levanta erro por valor ruim** (guarda em `erros()`, que vai para a faixa de saúde via `saude.ajustes_com_erro`).
-- `src/ajustes_tabela.py` é a tabela: chave, valor de fábrica, mínimo, máximo, explicação, tipo (`decimal`, `cor`, `textos`, `selos_nomes`, `selos_textos`, `numeros`).
+- `src/sistema/ajustes_tabela.py` é a tabela: chave, valor de fábrica, mínimo, máximo, explicação, tipo (`decimal`, `cor`, `textos`, `selos_nomes`, `selos_textos`, `numeros`).
 - Código Python: `NOME = ajustes.valor("grupo.chave")` no lugar do número fixo (as constantes continuam com o mesmo nome, então tudo que importava continua funcionando).
 - Tela (JavaScript): `src/app_servidor.py` serve `/ajustes.js` (só os grupos `tela`, `filtro` e `recarregar`); as peças leem `globalThis.aj?.("chave") ?? padrão`. O teste confere que o padrão do JavaScript é igual ao da tabela.
 - Chave nova: linha em `ajustes_tabela.py` → usar no código → `python Automacoes\gerar_ajustes_exemplo.py` → `testes/test_ajustes.py` falha se uma chave da tabela não for usada em lugar nenhum, se o código pedir chave que não existe ou se o exemplo estiver desatualizado.

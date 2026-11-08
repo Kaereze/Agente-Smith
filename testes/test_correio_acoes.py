@@ -1,8 +1,8 @@
 """Ações no Outlook do PC dono a partir do Painel de outro PC: excluir, encaminhar, fila com o PC desligado."""
 import datetime
 
-import envio_nf as en
-import espelho_emails as ee
+from emails import envio_nf as en
+from emails import espelho_emails as ee
 from test_envio_nf import CAIXA, Relogio, _ler, _prep
 
 SEM_FORM = {"aba": "", "carimbo": "", "email": "ana@gmail.com", "hotel": "NOVO CWB", "nome": "Ana"}

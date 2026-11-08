@@ -1,4 +1,4 @@
-from aviso_certificado import decidir
+from emails.aviso_certificado import decidir
 
 NOME = ("O servidor ao qual você está conectado está usando um certificado\rde segurança que não pode ser confirmado.\r\n\r\n"
         "O nome principal do destino está incorreto. ")

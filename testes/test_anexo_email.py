@@ -3,7 +3,7 @@ import base64
 
 import pytest
 
-import busca_outlook as bo
+from emails import busca_outlook as bo
 
 
 class Anexo:

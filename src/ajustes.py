@@ -1,7 +1,7 @@
 """Ajustes do Painel: tempos, limites, textos e assinaturas num arquivo de chave e valor (04/11/2026, pedido do João).
 
 O arquivo `ajustes.json` fica ao lado do config.json, SÓ no PC do administrador (está no .gitignore: nunca sobe ao GitHub).
-Quem não aparece no arquivo usa o valor de fábrica (src/ajustes_tabela.py, gerado; `ajustes.exemplo.json` mostra todos).
+Quem não aparece no arquivo usa o valor de fábrica (src/sistema/ajustes_tabela.py, gerado; `ajustes.exemplo.json` mostra todos).
 Valor inválido (fora do mínimo/máximo, tipo errado, chave com erro de digitação) NÃO derruba o Painel: usa o valor de fábrica
 e anota o motivo em erros(), que vai para o log e para o aviso de saúde.
 
@@ -15,7 +15,7 @@ import json
 import re
 from pathlib import Path
 
-from ajustes_tabela import ENTRADAS, GRUPOS
+from sistema.ajustes_tabela import ENTRADAS, GRUPOS
 
 CAMINHO = Path(__file__).resolve().parent.parent / "ajustes.json"
 _POR_CHAVE = {e[0]: e for e in ENTRADAS}
@@ -170,7 +170,7 @@ def diferencas():
 if __name__ == "__main__":   # python src\ajustes.py  -> confere o ajustes.json e diz o que está errado
     import sys
 
-    from console_utf8 import garantir_utf8
+    from sistema.console_utf8 import garantir_utf8
     garantir_utf8()
     problemas = erros()
     if not CAMINHO.exists():

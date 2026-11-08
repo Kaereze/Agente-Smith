@@ -18,7 +18,7 @@ Robô que leva cada pedido de NF dos hotéis até a caixa do agente, e um **Pain
 
 ## O caminho de um pedido
 1. Hóspede preenche o **formulário** → cai na **planilha do hotel** (só lemos).
-2. O PC principal **copia** as planilhas que mudaram para a **Planilha Central** (`src/sincronizar.py`): rodada completa **a cada 10 min** e, pela vigia de formulários (`src/vigia_formularios.py`), em 10 a 20 s quando o Drive avisa que mudou.
+2. O PC principal **copia** as planilhas que mudaram para a **Planilha Central** (`src/sincronizar.py`): rodada completa **a cada 10 min** e, pela vigia de formulários (`src/central/vigia_formularios.py`), em 10 a 20 s quando o Drive avisa que mudou.
 3. O **robô** manda um e-mail por pedido para a caixa `notafiscal@` do hotel (`src/main.py`).
 4. O **conferente** de cada PC lê o Outlook, liga e-mail ↔ pedido, acha a NF no Dropbox e põe etiquetas (`src/conferente.py`).
 5. O agente emite e envia a NF; resolvido, **tira o e-mail da Caixa de Entrada** → some do Painel.

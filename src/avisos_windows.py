@@ -7,9 +7,9 @@ Só avisa na MUDANÇA (não repete a cada leitura) e só no horário de trabalho
 import datetime
 import subprocess
 
-import saude
+from painel import saude
 
-from log_util import configurar_logging
+from sistema.log_util import configurar_logging
 import ajustes
 
 logger = configurar_logging(__name__)
@@ -153,6 +153,6 @@ def mostrar(titulo, mensagem):
 
 
 if __name__ == "__main__":
-    from console_utf8 import garantir_utf8
+    from sistema.console_utf8 import garantir_utf8
     garantir_utf8()
     mostrar("Teste", "Se você está lendo isto, os avisos do Painel funcionam neste PC.")

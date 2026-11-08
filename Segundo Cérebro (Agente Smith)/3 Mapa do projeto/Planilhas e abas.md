@@ -6,7 +6,7 @@ tags: [cerebro/mapa]
 ---
 # Planilhas e abas
 
-IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/relatorio_semana.py` → `PLANILHA_MAIL_ANALYTICS`. (IDs não são senha: o acesso depende do compartilhamento.)
+IDs: Central em `config.json` → `planilha_central_id`; Mail Analytics em `src/painel/relatorio_semana.py` → `PLANILHA_MAIL_ANALYTICS`. (IDs não são senha: o acesso depende do compartilhamento.)
 
 ## Planilha Central! (Krz) — o hub da equipe
 | Aba | Quem grava | Quem lê | Observação |

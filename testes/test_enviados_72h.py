@@ -1,7 +1,7 @@
 """Itens Enviados 72 h e envio do hóspede à mão (usuário, 22/10/2026)."""
 import app_servidor
-import busca_outlook
-import espelho_emails as ee
+from emails import busca_outlook
+from emails import espelho_emails as ee
 
 
 def _estado(monkeypatch, local, rapido, enderecos=None):

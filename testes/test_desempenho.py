@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-import desempenho
+from painel import desempenho
+from codigo_fonte import fonte, fonte_servidor
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -104,18 +105,18 @@ def test_medidor_do_programa_existe_e_nao_derruba_sem_logger():
 
 
 def test_laços_e_respostas_do_servidor_e_do_conferente_estao_cronometrados():
-    servidor = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    servidor = fonte_servidor(RAIZ)
     for etapa in ("painel.volta_completa", "painel.atualizar", "painel.notas_emails", "painel.fiscal_intelligence", "painel.canceladas", "painel.salvar_cache"):
         assert f'"{etapa}"' in servidor, etapa
     assert 'setattr(Handler, verbo, _cronometrado(' in servidor
-    conferente = (RAIZ / "src" / "conferente.py").read_text(encoding="utf-8")
+    conferente = fonte(RAIZ, "conferente")
     for etapa in ("conferente.uma_volta", "conferente.confirmar_nfs", "conferente.espelho_emails", "conferente.vigia_outlook", "conferente.publicar_cota"):
         assert f'"{etapa}"' in conferente, etapa
     assert "talvez_resumir(logger)" in conferente
 
 
 def test_resumo_so_para_o_administrador():
-    servidor = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    servidor = fonte_servidor(RAIZ)
     trecho = servidor[servidor.index('if url.path in ("/agentes/mapa", "/api/agentes", "/api/desempenho")'):]
     trecho = trecho[:trecho.index("estatico = ESTATICOS.get(url.path)")]
     assert trecho.index("e_admin_aqui") < trecho.index("desempenho.MEDIDOR.resumo()")

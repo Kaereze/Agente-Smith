@@ -4,7 +4,7 @@ import time
 
 from pathlib import Path
 
-import envio_nf as en
+from emails import envio_nf as en
 from conftest import CENTRAL
 from tela_texto import codigo_js
 
@@ -236,7 +236,7 @@ def test_corpo_com_selo_leva_a_mensagem_padrao_e_a_imagem():
 
 
 def test_email_sem_formulario_acha_a_nf_pelo_numero_da_estada_e_nome_com_erro(monkeypatch):
-    import envio_nf as e
+    from emails import envio_nf as e
     itens = [("NF 590 - COERNELIO NOGUEIRA - 62222.pdf", r"C:\dropbox\NF 590 - COERNELIO NOGUEIRA - 62222.pdf", 1791460000,
               ("590", "COERNELIO NOGUEIRA")),
              ("NF 428 - FRANCISCO ALISSON PEREIRA GURGEL - 2911.pdf", r"C:\dropbox\NF 428 - FRANCISCO ALISSON PEREIRA GURGEL - 2911.pdf",
@@ -256,7 +256,7 @@ def test_email_sem_formulario_acha_a_nf_pelo_numero_da_estada_e_nome_com_erro(mo
 
 def test_pelo_nome_nao_liga_nota_de_outra_estada(monkeypatch):
     """Usuário, 21/10/2026: a NF de uma estada caiu em pedidos de outras estadas do mesmo nome. Dados inventados."""
-    import envio_nf as e
+    from emails import envio_nf as e
     salvo = 1792900000   # 18/10/2026
     itens = [("NF 900 - MARCOS SILVA EXEMPLO - 30001.pdf", r"C:\dropbox\NF 900 - MARCOS SILVA EXEMPLO - 30001.pdf", salvo,
               ("900", "MARCOS SILVA EXEMPLO"))]

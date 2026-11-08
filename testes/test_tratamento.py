@@ -1,4 +1,4 @@
-from tratamento import campos_para_email, completar_zeros, converter_data, tipo_documento
+from central.tratamento import campos_para_email, completar_zeros, converter_data, tipo_documento
 
 
 def test_cpf_com_zero_comido():
@@ -58,7 +58,7 @@ def test_cep_incompleto_nao_vira_documento_inventado():
 
 
 def test_formato_de_data_descoberto_pela_aba():
-    from tratamento import detectar_formato_data
+    from central.tratamento import detectar_formato_data
     assert detectar_formato_data(["05/10/2025", "26/10/2025 12:36:33"]) == "brasileiro"
     assert detectar_formato_data(["5/28/2026", "6/1/2026"]) == "americano"
     assert detectar_formato_data(["05/10/2025"], "americano") == "americano"   # sem pista: usa o config

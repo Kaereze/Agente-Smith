@@ -1,8 +1,8 @@
 """Convivência com o robô antigo (src/robo_antigo.py)."""
 import datetime
 
-import robo_antigo as ra
-from modelos import Hotel, Solicitacao
+from notas import robo_antigo as ra
+from notas.modelos import Hotel, Solicitacao
 
 H = Hotel(aba="x", nome="BAHIA", operador="nf@bahia", planilha_id="p")
 AGORA = datetime.datetime(2026, 9, 27, 12, 0, 0)

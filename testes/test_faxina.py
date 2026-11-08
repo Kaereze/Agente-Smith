@@ -2,11 +2,11 @@ import datetime
 
 import pytest
 
-import app_dados as d
-import envio_nf
-import faxina
+from painel import app_dados as d
+from emails import envio_nf
+from central import faxina
 from conftest import CENTRAL, ESTRELA
-import armazem
+from sistema import armazem
 
 HOJE = datetime.date(2026, 10, 20)
 VELHO = datetime.datetime(2026, 10, 1, 10, 0).astimezone()

@@ -15,7 +15,7 @@ import pytest
 sync_api = pytest.importorskip("playwright.sync_api", reason="pip install -r requirements-dev.txt")
 
 import app_servidor  # noqa: E402
-import demo  # noqa: E402
+from painel import demo  # noqa: E402
 from config import carregar_config  # noqa: E402
 
 TELAS = ["visao", "fila", "correio", "gerencia", "maquinas"]

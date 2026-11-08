@@ -31,7 +31,7 @@ def somar(linhas, lado):
 
 
 def contar_outlook():
-    import outlook_vivo
+    from emails import outlook_vivo
     import pythoncom
     if not outlook_vivo.pode_usar():
         raise SystemExit("O Outlook não está aberto com janela. Abra o Outlook e rode de novo.")
@@ -51,10 +51,10 @@ def contar_outlook():
 
 
 def contar_painel():
-    import envio_nf  # noqa: F401  (carrega a configuração do projeto)
-    import espelho_emails as ee
+    from emails import envio_nf  # noqa: F401  (carrega a configuração do projeto)
+    from emails import espelho_emails as ee
     from config import caminho_chave_google, carregar_config
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     cfg = carregar_config()
     aba = ee.nome_aba(socket.gethostname())
     dados, _ = BackendGoogle(caminho_chave_google(cfg), somente_leitura=True).ler_abas(cfg["planilha_central_id"], [aba])

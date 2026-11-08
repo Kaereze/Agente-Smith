@@ -11,17 +11,17 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-import armazem
+from sistema import armazem
 from config import carregar_config, caminho_chave_google
-from log_util import configurar_logging
-from sheets import VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha
+from sistema.log_util import configurar_logging
+from central.sheets import VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha
 from sincronizar import (PAUSA_ENTRE_LEITURAS, _chave_linha, _gravar_aba, _hora, _ler_planilha_hotel, juntar_planilhas,
                          mapear_fontes)
-from tratamento import detectar_formato_data, normalizar
+from central.tratamento import detectar_formato_data, normalizar
 import ajustes
 
 logger = configurar_logging("conferir_copia")
@@ -153,7 +153,7 @@ def conferir(backend=None, cfg=None):
     cfg = cfg or carregar_config()
     chave = caminho_chave_google(cfg)
     if backend is None:
-        from sheets import BackendGoogle
+        from central.sheets import BackendGoogle
         backend = BackendGoogle(chave)
     central = cfg["planilha_central_id"]
     inicio = time.time()
@@ -245,7 +245,7 @@ def _gravar_resultado(backend, cfg, resultados, agora):
 
 def rodar_com_trava():
     """Mesma trava da cópia: conferir no meio de uma cópia daria falso alarme."""
-    from lock_execucao import adquirir_lock, liberar_lock
+    from sistema.lock_execucao import adquirir_lock, liberar_lock
     if not adquirir_lock():
         return None, "A cópia ou um envio está rodando agora — tente conferir de novo em 2 minutos."
     try:

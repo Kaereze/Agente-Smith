@@ -1,5 +1,5 @@
-import cota_google
-from cota_google import PERFIS, Cota
+from central import cota_google
+from central.cota_google import PERFIS, Cota
 
 
 class Relogio:

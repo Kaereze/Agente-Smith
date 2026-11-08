@@ -2,8 +2,8 @@
 import datetime
 import json
 
-import acessos
-import armazem
+from privacidade import acessos
+from sistema import armazem
 
 
 def _pasta(monkeypatch, tmp_path):
@@ -52,7 +52,7 @@ def test_falha_ao_gravar_nao_derruba_a_leitura(monkeypatch, tmp_path):
 
 
 def test_rotas_anotam_texto_anexo_e_ficha_mas_nao_erro(monkeypatch):
-    import rotas_api
+    from painel import rotas_api
     fonte = open(rotas_api.__file__, encoding="utf-8").read()
     assert '_vendo(c, "email"' in fonte and '_vendo(c, "anexo"' in fonte and '"/api/acesso"' in fonte
     chamadas = []

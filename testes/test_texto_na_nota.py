@@ -2,7 +2,7 @@
 conseguindo reconhecer os erros, a própria hóspede disse na mensagem… entra na nota e verifica se alguma parte dela aparece").
 Caso real com o nome trocado: "não consta a identificação “UEM / Fulana”" virava "refazer a nota (o cliente não disse o
 que mudar)"."""
-import analise_nf as a
+from notas import analise_nf as a
 
 EMAIL = ("Prezados, bom dia!\nAgradeço pelo envio da nota fiscal. No entanto, não consta a identificação “UEM / Marina "
          "Exemplo Costa”, conforme solicitado anteriormente.\nPeço, por gentileza, que seja realizada a correção e "

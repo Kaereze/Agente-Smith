@@ -1,7 +1,7 @@
 """Cota de envio (src/cota_envio.py): conta os envios da última hora."""
 import datetime
 
-from cota_envio import calcular_cota
+from emails.cota_envio import calcular_cota
 
 AGORA = datetime.datetime(2026, 9, 24, 17, 0)
 

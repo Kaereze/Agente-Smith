@@ -1,4 +1,4 @@
-import limpeza
+from sistema import limpeza
 
 
 def _arquivo(caminho, bytes_):

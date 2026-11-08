@@ -1,7 +1,7 @@
 """Gerência v2 (14/10/2026): relatório do mês contra o mês anterior, nos mesmos dias."""
 import datetime
 
-import relatorio_semana as rs
+from painel import relatorio_semana as rs
 
 D = datetime.date
 

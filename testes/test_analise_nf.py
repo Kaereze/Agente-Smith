@@ -1,4 +1,4 @@
-import analise_nf as a
+from notas import analise_nf as a
 
 DANFSE = """DANFSe v2.0
 1221

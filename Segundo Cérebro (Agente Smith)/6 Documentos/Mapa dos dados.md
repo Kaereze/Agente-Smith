@@ -7,7 +7,7 @@ tags: [cerebro/documentos, lgpd, dados]
 ---
 # Mapa dos dados
 
-> Gerado de `src/armazem.py` por `ferramentas/mapa_dos_dados.py`. **Não edite à mão**: mude o catálogo e rode a ferramenta.
+> Gerado de `src/sistema/armazem.py` por `ferramentas/mapa_dos_dados.py`. **Não edite à mão**: mude o catálogo e rode a ferramenta.
 > Tudo fica em `estado/` de cada PC, fora do GitHub. "Pessoal" = tem nome, CPF/CNPJ, e-mail ou texto de hóspede.
 
 | Arquivo | Para que serve | Pessoal | Quanto tempo fica | Quem escreve |
@@ -50,6 +50,6 @@ tags: [cerebro/documentos, lgpd, dados]
 | `backup_central_AAAAMMDD_HHMMSS.json` | Cópia da Central para recuperar erro | **sim** | 24 h (144 cópias) | `sincronizar` |
 
 ## Onde mexer
-- Arquivo novo em `estado/`: declare em `src/armazem.py` e peça o caminho com `armazem.caminho(...)`. O teste barra caminho montado à mão.
+- Arquivo novo em `estado/`: declare em `src/sistema/armazem.py` e peça o caminho com `armazem.caminho(...)`. O teste barra caminho montado à mão.
 - Pedido de titular (ver ou apagar dados de uma pessoa): `ferramentas/pedido_titular.py` e [[Dados de hóspedes (LGPD)]].
-- Quem abriu o quê: `estado/acessos/AAAA-MM.jsonl` (`src/acessos.py`), 12 meses, sem nome nem CPF.
+- Quem abriu o quê: `estado/acessos/AAAA-MM.jsonl` (`src/privacidade/acessos.py`), 12 meses, sem nome nem CPF.

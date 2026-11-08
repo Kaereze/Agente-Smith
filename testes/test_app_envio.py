@@ -3,7 +3,7 @@ import sys
 import time
 import types
 
-import app_envio
+from painel import app_envio
 
 
 def _esperar(envio, segundos=5):

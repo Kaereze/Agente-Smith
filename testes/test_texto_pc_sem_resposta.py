@@ -2,8 +2,8 @@
 em vez de esperar 6 s a cada e-mail (medido: 10 s em média no PC de casa)."""
 import types
 
-import estado_correio
-import rede_local
+from painel import estado_correio
+from rede import rede_local
 
 
 def _estado(monkeypatch, respostas):

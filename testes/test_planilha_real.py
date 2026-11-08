@@ -1,9 +1,9 @@
 """Casos tirados da Planilha Central de verdade (formulário novo, carimbo só com data)."""
 from conftest import CENTRAL
 from main import executar
-from modelos import Hotel
-from montar_email import montar_emails
-from sheets import interpretar_aba, ler_hoteis, marcar_enviados, nome_do_hotel_pela_aba
+from notas.modelos import Hotel
+from emails.montar_email import montar_emails
+from central.sheets import interpretar_aba, ler_hoteis, marcar_enviados, nome_do_hotel_pela_aba
 
 CAB_NOVO = ['Carimbo de data/hora', 'Termos de aceite', 'Documento Tomador', 'Nome Tomador', 'CEP', 'E-mail',
             'Telefone para contato', 'CPF do Titular da Reserva', 'Nome do Titular da Reserva',

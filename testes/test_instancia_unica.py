@@ -4,7 +4,7 @@ import sys
 import pytest
 
 import app_servidor
-import armazem
+from sistema import armazem
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="trava do Windows")

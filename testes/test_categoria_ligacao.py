@@ -1,6 +1,6 @@
 """Botão Ligação -> categoria LIGAÇÃO do Outlook no e-mail enviado (27/10/2026). Dados inventados."""
 import app_servidor
-import envio_nf
+from emails import envio_nf
 
 
 class Cat:

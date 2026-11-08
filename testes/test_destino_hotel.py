@@ -1,8 +1,8 @@
 """destino_envio = "hotel": cada hotel recebe as solicitações dele no e-mail da coluna B do Cadastro_Hoteis."""
 from conftest import AGORA, CENTRAL, Relogio
 from main import executar
-from outlook import OutlookNF
-from sheets import ler_hoteis
+from emails.outlook import OutlookNF
+from central.sheets import ler_hoteis
 
 
 def test_cada_hotel_vai_pro_proprio_email(cfg, planilha):

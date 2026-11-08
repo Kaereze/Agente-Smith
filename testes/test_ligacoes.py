@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 import app_servidor
-import espelho_emails
-import ligacoes
+from emails import espelho_emails
+from emails import ligacoes
 from tela_texto import codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"

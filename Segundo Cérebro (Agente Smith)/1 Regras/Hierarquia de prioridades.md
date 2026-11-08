@@ -64,7 +64,7 @@ tags: [cerebro/regras]
 - "Criar repositório/enviar dados para fora" negado pelo sistema de permissões → **não contornar**; explicar e deixar o João decidir.
 
 ## Escalabilidade (quando crescer)
-- **Novo agente / PC:** `config.json` (`agentes`), `Cadastro_Hoteis` (hotel, e-mail, agente), nova branch com o nome dele, divisão da cota (`src/cota_google.py`), [[Pessoas e PCs]].
+- **Novo agente / PC:** `config.json` (`agentes`), `Cadastro_Hoteis` (hotel, e-mail, agente), nova branch com o nome dele, divisão da cota (`src/central/cota_google.py`), [[Pessoas e PCs]].
 - **Novo hotel:** linha no `Cadastro_Hoteis` + planilha do hotel no Drive; o Painel avisa "cadastro incompleto" se faltar.
 - **Banco central (Supabase, futuro):** substitui a Planilha Central como hub; a hierarquia continua igual (P0 e P1 primeiro; Outlook segue como fonte da verdade da caixa).
 - **Mais PCs = mais leituras:** antes de qualquer leitura nova, refazer a conta da cota (P3).

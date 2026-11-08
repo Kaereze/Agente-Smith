@@ -5,10 +5,10 @@ import datetime
 import json
 import urllib.error
 
-import envio_nf as en
-import envio_pc_dono as epd
+from emails import envio_nf as en
+from emails import envio_pc_dono as epd
 from conftest import CENTRAL
-from modelos import EmailMontado
+from notas.modelos import EmailMontado
 
 CAIXA = "notafiscal@aracaju.com.br"
 PCS = [{"pc": "PC-CLARA", "agente": "Clara", "contas_lista": [CAIXA], "online": True, "rede": "10.80.0.2:8766"}]

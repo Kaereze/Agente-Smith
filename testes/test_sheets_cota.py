@@ -1,6 +1,6 @@
 """BackendGoogle com um gspread falso: confere quantas chamadas cada operação gasta da cota."""
-import cota_google
-import sheets
+from central import cota_google
+from central import sheets
 
 
 class AbaFalsa:

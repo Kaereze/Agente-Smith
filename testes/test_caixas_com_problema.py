@@ -8,15 +8,16 @@ from types import SimpleNamespace
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-import outlook_vivo  # noqa: E402
-import saude  # noqa: E402
+from emails import outlook_vivo  # noqa: E402
+from painel import saude  # noqa: E402
 from tela_texto import pagina
+from codigo_fonte import fonte_servidor
 
 UI = RAIZ / "app_ui"
 HTML = pagina(UI)
 JS = (UI / "pecas" / "caixas.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "caixas.css").read_text(encoding="utf-8")
-SERVIDOR = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+SERVIDOR = fonte_servidor(RAIZ)
 
 
 def test_avisos_de_outlook_parado_levam_o_tipo_caixa():

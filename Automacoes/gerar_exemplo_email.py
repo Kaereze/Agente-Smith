@@ -8,10 +8,10 @@ import sys
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(RAIZ, "src"))
 
-import controle_nf
-from controle_nf import paragrafo_status, trocar_paragrafo_status
-from modelos import Hotel, Solicitacao
-import montar_email
+from notas import controle_nf
+from notas.controle_nf import paragrafo_status, trocar_paragrafo_status
+from notas.modelos import Hotel, Solicitacao
+from emails import montar_email
 
 visual = sys.argv[1] if len(sys.argv) > 1 else "verde"
 controle_nf.VISUAL = visual

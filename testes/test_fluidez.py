@@ -5,8 +5,9 @@ from pathlib import Path
 import pytest
 
 import app_servidor
-import envio_nf as en
+from emails import envio_nf as en
 from test_envio_nf import CAIXA, SOL, Relogio, _ler, _prep, _servico
+from codigo_fonte import fonte_servidor
 
 RAIZ = Path(__file__).resolve().parents[1]
 ANEXO = [{"tipo": "arquivo", "nome": "n.pdf", "conteudo": b"x"}]
@@ -70,7 +71,7 @@ def test_sem_segundo_plano_continua_como_sempre_o_erro_sobe(cfg, planilha, monke
 
 
 def test_o_servidor_liga_o_segundo_plano_do_envio():
-    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    fonte = fonte_servidor(RAIZ)
     assert "self.envio_nf.segundo_plano = lambda trabalho: threading.Thread(target=trabalho" in fonte
 
 
@@ -104,7 +105,7 @@ def test_atividade_o_laco_le_uma_vez_e_guarda_por_20_s():
 
 
 def test_laco_do_painel_atualiza_a_atividade_e_o_clique_nao_tem_ler_abas():
-    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    fonte = fonte_servidor(RAIZ)
     assert 'medir("painel.atividade"' in fonte and "estado.atualizar_atividade()" in fonte
     corpo = fonte[fonte.index("    def atividade_resumo(self):"):]
     corpo = corpo[:corpo.index("\n    def ", 10)]   # só este método (o seguinte muda de arquivo quando o Estado é partido)
@@ -126,7 +127,7 @@ def _normalizar_de_referencia(texto):
 
 
 def test_normalizar_continua_dando_o_mesmo_resultado_e_fica_lembrado():
-    import tratamento
+    from central import tratamento
     amostras = ["  Endereço de E-mail ", "CPF/CNPJ", None, 123, "", "Ação  Nº 5", "ÁGUA", "ﬁnal", "água", " \t "]
     for s in amostras:
         assert tratamento.normalizar(s) == _normalizar_de_referencia(s), repr(s)
@@ -136,7 +137,7 @@ def test_normalizar_continua_dando_o_mesmo_resultado_e_fica_lembrado():
 
 
 def test_tipo_documento_continua_igual():
-    from tratamento import tipo_documento
+    from central.tratamento import tipo_documento
     casos = {"CPF": "cpf", "CNPJ": "cnpj", "CPF/CNPJ": "cpf_cnpj", "CPF ou CNPJ do Tomador": "cpf_cnpj", "CEP": "cep",
              "Recepção": None, "Nome": None, "Documento Tomador": None, "Código Postal (CEP)": "cep"}
     for cabecalho, esperado in casos.items():
@@ -145,7 +146,7 @@ def test_tipo_documento_continua_igual():
 
 
 def test_achar_coluna_com_cabecalhos_lembrados():
-    import sheets
+    from central import sheets
     cab = ["Carimbo de data/hora", "Endereço de e-mail", "Nome"]
     assert sheets._achar_coluna(cab, "ENDERECO DE E-MAIL") == 1
     assert sheets._achar_coluna(cab, ["x", "nome"]) == 2

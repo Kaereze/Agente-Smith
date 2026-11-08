@@ -16,9 +16,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-import envio_nf  # noqa: E402
-import rede_local  # noqa: E402
-import rede_pcs  # noqa: E402
+from emails import envio_nf  # noqa: E402
+from rede import rede_local  # noqa: E402
+from rede import rede_pcs  # noqa: E402
 from config import caminho_chave_google, carregar_config, sem_outlook  # noqa: E402
 
 CAMPOS_CHAVE = ("type", "client_email", "private_key", "private_key_id", "project_id")
@@ -157,7 +157,7 @@ def main():
     conferir_seguranca_do_windows()
     conferir_ajustes()
 
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     try:
         dados, erros = BackendGoogle(caminho, somente_leitura=True).ler_abas(cfg["planilha_central_id"], [envio_nf.ABA_PCS])
     except Exception as e:   # noqa: BLE001

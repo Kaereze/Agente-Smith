@@ -1,9 +1,9 @@
 import datetime
 
-import app_dados as d
-import fiscal_intelligence as fi
-import painel_metricas as pm
-from hoteis import CadastroHoteis
+from painel import app_dados as d
+from central import fiscal_intelligence as fi
+from painel import painel_metricas as pm
+from central.hoteis import CadastroHoteis
 
 CAD = CadastroHoteis([["CRICIÚMA", "nf@cri.com", "Cristian"], ["GOIÂNIA CENTRO", "nf@goi.com", "Clara"],
                       ["SÃO FRANCISCO", "nf@sf.com", "João"], ["Nome", "Email", "Operador"]],
@@ -162,7 +162,7 @@ def test_fim_de_semana_sem_dado_e_dia_a_mais_pra_quem_nao_soma():
 
 def test_nf_emitida_sem_email_fica_envio_pendente():
     import datetime
-    import app_dados as d
+    from painel import app_dados as d
     sol = {"email": "h@x.com", "data": "2026-10-06"}
     hoje = datetime.date(2026, 10, 8)
     marcada = {"historico": [{"quando": "2026-10-08T09:00:00-03:00", "acao": d.NF, "valor": "590"}], "obs": []}

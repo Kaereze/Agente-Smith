@@ -22,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from log_util import configurar_logging
+from sistema.log_util import configurar_logging
 
 logger = configurar_logging(__name__)
 

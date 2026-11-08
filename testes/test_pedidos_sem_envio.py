@@ -1,7 +1,7 @@
 """Alarme de pedido parado (15/10/2026): pedido de formulário sem TRUE na Central há mais de 2 h vira aviso."""
 import datetime
 
-import saude
+from painel import saude
 
 D = datetime.datetime
 

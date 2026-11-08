@@ -4,9 +4,10 @@ import json
 import re
 from pathlib import Path
 
-import agentes_smith
+from painel import agentes_smith
 import app_servidor
 from tela_texto import pagina, codigo_js
+from codigo_fonte import fonte_servidor, modulos
 
 RAIZ = Path(__file__).resolve().parents[1]
 AGORA = datetime.datetime(2026, 10, 28, 14, 0, 0)
@@ -85,7 +86,7 @@ def test_agente_sem_sinal_real_nao_aparece_na_resposta():
 
 
 def test_rota_so_do_administrador_e_arquivo_fora_da_lista_publica():
-    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    fonte = fonte_servidor(RAIZ)
     trecho = fonte[fonte.index('if url.path in ("/agentes/mapa", "/api/agentes", "/api/desempenho")'):]
     trecho = trecho[:trecho.index("estatico = ESTATICOS.get(url.path)")]
     assert "e_admin_aqui(estado.cfg, nome_do_agente(), liberado())" in trecho and "403" in trecho
@@ -113,7 +114,7 @@ def test_mapa_tem_todos_os_modulos_de_src():
     """O mapa precisa conter tudo (pedido do João, 28/10/2026). Módulo novo em src/? Acrescente o bloco em `var N` e as ligações
     em `var E` de app_ui/agentes/mapa.html (e no Mapa do sistema.drawio): Segundo Cérebro/3 Mapa do projeto/Mapa visual do sistema.md."""
     _, blocos = _blocos_do_mapa()
-    faltando = sorted(p.stem for p in (RAIZ / "src").glob("*.py") if p.stem not in blocos)
+    faltando = [m for m in modulos(RAIZ) if m not in blocos]
     assert not faltando, f"módulo(s) de src/ fora do mapa de Agentes do Smith: {faltando}"
 
 

@@ -17,18 +17,18 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-import armazem
+from sistema import armazem
 from config import PASTA_ESTADO, ErroDeConfig, carregar_config, e_principal
-from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, e_email_do_robo,
+from notas.controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, e_email_do_robo,
                          ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
                          trocar_paragrafo_status)
-from log_util import configurar_logging
-import desempenho
-import outlook_vivo
+from sistema.log_util import configurar_logging
+from painel import desempenho
+from emails import outlook_vivo
 import ajustes
 
 logger = configurar_logging("conferente")
@@ -405,7 +405,7 @@ def _e_email_de_solicitacao(item, remetente_antigo):
 
 def marcar_notas_divididas(namespace, cfg, dias=45, so_conta=None):
     """Categoria "Nota dividida" nos e-mails de solicitação (dos dois robôs) que pedem mais de uma nota."""
-    from controle_nf import CATEGORIA_DIVIDIDA, pede_nota_dividida
+    from notas.controle_nf import CATEGORIA_DIVIDIDA, pede_nota_dividida
     remetente_antigo = str(cfg.get("robo_antigo", {}).get("remetente", "redeandrade.notafiscal@gmail.com")).lower()
     desde = datetime.datetime.now() - datetime.timedelta(days=dias)
     marcados = 0
@@ -440,7 +440,7 @@ def marcar_notas_divididas(namespace, cfg, dias=45, so_conta=None):
 
 
 def uma_volta(outlook, namespace, cfg, agora=None):
-    import controle_nf
+    from notas import controle_nf
     controle_nf.VISUAL = cfg.get("visual_email", "classico")
     agora = agora or datetime.datetime.now()
     with abrir_registro(CAMINHO_REGISTRO) as registro:
@@ -484,7 +484,7 @@ def _identificar(cfg):
         import pythoncom
         import identidade
         from config import caminho_chave_google
-        from sheets import BackendGoogle
+        from central.sheets import BackendGoogle
         pythoncom.CoInitialize()
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
         dados = identidade.detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
@@ -499,7 +499,7 @@ class _SoConferente(Exception):
 
 
 def publicar_sinal(backend, cfg):
-    from sheets import LINHA_CONFIG, LINHA_ONLINE, config_publica, escrever_linhas_status
+    from central.sheets import LINHA_CONFIG, LINHA_ONLINE, config_publica, escrever_linhas_status
     escrever_linhas_status(backend, cfg, {
         LINHA_CONFIG: config_publica(cfg),
         LINHA_ONLINE: datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -509,13 +509,13 @@ def publicar_sinal(backend, cfg):
 def publicar_cota(backend, namespace, cfg):
     if backend is None:
         return
-    from cota_envio import medir
-    from sheets import LINHA_COTA, escrever_linhas_status
+    from emails.cota_envio import medir
+    from central.sheets import LINHA_COTA, escrever_linhas_status
     escrever_linhas_status(backend, cfg, {LINHA_COTA: medir(namespace, cfg)})
 
 
 def _ler_selecao_status(backend, cfg):
-    from sheets import LINHA_SELECAO
+    from central.sheets import LINHA_SELECAO
     dados, _ = backend.ler_abas(cfg["planilha_central_id"], [cfg["aba_status"]])
     linhas = dados.get(cfg["aba_status"], [])
     return linhas[LINHA_SELECAO - 1][1] if len(linhas) >= LINHA_SELECAO and len(linhas[LINHA_SELECAO - 1]) > 1 else ""
@@ -545,7 +545,7 @@ class AndamentoNaPlanilha(logging.Handler):
             return
         self.gravando = True
         try:
-            from sheets import LINHA_ANDAMENTO, escrever_linhas_status
+            from central.sheets import LINHA_ANDAMENTO, escrever_linhas_status
             escrever_linhas_status(self.backend, self.cfg, {self.linha or LINHA_ANDAMENTO: "\n".join(self.linhas)})
             self.ultima_gravacao = time.monotonic()
         except Exception:
@@ -556,7 +556,7 @@ class AndamentoNaPlanilha(logging.Handler):
 
 def atender_conferencia(backend, cfg, quem):
     """Comando CONFERIR_COPIA."""
-    from sheets import LINHA_COMANDO, LINHA_CONFERENCIA, LINHA_RESPOSTA, escrever_linhas_status
+    from central.sheets import LINHA_COMANDO, LINHA_CONFERENCIA, LINHA_RESPOSTA, escrever_linhas_status
     import conferir_copia
     escrever_linhas_status(backend, cfg, {LINHA_COMANDO: "CONFERINDO", LINHA_CONFERENCIA: "",
                                           LINHA_RESPOSTA: f"🔍 Conferindo a cópia (pedido por {quem or '?'} · {_agora_txt()})"})
@@ -576,8 +576,8 @@ def atender_conferencia(backend, cfg, quem):
 
 def atender_pedido(backend, cfg):
     """Despacha o comando da aba Status. -> True se havia um comando."""
-    from historico import ORIGEM_CLAUDIO, ORIGEM_SEPARADO
-    from sheets import LINHA_COMANDO, LINHA_RESPOSTA, LINHA_SELECAO, escrever_linhas_status, ler_comando
+    from notas.historico import ORIGEM_CLAUDIO, ORIGEM_SEPARADO
+    from central.sheets import LINHA_COMANDO, LINHA_RESPOSTA, LINHA_SELECAO, escrever_linhas_status, ler_comando
     comando, quem, quando = ler_comando(backend, cfg)
     if comando == "CONFERIR_COPIA":
         return atender_conferencia(backend, cfg, quem)
@@ -602,7 +602,7 @@ def atender_pedido(backend, cfg):
             return True
     origem = ORIGEM_SEPARADO if selecao else ORIGEM_CLAUDIO
     logger.info(f"⚡ {origem} pedido por {quem or '?'}" + (f" — {selecao['aba']} linhas {sorted(selecao['linhas'])}" if selecao else ""))
-    from sheets import LINHA_ANDAMENTO
+    from central.sheets import LINHA_ANDAMENTO
     escrever_linhas_status(backend, cfg, {LINHA_COMANDO: "EM ANDAMENTO", LINHA_ANDAMENTO: "",
                                           LINHA_RESPOSTA: f"🚀 Enviando... (pedido por {quem or '?'} · {_agora_txt()})"})
     andamento = AndamentoNaPlanilha(backend, cfg)
@@ -636,7 +636,7 @@ def avisar_paineis(cfg, o_que):
     a volta de 15 s (21/10/2026). Em segundo plano e sem erro: se não chegar, a tela pega na volta normal."""
     def avisar():
         try:
-            import rede_local
+            from rede import rede_local
             from config import caminho_chave_google
             segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
             if segredo:
@@ -665,13 +665,13 @@ def main():
     if trava is None:
         logger.info("ℹ️ Já tem um conferente rodando nesta máquina — este sai.")
         return 0
-    import cota_google
+    from central import cota_google
     cota_google.configurar("conferente_principal" if e_principal(cfg) else "conferente")
     outlook_vivo.iniciar_guardiao()   # usuário, 13/10/2026: Outlook obrigatoriamente aberto (com janela) com o PC ligado
 
     import pythoncom
     from config import caminho_chave_google
-    from sheets import BackendGoogle, garantir_rotulos_status
+    from central.sheets import BackendGoogle, garantir_rotulos_status
 
     intervalo = int(cfg["conferencia"]["intervalo_segundos"])
     logger.info(f"👀 Conferente de NF ligado (Itens Enviados a cada {intervalo}s; "
@@ -711,7 +711,7 @@ def main():
             if agora >= proxima_faxina:
                 proxima_faxina = agora + 60 * 60
                 try:
-                    import faxina
+                    from central import faxina
                     faxina.rodar(backend, cfg)
                 except Exception as e:
                     logger.warning(f"⚠️ Faxina da Central não rodou ({e}) — tento de novo em 1 h.")
@@ -723,7 +723,7 @@ def main():
 
         if vigia_form is None and e_principal(cfg):
             try:
-                import vigia_formularios
+                from central import vigia_formularios
                 vigia_form = vigia_formularios.iniciar(cfg, lambda: avisar_paineis(carregar_config(), "formulario")) or False
             except Exception as e:
                 logger.warning(f"⚠️ Vigia dos formulários não ligou ({e}) — a cópia continua de 10 em 10 min.")
@@ -753,7 +753,7 @@ def main():
             proxima_conferencia = time.monotonic() + intervalo
 
         try:   # a cada volta (10 s): aviso de certificado do Outlook (nome do servidor diferente) trava a fila de envio
-            import aviso_certificado
+            from emails import aviso_certificado
             with desempenho.MEDIDOR.medir("conferente.aviso_certificado", logger=logger):
                 aviso_certificado.responder_avisos()
         except Exception as erro:
@@ -764,11 +764,11 @@ def main():
             try:
                 pythoncom.CoInitialize()
                 namespace = outlook_vivo.aplicativo().GetNamespace("MAPI")
-                import vigia_outlook
+                from emails import vigia_outlook
                 vigia = vigia or vigia_outlook.Vigia()
                 with desempenho.MEDIDOR.medir("conferente.vigia_outlook", logger=logger):
                     novos = vigia.novidades(namespace)
-                import envio_nf
+                from emails import envio_nf
                 marca = envio_nf.marca_das_pastas(cfg)
                 if dropbox_antes is not None and marca != dropbox_antes:
                     envio_nf.listar_notas_dropbox(cfg, forcar=True)
@@ -814,7 +814,7 @@ def main():
             if namespace is not None and agora >= proximo_espelho:
                 # E-mails de hóspedes sem resposta das caixas daqui -> aba Emails_<PC> (o Painel de todos vê)
                 try:
-                    import espelho_emails
+                    from emails import espelho_emails
                     if espelho is None:
                         espelho = espelho_emails.Espelho(BackendGoogle(caminho_chave_google(cfg)), cfg)
                     antes = _publicado(espelho)
@@ -826,7 +826,7 @@ def main():
                     logger.warning(f"⚠️ Espelho de e-mails falhou ({e}) — tento de novo em 2 min.")
                     espelho = None
                 try:   # fim de semana de João e Cristian contado pelo Painel (o Mail Analytics só grava na segunda)
-                    import contagem_painel
+                    from painel import contagem_painel
                     if espelho is not None:
                         contagem = contagem or contagem_painel.Contagem()
                         contagem.talvez(namespace, espelho._caixas_do_outlook(namespace, espelho._caixas()),

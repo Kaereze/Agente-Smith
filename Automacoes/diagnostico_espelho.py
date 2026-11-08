@@ -13,8 +13,8 @@ import sys
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
-import espelho_emails as ee   # noqa: E402
-import outlook_vivo           # noqa: E402
+from emails import espelho_emails as ee   # noqa: E402
+from emails import outlook_vivo           # noqa: E402
 
 
 def main():

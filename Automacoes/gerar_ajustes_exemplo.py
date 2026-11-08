@@ -12,7 +12,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
-from ajustes_tabela import ENTRADAS, GRUPOS  # noqa: E402
+from sistema.ajustes_tabela import ENTRADAS, GRUPOS  # noqa: E402
 
 LEIA_ME = ("Ajustes do Painel Fiscal. Para mudar algo, altere só o NÚMERO ou o TEXTO depois dos dois pontos e salve. "
            "As linhas que começam com _ajuda são só explicação: o Painel as ignora. "
@@ -67,7 +67,7 @@ def escrever(caminho, dados):
 
 
 def main(argv):
-    from console_utf8 import garantir_utf8
+    from sistema.console_utf8 import garantir_utf8
     garantir_utf8()
     if "--meu" in argv:
         caminho = RAIZ / "ajustes.json"

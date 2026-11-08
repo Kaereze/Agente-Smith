@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 import atualizador
-import log_util
+from sistema import log_util
 
 
 def git(pasta, *args):

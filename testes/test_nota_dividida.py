@@ -1,5 +1,5 @@
 """Tag "Nota dividida" (controle_nf.pede_nota_dividida)."""
-from controle_nf import pede_nota_dividida
+from notas.controle_nf import pede_nota_dividida
 
 
 def test_campo_nota_dividida_sim():
@@ -21,6 +21,6 @@ def test_texto_normal_nao_marca():
 
 
 def test_categorias_do_outlook_em_portugues_usam_ponto_e_virgula():
-    from controle_nf import categorias_atualizadas
+    from notas.controle_nf import categorias_atualizadas
     r = categorias_atualizadas("⏳ NF pendente; 💬 Tratativa; Nota dividida", 1, 1, False)
     assert r == "Nota dividida, ✅ NF concluído"      # troca só as do robô e mantém a azul

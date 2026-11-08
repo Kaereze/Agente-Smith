@@ -1,7 +1,7 @@
 import datetime
 
-import canceladas as cn
-import painel_metricas as pm
+from notas import canceladas as cn
+from painel import painel_metricas as pm
 
 D = datetime.date
 

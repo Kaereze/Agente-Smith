@@ -1,5 +1,5 @@
 """Um arquivo de log por programa (20/10/2026): o log disputado entre robô, conferente e Painel não gira mais."""
-import log_util
+from sistema import log_util
 
 
 def test_cada_programa_tem_o_seu_arquivo():

@@ -4,7 +4,7 @@ import os
 
 from conftest import AGORA, ARACAJU, BARRA, CABECALHO_HOTEL, CENTRAL, ESTRELA, Relogio, linha_hotel
 from main import executar
-from sheets import marcar_enviados, ler_hoteis, ler_pendentes
+from central.sheets import marcar_enviados, ler_hoteis, ler_pendentes
 
 
 def _coluna_enviado(planilha, aba):

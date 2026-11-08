@@ -2,8 +2,8 @@
 aparece; respondido, formulário e aviso do Outlook ficam marcados e não viram urgência nem "esperando resposta"."""
 import datetime
 
-import correio
-import espelho_emails as ee
+from emails import correio
+from emails import espelho_emails as ee
 
 
 def _e(i, de, quando, classes):

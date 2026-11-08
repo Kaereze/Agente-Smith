@@ -5,8 +5,9 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-import nf_cobre  # noqa: E402
+from notas import nf_cobre  # noqa: E402
 from tela_texto import codigo_js
+from codigo_fonte import fonte, fonte_servidor
 
 NOTA = ("DANFSe v1.0 Documento Auxiliar da NFS-e\nChave de Acesso 4120000000000000000000000000000000000000000000000\n"
         "TOMADOR DO SERVIÇO CNPJ / CPF / NIF 12.345.678/0001-90 Nome EMPRESA EXEMPLO LTDA\n"
@@ -74,8 +75,8 @@ def test_motivo_curto_da_urgencia():
 
 
 def test_ligacoes_no_servidor_e_na_tela():
-    srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
-    envio = (RAIZ / "src" / "envio_nf.py").read_text(encoding="utf-8")
+    srv = fonte_servidor(RAIZ)
+    envio = fonte(RAIZ, "envio_nf")
     js = codigo_js(RAIZ / "app_ui", "correio")
     assert '"/api/nf_cobre"' in srv and '"/api/correio/concluir"' in srv
     assert "acao=envio_nf.MOVER_NF" in srv and "mover_para_nf_enviada_no_outlook" in envio
@@ -119,7 +120,7 @@ def test_falta_a_nota_do_estacionamento_ou_o_valor_nao_bate():
 
 
 def test_botao_direito_tirar_da_entrada_vale_ate_para_respondido_e_nunca_apaga():
-    srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    srv = fonte_servidor(RAIZ)
     js = codigo_js(RAIZ / "app_ui", "correio")
     assert '"/api/correio/mover_nf"' in srv and "def mover_email_nf" in srv
     corpo = srv.split("def mover_email_nf")[1].split("def concluir_conversa")[0]

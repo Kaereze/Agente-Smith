@@ -8,7 +8,7 @@ Outlook e, no fim, confere o total de cada caixa; diferente, relê aquela caixa 
 import datetime
 import re
 
-import espelho_emails as ee
+from emails import espelho_emails as ee
 from test_espelho_emails import Central, Item, Lista, OutlookFalso
 
 D = datetime.datetime

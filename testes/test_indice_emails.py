@@ -2,7 +2,7 @@
 import datetime
 import re
 
-import indice_emails as ie
+from emails import indice_emails as ie
 
 D = datetime.datetime
 AGORA = D(2026, 10, 20, 15, 0)

@@ -16,7 +16,7 @@ from gspread.utils import a1_to_rowcol
 PASTA_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(PASTA_PROJETO, "src"))
 
-import armazem  # noqa: E402
+from sistema import armazem  # noqa: E402
 
 CENTRAL = "PLANILHA_CENTRAL"
 ESTRELA = "Solicitação Nota Fiscal (Estrela Centro) (respostas)"
@@ -195,7 +195,7 @@ def pastas_temporarias(tmp_path, monkeypatch):
 @pytest.fixture(autouse=True)
 def sem_outlook_no_envio_nf(monkeypatch):
     """O serviço de envio de NF do Painel nunca toca o Outlook de verdade nos testes."""
-    import envio_nf
+    from emails import envio_nf
     monkeypatch.setattr(envio_nf, "contas_do_outlook", lambda: [])
     monkeypatch.setattr(envio_nf, "enviar_pelo_outlook", lambda *a: (_ for _ in ()).throw(RuntimeError("Outlook real bloqueado no teste")))
 

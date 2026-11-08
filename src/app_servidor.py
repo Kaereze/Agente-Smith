@@ -27,44 +27,44 @@ from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from console_utf8 import garantir_utf8
+from sistema.console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-import app_dados as dados
-import acessos
-import atividade
+from painel import app_dados as dados
+from privacidade import acessos
+from painel import atividade
 import atualizador
 import avisos_windows
-import canceladas
-import hospedes
-import ligacoes
-import cota_google
-import envio_nf
-import espelho_emails
-import rede_local
-import rede_pcs
-import contagem_painel
-import relatorio_semana
-import saude
-import fiscal_intelligence
-import painel_metricas as metricas
-import agentes_smith
-import rotas_api
-import desempenho
-from arquivos import salvar_json
-from hoteis import CadastroHoteis
-from app_envio import Envio
-from estado_sistema import DROPBOX_OLHAR_SEGUNDOS, REINICIO_PENDENTE_MIN, SistemaMixin   # noqa: F401
-from estado_envio import EnvioMixin
-from estado_rede import RedeMixin, VERIFICAR_ATUALIZACAO_MINUTOS, TELAS, SEM_REDE_SEGUNDOS, JANELA_ABERTA_SEGUNDOS, ATIVIDADE_CACHE_SEGUNDOS   # noqa: F401
-from estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_SEGUNDOS, _kw_ligacao   # noqa: F401  (nomes usados por testes e rotas)
-import armazem
+from notas import canceladas
+from notas import hospedes
+from emails import ligacoes
+from central import cota_google
+from emails import envio_nf
+from emails import espelho_emails
+from rede import rede_local
+from rede import rede_pcs
+from painel import contagem_painel
+from painel import relatorio_semana
+from painel import saude
+from central import fiscal_intelligence
+from painel import painel_metricas as metricas
+from painel import agentes_smith
+from painel import rotas_api
+from painel import desempenho
+from sistema.arquivos import salvar_json
+from central.hoteis import CadastroHoteis
+from painel.app_envio import Envio
+from painel.estado_sistema import DROPBOX_OLHAR_SEGUNDOS, REINICIO_PENDENTE_MIN, SistemaMixin   # noqa: F401
+from painel.estado_envio import EnvioMixin
+from painel.estado_rede import RedeMixin, VERIFICAR_ATUALIZACAO_MINUTOS, TELAS, SEM_REDE_SEGUNDOS, JANELA_ABERTA_SEGUNDOS, ATIVIDADE_CACHE_SEGUNDOS   # noqa: F401
+from painel.estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_SEGUNDOS, _kw_ligacao   # noqa: F401  (nomes usados por testes e rotas)
+from sistema import armazem
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
-import limpeza
-from log_util import configurar_logging
-from sheets import (STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
-from tratamento import normalizar
+from sistema import limpeza
+from sistema.log_util import configurar_logging
+from central.sheets import (STATUS_ROTULO_A1, escrever_linhas_status, nome_do_hotel_pela_aba)
+from central.tratamento import normalizar
 import ajustes
 
 logger = configurar_logging("app")
@@ -108,7 +108,7 @@ VERSAO_CACHE = 1
 # Cache em disco (Fase 1, 05/11/2026): lê só estes tipos. Um arquivo trocado por outro com código dentro não roda nada: é recusado
 # (o Painel então lê tudo de novo do Google, como sempre fez sem cache).
 _TIPOS_DO_CACHE = {("datetime", "datetime"), ("datetime", "date"), ("datetime", "timezone"), ("datetime", "timedelta"),
-                   ("hoteis", "CadastroHoteis"), ("modelos", "Hotel"), ("modelos", "Solicitacao"),
+                   ("central.hoteis", "CadastroHoteis"), ("notas.modelos", "Hotel"), ("notas.modelos", "Solicitacao"),
                    ("collections", "OrderedDict"), ("collections", "defaultdict"), ("builtins", "set"), ("builtins", "frozenset")}
 
 
@@ -938,13 +938,13 @@ def main():
             abrir_janela()
         return 0
 
-    from sheets import BackendGoogle
+    from central.sheets import BackendGoogle
     cota_google.configurar("painel")
-    modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/demo.py)
+    modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/painel/demo.py)
     cfg = carregar_config(exigir_chave=not modo_demo)
     so_ver = "--visualizar" in sys.argv and not modo_demo   # PC de casa com a chave: dados reais, só leitura
     if modo_demo:
-        import demo
+        from painel import demo
         global CAMINHO_CACHE
         CAMINHO_CACHE = armazem.caminho("painel_cache_demo.pkl")
         cfg = demo.configurar_cfg(cfg)
@@ -953,7 +953,7 @@ def main():
         demo.preparar(estado, backend_demo)
         logger.info("🧪 MODO DEMONSTRAÇÃO: dados fictícios, nada vai pro Google nem pro Outlook")
     elif so_ver:
-        from sheets import BackendSoLeitura
+        from central.sheets import BackendSoLeitura
         CAMINHO_CACHE = armazem.caminho("painel_cache_casa.pkl")
         estado = Estado(BackendSoLeitura(caminho_chave_google(cfg)), cfg)
         logger.info("🏠 MODO CASA: dados reais, só visualização (não grava na Central, não mexe no Outlook)")

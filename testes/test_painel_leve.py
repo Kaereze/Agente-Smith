@@ -2,9 +2,9 @@
 correio dos 4 PCs junto (respondido/excluído some, lido vale pra equipe) e solicitação resolvida some em 24 h."""
 import datetime
 
-import app_dados as d
+from painel import app_dados as d
 import app_servidor
-import espelho_emails as ee
+from emails import espelho_emails as ee
 from app_servidor import Estado
 from conftest import CENTRAL, ESTRELA
 

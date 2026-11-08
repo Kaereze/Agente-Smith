@@ -22,7 +22,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import armazem
+from sistema import armazem
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO
 import ajustes
 
@@ -244,8 +244,8 @@ def main():
     except Exception:
         pass   # sem o atalho, só não liga sozinho com o Windows
     try:
-        import limpeza
-        from log_util import configurar_logging
+        from sistema import limpeza
+        from sistema.log_util import configurar_logging
         liberado = limpeza.limpar_cache_da_janela(PASTA_ESTADO)   # só o cache do navegador, antes de a janela abrir (27/10/2026)
         if liberado:
             configurar_logging("janela").info(

@@ -1,8 +1,8 @@
 """✅ só com prova de dentro da nota (PDF/OCR/XML) — caso real da NF 801 (Ondina, 24/09/2026)."""
 import datetime
 
-from controle_nf import Registro, conferir_conteudo, nfs_sem_prova, provas_da_solicitacao, reconferir, situacao
-from modelos import Hotel, Solicitacao
+from notas.controle_nf import Registro, conferir_conteudo, nfs_sem_prova, provas_da_solicitacao, reconferir, situacao
+from notas.modelos import Hotel, Solicitacao
 
 # Imita o texto que o OCR do Windows devolveu (com os erros dele: "f" no lugar de "/", "OO" no lugar de "00")
 NOTA_OCR = """PREFEITURA MUNICIPAL DO SALVADOR NOTA FISCAL DE SERVIÇOS ELETRÔNICA
@@ -146,7 +146,7 @@ def test_nota_do_dropbox_antes_do_pedido_nao_conta():
 
 def test_mesmo_cnpj_outra_estadia_nao_e_a_nota():
     """Caso real 27/09: Consórcio Planex, pedido de 23/09 a 28/09, NF 1369 era da estadia de 18 a 19/09."""
-    from controle_nf import conferir_conteudo
+    from notas.controle_nf import conferir_conteudo
     sol = {"documentos": ["12345678000190"], "datas": ["23/09/2026", "28/09/2026"], "nomes": ["Consorcio Planex"],
            "valores": [], "servicos": ["diaria"]}
     nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " Tomador CNPJ 12.345.678/0001-90 Consorcio Planex "
@@ -157,7 +157,7 @@ def test_mesmo_cnpj_outra_estadia_nao_e_a_nota():
 
 def test_pediu_consumo_nota_de_diaria_nao_e_a_nota():
     """Hóspede pede diária ontem e consumo hoje com os mesmos dados: a NF da diária não fecha o pedido do consumo."""
-    from controle_nf import conferir_conteudo
+    from notas.controle_nf import conferir_conteudo
     sol = {"documentos": ["12345678901"], "datas": ["20/09/2026", "22/09/2026"], "nomes": ["Ze Silva"],
            "valores": [], "servicos": ["consumo"]}
     nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " CPF 123.456.789-01 Ze Silva Hospedagem diária 20/09/2026 a 22/09/2026"
@@ -169,7 +169,7 @@ def test_pediu_consumo_nota_de_diaria_nao_e_a_nota():
 
 def test_hospede_errou_o_ano_da_estadia():
     """Caso real 27/09: 'Incomum viagens' digitou 25/09/0026; a NF 1201 (25/09/2026) é a certa."""
-    from controle_nf import conferir_conteudo
+    from notas.controle_nf import conferir_conteudo
     sol = {"documentos": ["12345678000190"], "datas": ["25/09/0026", "26/09/0026"], "nomes": ["Incomum viagens"],
            "valores": [], "servicos": ["diaria"]}
     nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " CNPJ 12.345.678/0001-90 hospedagem diária 25/09/2026 27/09/2026"
@@ -186,7 +186,7 @@ TRIBUTAÇÃO MUNICIPAL (ISSQN)"""
 
 
 def test_le_a_descricao_do_servico_da_nota():
-    from controle_nf import ler_descricao_nota
+    from notas.controle_nf import ler_descricao_nota
     d = ler_descricao_nota(BLOCO_1202)
     assert d == {"checkin": "24/09", "checkout": "25/10", "servicos": {"diaria", "estacionamento"}}
     d = ler_descricao_nota("DATA DE CHECK-IN: 18/09/2026\nVALOR DE DIARIA: R$148,77\nVALOR DO CONSUMO: R$ 0,00")
@@ -195,7 +195,7 @@ def test_le_a_descricao_do_servico_da_nota():
 
 def test_checkout_com_mes_errado_na_nota_ainda_confere():
     """NF 1202 real: check-out 25/10 (era 25/09) — o check-in 24/09 basta."""
-    from controle_nf import conferir_conteudo
+    from notas.controle_nf import conferir_conteudo
     sol = {"documentos": ["12345678000190"], "datas": ["24/09/2026", "25/09/2026"], "nomes": ["Crop"], "valores": [],
            "servicos": ["diaria", "estacionamento"]}
     texto = ("NOTA FISCAL " * 20) + " CNPJ 12.345.678/0001-90 " + BLOCO_1202
@@ -204,7 +204,7 @@ def test_checkout_com_mes_errado_na_nota_ainda_confere():
 
 
 def test_pediu_so_consumo_e_a_nota_e_de_diaria_e_estacionamento():
-    from controle_nf import conferir_conteudo
+    from notas.controle_nf import conferir_conteudo
     sol = {"documentos": ["12345678000190"], "datas": ["24/09/2026", "25/09/2026"], "nomes": ["Crop"], "valores": [],
            "servicos": ["consumo"]}
     texto = ("NOTA FISCAL " * 20) + " CNPJ 12.345.678/0001-90 " + BLOCO_1202

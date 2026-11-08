@@ -109,7 +109,7 @@ def test_olhar_dropbox_refaz_as_nfs_so_quando_a_pasta_muda(monkeypatch):
 
 def test_robo_avisa_o_painel_deste_pc(monkeypatch):
     import config
-    import rede_local
+    from rede import rede_local
     chamadas = []
     monkeypatch.setattr(config, "caminho_chave_google", lambda cfg: "chave.json")
     monkeypatch.setattr(rede_local, "segredo_da_chave", lambda caminho: b"segredo-de-teste")
@@ -120,7 +120,7 @@ def test_robo_avisa_o_painel_deste_pc(monkeypatch):
 
 def test_robo_sem_painel_no_ar_nao_quebra(monkeypatch):
     import config
-    import rede_local
+    from rede import rede_local
     monkeypatch.setattr(config, "caminho_chave_google", lambda cfg: "chave.json")
     monkeypatch.setattr(rede_local, "segredo_da_chave", lambda caminho: b"segredo-de-teste")
     def recusa(*a, **k):

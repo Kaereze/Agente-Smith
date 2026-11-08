@@ -1,5 +1,5 @@
 """Modo demonstração (PC de casa): sobe com dados fictícios e as ações só fingem."""
-import demo
+from painel import demo
 from app_servidor import Estado
 
 

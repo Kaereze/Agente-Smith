@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-import app_dados as d
+from painel import app_dados as d
 from app_servidor import Estado
 from conftest import ESTRELA
 

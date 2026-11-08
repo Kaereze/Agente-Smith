@@ -1,8 +1,8 @@
 """Notas fiscais = espelho da Caixa de Entrada (usuário, 11/10/2026): só as solicitações do robô que estão no Outlook."""
 import datetime
 
-import app_dados as dados
-import espelho_emails as ee
+from painel import app_dados as dados
+from emails import espelho_emails as ee
 
 CORPO = """Solicitações de Nota Fiscal
 Operador: notafiscal@redeandradelagoa.com.br · Gerado em 08/10/2026 19:24 · 2 solicitação(ões)
@@ -62,7 +62,7 @@ def test_solicitacao_sem_formulario_aparece_com_aviso():
 
 
 # ---------- Caixa de entrada fiel ao Outlook (11/10/2026) ----------
-import correio
+from emails import correio
 
 
 def test_lido_no_outlook_so_vale_depois_de_5_minutos():
@@ -106,7 +106,7 @@ def test_copia_dos_hoteis_le_a_planilha_do_hotel():
 
 
 # ---------- saúde do sistema (11/10/2026) ----------
-import saude
+from painel import saude
 
 
 def test_saude_avisa_copia_parada_saida_travada_e_versao():
@@ -132,7 +132,7 @@ def test_saude_tudo_normal_nao_mostra_nada():
 
 
 # ---------- relatório do dia/semana (Mail Analytics, só leitura) e cadastro completo ----------
-import relatorio_semana as rs
+from painel import relatorio_semana as rs
 
 
 def _dados_ma():
@@ -174,7 +174,7 @@ def test_mail_analytics_atrasado():
 
 
 # ---------- fim de semana contado pelo Painel (11/10/2026) ----------
-import contagem_painel as cp
+from painel import contagem_painel as cp
 
 
 def _reg(d, n):
@@ -228,7 +228,7 @@ def test_pagina_inteira_espera_arquivo_completo(tmp_path, monkeypatch):
 
 def test_modo_casa_porteiro_ignora_toda_gravacao():
     # PC de casa (12/10/2026): só lê; nenhuma gravação chega ao Google
-    import sheets
+    from central import sheets
     b = object.__new__(sheets.BackendSoLeitura)
     chamadas = []
     b._com_aba = lambda *a, **k: chamadas.append(a)

@@ -3,8 +3,9 @@ import json
 import time
 from pathlib import Path
 
-import enviar_receber as er
+from emails import enviar_receber as er
 from tela_texto import pagina, codigo_js
+from codigo_fonte import fonte_servidor
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 CORREIO = codigo_js(UI, "correio")
@@ -157,7 +158,7 @@ def test_gancho_de_acao_longa_avisa_depois_de_3_s_e_o_api_liga_sozinho():
 
 def test_servidor_so_atende_pelo_painel_deste_pc_e_pela_rede_assinada():
     import app_servidor
-    fonte = "".join(Path(app_servidor.__file__).with_name(n).read_text(encoding="utf-8") for n in ("app_servidor.py", "rotas_api.py"))
+    fonte = fonte_servidor(Path(app_servidor.__file__).resolve().parent.parent)
     assert '"enviar_receber": estado.rede_enviar_receber' in fonte and '"/api/enviar_receber"' in fonte
 
 

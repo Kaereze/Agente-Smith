@@ -1,9 +1,9 @@
 """Pedido do titular (LGPD, 08/11/2026): localizar e apagar os dados de uma pessoa neste PC, sem mostrar conteúdo."""
 import pytest
 
-import armazem
-import indice_emails
-import titular
+from sistema import armazem
+from emails import indice_emails
+from privacidade import titular
 
 CPF = "529.982.247-25"   # inventado (dígitos válidos)
 

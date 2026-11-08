@@ -4,10 +4,10 @@ pendente nas duas e o TRUE volta para a planilha de onde cada linha veio."""
 import datetime
 import json
 
-import robo_antigo as ra
+from notas import robo_antigo as ra
 import sincronizar as sz
-from modelos import Hotel
-from sheets import interpretar_aba
+from notas.modelos import Hotel
+from central.sheets import interpretar_aba
 
 CFG = {"colunas": {"enviado": "Enviado", "carimbo": "Carimbo de data/hora",
                    "email_hospede": ["Endereço de e-mail", "E-mail"],

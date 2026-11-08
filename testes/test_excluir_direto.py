@@ -6,10 +6,11 @@ from pathlib import Path
 import pytest
 
 import app_servidor
-import envio_nf as en
-import indice_emails
+from emails import envio_nf as en
+from emails import indice_emails
 from test_envio_nf import CAIXA, SOL, Relogio, _ler, _prep, _servico
 from tela_texto import codigo_js
+from codigo_fonte import fonte_servidor
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -116,6 +117,6 @@ def test_tela_delete_direto_so_para_o_administrador_e_em_todas_as_listas():
 
 
 def test_rota_de_excluir_passa_os_dados_do_e_mail():
-    fonte = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", RAIZ / "src" / "rotas_api.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
+    fonte = fonte_servidor(RAIZ)
     assert 'c.estado.excluir_email(str(b.get("id", "")), c.agente(), b)' in fonte
     assert "self.envio_nf.entry_confere = lambda i, e, c" in fonte

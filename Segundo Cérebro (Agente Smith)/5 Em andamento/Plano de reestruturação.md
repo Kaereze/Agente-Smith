@@ -31,5 +31,5 @@ Cada etapa: uma versão, testes verdes, teste de tela, e só sobe com OK do Joã
 
 ## Andamento (29/10/2026)
 - Passo 1 (limpar) e passo 2 (partir a `Estado`): feitos no PC de casa, sem etiqueta. `app_servidor.py` 2.575 → 1.093 linhas. Falta a tabela de rotas.
-- Tabela de rotas (30/10): feita em `src/rotas_api.py`; `app_servidor.py` ~985 linhas, 709 testes (708 + mapa) ok. Faltam: pastas por assunto em `src/`, porta única de dados, CSS/JS fora do `index.html`.
+- Tabela de rotas (30/10): feita em `src/painel/rotas_api.py`; `app_servidor.py` ~985 linhas, 709 testes (708 + mapa) ok. Faltam: pastas por assunto em `src/`, porta única de dados, CSS/JS fora do `index.html`.
 - Supabase: por último, não usar agora (decisão do João). Foco: só NF e e-mail.

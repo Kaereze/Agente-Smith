@@ -4,7 +4,7 @@ import datetime
 import pytest
 
 import app_servidor
-import envio_nf
+from emails import envio_nf
 
 
 def _estado(monkeypatch, contas):
@@ -92,7 +92,7 @@ def test_tira_a_assinatura_automatica_do_outlook():
 
 
 def test_espelho_mostra_se_o_enviado_saiu_pelo_painel():
-    import espelho_emails as ee
+    from emails import espelho_emails as ee
     agora = datetime.datetime(2026, 10, 13, 11, 0)
     itens = {"a": {"id": "a", "pasta": ee.ENVIADO, "caixa": "c", "hotel": "VERNON", "de": "c", "para": "h@x.com",
                    "assunto": "NF", "quando": "2026-10-13T10:00:00", "via": "painel"}}
