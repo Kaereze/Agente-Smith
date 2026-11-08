@@ -15,6 +15,8 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - **`index.html` dividido** (a Auditoria cobrava): de 3.398 para 227 linhas. O estilo foi para `app_ui/estilo.css` (2.137 linhas) e a lógica das telas para `app_ui/telas.js` (1.034 linhas). Ficam inline só o tema, o token e o guardião da página pela metade (de propósito: se um arquivo externo falhar, é ele que recarrega). Os testes que conferem o código da tela leem os três juntos (`testes/tela_texto.py`).
 - **E-mail: dois botões rápidos na lista**, "Sem resposta" e "Correção", com a contagem de cada um, no lugar do menu "Filtro: Todos". Clicar de novo tira o filtro.
 
+- **Abrir e-mail mais rápido quando o PC dono não responde** (medido: 10 s em média, até 44 s, no PC de casa): depois de 1 falha, o Painel usa a cópia da planilha por 45 s em vez de esperar 6 s a cada e-mail.
+
 ### Removido
 - Código sem uso: `assunto_sugerido`, `sem_historico`, `e_automatico` e as constantes `CORPO_PADRAO`, `PR_CABECALHOS`, `CONFERENCIA`, `VALORES_DESLIGADO` (e os testes que só conferiam essas funções).
 

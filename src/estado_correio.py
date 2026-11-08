@@ -28,6 +28,7 @@ import ajustes
 logger = configurar_logging("app")
 NOTAS_EMAILS_SEGUNDOS = ajustes.valor("email.notas_dos_emails_segundos")   # e-mail -> NF do Dropbox: recalculado a cada 2 min, fora da resposta da tela
 ENVIADOS_RAPIDO_SEGUNDOS = ajustes.valor("email.enviados_rapido_segundos")   # consulta rápida nos Itens Enviados do Outlook quando o índice ainda não tem o envio do hóspede
+TEXTO_PC_SEM_RESPOSTA_SEGUNDOS = 45   # depois que o PC dono não responde ao pedido de texto, não pergunta de novo por este tempo
 
 
 def _kw_ligacao(corpo):
@@ -434,11 +435,16 @@ class CorreioMixin:
         if pc == socket.gethostname():
             return {**self.rede_texto({"id": id_email, "entry": entry}), "origem": "este PC"}
         endereco = self._enderecos_rede().get(pc)
-        if endereco and self.segredo:
+        falhou = getattr(self, "_texto_falhou", {})
+        # PC dono que acabou de não responder (casa, rede fora, PC desligado): vai direto para a cópia da planilha em vez de
+        # esperar 6 s de novo a cada e-mail aberto (medido em 07/11/2026: abrir e-mail levava 10 s em média no PC de casa)
+        if endereco and self.segredo and time.monotonic() - falhou.get(pc, -1e9) > TEXTO_PC_SEM_RESPOSTA_SEGUNDOS:
             r = rede_local.perguntar_a_todos(self.segredo, {pc: endereco}, "texto", {"id": id_email, "entry": entry}, tempo=6).get(pc, {})
             self._anotar_rede({pc: r})
             if "erro" not in r:
+                self._texto_falhou = {k: v for k, v in falhou.items() if k != pc}
                 return {**r, "origem": "ao vivo"}
+            self._texto_falhou = {**falhou, pc: time.monotonic()}
         if not id_email:
             raise KeyError(f"o PC {pc} não respondeu pela rede agora — tente de novo em instantes")
         return {**self._texto_da_planilha(pc, id_email), "origem": "cópia (PC dono sem rede)"}
