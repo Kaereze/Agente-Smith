@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-11-07 (auditoria de segurança)
+
+### Segurança
+- **`pypdf` 6.16.2 → 6.21.4**: a versão antiga tinha 26 falhas conhecidas (pip-audit). O Painel lê PDF de hóspede, que é arquivo vindo de fora. Só a `pypdf` tinha falha; as outras bibliotecas estão limpas.
+- **Cabeçalhos de segurança em toda resposta do Painel** (`nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin`), num ponto só (`Handler.end_headers`). Teste novo: `testes/test_cabecalhos_seguranca.py`.
+
 ## [2026.11.03.3] — 2026-11-03 (aguarda publicação)
 
 ### Adicionado

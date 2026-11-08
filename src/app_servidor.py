@@ -667,6 +667,13 @@ def _cronometrado(metodo, verbo):
     return interno
 
 
+# nosniff: o navegador não "adivinha" o tipo do arquivo · SAMEORIGIN: só o próprio Painel pode me pôr num quadro (a aba Agentes usa) ·
+# no-referrer: nenhum endereço do Painel vai para fora · same-origin: outro site não consegue ler estas respostas.
+# CSP ficou de fora de propósito: o visualizador de PDF do hóspede é um quadro com blob e precisa ser testado no PC do trabalho antes.
+CABECALHOS_SEGURANCA = (("X-Content-Type-Options", "nosniff"), ("X-Frame-Options", "SAMEORIGIN"),
+                        ("Referrer-Policy", "no-referrer"), ("Cross-Origin-Resource-Policy", "same-origin"))
+
+
 def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     pc = socket.gethostname()
     hosts_ok = {f"127.0.0.1:{PORTA}", f"localhost:{PORTA}"}
@@ -690,6 +697,11 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass
+
+        def end_headers(self):   # cabeçalhos de segurança em TODA resposta (auditoria 07/11/2026), num ponto só
+            for nome, valor in CABECALHOS_SEGURANCA:
+                self.send_header(nome, valor)
+            super().end_headers()
 
         def _json(self, corpo, codigo=200, comparar=False):
             dados_ = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
