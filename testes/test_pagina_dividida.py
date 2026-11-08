@@ -32,6 +32,7 @@ def test_cada_arquivo_js_da_tela_esta_no_html_uma_vez_e_o_servidor_entrega():
     import re
     html = (UI / "index.html").read_text(encoding="utf-8")
     citados = re.findall(r'<script src="/([^"/]+\.js)"></script>', html)
+    citados = [n for n in citados if n != "ajustes.js"]   # esse é gerado pelo servidor a partir do ajustes.json, não é arquivo da pasta
     em_disco = sorted(f.name for f in UI.glob("*.js"))
     assert sorted(citados) == em_disco, (set(em_disco) ^ set(citados))
     assert len(set(citados)) == len(citados)
