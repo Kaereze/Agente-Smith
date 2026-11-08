@@ -68,7 +68,7 @@ function rbLinha(x, tipo) {
   const t = rbTrilha(x), agente = (typeof AG !== "undefined" && AG[x.hotel]) || "";
   const ultimoEnvio = (x.envios || []).slice(-1)[0]?.quando || "";
   const onde = tipo === "and" ? `<b>Enviando agora</b>${agente ? ` pelo PC de ${esc(agente)}` : ""}`
-    : tipo === "env" ? `<b>Na fila para ir ao hotel</b>`
+    : tipo === "env" ? `<b>Esperando a próxima rodada</b>`
     : tipo === "ok" ? `Concluído${ultimoEnvio ? " às " + esc(ultimoEnvio.slice(11, 16)) : ""}`
     : (x.nfs || []).length ? `<b>NF emitida</b> · falta enviar ao hóspede` : `Enviado ao hotel · <b>esperando a NF</b>`;
   const icone = tipo === "and" ? rbGira(14) : tipo === "ok" ? rbIc("ok", 16, "rb-ok") : rbIc("rel", 16, "rb-cz");
