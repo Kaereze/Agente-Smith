@@ -9,7 +9,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Em preparação, sem etiqueta] — 2026-11-07 (design pedido pelo João)
+## [2026.11.07.1] — 2026-11-07 (design pedido pelo João)
 
 ### Mudou
 - **E-mail, faixa de cima:** saíram Novo e-mail, Excluir, Arquivar e Mover (o contato com o hóspede já está no botão Enviar NF e na resposta de dentro do e-mail). Ficam Responder, Responder a todos, Encaminhar, Não lido/Lido, Sinalizar, Enviar NF e Enviar/Receber.
