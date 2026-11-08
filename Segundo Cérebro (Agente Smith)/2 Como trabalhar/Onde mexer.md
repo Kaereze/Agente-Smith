@@ -116,6 +116,7 @@ tags: [cerebro/trabalho]
 | Os **blocos e as ligações** do mapa, os caminhos e os quadros | `app_ui/agentes/mapa.html`: `var N` (blocos), `var E` (ligações), `var FR` (quadros), `var PROD` (caminho de produção). Espelho editável: `3 Mapa do projeto/Mapa do sistema.drawio` |
 | **Quais agentes** aparecem na lista e como se chamam | `var AG` no script do `mapa.html` (o id é o nome do módulo em `src/`) |
 | O **estado ao vivo** (o que conta como ok, atenção, parado) | `src/agentes_smith.py` → `estado` (limites: `COPIA_ATENCAO_MIN`, `COPIA_PARADA_MIN`) |
+| **Resumo do dia: cartões e gráficos (07/11)** | desenho e animação em `app_ui/pecas/resumo_dia.js` + `.css`; os números são calculados em `resumoDiaHtml()`, `app_ui/painel.js`; teste `testes/test_resumo_dia.py` |
 | **O que falta para emitir a NF (30/10)** | `app_ui/pecas/regras_nf.js` (`faltaDados`, `faltaExtras`, validação de CPF/CNPJ/CEP; teste `testes/test_regras_nf.py`); texto da mensagem em `modeloPedirFalta`, `app_ui/painel.js` |
 | **Rota nova da API (30/10)** | uma linha em `GET` ou `POST` de `src/rotas_api.py` (endereço → função do `Estado`); HTTP, token e erros ficam em `criar_handler`, em `src/app_servidor.py` |
 | **Quem pode ver** | `e_admin_aqui` em `src/app_servidor.py`; as rotas `/agentes/mapa` e `/api/agentes` ficam antes dos arquivos públicos (`ESTATICOS`) |

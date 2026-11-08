@@ -167,3 +167,22 @@ def test_cabecalho_da_lista_de_emails_nao_corta_nenhuma_letra(painel_demo, naveg
             assert cortados == [], (marcar, cortados)
     finally:
         contexto.close()
+
+
+def test_resumo_de_ontem_novo_abre_mostra_dica_e_troca_para_tabela_sem_cortar_nada(painel_demo, pagina):
+    """João (07/11/2026): o resumo ganhou gráficos que se mexem. Sem erro, com dica ao passar o mouse e a opção de ver em tabela."""
+    abrir(pagina, painel_demo, "visao")
+    pagina.wait_for_selector(".rs-corpo .rs-kpi", timeout=10000)
+    assert pagina.locator(".rs-kpi").count() == 5 and pagina.locator(".rs-hit").count() >= 8
+    caixa = pagina.locator(".rs-hit").nth(4).bounding_box()
+    pagina.mouse.move(caixa["x"] + caixa["width"] / 2, caixa["y"] + 30)
+    pagina.wait_for_selector("#rs-dica.on", timeout=3000)
+    assert "Pedidos" in pagina.locator("#rs-dica").inner_text()
+    pagina.locator("[data-rs-tabela]").click()
+    pagina.wait_for_selector(".rs-tabela-on", timeout=3000)
+    assert pagina.locator(".rs-so-tabela").is_visible() and not pagina.locator(".rs-so-graficos").is_visible()
+    pagina.locator("[data-rs-tabela]").click()
+    pagina.wait_for_selector(".rs-so-graficos", state="visible", timeout=3000)
+    pagina.locator("[data-rd=hoje]").click()
+    pagina.wait_for_selector(".rd-cab h1:has-text('Resumo de hoje')", timeout=3000)
+    confere_a_tela(pagina)

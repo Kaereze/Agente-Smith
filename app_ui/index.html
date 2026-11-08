@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/pecas/caixas.css">
 <link rel="stylesheet" href="/pecas/busca_recente.css">
 <link rel="stylesheet" href="/pecas/etapas.css">
+<link rel="stylesheet" href="/pecas/resumo_dia.css">
 <link rel="stylesheet" href="/pecas/filtro_hoteis.css">
 <style>
 /* Leiaute: barra lateral verde com seções | área creme com filtros no topo | lista + leitura ao lado (estilo Outlook).
@@ -1340,28 +1341,13 @@ button.dest,.acoes button.dest{background:var(--atencao-fundo)!important;border-
 .seg-rd button{border:0;background:var(--folha);padding:7px 14px;font:inherit;font-size:12.5px;color:var(--tinta-2);cursor:pointer}
 .seg-rd button + button{border-left:1px solid var(--linha-forte)}
 .seg-rd button[aria-pressed="true"]{background:var(--verde-suave);color:var(--tinta);font-weight:600}
-.rd-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.rd-kpi{background:var(--folha);border:1px solid var(--linha);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:5px}
-.rd-kpi small{font:600 10.5px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3)}
-.rd-kpi b{font:600 26px var(--f-dado,"IBM Plex Mono");color:var(--tinta);font-variant-numeric:tabular-nums}
-.rd-kpi span{font-size:12px;color:var(--tinta-2)}
-.rd-kpi em{font-style:normal;font-weight:600}
-.sobe{color:var(--ok)}.desce{color:var(--erro)}.rd-kpi em.neutro{color:var(--tinta-2)}   /* neutro: nem bom nem ruim (24/10/2026) */
-.rd-grade{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
-.rd-painel{background:var(--folha);border:1px solid var(--linha);border-radius:8px;overflow:hidden;min-width:0}
-.rd-tit{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--linha)}
-.rd-tit b{font-size:14px}.rd-tit small{font-size:12px;color:var(--tinta-3)}
+.sobe{color:var(--ok)}.desce{color:var(--erro)}.rs-delta em.neutro{color:var(--tinta-2)}   /* neutro: nem bom nem ruim (24/10/2026) */
 .rd-lin{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 130px;gap:12px;align-items:center;width:100%;padding:11px 18px;
   border:0;border-bottom:1px solid var(--linha);background:transparent;color:var(--tinta);font:inherit;text-align:left;cursor:pointer}
 .rd-lin:hover{background:var(--folha-2)}
 .rd-nome{display:flex;flex-direction:column;min-width:0}.rd-nome b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rd-nome small{font-size:12px;color:var(--tinta-3)}
 .rd-pz{text-align:right}
-.rd-tab{width:100%;border-collapse:collapse;font-size:13px}
-.rd-tab th{text-align:left;font:600 10.5px var(--f-texto,"IBM Plex Sans");letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);padding:10px 18px;border-bottom:1px solid var(--linha)}
-.rd-tab td{padding:10px 18px;border-bottom:1px solid var(--linha)}
-.rd-tab .n{text-align:right;font-family:var(--f-dado,"IBM Plex Mono")}
-@media (max-width:1100px){.rd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rd-grade{grid-template-columns:1fr}}
 /* Gerência v2: relatório do mês */
 .ger-v2{display:flex;flex-direction:column;gap:18px}
 .g-cab{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;justify-content:space-between}
@@ -1624,7 +1610,7 @@ html,body{background:#1f1f1f}
    texto sem espaçamento; títulos -0,01em; rótulos pequenos em maiúsculas 11px com 0,05em; números na fonte do texto,
    alinhados (a fonte "de máquina" fica só no e-mail das caixas e no nome dos PCs) */
 .app.modo-ol{--f-dado:"IBM Plex Sans",system-ui,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0}
-.modo-ol :is(.rot,.linhas-cab span,.linhas-cab button,.kpi .r,.tabela th,.ativ-tab th,.stc-r,.pop-grupo,.ord,.quadro-e2 > b,.kpi-r,.rot-nav,.cx-tipo,.st-rot,.cx-fl > span:first-child,.cx-verifica b,.cx-hist-t,.fr-rot,.ger-tab th,.ajuda-corpo h4,.ficha-tit .rot,.nf-cab span,.rot-barra,.sec-tit,.sc-grupo,.fr-bloco h4,.cx-pedido small,.rd-kpi small,.rd-tab th,.g-kpi small,.ol-pc,.ol-ficha .fg small){letter-spacing:.05em!important;font-size:11px!important;font-weight:600!important;color:var(--tinta-3)}
+.modo-ol :is(.rot,.linhas-cab span,.linhas-cab button,.kpi .r,.tabela th,.ativ-tab th,.stc-r,.pop-grupo,.ord,.quadro-e2 > b,.kpi-r,.rot-nav,.cx-tipo,.st-rot,.cx-fl > span:first-child,.cx-verifica b,.cx-hist-t,.fr-rot,.ger-tab th,.ajuda-corpo h4,.ficha-tit .rot,.nf-cab span,.rot-barra,.sec-tit,.sc-grupo,.fr-bloco h4,.cx-pedido small,.rs-kpi small,.rs-tab th,.g-kpi small,.ol-pc,.ol-ficha .fg small){letter-spacing:.05em!important;font-size:11px!important;font-weight:600!important;color:var(--tinta-3)}
 .modo-ol :is(.col-hotel,.cx-hotel){letter-spacing:0!important;text-transform:none!important}
 .modo-ol :is(.pilula,.envio,.tipo,.tipo-o,.op-cartao .op-nome,.ln .n.em-teste){letter-spacing:.04em!important}
 .modo-ol .vista :is(h1,h2){letter-spacing:-.01em!important}
@@ -2338,6 +2324,7 @@ html,body{background:#1f1f1f}
 <script src="/pecas/caixas.js"></script>
 <script src="/pecas/busca_recente.js"></script>
 <script src="/pecas/etapas.js"></script>
+<script src="/pecas/resumo_dia.js"></script>
 <script src="/pecas/atualizar_pc.js"></script>
 <script src="/pecas/filtro_hoteis.js"></script>
 <script>

@@ -1,0 +1,100 @@
+/* Peça única do Resumo do dia (João, 07/11/2026). O Painel é sempre escuro (Prévia 5, .modo-ol): séries validadas com o validador
+   do dataviz para o escuro, #3b8fe3 / #b8862f sobre #242424 (a variante clara, se um dia houver: #2f6fc4 / #8a6212 sobre #fffdf8). */
+:root{--rs-a:#3b8fe3;--rs-b:#b8862f;--rs-c:#7fb8f0}
+
+.rs-corpo{display:flex;flex-direction:column;gap:10px}
+.rs-so-graficos{display:flex;flex-direction:column;gap:10px}
+.rs-so-tabela{display:none}
+.rs-tabela-on .rs-so-graficos{display:none}.rs-tabela-on .rs-so-tabela{display:block}
+.rs-cartao{background:var(--folha,#242424);border:1px solid var(--linha,#333);border-radius:8px;padding:16px;min-width:0}
+.rs-cartao h2{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--tinta)}
+.rs-h2b{margin-top:16px!important}
+.rs-dica{margin:0 0 12px;color:var(--tinta-3);font-size:12px}
+.rs-vazio{color:var(--tinta-3);font-size:13px;padding:8px 0}
+
+/* KPIs */
+.rs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.rs-kpi{display:flex;flex-direction:column;gap:2px;transition:border-color .2s,transform .2s}
+.rs-kpi:hover{border-color:var(--linha-forte,#4a4a4a);transform:translateY(-1px)}
+.rs-kpi small{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-3)}
+.rs-kpi b{font-size:32px;line-height:1.15;font-weight:600;color:var(--tinta);font-variant-numeric:tabular-nums}
+.rs-delta{font-size:12px;color:var(--tinta-2);min-height:1.4em}
+.rs-delta em{font-style:normal;font-weight:600}
+.rs-nota{font-size:12px;color:var(--tinta-3)}
+.rs-spark{display:block;width:100%;height:34px;margin-top:8px;overflow:visible}
+.rs-spark path,.rs-fio{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* grade */
+.rs-grade{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+.rs-g8{grid-column:span 8}.rs-g4{grid-column:span 4}.rs-g6{grid-column:span 6}
+@media (max-width:1100px){.rs-g8,.rs-g4,.rs-g6{grid-column:span 12}}
+
+/* gráfico de linha */
+.rs-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 8px;color:var(--tinta-2);font-size:12px}
+.rs-leg span{display:inline-flex;align-items:center;gap:6px}
+.rs-leg i{display:inline-block;width:12px;height:3px;border-radius:2px}.rs-leg i.rs-q{height:10px;width:10px}
+.rs-graf svg{display:block;width:100%;height:auto;overflow:visible}
+.rs-linha-svg text{font:11px var(--f-texto,"Segoe UI",sans-serif);fill:var(--tinta-3)}
+.rs-eixo line{stroke:var(--linha,#2e2e2e)}.rs-eixo .rs-base{stroke:var(--linha-forte,#4a4a4a)}
+.rs-area{opacity:.12}
+.rs-cruz{stroke:var(--tinta-3);stroke-width:1;stroke-dasharray:3 3}
+.rs-pa,.rs-pb{stroke:var(--folha,#242424);stroke-width:2}
+.rs-hit{fill:transparent;cursor:crosshair}
+.rs-linha-svg:focus-visible{outline:2px solid #479ef5;outline-offset:4px;border-radius:4px}
+
+/* barras, meter, segmentos */
+.rs-barras{display:grid;gap:8px}
+.rs-br{display:grid;grid-template-columns:minmax(80px,130px) minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:4px;padding:3px 4px}
+.rs-br:hover,.rs-br:focus-visible{background:var(--folha-2,#2b2b2b);outline:none}
+.rs-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tinta-2)}
+.rs-trilho{display:grid;gap:3px}
+.rs-barra{height:8px;border-radius:0 4px 4px 0;background:var(--rs-a);transform-origin:left;transition:transform .7s cubic-bezier(.2,.7,.2,1)}
+.rs-barra.rs-o{background:var(--rs-b);transition-delay:.08s}
+.rs-val{min-width:2.4em;text-align:right;font-weight:600;color:var(--tinta);font-variant-numeric:tabular-nums}
+.rs-rot{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-3)}
+.rs-meter{height:10px;border-radius:5px;background:var(--linha,#333);overflow:hidden;margin:8px 0 6px}
+.rs-meter div{height:100%;width:var(--p);background:var(--rs-a);border-radius:5px;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.rs-segbar{display:flex;gap:2px;height:28px;margin:8px 0}
+.rs-seg{flex:0 1 auto;min-width:0;background:var(--cor);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;transition:flex-basis .9s cubic-bezier(.2,.7,.2,1),filter .15s}
+.rs-seg:hover,.rs-seg:focus-visible{filter:brightness(1.18);outline:none}
+.rs-lista-seg{display:grid;gap:4px;margin-top:8px}
+.rs-lista-seg div{display:flex;justify-content:space-between;gap:12px;color:var(--tinta-2);font-size:13px}
+.rs-lista-seg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+.rs-lista-seg b{color:var(--tinta)}
+
+/* lista de atenção (as linhas e etiquetas são as de sempre: .rd-lin, etiquetas do pedido) */
+.rs-atencao .rd-lin{border-top:1px solid var(--linha);transition:opacity .35s,transform .35s,background .15s}
+.rs-atencao .rd-lin:first-child{border-top:0}
+
+/* tabela */
+.rs-tab{width:100%;border-collapse:collapse;font-size:13px}
+.rs-tab th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-3);text-align:left;font-weight:500;padding:6px 8px;border-bottom:1px solid var(--linha)}
+.rs-tab td{padding:7px 8px;border-bottom:1px solid var(--linha);color:var(--tinta)}
+.rs-tab .n{text-align:right;font-variant-numeric:tabular-nums}
+
+/* dica */
+#rs-dica{position:fixed;z-index:60;pointer-events:none;background:#2b2b2b;border:1px solid #4a4a4a;border-radius:8px;padding:8px 10px;font-size:12px;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .12s}
+#rs-dica.on{opacity:1}
+.rs-dt{color:#a8a8a8;margin-bottom:4px}
+.rs-dl{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.rs-dl span{display:inline-flex;align-items:center;gap:6px;color:#d0d0d0}
+.rs-dl i{display:inline-block;width:10px;height:3px;border-radius:2px}
+.rs-dl b{color:#f0f0f0;font-size:13px}
+
+/* animação de entrada: só quando o Painel acrescenta .rs-pre (números novos ou tela recém-aberta) */
+.rs-tr{stroke-dasharray:1;stroke-dashoffset:0;transition:stroke-dashoffset 1s cubic-bezier(.2,.7,.2,1)}
+.rs-pre .rs-tr{stroke-dashoffset:1;transition:none}
+.rs-pre .rs-barra{transform:scaleX(0);transition:none}
+.rs-pre .rs-meter div{width:0;transition:none}
+.rs-pre .rs-seg{flex-basis:0!important;transition:none}
+.rs-pre .rs-cartao{opacity:0;transform:translateY(8px);transition:none}
+.rs-cartao{transition:opacity .4s,transform .4s,border-color .2s}
+.rs-pre .rs-atencao .rd-lin{opacity:0;transform:translateY(6px);transition:none}
+@media (prefers-reduced-motion: reduce){.rs-corpo *{transition:none!important}}
+
+/* cabeçalho do resumo: "Ver como tabela" ao lado de Ontem/Hoje */
+.rs-acoes{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rd-cab .seg-rd{margin-left:0}
+.rs-btn{font:inherit;font-size:12.5px;color:var(--tinta-2);background:transparent;border:1px solid var(--linha-forte,#4a4a4a);border-radius:7px;padding:6px 12px;cursor:pointer}
+.rs-btn:hover{background:var(--folha-2,#2b2b2b);color:var(--tinta)}
+.rs-btn:focus-visible{outline:2px solid #479ef5;outline-offset:2px}

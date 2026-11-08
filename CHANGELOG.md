@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Em preparação, sem etiqueta] — 2026-11-07 (Resumo do dia novo)
+
+### Mudou
+- **Resumo de ontem / de hoje virou um painel de números e gráficos que se mexem** (desenho aprovado em `Designs/2026-11-07 Resumo de ontem (dashboard).html`), numa peça única nova: `app_ui/pecas/resumo_dia.js` e `.css`.
+  - 5 cartões com número que sobe até o valor, mudança contra a semana anterior e risquinho dos últimos 7 dias.
+  - Gráfico de linha de pedidos e NFs **por hora**, com linha-guia e quadro de valores ao passar o mouse (ou pelas setas do teclado).
+  - Barra de **prazo** (NFs em até 48 h), barra por **situação** (Sem NF, Falta dado, NF pronta falta enviar), barras da **equipe** e dos **hotéis com mais pedidos**, e a lista "Precisa de atenção".
+  - Botão **Ver como tabela** (os mesmos números, para ler, copiar ou imprimir). Respeita "reduzir movimento" do Windows.
+  - A animação roda ao abrir a tela, ao trocar Ontem/Hoje ou quando os números mudam; **não repete** a cada atualização de 15 s.
+  - Cores validadas para daltonismo (azul `#3b8fe3`, dourado `#b8862f`). SVG e CSS puros, sem biblioteca nova.
+- Saiu o CSS dos cartões antigos do resumo (`.rd-kpi`, `.rd-grade`, `.rd-painel`, `.rd-tab`). Ficaram `.rd-cab`, `.seg-rd` e as linhas de atenção.
+
 ## [2026.11.07.1] — 2026-11-07 (design pedido pelo João)
 
 ### Mudou

@@ -297,35 +297,62 @@ function resumoDiaHtml() {
   abertos.forEach(it => somar(agentesDo(it)[0] || agenteDe(it.s), "pend"));
   const atencao = TODOS.filter(it => it.tipo === "form" && (motivoUrgente(it.s) || faltaDados(it.s).length))
     .sort((x, y) => String(x.s.prazo?.vence || "9") < String(y.s.prazo?.vence || "9") ? -1 : 1).slice(0, 6);
+  // --- dados para a peça (pecas/resumo_dia.js) ---
+  const horaDe = h => parseInt(String(h).slice(0, 2), 10);
+  const evHoras = [...a.recebidos.map(s => horaDe(horaDoCarimbo(s.carimbo) || "12:00")), ...a.envios.map(e => horaDe(e.iso.slice(11, 13)))].filter(h => h >= 0 && h <= 23);
+  const h0 = Math.min(8, ...evHoras), h1 = Math.max(19, ...evHoras);
+  const horas = Array.from({ length: h1 - h0 + 1 }, (_, i) => ({ h: h0 + i, ped: 0, nfs: 0 }));
+  a.recebidos.forEach(s => { const x = horas[horaDe(horaDoCarimbo(s.carimbo) || "12:00") - h0]; if (x) x.ped++; });
+  a.envios.forEach(e => { const x = horas[horaDe(e.iso.slice(11, 13)) - h0]; if (x) x.nfs += e.n; });
+  // os 7 dias até o dia do resumo, para o risquinho de cada cartão
+  const ultimos = Array.from({ length: 7 }, (_, i) => { const x = new Date(base); x.setDate(x.getDate() - (6 - i)); return numeros(isoDe(x)); });
+  const serie = f => { const v = ultimos.map(f); let ult = null; const lis = v.map(x => x == null ? ult : (ult = x)); return lis.filter(x => x != null).length >= 2 ? lis.map(x => x ?? 0) : null; };
+  const kpis = [
+    { r: "Pedidos recebidos", v: a.recebidos.length, fmt: "n", delta: varN(a.recebidos.length, b.recebidos.length, 0) || "pelo formulário", spark: serie(n => n.recebidos.length) },
+    { r: "NFs enviadas", v: a.nfs, fmt: "n", delta: varN(a.nfs, b.nfs, 1) || "pelo Painel e Outlook", spark: serie(n => n.nfs) },
+    { r: "Enviadas no prazo", v: a.noPrazo, fmt: "p", spark: serie(n => n.noPrazo),
+      delta: b.noPrazo == null || a.noPrazo == null ? "prazo de 48 h" : a.noPrazo === b.noPrazo ? `igual (era ${b.noPrazo}%)`
+        : `<em class="${a.noPrazo > b.noPrazo ? "sobe" : "desce"}">${a.noPrazo > b.noPrazo ? "+" : "−"}${Math.abs(a.noPrazo - b.noPrazo)} pontos</em> (era ${b.noPrazo}%)` },
+    { r: "Tempo até a NF", v: a.mediana == null ? null : Math.round(a.mediana), fmt: "h", spark: serie(n => n.mediana),
+      delta: a.mediana == null || b.mediana == null || Math.round(a.mediana) === Math.round(b.mediana) ? `mediana${b.mediana != null ? ` · era ${fmtH(b.mediana)}` : ""}`
+        : `<em class="${a.mediana < b.mediana ? "sobe" : "desce"}">${fmtH(Math.abs(b.mediana - a.mediana))} ${a.mediana < b.mediana ? "mais rápido" : "mais lento"}</em> (era ${fmtH(b.mediana)})` },
+    { r: `Ficaram para ${pn.resumo === "ontem" ? "hoje" : "amanhã"}`, v: abertos.length, fmt: "n", spark: null,
+      delta: `<span class="${vencidos ? "desce" : ""}">${vencidos ? vencidos + " já vencido" + (vencidos > 1 ? "s" : "") : "nenhum vencido"}</span>` },
+  ];
+  const noPrazoOk = a.envios.filter(e => e.h >= 0 && e.h <= 48).length, validosN = a.envios.filter(e => e.h >= 0).length;
+  const prontas = TODOS.filter(it => it.tipo === "form" && it.s.situacao === "concluida" && it.s.envio_pendente).length;
+  const faltaN = abertos.filter(it => faltaDados(it.s).length).length;
+  const porHotel = {};
+  a.recebidos.forEach(s => { const h = String(s.hotel || "—").split(" / ")[0]; porHotel[h] = (porHotel[h] || 0) + 1; });
+  const dados = {
+    kpis, horas, tabela: !!pn.rsTabela,
+    prazo: { pct: a.noPrazo, ok: noPrazoOk, total: validosN },
+    abertos: [{ nome: "Sem NF", n: abertos.length - faltaN, k: "a" }, { nome: "Falta dado", n: faltaN, k: "c" }, { nome: "NF pronta, falta enviar", n: prontas, k: "b" }],
+    vencidos,
+    equipe: Object.entries(porAgente).filter(([ag]) => ag !== "Sem agente").sort((x, y) => x[0].localeCompare(y[0])).map(([nome, v]) => ({ nome, rec: v.rec || 0, nfs: v.nfs || 0 })),
+    hoteis: Object.entries(porHotel).sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).slice(0, 6).map(([nome, n]) => ({ nome, n })),
+    titulos: { equipe: `Equipe ${pn.resumo === "ontem" ? "ontem" : "hoje"}`, atencao: `Precisa de atenção ${pn.resumo === "ontem" ? "hoje" : "agora"}`,
+               abertos: pn.resumo === "ontem" ? "O que ficou para hoje" : "O que está em aberto" },
+    atencao: atencao.length ? atencao.map(it => `<button type="button" class="rd-lin" data-abrir-ficha="${esc(it.s.chave)}">
+          <span class="rd-nome"><b>${esc(it.s.nome)}</b><small>${esc(it.s.hotel)} · ${esc(agentesDo(it)[0] || "")}</small></span>
+          <span class="tags-nf">${tagsPedido(it.s)}</span><span class="rd-pz">${it.s.prazo ? prazoHtml(it.s.prazo) : ""}</span></button>`).join("")
+      : `<div class="vazio">Nada urgente nem com dado faltando.</div>`,
+  };
+  // a animação roda quando os números mudam ou a tela acabou de abrir (mais de 20 s sem desenhar); no refresh de 15 s, não repete
+  const assinatura = JSON.stringify([pn.resumo, kpis.map(k => k.v), horas, dados.abertos, dados.equipe, dados.hoteis]);
+  pn.rsAnimar = assinatura !== pn.rsAssinatura || Date.now() - (pn.rsDesenhado || 0) > 20000;
+  pn.rsAssinatura = assinatura; pn.rsDesenhado = Date.now();
   return `<section class="resumo-dia" aria-label="Resumo do dia">
     <div class="rd-cab"><h1>${pn.resumo === "ontem" ? "Resumo de ontem" : "Resumo de hoje"}</h1>
       <span class="sub">${esc(nomeDia)} · comparado com o mesmo dia da semana anterior</span>
+      <div class="rs-acoes"><button type="button" class="rs-btn" data-rs-tabela aria-pressed="${!!pn.rsTabela}">${pn.rsTabela ? "Ver os gráficos" : "Ver como tabela"}</button>
       <div class="seg-rd" role="group" aria-label="Dia do resumo">
         <button type="button" data-rd="ontem" aria-pressed="${pn.resumo === "ontem"}">Ontem</button>
-        <button type="button" data-rd="hoje" aria-pressed="${pn.resumo === "hoje"}">Hoje</button></div></div>
-    <div class="rd-kpis">
-      <div class="rd-kpi"><small>Pedidos recebidos</small><b>${a.recebidos.length}</b><span>${varN(a.recebidos.length, b.recebidos.length, 0) || "pelo formulário"}</span></div>
-      <div class="rd-kpi"><small>NFs enviadas</small><b>${a.nfs}</b><span>${varN(a.nfs, b.nfs, 1) || "pelo Painel e Outlook"}</span></div>
-      <div class="rd-kpi"><small>Enviadas no prazo</small><b>${a.noPrazo == null ? "—" : a.noPrazo + "%"}</b><span>${b.noPrazo == null || a.noPrazo == null ? "prazo de 48 h" : a.noPrazo === b.noPrazo ? `igual (era ${b.noPrazo}%)`
-        : `<em class="${a.noPrazo > b.noPrazo ? "sobe" : "desce"}">${a.noPrazo > b.noPrazo ? "+" : "−"}${Math.abs(a.noPrazo - b.noPrazo)} pontos</em> (era ${b.noPrazo}%)`}</span></div>
-      <div class="rd-kpi"><small>Tempo até a NF</small><b>${fmtH(a.mediana)}</b><span>${a.mediana == null || b.mediana == null || Math.round(a.mediana) === Math.round(b.mediana) ? `mediana${b.mediana != null ? ` · era ${fmtH(b.mediana)}` : ""}`
-        : `<em class="${a.mediana < b.mediana ? "sobe" : "desce"}">${fmtH(Math.abs(b.mediana - a.mediana))} ${a.mediana < b.mediana ? "mais rápido" : "mais lento"}</em> (era ${fmtH(b.mediana)})`}</span></div>
-      <div class="rd-kpi"><small>Ficaram para ${pn.resumo === "ontem" ? "hoje" : "amanhã"}</small><b>${abertos.length}</b><span class="${vencidos ? "desce" : ""}">${vencidos ? vencidos + " já vencido" + (vencidos > 1 ? "s" : "") : "nenhum vencido"}</span></div>
-    </div>
-    <div class="rd-grade">
-      <div class="rd-painel"><div class="rd-tit"><b>Precisa de atenção ${pn.resumo === "ontem" ? "hoje" : "agora"}</b><small>urgentes e com dado faltando</small></div>
-        ${atencao.length ? atencao.map(it => `<button type="button" class="rd-lin" data-abrir-ficha="${esc(it.s.chave)}">
-          <span class="rd-nome"><b>${esc(it.s.nome)}</b><small>${esc(it.s.hotel)} · ${esc(agentesDo(it)[0] || "")}</small></span>
-          <span class="tags-nf">${tagsPedido(it.s)}</span><span class="rd-pz">${it.s.prazo ? prazoHtml(it.s.prazo) : ""}</span></button>`).join("")
-          : `<div class="vazio">Nada urgente nem com dado faltando.</div>`}</div>
-      <div class="rd-painel"><div class="rd-tit"><b>Equipe ${pn.resumo === "ontem" ? "ontem" : "hoje"}</b><small>pedidos e notas</small></div>
-        <table class="rd-tab"><thead><tr><th>Agente</th><th class="n">Recebidos</th><th class="n">NFs</th><th class="n">No prazo</th><th class="n">Pendentes</th></tr></thead>
-        <tbody>${Object.entries(porAgente).filter(([ag]) => ag !== "Sem agente").sort((x, y) => x[0].localeCompare(y[0])).map(([ag, v]) =>
-          `<tr><td>${esc(ag)}</td><td class="n">${v.rec || 0}</td><td class="n">${v.nfs || 0}</td><td class="n">${v.prazo[1] ? Math.round(100 * v.prazo[0] / v.prazo[1]) + "%" : "—"}</td><td class="n">${v.pend || 0}</td></tr>`).join("")
-          || `<tr><td colspan="5" class="vazio">Sem movimento.</td></tr>`}</tbody></table></div>
-    </div></section>`;
+        <button type="button" data-rd="hoje" aria-pressed="${pn.resumo === "hoje"}">Hoje</button></div></div></div>
+    ${resumoDiaPeca(dados)}</section>`;
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-rd]"); if (b) { pn.resumo = b.dataset.rd; desenharVisao(); } });
+document.addEventListener("click", e => { if (e.target.closest("[data-rs-tabela]")) { pn.rsTabela = !pn.rsTabela; pn.rsAnimar = false; pn.rsAssinatura = ""; desenharVisao(); } });
 
 // Cartão Ligações (usuário, 22/10/2026): o que foi marcado no botão "Ligação" ao enviar ou depois em Itens Enviados
 function cartaoLigacoes() {
@@ -434,6 +461,7 @@ function desenharVisao() {
       <div style="display:flex;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Período">${JANELAS.map(j =>
         `<button data-vj="${j}" aria-pressed="${pn.janela === j}">${j} dias</button>`).join("")}</div>${botaoTabela("dias")}</div></div>
       <div id="leg-dias" style="margin:4px 0 10px"></div><div id="graf-dias"></div></div>`;
+  if (pn.rsAnimar) resumoDiaAnimar(el);   // Resumo do dia (pecas/resumo_dia.js): números sobem e gráficos entram só quando mudou ou a tela abriu
   if (pn.animar && !matchMedia("(prefers-reduced-motion: reduce)").matches) { pn.animar = false; el.classList.add("anima"); contarNumeros(el); }
   else el.classList.remove("anima");
   // cada gráfico também como tabela (leitor de tela, teclado e quem prefere números)
