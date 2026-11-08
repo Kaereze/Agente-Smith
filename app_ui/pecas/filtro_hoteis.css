@@ -31,3 +31,9 @@
 .modo-ol .ol-lcab .fh-ordem{display:inline-flex!important;align-items:center;height:28px;padding:0 10px;margin-left:10px;border:1px solid #4a4a4a;border-radius:14px;background:transparent;color:#e0e0e0;font-size:12.5px;cursor:pointer}
 .modo-ol .ol-lcab .fh-ordem:hover{background:#2d2d2d;border-color:#479ef5}
 .modo-ol .ol-fav[data-fh-nivel] .tx{padding-left:4px}
+/* filtros rápidos da lista de e-mail (Sem resposta, Pedido de correção): chips numa linha própria, que quebra em vez de cortar */
+.modo-ol .ol-lcab .ol-rapido{border:1px solid #4a4a4a;border-radius:999px;padding:3px 10px;font-size:12.5px;color:#d0d0d0;border-bottom-width:1px;white-space:nowrap}
+.modo-ol .ol-lcab .ol-rapido em{font-style:normal;color:#a8a8a8;margin-left:4px}
+.modo-ol .ol-lcab .ol-rapido:hover{border-color:#479ef5}
+.modo-ol .ol-lcab .ol-rapido[aria-pressed="true"]{background:#173b63;border-color:#479ef5;color:#fff;font-weight:600}
+.modo-ol .ol-lcab .ol-rapido[aria-pressed="true"] em{color:#cfe5fb}

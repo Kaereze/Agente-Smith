@@ -196,3 +196,26 @@ def test_pc_sem_caixas_nao_aparece_na_lista_de_pastas_do_email(painel_demo, pagi
     pagina.wait_for_timeout(400)
     nomes = pagina.evaluate("[...document.querySelectorAll('.ol-pc2')].map(e => e.textContent)")
     assert nomes and not any("PC-DE-CASA" in n or "0 caixas" in n for n in nomes), nomes
+
+
+def test_filtros_rapidos_da_lista_de_email_filtram_contam_e_nao_cortam(painel_demo, pagina):
+    """João (07/11/2026): "Sem resposta" e "Pedido de correção" voltaram como dois botões na lista, no lugar do menu Filtro."""
+    abrir(pagina, painel_demo, "correio")
+    pagina.wait_for_selector(".ol-rapido", timeout=10000)
+    assert pagina.locator(".ol-rapido").count() == 2
+    total = pagina.evaluate("itensDaTela('').length")
+    n_sem = int(pagina.locator('[data-cx-rapido="semresp"] em').inner_text().replace(".", ""))
+    pagina.locator('[data-cx-rapido="semresp"]').click()
+    pagina.wait_for_timeout(300)
+    assert pagina.evaluate("itensDaTela('').length") == n_sem <= total
+    assert pagina.locator('[data-cx-rapido="semresp"]').get_attribute("aria-pressed") == "true"
+    assert pagina.locator('[data-cx-filtro="todas"]').get_attribute("aria-pressed") == "false"
+    pagina.locator('[data-cx-rapido="semresp"]').click()   # clicar de novo tira o filtro
+    pagina.wait_for_timeout(300)
+    assert pagina.evaluate("itensDaTela('').length") == total
+    cortados = pagina.evaluate("""() => { const col = document.querySelector('.ol-lcab').getBoundingClientRect();
+      return [...document.querySelectorAll('.ol-lcab *')].filter(el => { const r = el.getBoundingClientRect();
+        return r.width && (r.right > col.right + 1 || r.left < col.left - 1 || (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).display !== 'inline')); })
+        .map(el => el.tagName + '.' + el.className + ' ' + (el.textContent || '').trim().slice(0, 30)); }""")
+    assert cortados == [], cortados
+    confere_a_tela(pagina)

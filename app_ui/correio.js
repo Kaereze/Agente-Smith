@@ -66,6 +66,18 @@ function passaBusca(e, busca) {
 }
 
 // ---------- lista ----------
+// Filtros rápidos (João, 07/11/2026): dois botões na lista, no lugar do menu "Filtro: Todos". Um por vez; clicar de novo tira.
+const FILTROS_RAPIDOS = {
+  semresp: ["Sem resposta", e => e.pasta !== "enviado" && !e.respondido && !cx.resolvendo[e.id]],
+  correcao: ["Correção", e => (e.classes || []).includes("corrigir") || /corre/i.test(e.motivo_urgencia || "")],
+};
+function rapidosHtml() {
+  if (cx.caixa === "enviados") return "";
+  const atual = cx.rapido; cx.rapido = "";
+  const base = itensDaTela(""); cx.rapido = atual;   // quantos cada botão acharia nesta caixa, hotel e pasta
+  return `<span class="ol-quebra"></span>` + Object.entries(FILTROS_RAPIDOS).map(([k, [nome, f]]) =>
+    `<button type="button" class="ol-rapido" data-cx-rapido="${k}" aria-pressed="${atual === k}">${esc(nome)} <em>${base.filter(f).length.toLocaleString("pt-BR")}</em></button>`).join("");
+}
 function itensDaTela(busca) {
   if (busca) {   // busca: o que o Outlook dos PCs devolveu + o espelho dos PCs que não responderam (desligados)
     const r = cx.live && cx.live.termo === busca ? cx.live : null;
@@ -77,7 +89,7 @@ function itensDaTela(busca) {
   }
   fhAtualizarContagem();
   const base = cx.caixa === "enviados" ? (cx.dados?.enviados || []).map(e => ({ ...e, pasta: "enviado" })).filter(e => !cx.escondidos[e.id] && doEscopo(e)) : emailsDa(cx.caixa);
-  const lista = base.filter(e => fhPassa(e.hotel) && (!cx.soNaoLidos || e.lido === false)
+  const lista = base.filter(e => fhPassa(e.hotel) && (!cx.soNaoLidos || e.lido === false) && (!cx.rapido || FILTROS_RAPIDOS[cx.rapido]?.[1](e))
     && (!cx.caixaSel || String(e.caixa || "").toLowerCase() === cx.caixaSel) && (!cx.soForm || (e.classes || []).includes("formulario")));
   // Caixa de Entrada: uma lista só, na ordem do botão Data (João, 07/11/2026: sem blocos de prioridade)
   if (cx.caixa === "entrada") return fhPorData(lista, e => e.quando);
@@ -111,9 +123,9 @@ function desenharCorreio() {
   const titulo = busca ? "Resultado da pesquisa" : cx.soForm ? "Formulários do robô" :
     (cx.caixa === "enviados" ? "Itens Enviados" : cx.caixa === "urgencia" ? "Urgência" : "Caixa de Entrada") + (nomePasta ? " · " + nomePasta : "");
   if ($("cx-lcab")) $("cx-lcab").innerHTML = `<div class="ol-lcab">` + (busca ? `<span class="ol-ord">no Outlook dos 4 PCs</span>` :
-    `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos}">Todas</button>` +
+    `<button type="button" data-cx-filtro="todas" aria-pressed="${!cx.soNaoLidos && !cx.rapido}">Todas</button>` +
     (cx.caixa === "enviados" ? "" : `<button type="button" data-cx-filtro="naolidos" aria-pressed="${cx.soNaoLidos}">Não lidos</button>`) +
-    `<span class="ol-quebra"></span>` + fhHtml() + (cx.caixa === "entrada" ? fhBotaoOrdem() : `<span class="ol-ord">Por Data ↓</span>`)) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${FH.sel.size ? " · " + FH.sel.size + (FH.sel.size === 1 ? " hotel" : " hotéis") : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
+    `<span class="ol-quebra"></span>` + fhHtml() + (cx.caixa === "entrada" ? fhBotaoOrdem() : `<span class="ol-ord">Por Data ↓</span>`) + rapidosHtml()) + `</div><div class="ol-ltit"><b>${esc(titulo)}</b>${FH.sel.size ? " · " + FH.sel.size + (FH.sel.size === 1 ? " hotel" : " hotéis") : ""} · ${lista.length.toLocaleString("pt-BR")} itens` +
     (naoLidos ? ` · ${naoLidos.toLocaleString("pt-BR")} não lidos` : "") + `</div>`;
   if ($("ol-contagem")) $("ol-contagem").innerHTML = `<span title="Itens na caixa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-7h14l2 7v5H3z"/><path d="M3 13h5l1 2h6l1-2h5"/></svg>${lista.length.toLocaleString("pt-BR")}<i class="so-leitor"> itens</i></span><span title="Não lidos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>${naoLidos.toLocaleString("pt-BR")}<i class="so-leitor"> não lidos</i></span>`;
   $("v-correio").classList.toggle("sem-pastas", !!cx.semPastas);
@@ -128,7 +140,7 @@ function desenharCorreio() {
   }
   const quem = escopoAtual() === "todos" ? "" : ` de ${escopoAtual()}`;
   const vazio = cx.buscando ? "Procurando no Outlook dos PCs…" : busca ? `Nenhum e-mail com “${esc(busca)}”.`
-    : cx.caixa === "enviados" ? "Nada enviado nas últimas 72 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : "";
+    : cx.caixa === "enviados" ? "Nada enviado nas últimas 72 h." : cx.soNaoLidos ? "Nenhum e-mail não lido aqui." : cx.rapido ? "Nenhum e-mail com este filtro." : "";
   const corpo = html || (vazio ? `<div class="vazio">${vazio}</div>`
     : caixaEmDia(cx.caixa === "urgencia" ? `Nada urgente na caixa${quem}.` : `Caixa de Entrada vazia${quem}.`));
   $("cx-lista").innerHTML = busca ? secoesDaBusca(busca) + corpo : corpo;
@@ -1037,7 +1049,7 @@ function desenharPastas() {
 }
 try { cx.fechados = JSON.parse(localStorage.getItem("painel.caixasFechadas") || "{}") || {}; } catch (e) {}
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
+  const t = ev.target.closest("[data-ol-fav],[data-ol-caixa],[data-ol-sub],[data-ol-pc],[data-ol-todas],[data-cx-grupo],[data-cx-filtro],[data-cx-rapido],[data-cx-faixa],[data-ol-aba],[data-ol-acao],[data-ol-menu]");
   if (!t) { if (cx.menu && !ev.target.closest(".ol-menu")) { cx.menu = false; desenharLeituraCorreio(); } return; }
   const d = t.dataset;
   if (d.olAba) { cx.aba = d.olAba; desenharFaixaGlobal(); return desenharFaixa(); }
@@ -1063,7 +1075,8 @@ document.addEventListener("click", ev => {
     try { localStorage.setItem("painel.caixasFechadas", JSON.stringify(cx.fechados)); } catch (e) {}
     return desenharPastas();
   }
-  if (d.cxFiltro) { cx.soNaoLidos = d.cxFiltro === "naolidos"; cx.sel = null; return desenharCorreio(); }
+  if (d.cxFiltro) { cx.soNaoLidos = d.cxFiltro === "naolidos"; cx.rapido = ""; cx.sel = null; return desenharCorreio(); }
+  if (d.cxRapido) { cx.rapido = cx.rapido === d.cxRapido ? "" : d.cxRapido; cx.sel = null; return desenharCorreio(); }
   const id = cx.sel;
   cx.menu = false;
   if (!id || t.disabled) return;
