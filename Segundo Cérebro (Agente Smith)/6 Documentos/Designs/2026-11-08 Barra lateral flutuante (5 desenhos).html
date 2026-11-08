@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barra lateral flutuante · 5 desenhos</title>
+<style>
+/* Proposta de design (08/11/2026). Dados fictícios; os ícones são os do próprio Painel. Passe o mouse, clique nos ícones, e veja cada desenho no fundo com movimento. */
+:root{--fundo:#1f1f1f;--cartao:#242424;--borda:#333;--tinta:#f0f0f0;--t2:#d0d0d0;--t3:#a8a8a8;--azul:#479ef5;--verm:#e8484f}
+*{box-sizing:border-box}
+body{margin:0;background:#161616;color:var(--tinta);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+main{max-width:1500px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:22px;margin:0 0 4px}.sub{color:var(--t3);margin:0 0 22px;max-width:100ch}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.opcao{display:flex;flex-direction:column;gap:10px}
+.opcao h2{font-size:15px;margin:0}
+.opcao h2 small{display:inline-block;margin-left:8px;color:var(--azul);font-weight:600}
+.opcao p{margin:0;color:var(--t2);font-size:13px}
+.opcao p.cuidado{color:var(--t3)}
+
+/* o "palco": um pedaço da tela do Painel (com cores atrás, para o vidro ter o que desfocar) */
+.palco{position:relative;height:560px;border-radius:12px;overflow:hidden;background:var(--fundo);border:1px solid var(--borda);isolation:isolate}
+.palco .fundo{position:absolute;inset:0;padding:20px 20px 20px 92px;display:grid;gap:10px;align-content:start}
+.palco .bloco{background:#262626;border:1px solid #343434;border-radius:8px;padding:12px}
+.palco .bloco b{display:block;font-size:12px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase}
+.palco .bloco i{display:block;font:600 26px/1.2 "Segoe UI";font-style:normal}
+.palco .grafico{height:130px;border-radius:6px;background:
+  linear-gradient(180deg,rgba(59,143,227,.5),rgba(59,143,227,.05)) bottom/100% 60% no-repeat,
+  repeating-linear-gradient(90deg,transparent 0 38px,rgba(255,255,255,.04) 38px 39px)}
+.palco .faixa{height:10px;border-radius:5px;background:linear-gradient(90deg,#3b8fe3 70%,#7fb8f0 70% 82%,#b8862f 82%)}
+.palco .mancha{position:absolute;border-radius:50%;filter:blur(38px);opacity:.55;z-index:0}
+.palco .mancha.a{width:200px;height:200px;left:-60px;top:80px;background:#3b8fe3}
+.palco .mancha.b{width:170px;height:170px;left:-30px;top:330px;background:#b8862f}
+.palco .mancha.c{width:140px;height:140px;left:30px;top:220px;background:#e8484f;opacity:.35}
+.palco .fundo{z-index:1}
+
+/* ---------- barra: base comum ---------- */
+.barra{position:absolute;left:14px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 8px;width:60px;animation:entra .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes entra{from{opacity:0;transform:translate(-14px,-50%) scale(.96)}to{opacity:1;transform:translate(0,-50%) scale(1)}}
+.logo{width:34px;height:34px;border-radius:9px;background:#0f6cbd;color:#fff;display:grid;place-items:center;font:700 12px "Segoe UI";margin-bottom:6px;flex:none}
+.item{position:relative;width:42px;height:40px;border:0;border-radius:12px;background:transparent;color:rgba(255,255,255,.72);display:grid;place-items:center;cursor:pointer;padding:0;flex:none;
+  transition:background .2s,color .2s,transform .2s}
+.item svg{width:20px;height:20px;pointer-events:none}
+.item:hover{color:#fff}
+.item:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.item .rot{display:none}   /* só a opção 5 mostra o nome dentro da barra */
+.item .dica{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-4px,-50%);white-space:nowrap;background:rgba(20,20,20,.9);color:#f0f0f0;font-size:12px;padding:5px 10px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:9}
+.item:hover .dica,.item:focus-visible .dica{opacity:1;transform:translate(0,-50%)}
+.badge{position:absolute;right:-5px;top:-4px;min-width:20px;height:17px;padding:0 5px;border-radius:9px;background:var(--verm);color:#fff;font:700 10.5px/17px "Segoe UI";text-align:center;box-shadow:0 0 0 2px rgba(24,24,24,.9)}
+.sep{width:24px;height:1px;background:rgba(255,255,255,.14);margin:6px 0;flex:none}
+.avatar{width:34px;height:34px;border-radius:50%;background:#555;color:#fff;display:grid;place-items:center;font:600 13px "Segoe UI";border:2px solid var(--azul);flex:none;margin-top:2px}
+
+/* ---------- 1 · vidro fosco ---------- */
+.v1 .barra{border-radius:32px;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.05));backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 20px 44px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.25),inset 0 -1px 0 rgba(255,255,255,.04)}
+.v1 .item.ativo{background:rgba(255,255,255,.2);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 12px rgba(0,0,0,.25)}
+.v1 .item:hover:not(.ativo){background:rgba(255,255,255,.1)}
+
+/* ---------- 2 · fantasma ---------- */
+.v2 .barra{border-radius:30px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .4s,border-color .4s,box-shadow .4s}
+.v2 .barra .item,.v2 .barra .logo,.v2 .barra .avatar{opacity:.34;transition:opacity .4s,background .2s,color .2s}
+.v2 .barra:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.16);box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.v2 .barra:hover .item,.v2 .barra:hover .logo,.v2 .barra:hover .avatar{opacity:1}
+.v2 .item.ativo{opacity:.8!important;color:#fff}
+.v2 .item.ativo::before{content:"";position:absolute;left:-7px;top:50%;width:3px;height:16px;border-radius:2px;background:var(--azul);transform:translateY(-50%);box-shadow:0 0 10px var(--azul)}
+.v2 .barra:hover .item.ativo{opacity:1!important;background:rgba(255,255,255,.1)}
+
+/* ---------- 3 · borda espelhada ---------- */
+.v3 .barra{border-radius:32px;background:rgba(14,14,14,.55);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 22px 48px rgba(0,0,0,.55)}
+.v3 .barra::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(255,255,255,.06) 28%,rgba(255,255,255,.02) 60%,rgba(255,255,255,.55));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.v3 .barra::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:hidden;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%) -200% 0/200% 100% no-repeat;animation:brilho 7s ease-in-out 1.2s infinite}
+@keyframes brilho{0%,70%,100%{background-position:-200% 0}85%{background-position:200% 0}}
+.v3 .item.ativo{color:#fff;background:rgba(71,158,245,.16)}
+.v3 .item.ativo svg{filter:drop-shadow(0 0 6px rgba(71,158,245,.9))}
+.v3 .item:hover:not(.ativo){background:rgba(255,255,255,.07)}
+
+/* ---------- 4 · dock com lupa ---------- */
+.v4 .barra{border-radius:30px;background:rgba(255,255,255,.07);backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7);
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 20px 44px rgba(0,0,0,.45),inset 1px 0 0 rgba(255,255,255,.2),inset 0 1px 0 rgba(255,255,255,.2)}
+.v4 .item{transform-origin:0 50%;will-change:transform;transition:transform .12s ease-out,background .2s}
+.v4 .item.ativo{color:#fff}
+.v4 .item.ativo::after{content:"";position:absolute;left:50%;bottom:-3px;width:4px;height:4px;border-radius:50%;background:#fff;transform:translateX(-50%)}
+.v4 .item .dica{left:calc(100% + 18px)}
+
+/* ---------- 5 · ilha que abre ---------- */
+.v5 .barra{align-items:stretch;width:60px;border-radius:30px;background:rgba(20,20,20,.62);backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 44px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14);transition:width .35s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+.v5 .barra:hover{width:196px}
+.v5 .item{width:100%;height:40px;display:flex;align-items:center;justify-content:flex-start;padding:0 11px;gap:12px;border-radius:14px}
+.v5 .item .rot{display:inline;font-size:13px;opacity:0;white-space:nowrap;transform:translateX(-6px);transition:opacity .2s .05s,transform .25s .05s}
+.v5 .barra:hover .item .rot{opacity:1;transform:none}
+.v5 .item .dica{display:none}
+.v5 .item.ativo{background:rgba(71,158,245,.2);color:#fff}
+.v5 .item:hover:not(.ativo){background:rgba(255,255,255,.08)}
+.v5 .badge{right:8px;top:6px}
+.v5 .barra:hover .badge{right:12px;top:11px;box-shadow:none}
+.v5 .logo{align-self:flex-start;margin-left:3px}
+.v5 .avatar{align-self:flex-start;margin-left:3px}
+.v5 .sep{align-self:center}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.rodape{color:var(--t3);font-size:12.5px;margin-top:22px;border-top:1px solid var(--borda);padding-top:14px;max-width:110ch}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-painel" viewBox="0 0 24 24"><path d="M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="i-nf" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15m0 5v-5h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cadeado" viewBox="0 0 24 24"><path d="M6 11h12v10H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="i-caixa" viewBox="0 0 24 24"><path d="M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-rede" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/></g></symbol>
+<symbol id="i-enviar" viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-3-7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+<main>
+<h1>Barra lateral flutuante: 5 desenhos</h1>
+<p class="sub">A barra sai da borda da janela e passa a flutuar no meio da tela, como o dock do iPhone e do Mac: cantos bem redondos, vidro fosco que desfoca o que está atrás e uma borda que brilha como espelho. Cada cartão abaixo é um pedaço da tela do Painel (dados fictícios). <b>Passe o mouse e clique nos ícones.</b> Os ícones, a ordem e o número de e-mails (604) são os do Painel de hoje.</p>
+<section class="grade" id="grade"></section>
+<p class="rodape">Como funciona por baixo: <code>backdrop-filter</code> (desfoque do que está atrás), fundo translúcido e uma borda feita com degradê. O navegador da janela do Painel (WebView2, do Edge) já faz tudo isso, sem biblioteca nova. Em PC com placa de vídeo muito fraca o desfoque pode pesar um pouco; se acontecer, o desenho cai para um fundo translúcido liso, sem desfoque, e continua bonito. A barra de hoje (fixa, na borda) ocupa 56 px de largura; as flutuantes ocupam 60 px mas deixam o conteúdo usar a tela inteira por baixo, então a tela precisa de uma margem à esquerda (já prevista nos cartões acima).</p>
+</main>
+<script>
+const ITENS = [
+  ["i-painel", "Visão geral"], ["i-nf", "Notas fiscais"], ["i-sync", "Robô"], ["i-cadeado", "Gerência"], ["i-caixa", "E-mails", "604"], ["i-log", "Máquinas e registro"], ["i-rede", "Agentes"]];
+const OPCOES = [
+  ["v1", "1 · Vidro fosco", "o mais parecido com o iPhone", "Cápsula de vidro que desfoca o que está atrás, com brilho fino no alto e sombra suave. O ícone ativo ganha uma bolha de vidro mais clara.", "Cuidado: é o que mais chama atenção; combina com o resto se o fundo for escuro e calmo."],
+  ["v2", "2 · Fantasma", "o mais discreto", "Quase invisível: só os ícones, bem apagados. Ao chegar o mouse, o vidro aparece e os ícones acendem. O ativo tem uma luzinha azul na borda.", "Cuidado: quem não conhece pode achar que o menu sumiu; por isso o ativo fica sempre um pouco mais forte."],
+  ["v3", "3 · Borda espelhada", "o mais elegante", "Vidro escuro com uma borda de espelho (clara nos cantos de cima e de baixo) e um reflexo que passa de tempos em tempos. O ícone ativo brilha em azul.", "Cuidado: o reflexo é uma animação lenta e leve, e se desliga sozinha com o \"reduzir movimento\" do Windows."],
+  ["v4", "4 · Dock com lupa", "o mais divertido", "Os ícones crescem quando o mouse passa, e os vizinhos crescem um pouco também, como no Mac. O ativo ganha um pontinho embaixo.", "Cuidado: é bonito, mas o mais \"enfeitado\"; para uso o dia todo cansa mais que os outros."],
+  ["v5", "5 · Ilha que abre", "o mais útil", "Compacta (só ícones), mas ao passar o mouse abre sozinha e mostra o nome de cada tela. Resolve o \"não sei o que é cada ícone\" sem ocupar lugar.", "Cuidado: a barra muda de largura ao abrir; fica por cima do conteúdo, sem empurrar a tela."]];
+const grade = document.getElementById("grade");
+OPCOES.forEach(([cls, titulo, tag, texto, cuidado]) => {
+  const el = document.createElement("div"); el.className = "opcao " + cls;
+  const item = (id, nome, badge, i) => `<button class="item${i === 0 ? " ativo" : ""}" type="button" aria-label="${nome}"><svg><use href="#${id}"/></svg><span class="rot">${nome}</span><span class="dica">${nome}</span>${badge ? `<span class="badge">${badge}</span>` : ""}</button>`;
+  el.innerHTML = `<h2>${titulo}<small>${tag}</small></h2>
+    <div class="palco"><i class="mancha a"></i><i class="mancha b"></i><i class="mancha c"></i>
+      <div class="fundo"><div class="bloco"><b>Pedidos recebidos</b><i>64</i><div class="grafico"></div></div><div class="bloco"><b>O que ficou para hoje</b><i>121</i><div class="faixa"></div></div>
+        <div class="bloco"><b>Precisa de atenção</b><i>6</i><div class="faixa" style="background:linear-gradient(90deg,#e8484f 40%,#3b8fe3 40%)"></div></div></div>
+      <nav class="barra" aria-label="Menu">
+        <div class="logo">NF</div>
+        ${ITENS.map(([id, nome, badge], i) => item(id, nome, badge, i)).join("")}
+        <div class="sep"></div>
+        <button class="item" type="button" aria-label="Enviar"><svg><use href="#i-enviar"/></svg><span class="rot">Enviar pendentes</span><span class="dica">Enviar pendentes</span></button>
+        <div class="avatar" title="João">J</div>
+        <button class="item" type="button" aria-label="Abrir os nomes"><svg><use href="#i-chev"/></svg><span class="rot">Mostrar nomes</span><span class="dica">Mostrar nomes</span></button>
+      </nav></div>
+    <p>${texto}</p><p class="cuidado">${cuidado}</p>`;
+  grade.appendChild(el);
+  el.querySelectorAll(".barra .item").forEach(b => b.addEventListener("click", () => {
+    if (b.getAttribute("aria-label") === "Enviar" || b.getAttribute("aria-label") === "Abrir os nomes") return;
+    el.querySelectorAll(".barra .item").forEach(x => x.classList.remove("ativo")); b.classList.add("ativo"); }));
+});
+// lupa do desenho 4: cada ícone cresce conforme a distância do mouse
+const v4 = document.querySelector(".v4 .barra");
+if (v4 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const itens = [...v4.querySelectorAll(".item")];
+  v4.addEventListener("mousemove", e => itens.forEach(b => { const r = b.getBoundingClientRect(), d = Math.abs(e.clientY - (r.top + r.height / 2));
+    b.style.transform = `scale(${1 + 0.6 * Math.max(0, 1 - d / 90)})`; }));
+  v4.addEventListener("mouseleave", () => itens.forEach(b => b.style.transform = ""));
+}
+</script>
+</body>
+</html>
