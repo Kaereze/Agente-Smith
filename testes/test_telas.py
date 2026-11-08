@@ -114,7 +114,10 @@ def test_cada_tela_abre_sem_erro_sem_rolagem_lateral_e_sem_texto_espremido(paine
 
 def test_e_mail_aberto_mostra_a_ficha_de_etapas_e_nao_as_caixas_antigas(painel_demo, pagina):
     abrir(pagina, painel_demo, "correio")
-    pagina.locator(".cx-l").first.click()
+    # um e-mail que tenha o pedido do formulário ligado (o 1º da lista pode ser só texto, sem formulário)
+    id_com_pedido = pagina.evaluate("itensDaTela('').find(e => e.solicitacao)?.id")
+    assert id_com_pedido, "a demonstração precisa ter e-mail com pedido de formulário"
+    pagina.locator(f'.cx-l[data-id="{id_com_pedido}"]').click()
     pagina.wait_for_selector(".c-top", timeout=10000)
     # os 3 estados da NF enviada (dados inventados): tudo confere, não consegui ler, pede nova nota
     casos = {
