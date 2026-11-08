@@ -7,9 +7,10 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import codigo_js
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
-JS = (UI / "correio.js").read_text(encoding="utf-8")
+JS = codigo_js(UI, "correio")
 
 
 def test_o_aviso_entra_embaixo_do_resumo_e_nao_grava_nada():

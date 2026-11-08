@@ -9,6 +9,7 @@ import app_servidor
 import envio_nf as en
 import indice_emails
 from test_envio_nf import CAIXA, SOL, Relogio, _ler, _prep, _servico
+from tela_texto import codigo_js
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -101,7 +102,7 @@ def test_servidor_recusa_quando_falta_dado_ou_a_caixa_nao_e_de_hotel(extra):
 
 # ---------------------------------------------------------------- tela
 def test_tela_delete_direto_so_para_o_administrador_e_em_todas_as_listas():
-    js = (RAIZ / "app_ui" / "correio.js").read_text(encoding="utf-8")
+    js = codigo_js(RAIZ / "app_ui", "correio")
     corte = js[js.index('if (e.key === "Delete")'):]
     corte = corte[:corte.index("if (e.ctrlKey && k === \"u\")")]
     assert "achaEmail(cx.sel)" in corte and "souAdmin() ? excluirDireto(alvo.id) : excluir(alvo.id)" in corte

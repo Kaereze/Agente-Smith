@@ -6,8 +6,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import codigo_js
 
-PAINEL = (Path(__file__).resolve().parents[1] / "app_ui" / "painel.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(Path(__file__).resolve().parents[1] / "app_ui", "painel")
 TRECHO = PAINEL[PAINEL.index("function assuntoDoArquivo"):PAINEL.index("// Ação longa (27/10/2026)")]
 
 

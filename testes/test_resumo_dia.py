@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 PECA = (UI / "pecas" / "resumo_dia.js").read_text(encoding="utf-8")
@@ -61,7 +61,7 @@ def test_serie_sem_pontos_suficientes_nao_desenha_risquinho():
 
 
 def test_o_painel_usa_a_peca_e_so_anima_quando_mudou():
-    painel = (UI / "painel.js").read_text(encoding="utf-8")
+    painel = codigo_js(UI, "painel")
     html = pagina(UI)
     assert "resumoDiaPeca(dados)" in painel and "resumoDiaAnimar(el)" in painel and "pn.rsAnimar = assinatura !== pn.rsAssinatura" in painel
     assert '/pecas/resumo_dia.js' in html and '/pecas/resumo_dia.css' in html

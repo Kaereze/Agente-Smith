@@ -6,6 +6,7 @@ from pathlib import Path
 
 import envio_nf as en
 from conftest import CENTRAL
+from tela_texto import codigo_js
 
 SOL = {"chave": "k1", "aba": "Aba X", "carimbo": "9/30/2026 10:00:00", "email": "hospede@x.com", "hotel": "NOVO CWB",
        "nome": "FH Manutenção Industrial LTDA", "emails": ["hospede@x.com", "financeiro@fh.com"], "nomes": []}
@@ -540,5 +541,5 @@ def test_corpo_do_email_do_afonso_tem_a_mensagem_padrao_e_as_tres_linhas_sem_ima
 
 
 def test_tela_mostra_o_texto_do_selo_no_lugar_da_imagem():
-    js = (Path(__file__).resolve().parent.parent / "app_ui" / "painel.js").read_text(encoding="utf-8")
+    js = codigo_js(Path(__file__).resolve().parent.parent / "app_ui", "painel")
     assert 'id="nf-selo-texto"' in js and "if (s && s.texto)" in js and "envNF.selos = o.selos;" in js

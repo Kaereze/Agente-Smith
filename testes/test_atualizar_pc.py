@@ -5,11 +5,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 PECA = (UI / "pecas" / "atualizar_pc.js").read_text(encoding="utf-8")
-PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(UI, "painel")
 HTML = pagina(UI)
 
 

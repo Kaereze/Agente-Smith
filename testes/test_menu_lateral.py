@@ -1,10 +1,10 @@
 """Menu da lateral v2 (22/10/2026): só ícones ou com os nomes, e "Quem está neste PC" ao lado da barra."""
 from pathlib import Path
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 HTML = pagina(UI)
-PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(UI, "painel")
 
 
 def test_botao_de_mostrar_os_nomes_fica_no_pe_da_barra_e_a_tela_nao_forca_mais_fechado():

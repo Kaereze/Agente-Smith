@@ -3,12 +3,12 @@ import re
 from pathlib import Path
 
 import app_servidor
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 HTML = pagina(UI)
 JS = (UI / "robo.js").read_text(encoding="utf-8")
-PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(UI, "painel")
 
 
 def test_robo_js_e_servido_e_carregado_depois_do_painel():

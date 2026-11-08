@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
 PECA = (UI / "pecas" / "regras_nf.js").read_text(encoding="utf-8")
@@ -70,5 +70,5 @@ def test_tela_usa_a_peca_e_o_marcar_tratativa_saiu():
     assert '/pecas/regras_nf.js' in html and "function faltaDados" not in html
     assert "[...faltaDados(s), ...faltaExtras(s)]" in html
     assert 'texto: "Marcar tratativa"' not in (UI / "pecas" / "etapas.js").read_text(encoding="utf-8")   # o botão saiu
-    msg = (UI / "painel.js").read_text(encoding="utf-8")
+    msg = codigo_js(UI, "painel")
     assert '"CEP"' in msg and '"CPF/CNPJ inválido"' in msg and "nf-msg" in msg   # a mensagem sai preparada no campo editável

@@ -4,11 +4,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 HTML = pagina(UI)
-PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(UI, "painel")
 
 
 def test_enviar_nf_azul_no_topo_do_email():

@@ -21,6 +21,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - **LGPD, registro de quem viu o dado** (`src/acessos.py`): abrir e-mail, anexo ou ficha anota quando, quem, PC e tipo, sem nome nem CPF; 12 meses, só neste PC.
 - **LGPD, pedido do titular** (`ferramentas/pedido_titular.py` e `src/titular.py`): localiza (só quantidades) e apaga do índice e dos caches reconstruíveis os dados de uma pessoa neste PC.
 
+- **Os três arquivos grandes da tela foram divididos por assunto**, sem mudar nenhuma linha de lógica (conferido: o texto das partes juntas é igual ao original). `painel.js` (1.304 linhas) virou 7 arquivos, `correio.js` (1.254) virou 6 e `telas.js` (1.035) virou 4; o maior tem 530 linhas. O servidor entrega todo `app_ui/*.js` e o teste garante que nenhum arquivo fica solto ou repetido no HTML.
+  - **painel**: `painel.js` (base), `painel_maquinas.js`, `painel_visao.js` (resumo e Visão geral), `painel_pendentes.js`, `painel_enviar_nf.js`, `painel_eventos.js`, `painel_relatorios.js`.
+  - **correio**: `correio.js` (estado), `correio_lista.js` (lista e busca), `correio_leitura.js` (abrir e-mail, texto, anexos), `correio_faixa.js` (Enviar/Receber e faixa), `correio_ficha.js` (resumo, formulário, NF), `correio_acoes.js` (ações, pastas, cliques).
+  - **telas**: `telas.js` (base, API, saúde), `telas_dados.js` (carregar, prazos, busca), `telas_notas.js` (filtros, lista, ficha), `telas_janela.js` (tema, ajuda, operador).
+
 ### Removido
 - Código sem uso: `assunto_sugerido`, `sem_historico`, `e_automatico` e as constantes `CORPO_PADRAO`, `PR_CABECALHOS`, `CONFERENCIA`, `VALORES_DESLIGADO` (e os testes que só conferiam essas funções).
 

@@ -9,10 +9,11 @@ import pytest
 import app_servidor
 import espelho_emails
 import ligacoes
+from tela_texto import codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
-PAINEL = (UI / "painel.js").read_text(encoding="utf-8")
-CORREIO = (UI / "correio.js").read_text(encoding="utf-8")
+PAINEL = codigo_js(UI, "painel")
+CORREIO = codigo_js(UI, "correio")
 ETIQUETA = (UI / "pecas" / "etiqueta.js").read_text(encoding="utf-8")
 
 

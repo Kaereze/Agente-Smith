@@ -6,7 +6,7 @@ O nome repetido entre arquivos da tela derruba o arquivo inteiro no navegador (a
 import re
 from collections import Counter
 from pathlib import Path
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parent.parent / "app_ui"
 TOPO = re.compile(r"^(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=)", re.M)
@@ -15,7 +15,7 @@ TOPO = re.compile(r"^(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\
 def _scripts():
     html = pagina(UI)
     blocos = re.findall(r"<script>([\s\S]*?)</script>", html)
-    return blocos + [(UI / f).read_text(encoding="utf-8") for f in ("graficos.js", "correio.js", "painel.js", "robo.js")]
+    return blocos + [(UI / "graficos.js").read_text(encoding="utf-8"), codigo_js(UI, "telas"), codigo_js(UI, "correio"), codigo_js(UI, "painel"), (UI / "robo.js").read_text(encoding="utf-8")]
 
 
 def test_nenhum_nome_repetido_entre_os_arquivos_da_tela():
@@ -32,14 +32,14 @@ def test_camada_da_previa5_no_fim_do_estilo():
 
 
 def test_formulario_na_ordem_do_email():
-    js = (UI / "correio.js").read_text(encoding="utf-8")
+    js = codigo_js(UI, "correio")
     ordem = re.search(r"const ORDEM_FORM = \[([\s\S]*?)\];", js).group(1)
     assert len(re.findall(r"/[^/]+/", ordem)) == 13   # os 13 campos do e-mail do Emissor Automático
     assert "Dados para emissão de Nota Fiscal:" in js and "Enviado por:" in js and "Enviado em:" in js
 
 
 def test_pesquisa_mostra_os_pedidos_na_hora_e_envio_nao_espera():
-    js_c = (UI / "correio.js").read_text(encoding="utf-8")
-    js_p = (UI / "painel.js").read_text(encoding="utf-8")
+    js_c = codigo_js(UI, "correio")
+    js_p = codigo_js(UI, "painel")
     assert "function secoesDaBusca" in js_c and "secoesDaBusca(busca) + corpo" in js_c
     assert "envNF.fechar();\n  seguirEnvio(r.id, ctx);" in js_p   # a janela fecha antes de acompanhar

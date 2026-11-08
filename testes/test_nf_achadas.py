@@ -8,6 +8,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 import controle_nf  # noqa: E402
 import nf_achadas  # noqa: E402
+from tela_texto import codigo_js
 
 AGORA = datetime.datetime(2026, 10, 27, 12, 0)
 TEXTO = ("DANFSe v1.0 Documento Auxiliar da NFS-e\nChave de Acesso 4120000000000000000000000000000000000000000000000\n"
@@ -127,8 +128,7 @@ def test_tag_sem_envio_nos_itens_enviados_gera_aviso():
 
 
 def test_tela_e_servidor_ligados_sem_marcar_outra_nota():
-    ui = RAIZ / "app_ui" / "painel.js"
-    js = ui.read_text(encoding="utf-8")
+    js = codigo_js(RAIZ / "app_ui", "painel")
     srv = "".join(p.read_text(encoding="utf-8") for p in [RAIZ / "src" / "app_servidor.py", *sorted((RAIZ / "src").glob("estado_*.py"))])
     assert "avisos_nf" in js and "outra nota" in js and "a.outra || a.possivel" in js
     assert "!o.sugestoes[0].outra && !o.sugestoes[0].possivel" in js          # "outra nota" e "possível" nunca vêm marcadas

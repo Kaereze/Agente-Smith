@@ -7,8 +7,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from tela_texto import codigo_js
 
-JS = (Path(__file__).resolve().parents[1] / "app_ui" / "correio.js").read_text(encoding="utf-8")
+JS = codigo_js(Path(__file__).resolve().parents[1] / "app_ui", "correio")
 TEXTO = ("Enviado por: marina.exemplo@gmail.com <mailto:marina.exemplo@gmail.com>\n\nDados para emissão de Nota Fiscal:\n\n"
          "Campo\tValor\nTermos de aceite\tLi e estou de acordo com os termos acima.\nDocumento Tomador\t52998224725\n"
          "Nome Tomador\tMarina Exemplo Costa\nCEP 01001000\nTelefone para contato\t11999990000\n"
@@ -98,5 +99,5 @@ def test_responder_formulario_usa_a_tabela_e_o_email_de_quem_preencheu():
     assert saida.returncode == 0, saida.stderr
     assert json.loads(saida.stdout) == ["marina.exemplo@gmail.com", "", ""]   # sem texto: vazio (nunca o Emissor)
     assert "form ? formularioHtml(form, e)" in JS   # a citação usa a mesma tabela da leitura
-    painel = (Path(__file__).resolve().parents[1] / "app_ui" / "painel.js").read_text(encoding="utf-8")
+    painel = codigo_js(Path(__file__).resolve().parents[1] / "app_ui", "painel")
     assert '$("nf-para").value = emailDoFormulario(emForm)' in painel

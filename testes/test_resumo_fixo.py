@@ -7,10 +7,10 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 UI = Path(__file__).resolve().parents[1] / "app_ui"
-JS = (UI / "correio.js").read_text(encoding="utf-8")
+JS = codigo_js(UI, "correio")
 HTML = pagina(UI)
 PECA = (UI / "pecas" / "etapas.js").read_text(encoding="utf-8")
 CSS = (UI / "pecas" / "etapas.css").read_text(encoding="utf-8")
@@ -80,7 +80,7 @@ def test_sem_reconhecimento_o_painel_nao_diz_que_a_nota_foi_emitida_nem_oferece_
 
 
 def test_a_tela_do_email_desliga_o_reconhecimento_da_nf():
-    js = (UI / "correio.js").read_text(encoding="utf-8")
+    js = codigo_js(UI, "correio")
     assert "const RECONHECE_NF = false;" in js and "reconhece: RECONHECE_NF" in js
     assert "if (RECONHECE_NF && !enviado && !robo" in js                     # nem busca /api/nf_cobre
     assert "${enviado || !RECONHECE_NF ? \"\" :" in js                      # nem o histórico x notas prontas

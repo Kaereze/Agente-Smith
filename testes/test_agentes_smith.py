@@ -6,7 +6,7 @@ from pathlib import Path
 
 import agentes_smith
 import app_servidor
-from tela_texto import pagina
+from tela_texto import pagina, codigo_js
 
 RAIZ = Path(__file__).resolve().parents[1]
 AGORA = datetime.datetime(2026, 10, 28, 14, 0, 0)
@@ -100,7 +100,7 @@ def test_botao_so_no_grupo_admin_e_quadro_carrega_so_ao_abrir():
     assert 'data-vista="agentes"' in grupo and "Agentes do Smith" in grupo
     assert html.count('data-vista="agentes"') == 1                      # só existe esse botão, dentro do grupo admin
     assert 'id="agentes-quadro"' in html and 'id="agentes-quadro" ' in html and "src=" not in html[html.index('id="agentes-quadro"'):html.index("</iframe>")]
-    js = (RAIZ / "app_ui" / "painel.js").read_text(encoding="utf-8")
+    js = codigo_js(RAIZ / "app_ui", "painel")
     assert 'agentes: "Agentes do Smith"' in js and 'agentesQuadro(v === "agentes")' in js
 
 
