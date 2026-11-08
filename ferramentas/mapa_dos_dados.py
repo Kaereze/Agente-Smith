@@ -1,6 +1,6 @@
 """Gera o mapa dos dados do Painel (Segundo Cérebro, "6 Documentos/Mapa dos dados.md") a partir do catálogo src/armazem.py.
 
-    python ferramentas\mapa_dos_dados.py
+    python ferramentas/mapa_dos_dados.py
 
 O catálogo é a fonte: o documento nunca fica velho. Um teste (testes/test_armazem.py) falha se o documento deixar de listar algum arquivo.
 """

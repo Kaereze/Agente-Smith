@@ -17,6 +17,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 
 - **Abrir e-mail mais rápido quando o PC dono não responde** (medido: 10 s em média, até 44 s, no PC de casa): depois de 1 falha, o Painel usa a cópia da planilha por 45 s em vez de esperar 6 s a cada e-mail.
 
+- **Armazém dos dados** (`src/armazem.py`): catálogo de tudo o que o Painel grava em `estado/` (36 dados: para que serve, se tem dado de hóspede, quanto tempo fica) e único montador de caminhos. 16 módulos passaram a pedir o caminho por ele; arquivo novo fora do catálogo dá erro, e um teste barra caminho montado à mão. Documento gerado: `Mapa dos dados.md` (`ferramentas/mapa_dos_dados.py`). É o ponto de troca para o banco de dados.
+- **LGPD, registro de quem viu o dado** (`src/acessos.py`): abrir e-mail, anexo ou ficha anota quando, quem, PC e tipo, sem nome nem CPF; 12 meses, só neste PC.
+- **LGPD, pedido do titular** (`ferramentas/pedido_titular.py` e `src/titular.py`): localiza (só quantidades) e apaga do índice e dos caches reconstruíveis os dados de uma pessoa neste PC.
+
 ### Removido
 - Código sem uso: `assunto_sugerido`, `sem_historico`, `e_automatico` e as constantes `CORPO_PADRAO`, `PR_CABECALHOS`, `CONFERENCIA`, `VALORES_DESLIGADO` (e os testes que só conferiam essas funções).
 
