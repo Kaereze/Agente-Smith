@@ -220,7 +220,7 @@ def _novas_tratativas(reg, antes):
 
 def marca_do_email(entry_id):
     """Marca curta e fixa do e-mail no texto da tratativa: a mesma mensagem nunca vira duas."""
-    return "#" + hashlib.sha1(entry_id.encode("utf-8", "replace")).hexdigest()[:8]
+    return "#" + hashlib.sha1(entry_id.encode("utf-8", "replace"), usedforsecurity=False).hexdigest()[:8]
 
 
 def _itens_enviados(pasta, limite):

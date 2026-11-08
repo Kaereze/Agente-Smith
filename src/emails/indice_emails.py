@@ -98,10 +98,10 @@ class Indice:
                 colunas = CAMPOS + ("completo",)
                 if antigo:
                     rowid = antigo[0]
-                    self.db.execute(f"UPDATE emails SET {', '.join(c + '=?' for c in colunas)} WHERE rowid=?", valores + [rowid])
+                    self.db.execute(f"UPDATE emails SET {', '.join(c + '=?' for c in colunas)} WHERE rowid=?", valores + [rowid])   # nosec B608: só nomes de coluna fixos (CAMPOS); os valores vão por ?
                     self.db.execute("DELETE FROM busca WHERE rowid=?", (rowid,))
                 else:
-                    rowid = self.db.execute(f"INSERT INTO emails ({', '.join(colunas)}) VALUES ({', '.join('?' * len(colunas))})",
+                    rowid = self.db.execute(f"INSERT INTO emails ({', '.join(colunas)}) VALUES ({', '.join('?' * len(colunas))})",   # nosec B608: colunas fixas, valores por ?
                                             valores).lastrowid
                 pessoas = " ".join(str(e.get(c) or "") for c in ("de", "nome", "para", "caixa", "hotel"))
                 texto = " ".join([str(e.get("texto") or "")[:TEXTO_MAX.get(e.get("pasta"), 600)]] + [str(a) for a in e.get("anexos") or []])
@@ -160,7 +160,7 @@ class Indice:
             return []
         with self.lock:
             linhas = self.db.execute(
-                f"SELECT {', '.join('e.' + c for c in CAMPOS)} FROM busca JOIN emails e ON e.rowid = busca.rowid "
+                f"SELECT {', '.join('e.' + c for c in CAMPOS)} FROM busca JOIN emails e ON e.rowid = busca.rowid "   # nosec B608: colunas fixas; o termo vai por ?
                 "WHERE busca MATCH ? ORDER BY e.quando DESC LIMIT ?", (consulta, int(limite))).fetchall()
         return [{**dict(zip(CAMPOS, linha)), "anexos": json.loads(linha[-1] or "[]")} for linha in linhas]
 

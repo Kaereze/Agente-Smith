@@ -878,7 +878,7 @@ def assinatura_tela(corpo):
         if isinstance(x, list):
             return [limpar(v) for v in x]
         return x
-    return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):

@@ -158,7 +158,7 @@ def nome_aba_textos(pc=None):
 
 
 def id_do_email(entry_id):
-    return hashlib.sha1(entry_id.encode("utf-8", "replace")).hexdigest()[:12]
+    return hashlib.sha1(entry_id.encode("utf-8", "replace"), usedforsecurity=False).hexdigest()[:12]
 
 
 def dividir_historico(texto):
@@ -356,7 +356,7 @@ def resolver(itens, enviados, agora):
 
 def versao_textos(itens):
     return hashlib.sha1(json.dumps(sorted((i, e.get("texto", ""), e.get("citado", "")) for i, e in itens.items()),
-                                   ensure_ascii=False).encode()).hexdigest()[:10]
+                                   ensure_ascii=False).encode(), usedforsecurity=False).hexdigest()[:10]
 
 
 def lido_confirmado(e, lido_desde, agora):
@@ -827,7 +827,7 @@ class Espelho:
                 logger.warning(f"⚠️ Não consegui publicar os textos dos e-mails ({e})")
                 versao = self.estado.get("publicado_textos", "")
         linhas = linhas_da_aba(self.itens, enviados_dt, pc, self.relogio(), versao, self.estado.get("lido_desde"))
-        assinatura = hashlib.sha1(json.dumps([l[:12] + l[13:] for l in linhas], ensure_ascii=False).encode()).hexdigest()
+        assinatura = hashlib.sha1(json.dumps([l[:12] + l[13:] for l in linhas], ensure_ascii=False).encode(), usedforsecurity=False).hexdigest()
         if assinatura != self.estado.get("publicado"):
             try:
                 self.backend.substituir_aba(self.central, nome_aba(pc), linhas)
@@ -836,7 +836,7 @@ class Espelho:
             except Exception as e:
                 logger.warning(f"⚠️ Não consegui publicar o espelho de e-mails ({e})")
         linhas_p = linhas_pedidos(getattr(self, "pedidos_caixa", self.estado.get("pedidos_caixa", {})) or {}, pc, self.relogio())
-        assinatura_p = hashlib.sha1(json.dumps([l[:7] + l[8:] for l in linhas_p], ensure_ascii=False).encode()).hexdigest()
+        assinatura_p = hashlib.sha1(json.dumps([l[:7] + l[8:] for l in linhas_p], ensure_ascii=False).encode(), usedforsecurity=False).hexdigest()
         if assinatura_p != self.estado.get("publicado_pedidos"):
             try:
                 self.backend.substituir_aba(self.central, nome_aba_pedidos(pc), linhas_p)

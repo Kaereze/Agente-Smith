@@ -272,7 +272,7 @@ class Servidor:
                     return self._responder(500, {"erro": str(e)[:200]})
 
         try:
-            self.http = ThreadingHTTPServer(("0.0.0.0", self.porta), Handler)
+            self.http = ThreadingHTTPServer(("0.0.0.0", self.porta), Handler)   # nosec B104: precisa ouvir a rede do escritório; todo pedido é assinado (HMAC), com código único e cifra; firewall pela TI
         except OSError as e:
             logger.warning(f"⚠️ Não consegui abrir a porta {self.porta} pra rede dos PCs ({e})")
             return False
@@ -296,7 +296,7 @@ def perguntar(segredo, endereco, acao, corpo, tempo=TEMPO_RESPOSTA):
         codigo = ""
     cabecalhos["X-Assinatura"] = assinar(segredo, quando, caminho, dados, codigo)
     pedido = urllib.request.Request(f"http://{endereco}{caminho}", data=dados, method="POST", headers=cabecalhos)
-    with urllib.request.urlopen(pedido, timeout=tempo) as r:
+    with urllib.request.urlopen(pedido, timeout=tempo) as r:   # nosec B310: o endereço é sempre http://IP:porta montado acima, nunca vem de fora
         if r.headers.get("X-Seguro") == "1":
             _PCS_SEGUROS.add(endereco)
         resposta = r.read() or b"{}"

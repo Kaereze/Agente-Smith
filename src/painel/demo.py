@@ -157,7 +157,7 @@ def _pessoa(r):
 
 
 def _id(*partes):
-    return hashlib.sha1("|".join(map(str, partes)).encode()).hexdigest()[:12]
+    return hashlib.sha1("|".join(map(str, partes)).encode(), usedforsecurity=False).hexdigest()[:12]
 
 
 class BackendDemo:

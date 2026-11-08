@@ -2,7 +2,7 @@
 
 Cada vez que alguém abre o texto de um e-mail, um anexo ou a ficha de um pedido, o Painel anota: quando, quem (operador), de qual PC, o tipo
 e uma referência curta do item. **Nunca** grava nome, CPF/CNPJ, e-mail ou texto do hóspede: a referência é um pedaço do código do item
-(SHA-1), que só serve para o Painel achar o mesmo item de novo. Fica só neste PC, em `estado/acessos/AAAA-MM.jsonl`, por 12 meses.
+(SHA-256), que só serve para o Painel achar o mesmo item de novo. Fica só neste PC, em `estado/acessos/AAAA-MM.jsonl`, por 12 meses.
 Se o registro falhar, a tela segue normalmente (o registro nunca derruba a leitura).
 """
 import collections
@@ -22,7 +22,7 @@ _trava = threading.Lock()
 
 def referencia(item):
     """Pedaço do código do item (nunca o código inteiro, nunca o conteúdo)."""
-    return hashlib.sha1(str(item or "").encode("utf-8")).hexdigest()[:10]
+    return hashlib.sha256(str(item or "").encode("utf-8")).hexdigest()[:10]
 
 
 def registrar(agente, pc, tipo, item="", hotel="", agora=None):

@@ -404,7 +404,7 @@ def assinatura_da_linha(linha, i_enviado):
     valores = [str(v).strip() for i, v in enumerate(linha) if i != i_enviado]
     while valores and not valores[-1]:
         valores.pop()
-    return hashlib.sha1(SEPARADOR.join(valores).encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha1(SEPARADOR.join(valores).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 def nome_do_hotel_pela_aba(nome_aba):
