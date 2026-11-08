@@ -98,7 +98,6 @@ FOLGA_MINUTOS = ajustes.valor("email.folga_minutos")
 CADASTRO_SEGUNDOS = ajustes.valor("email.cadastro_hoteis_segundos")   # Cadastro_Hoteis muda pouco: relido a cada 30 min (cota)
 REMETENTES_AUTOMATICOS = tuple(ajustes.valor("email.remetentes_automaticos"))
 DOMINIOS_AUTOMATICOS = tuple(ajustes.valor("email.dominios_automaticos"))
-PR_CABECALHOS = "http://schemas.microsoft.com/mapi/proptag/0x007D001F"
 _HISTORICO = re.compile(   # "Em qui., 8 de out. ... <x@y>\nescreveu:" (o Gmail quebra a linha antes do "escreveu:")
     r"^\s*(?:De:|From:|-{2,}\s*(?:Mensagem original|Original Message)|_{5,}|"
     r"Em [^\n]{5,160}(?:\n[^\n]{0,80})?escreveu:|On [^\n]{5,160}(?:\n[^\n]{0,80})?wrote:)",
@@ -174,23 +173,8 @@ def dividir_historico(texto):
     return limpa(proprio, MAX_TEXTO), limpa(citado, MAX_CITADO)
 
 
-def sem_historico(texto):
-    """Corta as mensagens antigas coladas embaixo (De:/From:/Em ... escreveu:)."""
-    return dividir_historico(texto)[0]
-
-
 def previa(texto):
     return re.sub(r"\s+", " ", texto or "").strip()[:MAX_PREVIA]
-
-
-def e_automatico(endereco, cabecalhos=""):
-    endereco = (endereco or "").lower()
-    usuario, _, dominio = endereco.partition("@")
-    if not dominio:
-        return True
-    if any(p in usuario for p in REMETENTES_AUTOMATICOS) or any(d in dominio for d in DOMINIOS_AUTOMATICOS):
-        return True
-    return "list-unsubscribe:" in (cabecalhos or "").lower()
 
 
 def e_do_robo(de, corpo, rede, remetente_antigo=""):

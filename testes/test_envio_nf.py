@@ -47,9 +47,7 @@ def _esperar(serv, id_envio):
     return serv.locais.get(id_envio)
 
 
-def test_assunto_e_destinatarios():
-    assert en.assunto_sugerido("NF 1212 - FH MANUTENCAO.pdf", "", "x") == "NF 1212 - FH MANUTENCAO"
-    assert en.assunto_sugerido("nota.pdf", "77", "Fh Manutenção") == "NF 77 - FH MANUTENÇÃO"
+def test_destinatarios():
     assert en.destinatarios(SOL) == ["hospede@x.com", "financeiro@fh.com"]
 
 

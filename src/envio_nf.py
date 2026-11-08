@@ -186,9 +186,6 @@ def corpo_do_email(mensagem, html_assinatura):
     return f"<html><body>{''.join(partes)}{html_assinatura}</body></html>"
 
 
-CORPO_PADRAO = MENSAGEM_PADRAO
-
-
 # ---------- selos pré-salvos (app_ui/assinaturas/<nome>.png) ----------
 # Pedido do usuário (06/10/2026): a mensagem é sempre a mesma, só muda o selo de quem envia.
 # Trocar/incluir um selo = pôr o PNG na pasta (o nome do arquivo é o do operador).
@@ -256,15 +253,6 @@ def agora():
 
 def _iso(d):
     return d.isoformat(timespec="seconds")
-
-
-# ---------- assunto, destinatários, sugestões ----------
-def assunto_sugerido(nome_arquivo, numero_nf, nome):
-    """Usa o nome do arquivo quando ele já está no padrão "NF 1212 - NOME"; senão monta com o número."""
-    base = os.path.splitext(os.path.basename(nome_arquivo or ""))[0]
-    if ler_assunto_nf(base):
-        return re.sub(r"\s+", " ", base).strip()
-    return f"NF {numero_nf} - {nome.upper()}" if numero_nf else f"NF - {nome.upper()}"
 
 
 def destinatarios(sol):

@@ -24,8 +24,6 @@ LIMITE_CHAMADA_GOOGLE_SEGUNDOS = ajustes.valor("google.chamada_limite_segundos")
 
 SEPARADOR = chr(31)   # nunca aparece numa resposta de formulário
 VALORES_PENDENTE = {"", "false", "falso"}
-VALORES_DESLIGADO = {"false", "falso", "nao", "n", "0", "inativo"}
-
 # Aba Status: A = rótulo, B = valor. As linhas 7+ são o protocolo com apps_script/menu_planilha_central.gs.
 STATUS_ROTULO_A1 = "Robô ligado?"
 STATUS_LINHAS = [

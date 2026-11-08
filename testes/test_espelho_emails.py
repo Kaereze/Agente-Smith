@@ -5,22 +5,6 @@ import espelho_emails as ee
 D = datetime.datetime
 
 
-def test_corta_o_historico_colado_embaixo():
-    texto = "Boa tarde,\nPreciso da nota no CNPJ 12.345.678/0001-90.\nObrigada\n\nDe: notafiscal@hotel.com\nEnviada em: ..."
-    assert ee.sem_historico(texto) == "Boa tarde,\nPreciso da nota no CNPJ 12.345.678/0001-90.\nObrigada"
-    assert ee.sem_historico("Oi\n\nEm seg., 5 de out. de 2026 às 10:00, Hotel <a@b> escreveu:\n> antigo") == "Oi"
-    assert ee.sem_historico("só o texto") == "só o texto"
-    gmail = "Boa tarde! O valor real pago.\n\nEm qui., 8 de out. de 2026 às 16:30, <nf@hotel.com.br>\nescreveu:\n> Prezada"
-    assert ee.sem_historico(gmail) == "Boa tarde! O valor real pago."   # o Gmail quebra a linha antes do "escreveu:"
-
-
-def test_automaticos_e_listas_ficam_de_fora():
-    assert ee.e_automatico("no-reply@booking.com") and ee.e_automatico("naoresponda@banco.com.br")
-    assert ee.e_automatico("reservas@decolar.com") and ee.e_automatico("x@empresa.com", "List-Unsubscribe: <mailto:..>")
-    assert ee.e_automatico("sem-arroba")
-    assert not ee.e_automatico("maria.souza@gmail.com") and not ee.e_automatico("financeiro@empresa.com.br")
-
-
 def test_respondido_fica_e_enviado_fica_72h():
     itens = {"a": {"pasta": "entrada", "de": "ana@x.com", "quando": "2026-10-06T10:00:00"},
              "b": {"pasta": "entrada", "de": "bia@x.com", "quando": "2026-10-06T10:00:00"},
