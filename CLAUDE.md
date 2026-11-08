@@ -18,5 +18,6 @@ Num PC fora do trabalho (sem Outlook dos hotéis e sem a chave do Google), use `
 - Trabalhe numa ramificação nova e faça um commit por etapa, com teste verde. **Não suba nem etiquete sem o OK do João** (a etiqueta reinicia os 4 PCs). Com o "pode subir": `git push origin HEAD:main HEAD:Bernardo HEAD:Christian HEAD:clara` e depois `git push origin <etiqueta>`.
 - Nunca abrir, fotografar nem colar dado real de hóspede. Foto de tela só da demonstração, em servidor isolado (como `testes/test_telas.py`).
 - Antes de entregar tela: medir texto cortado e espaçamento em 1440 e 1100 px. Tela nova: desenho para o João aprovar antes de construir.
+- **Mudou uma peça do casco (barra lateral, topo, rodapé, margens)? Redesenhe e fotografe o conjunto inteiro**, a janela toda em 1920×1080 e 1100 px, e confira canto vazio, rodapé cortado e rolagem. Foto só da peça isolada não vale (08/11/2026: a barra flutuante foi entregue com a coluna, o topo e o rodapé do desenho antigo).
 - Responder em português simples, curto: o que foi feito, o que não deu para verificar, e a pergunta no fim.
 
