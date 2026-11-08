@@ -4,11 +4,13 @@ import sys
 import pytest
 
 import app_servidor
+import armazem
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="trava do Windows")
 def test_segundo_painel_no_mesmo_pc_nao_sobe(tmp_path, monkeypatch):
     monkeypatch.setattr(app_servidor, "PASTA_ESTADO", tmp_path)
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path)
     primeiro = app_servidor.travar_instancia_unica()
     assert primeiro is not None
     assert app_servidor.travar_instancia_unica() is None          # aberto quase junto: não sobe
@@ -21,6 +23,7 @@ def test_segundo_painel_no_mesmo_pc_nao_sobe(tmp_path, monkeypatch):
 @pytest.mark.skipif(sys.platform != "win32", reason="trava do Windows")
 def test_main_sai_sem_subir_quando_ja_tem_painel(tmp_path, monkeypatch):
     monkeypatch.setattr(app_servidor, "PASTA_ESTADO", tmp_path)
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path)
     monkeypatch.setattr(app_servidor, "porta_livre", lambda: True)   # a porta parece livre (a brecha de antes)
     abertas = []
     monkeypatch.setattr(app_servidor, "abrir_janela", lambda: abertas.append(1))

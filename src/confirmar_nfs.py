@@ -32,7 +32,8 @@ garantir_utf8()
 
 import app_dados as dados
 from arquivos import salvar_json, so_na_nuvem
-from config import PASTA_ESTADO, caminho_chave_google, carregar_config
+import armazem
+from config import caminho_chave_google, carregar_config
 from controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
 from log_util import configurar_logging
 import outlook_vivo
@@ -41,14 +42,14 @@ import ajustes
 
 logger = configurar_logging("confirmar_nfs")
 
-CAMINHO_VISTOS = PASTA_ESTADO / "confirmar_nfs.json"
-CAMINHO_STATUS = PASTA_ESTADO / "confirmar_status.json"   # última volta (o Painel publica pros outros PCs)
+CAMINHO_VISTOS = armazem.caminho("confirmar_nfs.json")
+CAMINHO_STATUS = armazem.caminho("confirmar_status.json")   # última volta (o Painel publica pros outros PCs)
 RECEBIDOS_DIAS = ajustes.valor("notas.recebidos_dias")
 MAX_ATIVIDADES_POR_TIPO = ajustes.valor("notas.atividades_por_tipo")   # acima disso vira uma linha de resumo (ex.: conferência do ano)
 # Sobe quando a regra muda e e-mails já vistos precisam ser lidos de novo: na 1ª volta depois de atualizar,
 # cada PC relê os enviados sozinho. 2 = tratativas e NF anexada em assunto fora do padrão (07/10/2026).
 VERSAO_REGRAS = 4   # 3/4: registra os e-mails com NF já enviados, até pra outro endereço (envio pendente x enviada)
-CAMINHO_TEXTOS = PASTA_ESTADO / "cache_textos_nf.json"
+CAMINHO_TEXTOS = armazem.caminho("cache_textos_nf.json")
 AGENTE = "Robô"
 PREFIXO_NOTA_UNICA = "Hóspede aceita nota única:"
 MAX_ITENS_POR_CONTA = ajustes.valor("outlook.max_itens_por_conta")

@@ -22,6 +22,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import armazem
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO
 import ajustes
 
@@ -225,7 +226,7 @@ def garantir_inicio_com_windows():
 def main():
     import msvcrt
     os.makedirs(PASTA_ESTADO, exist_ok=True)
-    trava = open(PASTA_ESTADO / "_janela.lock", "a+b")
+    trava = open(armazem.caminho("_janela.lock"), "a+b")
     try:
         msvcrt.locking(trava.fileno(), msvcrt.LK_NBLCK, 1)
     except OSError:
@@ -262,7 +263,7 @@ def main():
     threading.Thread(target=esperar_pedido_de_mostrar, daemon=True).start()
     threading.Thread(target=vigiar_tela, daemon=True).start()
     webview.start(aplicar_icone, gui="edgechromium", private_mode=False,
-                  storage_path=str(PASTA_ESTADO / "app_webview"))
+                  storage_path=str(armazem.caminho("app_webview")))
     return 0
 
 

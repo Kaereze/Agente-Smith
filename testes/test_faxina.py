@@ -6,6 +6,7 @@ import app_dados as d
 import envio_nf
 import faxina
 from conftest import CENTRAL, ESTRELA
+import armazem
 
 HOJE = datetime.date(2026, 10, 20)
 VELHO = datetime.datetime(2026, 10, 1, 10, 0).astimezone()
@@ -68,6 +69,7 @@ def test_abas_curtas_perdem_so_o_comeco_velho():
 def test_rodar_na_planilha(cfg, planilha, tmp_path, monkeypatch):
     monkeypatch.setattr(faxina, "CAMINHO", tmp_path / "faxina.json")
     monkeypatch.setattr(faxina, "PASTA_ESTADO", tmp_path)
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path)
     hoje = datetime.date.today()
     velho = (datetime.datetime.now() - datetime.timedelta(days=10)).astimezone()
     sols = d.ler_solicitacoes(ESTRELA, "ESTRELA CENTRO", planilha.aba(ESTRELA), cfg)

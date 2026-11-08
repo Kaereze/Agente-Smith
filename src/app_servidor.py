@@ -32,6 +32,7 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 import app_dados as dados
+import acessos
 import atividade
 import atualizador
 import avisos_windows
@@ -58,6 +59,7 @@ from estado_sistema import DROPBOX_OLHAR_SEGUNDOS, REINICIO_PENDENTE_MIN, Sistem
 from estado_envio import EnvioMixin
 from estado_rede import RedeMixin, VERIFICAR_ATUALIZACAO_MINUTOS, TELAS, SEM_REDE_SEGUNDOS, JANELA_ABERTA_SEGUNDOS, ATIVIDADE_CACHE_SEGUNDOS   # noqa: F401
 from estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_SEGUNDOS, _kw_ligacao   # noqa: F401  (nomes usados por testes e rotas)
+import armazem
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
 import limpeza
 from log_util import configurar_logging
@@ -69,7 +71,7 @@ logger = configurar_logging("app")
 
 PORTA = 8765
 PASTA_UI = PASTA_PROJETO / "app_ui"
-CAMINHO_PREFS = PASTA_ESTADO / "app.json"
+CAMINHO_PREFS = armazem.caminho("app.json")
 
 
 def _marca_pagina():
@@ -97,10 +99,10 @@ def _pagina_inteira(tentativas=6):
             return html
         time.sleep(0.25)
     return html
-CAMINHO_CACHE = PASTA_ESTADO / "painel_cache.pkl"
-CAMINHO_CANCELADAS = PASTA_ESTADO / "canceladas.json"
+CAMINHO_CACHE = armazem.caminho("painel_cache.pkl")
+CAMINHO_CANCELADAS = armazem.caminho("canceladas.json")
 CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
-CAMINHO_VERSAO = PASTA_ESTADO / "versao_rodando.txt"
+CAMINHO_VERSAO = armazem.caminho("versao_rodando.txt")
 SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
 # Cache em disco (Fase 1, 05/11/2026): lê só estes tipos. Um arquivo trocado por outro com código dentro não roda nada: é recusado
@@ -391,7 +393,7 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         if not e_principal(self.cfg):
             return []
         try:
-            return json.load(open(PASTA_ESTADO / "planilhas_sem_cadastro.json", encoding="utf-8"))
+            return json.load(open(armazem.caminho("planilhas_sem_cadastro.json"), encoding="utf-8"))
         except (OSError, ValueError):
             return []
 
@@ -442,7 +444,7 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         self.abas_lidas_em = -1e9   # relê o cadastro na próxima volta
         return {"ok": True}
 
-    LIDO_APLICADO = PASTA_ESTADO / "lido_aplicado.json"
+    LIDO_APLICADO = armazem.caminho("lido_aplicado.json")
     LIDO_OUTLOOK_DESDE = "2026-10-11T11:55:36"   # clique de antes desta regra não vai pro Outlook (era só o lido da equipe)
 
     def reler_tratamento(self):
@@ -476,7 +478,7 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         if dias:
             desde = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat()
         try:
-            controle = json.load(open(PASTA_ESTADO / "controle_nf.json", encoding="utf-8"))
+            controle = json.load(open(armazem.caminho("controle_nf.json"), encoding="utf-8"))
         except (FileNotFoundError, ValueError):
             controle = {}
         with self.lock:
@@ -859,7 +861,7 @@ def abrir_janela():
     if edge is None:
         import webbrowser
         return webbrowser.open(url)
-    perfil = PASTA_ESTADO / "app_edge"   # perfil separado: a janela não se mistura com o Edge do usuário
+    perfil = armazem.caminho("app_edge")   # perfil separado: a janela não se mistura com o Edge do usuário
     subprocess.Popen([edge, f"--app={url}", f"--user-data-dir={perfil}", "--window-size=1440,900",
                       "--no-first-run", "--no-default-browser-check"])
 
@@ -914,7 +916,7 @@ def travar_instancia_unica():
     -> arquivo travado (manter aberto enquanto o processo vive) | None se já há outro."""
     import msvcrt
     os.makedirs(PASTA_ESTADO, exist_ok=True)
-    arquivo = open(PASTA_ESTADO / "_painel.lock", "a+b")
+    arquivo = open(armazem.caminho("_painel.lock"), "a+b")
     try:
         msvcrt.locking(arquivo.fileno(), msvcrt.LK_NBLCK, 1)
         return arquivo
@@ -948,7 +950,7 @@ def main():
     if modo_demo:
         import demo
         global CAMINHO_CACHE
-        CAMINHO_CACHE = PASTA_ESTADO / "painel_cache_demo.pkl"
+        CAMINHO_CACHE = armazem.caminho("painel_cache_demo.pkl")
         cfg = demo.configurar_cfg(cfg)
         backend_demo = demo.BackendDemo()
         estado = Estado(backend_demo, cfg)
@@ -956,7 +958,7 @@ def main():
         logger.info("🧪 MODO DEMONSTRAÇÃO: dados fictícios, nada vai pro Google nem pro Outlook")
     elif so_ver:
         from sheets import BackendSoLeitura
-        CAMINHO_CACHE = PASTA_ESTADO / "painel_cache_casa.pkl"
+        CAMINHO_CACHE = armazem.caminho("painel_cache_casa.pkl")
         estado = Estado(BackendSoLeitura(caminho_chave_google(cfg)), cfg)
         logger.info("🏠 MODO CASA: dados reais, só visualização (não grava na Central, não mexe no Outlook)")
     else:
@@ -1019,6 +1021,10 @@ def main():
             estado.vigiar_caixa_de_saida()
             estado.iniciar_indice()
         estado.iniciar_nf_achadas()
+    try:
+        acessos.limpar()   # registro de acessos: só os últimos 12 meses
+    except Exception as e:
+        logger.warning(f"Limpeza do registro de acessos não rodou: {e}")
     try:
         liberado = limpeza.aparar_registros(PASTA_LOGS)   # cópia girada antiga e grande (auditoria 27/10/2026)
         if liberado:

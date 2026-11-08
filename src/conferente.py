@@ -21,6 +21,7 @@ from console_utf8 import garantir_utf8
 
 garantir_utf8()
 
+import armazem
 from config import PASTA_ESTADO, ErroDeConfig, carregar_config, e_principal
 from controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, e_email_do_robo,
                          ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
@@ -32,7 +33,7 @@ import ajustes
 
 logger = configurar_logging("conferente")
 
-CAMINHO_REGISTRO = PASTA_ESTADO / "controle_nf.json"
+CAMINHO_REGISTRO = armazem.caminho("controle_nf.json")
 CLASSE_EMAIL = 43
 MAX_ITENS_POR_CONTA = ajustes.valor("outlook.max_itens_por_conta")
 SOBREPOSICAO = datetime.timedelta(minutes=5)   # relê um pouco pra trás; aplicar é idempotente
@@ -456,7 +457,7 @@ def uma_volta(outlook, namespace, cfg, agora=None):
 def _travar_instancia_unica():
     """-> arquivo travado (manter aberto enquanto o processo vive) | None se já há outro."""
     os.makedirs(PASTA_ESTADO, exist_ok=True)
-    arquivo = open(PASTA_ESTADO / "_conferente.lock", "a+b")
+    arquivo = open(armazem.caminho("_conferente.lock"), "a+b")
     try:
         msvcrt.locking(arquivo.fileno(), msvcrt.LK_NBLCK, 1)
         return arquivo

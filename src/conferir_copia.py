@@ -15,7 +15,8 @@ from console_utf8 import garantir_utf8
 
 garantir_utf8()
 
-from config import PASTA_ESTADO, carregar_config, caminho_chave_google
+import armazem
+from config import carregar_config, caminho_chave_google
 from log_util import configurar_logging
 from sheets import VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha
 from sincronizar import (PAUSA_ENTRE_LEITURAS, _chave_linha, _gravar_aba, _hora, _ler_planilha_hotel, juntar_planilhas,
@@ -162,7 +163,7 @@ def conferir(backend=None, cfg=None):
     m = mapear_fontes(backend, cfg, chave)
     por_hotel, destino_do_hotel = m["por_hotel"], m["destino_do_hotel"]
     try:
-        ultima_copia = datetime.datetime.fromisoformat(open(PASTA_ESTADO / "ultima_copia.txt", encoding="utf-8").read().strip())
+        ultima_copia = datetime.datetime.fromisoformat(open(armazem.caminho("ultima_copia.txt"), encoding="utf-8").read().strip())
     except (FileNotFoundError, ValueError):
         ultima_copia = None
     abas = [destino_do_hotel[h] for h in por_hotel if h in destino_do_hotel]

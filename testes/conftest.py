@@ -16,6 +16,8 @@ from gspread.utils import a1_to_rowcol
 PASTA_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(PASTA_PROJETO, "src"))
 
+import armazem  # noqa: E402
+
 CENTRAL = "PLANILHA_CENTRAL"
 ESTRELA = "Solicitação Nota Fiscal (Estrela Centro) (respostas)"
 ARACAJU = "Solicitação Nota Fiscal (Aracaju) (respostas)"
@@ -185,7 +187,7 @@ def outlook():
 def pastas_temporarias(tmp_path, monkeypatch):
     """Diário de envios e simulação vão pra uma pasta temporária, nunca pras pastas reais."""
     import main
-    monkeypatch.setattr(main, "PASTA_ESTADO", tmp_path / "estado")
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path / "estado")
     monkeypatch.setattr(main, "PASTA_SIMULACAO", tmp_path / "simulacao")
     return tmp_path
 

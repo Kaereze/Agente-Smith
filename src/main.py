@@ -14,7 +14,8 @@ garantir_utf8()
 from controle_nf import abrir_registro
 from historico import (ATENCAO, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_MANUAL, SUCESSO, Execucao,
                        JaEnviadas, explicar_aba_pulada, texto_simples)
-from config import e_principal, PASTA_ESTADO, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, caminho_chave_google, carregar_config
+import armazem
+from config import e_principal, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, caminho_chave_google, carregar_config
 import robo_antigo
 from envio_pc_dono import NaoEnviado, com_pc_dono
 from diario_envios import MINUTOS_ATE_DESISTIR, DiarioEnvios, idade_minutos, solicitacoes_da_entrada
@@ -110,7 +111,7 @@ def registrar_para_conferencia(emails, agora):
     if not emails:
         return
     try:
-        with abrir_registro(PASTA_ESTADO / "controle_nf.json") as registro:
+        with abrir_registro(armazem.caminho("controle_nf.json")) as registro:
             for email in emails:
                 registro.registrar_email(email, agora)
         logger.info(f"📌 {len(emails)} e-mail(s) anotado(s) pro conferente de NF.")
@@ -203,7 +204,7 @@ def _pendentes_da_selecao(backend, cfg, selecao, log_exec):
 def _convivencia_robo_antigo(backend, cfg, outlook, pendentes, ja_enviadas, log_exec, agora):
     """Dá a vez ao robô antigo (Apps Script) e marca TRUE no que ele já mandou, sem reenviar."""
     op = robo_antigo.opcoes(cfg)
-    ativos = robo_antigo.hoteis_ativos(PASTA_ESTADO / "robo_antigo.json", agora, op["dias_ativo"])
+    ativos = robo_antigo.hoteis_ativos(armazem.caminho("robo_antigo.json"), agora, op["dias_ativo"])
     pendentes, aguardando = robo_antigo.separar(pendentes, ativos, agora, op["espera_minutos"])
     if aguardando:
         hoteis = sorted({s.hotel.nome for s in aguardando})
@@ -264,8 +265,8 @@ def executar(cfg, backend, outlook, esperar=time.sleep, agora=None, relogio=time
     logger.info(f"📋 {len(pendentes)} solicitação(ões) pendente(s) lida(s).")
 
     avisos = [f"aba com erro: {e}" for e in erros_abas]
-    diario = DiarioEnvios(PASTA_ESTADO / "envios_pendentes.json")
-    ja_enviadas = JaEnviadas(PASTA_ESTADO / "ja_enviadas.json")
+    diario = DiarioEnvios(armazem.caminho("envios_pendentes.json"))
+    ja_enviadas = JaEnviadas(armazem.caminho("ja_enviadas.json"))
     outlook_conectado = False
 
     if modo == "PRODUCAO" and diario.listar():

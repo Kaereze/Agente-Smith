@@ -23,13 +23,13 @@ import time
 
 import busca_outlook
 import espelho_emails as ee
-from config import PASTA_ESTADO
+import armazem
 from log_util import configurar_logging
 import ajustes
 
 logger = configurar_logging("indice_emails")
 
-ARQUIVO = PASTA_ESTADO / "indice_emails.sqlite"
+ARQUIVO = armazem.caminho("indice_emails.sqlite")
 DIAS = ajustes.valor("email.indice_dias")
 TEXTO_MAX = {"entrada": 1500, "enviado": 300, "excluido": 600}   # o que o hóspede escreveu pesa mais que a nossa resposta
 PREVIA_TABELA = ajustes.valor("email.indice_previa_caracteres")   # a tabela do Outlook corta o texto aqui

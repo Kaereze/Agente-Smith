@@ -19,7 +19,7 @@ import re
 import socket
 
 from arquivos import salvar_json
-from config import PASTA_ESTADO
+import armazem
 from log_util import configurar_logging
 import ajustes
 
@@ -31,7 +31,7 @@ PREFIXO_ABA = "ContagemPainel_"
 CAB = ["Data", "Agente", "Hotel", "Caixa", "Recebidos", "Enviados", "NFs", "Ligações", "Contado em"]
 MANTER_DIAS = ajustes.valor("limpeza.contagem_painel_dias")
 RECONTAR_HOJE_MIN = ajustes.valor("limpeza.recontar_hoje_minutos")
-CAMINHO = PASTA_ESTADO / "contagem_painel.json"
+CAMINHO = armazem.caminho("contagem_painel.json")
 _NF = re.compile(r"\bNF\s*n?[º°o.]*\s*(\d{2,7})\b", re.I)
 _RESPOSTA = re.compile(r"^\s*(re|res|enc|fw|fwd|encaminhad[ao])\s*[:\]]", re.I)
 
@@ -39,7 +39,7 @@ _RESPOSTA = re.compile(r"^\s*(re|res|enc|fw|fwd|encaminhad[ao])\s*[:\]]", re.I)
 def agente_deste_pc():
     """Quem trabalha neste PC (o mesmo nome que o Painel mostra): estado/app.json, senão a identidade do PC."""
     try:
-        nome = json.load(open(PASTA_ESTADO / "app.json", encoding="utf-8")).get("agente")
+        nome = json.load(open(armazem.caminho("app.json"), encoding="utf-8")).get("agente")
         if nome:
             return nome
     except (OSError, ValueError):

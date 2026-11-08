@@ -12,7 +12,8 @@ import indice_emails
 import outlook_vivo
 import rede_pcs
 import saude
-from config import PASTA_ESTADO, e_principal
+import armazem
+from config import e_principal
 from log_util import configurar_logging
 import ajustes
 
@@ -51,7 +52,7 @@ class SistemaMixin:
         if not e_principal(self.cfg):
             return ""
         try:
-            return (PASTA_ESTADO / "ultima_copia.txt").read_text(encoding="utf-8").strip()[:19]
+            return (armazem.caminho("ultima_copia.txt")).read_text(encoding="utf-8").strip()[:19]
         except OSError:
             return ""
 

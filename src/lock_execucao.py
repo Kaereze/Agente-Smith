@@ -9,13 +9,13 @@ import pywintypes
 import win32api
 import win32con
 
-from config import PASTA_ESTADO
+import armazem
 from log_util import configurar_logging
 import ajustes
 
 logger = configurar_logging(__name__)
 
-ARQUIVO_LOCK = str(PASTA_ESTADO / "_execucao.lock")
+ARQUIVO_LOCK = str(armazem.caminho("_execucao.lock"))
 _ARQUIVO_MUTEX = ARQUIVO_LOCK + ".mutex"
 
 IDADE_MAXIMA_SEGUNDOS = ajustes.valor("limpeza.trava_orfa_segundos")   # execução normal leva minutos; mais que isso = trava órfã

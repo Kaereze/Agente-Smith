@@ -19,6 +19,7 @@ from console_utf8 import garantir_utf8
 garantir_utf8()
 
 from arquivos import salvar_json
+import armazem
 from config import PASTA_ESTADO, carregar_config, caminho_chave_google, e_principal
 from log_util import configurar_logging
 from sheets import BackendGoogle as _Backend
@@ -294,7 +295,7 @@ def espelhar_true_nos_hoteis(backend, cfg, hoteis=None):
         alvo = [h for h in alvo if normalizar(h) in quero]
     destinos = m["destino_do_hotel"]
     dados_central, _ = backend.ler_abas(central, [destinos[h] for h in alvo if h in destinos])
-    lista = chaves_da_lista_ja_enviadas(PASTA_ESTADO / "ja_enviadas.json")
+    lista = chaves_da_lista_ja_enviadas(armazem.caminho("ja_enviadas.json"))
     saida = {}
     for hotel in alvo:
         destino = dados_central.get(destinos.get(hotel, ""), [])
@@ -465,14 +466,14 @@ def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
     cadastro, por_hotel, sem_hotel = m["cadastro"], m["por_hotel"], m["sem_hotel"]
     abas_central, destino_do_hotel = m["abas_central"], m["destino_do_hotel"]
 
-    estado = PASTA_ESTADO / "sincronizacao.json"
+    estado = armazem.caminho("sincronizacao.json")
     try:
         marcas = json.load(open(estado, encoding="utf-8"))
     except FileNotFoundError:
         marcas = {}
-    chaves_enviadas = chaves_da_lista_ja_enviadas(PASTA_ESTADO / "ja_enviadas.json")
+    chaves_enviadas = chaves_da_lista_ja_enviadas(armazem.caminho("ja_enviadas.json"))
     try:
-        guardado = json.load(open(PASTA_ESTADO / VERSOES, encoding="utf-8"))
+        guardado = json.load(open(armazem.caminho(VERSOES), encoding="utf-8"))
     except (FileNotFoundError, ValueError):
         guardado = {}
     versoes, ultima_completa = guardado.get("versoes", {}), guardado.get("ultima_completa", "")
@@ -490,7 +491,7 @@ def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
     inicio_copia = datetime.datetime.now()
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
-        arquivo_backup = PASTA_ESTADO / f"backup_central_{inicio_copia:%Y%m%d_%H%M%S}.json"
+        arquivo_backup = armazem.backup_central(inicio_copia)
     dados_central, _ = backend.ler_abas(central, [destino_do_hotel[h] for h in a_ler if h in destino_do_hotel])
     for hotel in sorted(set(por_hotel) - set(a_ler)):
         relatorio.append({"hotel": hotel, "situacao": "sem mudança no Drive — não lida"})
@@ -538,11 +539,11 @@ def sincronizar(gravar=False, completa=None, so_hoteis=None, mapa=None):
     if gravar:
         os.makedirs(PASTA_ESTADO, exist_ok=True)
         json.dump(marcas, open(estado, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-        salvar_json(PASTA_ESTADO / VERSOES, {"versoes": {**versoes, **lidas_agora},
+        salvar_json(armazem.caminho(VERSOES), {"versoes": {**versoes, **lidas_agora},
                                              "ultima_completa": inicio_copia.isoformat(timespec="seconds") if completa
                                              else ultima_completa})
-        open(PASTA_ESTADO / "ultima_copia.txt", "w", encoding="utf-8").write(inicio_copia.isoformat(timespec="seconds"))
-        robo_antigo.registrar_atividade(PASTA_ESTADO / "robo_antigo.json",
+        open(armazem.caminho("ultima_copia.txt"), "w", encoding="utf-8").write(inicio_copia.isoformat(timespec="seconds"))
+        robo_antigo.registrar_atividade(armazem.caminho("robo_antigo.json"),
                                         {r["hotel"]: r.get("ultimo_antigo") for r in relatorio if "linhas" in r})
         _limpar_backups_antigos()
     return relatorio, sem_hotel, [h for h in cadastro.values() if h not in por_hotel]
@@ -616,7 +617,7 @@ def rodar_agendado():
                     f"{sum(r['pendentes'] for r in copiados)} pendente(s) neles.")
         if sem_hotel:
             logger.warning(f"⚠️ Planilhas na pasta sem hotel no cadastro (não copiadas): {', '.join(sem_hotel)}")
-        salvar_json(PASTA_ESTADO / "planilhas_sem_cadastro.json", sorted(sem_hotel))   # o Painel mostra "Cadastro completo"
+        salvar_json(armazem.caminho("planilhas_sem_cadastro.json"), sorted(sem_hotel))   # o Painel mostra "Cadastro completo"
         return 0
     except Exception:
         logger.exception("❌ A cópia dos hotéis deu erro — nada foi perdido, tento de novo em 30 min.")
@@ -625,7 +626,7 @@ def rodar_agendado():
         liberar_lock()
 
 
-CICLO = PASTA_ESTADO / "_ciclo_copia.txt"   # a rodada das 10 em 10 está rodando: a vigia dos formulários espera
+CICLO = armazem.caminho("_ciclo_copia.txt")   # a rodada das 10 em 10 está rodando: a vigia dos formulários espera
 CICLO_MAX_MINUTOS = ajustes.valor("google.rodada_morta_minutos")   # marca mais velha que isso = rodada que morreu no meio
 
 

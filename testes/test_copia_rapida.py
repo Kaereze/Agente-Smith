@@ -12,6 +12,7 @@ import cota_google
 import lock_execucao
 import sincronizar
 from vigia_formularios import VigiaFormularios
+import armazem
 
 CAB = ["Carimbo de data/hora", "Endereço de e-mail", "Nome", "Enviado"]
 
@@ -96,6 +97,7 @@ def test_trava_ocupada_ou_erro_tenta_na_proxima_volta():
 def copia(cfg, tmp_path, monkeypatch):
     """sincronizar() de verdade, com Google e Drive falsos."""
     monkeypatch.setattr(sincronizar, "PASTA_ESTADO", tmp_path)
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path)
     monkeypatch.setattr(sincronizar, "carregar_config", lambda: cfg)
     monkeypatch.setattr(sincronizar, "caminho_chave_google", lambda c: "chave.json")
     hoteis = {"a": [CAB, ["22/10/2026 21:54:08", "marina@exemplo.com", "Marina Exemplo", ""]],
@@ -156,6 +158,7 @@ def test_marca_da_rodada_e_velha_nao_trava(tmp_path, monkeypatch):
 def test_rodada_marca_e_desmarca_mesmo_com_erro(tmp_path, monkeypatch):
     monkeypatch.setattr(sincronizar, "CICLO", tmp_path / "_ciclo_copia.txt")
     monkeypatch.setattr(sincronizar, "PASTA_ESTADO", tmp_path)
+    monkeypatch.setattr(armazem, "raiz", lambda: tmp_path)
     vistos = []
     def falha():
         vistos.append(sincronizar.ciclo_rodando())

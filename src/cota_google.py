@@ -18,7 +18,7 @@ import os
 import threading
 import time
 
-from config import PASTA_ESTADO
+import armazem
 import ajustes
 
 LIMITE_GOOGLE = 60
@@ -30,7 +30,7 @@ PERFIS = {   # perfil: (leituras/min, escritas/min)
     "vigia_formularios": (4, 3),   # cópia rápida, linha própria dentro do conferente do principal (23/10/2026)
     "padrao": (4, 4),
 }
-PASTA_CONSUMO = PASTA_ESTADO / "cota_google"
+PASTA_CONSUMO = armazem.caminho("cota_google")
 GRAVAR_CONSUMO_SEGUNDOS = ajustes.valor("google.gravar_consumo_segundos")
 PAUSA_APOS_429 = ajustes.valor("google.pausa_apos_bloqueio_segundos")
 

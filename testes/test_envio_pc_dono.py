@@ -9,6 +9,7 @@ import envio_pc_dono as epd
 from conftest import AGORA, ARACAJU, CABECALHO_HOTEL, Relogio
 from main import executar
 from modelos import EmailMontado
+import armazem
 
 
 class LocalFalso:
@@ -152,9 +153,8 @@ def test_no_robo_pc_dono_desligado_deixa_a_linha_pendente_e_tira_do_diario(cfg, 
     i = CABECALHO_HOTEL.index("Enviado")
     assert [l[i] for l in planilha.aba(ARACAJU)[1:]] == ["FALSE"]   # continua pendente: vai na próxima volta
     assert local.enviados == []
-    import main
     from diario_envios import DiarioEnvios
-    assert DiarioEnvios(main.PASTA_ESTADO / "envios_pendentes.json").listar() == []
+    assert DiarioEnvios(armazem.caminho("envios_pendentes.json")).listar() == []
 
 
 # ---------- no PC dono ----------

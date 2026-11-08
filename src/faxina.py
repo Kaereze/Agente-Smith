@@ -23,6 +23,7 @@ import espelho_emails
 import ligacoes
 import rede_pcs
 from arquivos import salvar_json
+import armazem
 from config import PASTA_ESTADO
 from log_util import configurar_logging
 import ajustes
@@ -34,7 +35,7 @@ DIAS_ATIVIDADE = ajustes.valor("limpeza.atividade_dias")
 DIAS_SOLICITACAO = ajustes.valor("limpeza.solicitacao_dias")
 DIAS_SEM_SOLICITACAO = ajustes.valor("limpeza.sem_solicitacao_dias")   # evento de solicitação que não existe mais nas abas dos hotéis
 HORAS_ENTRE = ajustes.valor("limpeza.faxina_a_cada_horas")
-CAMINHO = PASTA_ESTADO / "faxina.json"
+CAMINHO = armazem.caminho("faxina.json")
 BACKUPS = ajustes.valor("limpeza.backups_guardados")
 ABAS_CURTAS = {envio_nf.ABA_FILA: DIAS_REGISTROS, rede_pcs.ABA_COMANDOS: DIAS_REGISTROS,
                espelho_emails.ABA_EVENTOS: DIAS_REGISTROS, atividade.ABA: DIAS_ATIVIDADE,
@@ -144,7 +145,7 @@ def _datas_das_solicitacoes(backend, cfg, central):
 
 def _backup(linhas, hoje):
     PASTA_ESTADO.mkdir(parents=True, exist_ok=True)
-    salvar_json(PASTA_ESTADO / f"backup_tratamento_{hoje:%Y%m%d}.json", linhas, indent=None)
+    salvar_json(armazem.backup_tratamento(hoje), linhas, indent=None)
     for velho in sorted(PASTA_ESTADO.glob("backup_tratamento_*.json"))[:-BACKUPS]:
         try:
             velho.unlink()

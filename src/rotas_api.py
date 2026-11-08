@@ -12,6 +12,7 @@ Este módulo não importa `app_servidor` (ele roda como `__main__`); o que depen
 """
 import datetime
 
+import acessos
 from log_util import configurar_logging
 from sheets import LINHA_COMANDO, LINHA_PEDIDO
 
@@ -58,6 +59,13 @@ def _relatorio_semana(c, q):
         return {"erro": f"não consegui ler a planilha do Mail Analytics ({str(e)[:120]})"}
 
 
+def _vendo(c, tipo, item, resposta):
+    """Anota quem abriu o dado do hóspede (acessos.py: sem nome, CPF nem texto) e devolve a resposta como veio."""
+    if not (isinstance(resposta, dict) and resposta.get("erro")):
+        acessos.registrar(c.agente(), c.pc, tipo, item)
+    return resposta
+
+
 GET = {
     "/api/versao": lambda c, q: {"v": c.estado.marca_tela()},
     "/api/estado": _estado,
@@ -76,8 +84,8 @@ GET = {
     "/api/emails": lambda c, q: {"emails": c.estado.lista_emails(), "este_pc": c.pc},
     "/api/correio": lambda c, q: c.estado.lista_correio(),
     "/api/correio/conversa": lambda c, q: c.estado.conversa(q.get("de", "")),
-    "/api/correio/texto": lambda c, q: c.estado.texto_email(q.get("id", ""), q.get("pc", ""), q.get("entry", "")),
-    "/api/correio/anexo": lambda c, q: c.estado.anexo_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""), q.get("nome", "")),
+    "/api/correio/texto": lambda c, q: _vendo(c, "email", q.get("id", ""), c.estado.texto_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""))),
+    "/api/correio/anexo": lambda c, q: _vendo(c, "anexo", q.get("id", ""), c.estado.anexo_email(q.get("id", ""), q.get("pc", ""), q.get("entry", ""), q.get("nome", ""))),
     "/api/correio/buscar": lambda c, q: c.estado.buscar_outlook(q.get("q", ""), q.get("vivo", "") == "1"),
     "/api/email/opcoes": lambda c, q: c.estado.opcoes_email(q.get("id", "")),
     "/api/email/novo": lambda c, q: c.estado.opcoes_email_novo(q.get("conta", "")),
@@ -149,4 +157,5 @@ POST = {
     "/api/correio/encaminhar": lambda c, b: c.estado.encaminhar_email(b, c.agente()),
     "/api/comando": lambda c, b: c.estado.pedir_comando(str(b.get("para", "")), str(b.get("comando", "")), f"{c.agente()} ({c.pc})"),
     "/api/atualizar": _atualizar,
+    "/api/acesso": lambda c, b: {"ok": acessos.registrar(c.agente(), c.pc, str(b.get("tipo", "")), str(b.get("item", "")))},   # a ficha abriu na tela
 }

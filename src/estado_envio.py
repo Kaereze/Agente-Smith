@@ -15,7 +15,7 @@ import nf_achadas
 import outlook_vivo
 import rede_local
 import saude
-from config import PASTA_ESTADO
+import armazem
 from estado_correio import _kw_ligacao
 from log_util import configurar_logging
 from sheets import STATUS_ROTULO_A1, nome_intervalo
@@ -105,7 +105,7 @@ class EnvioMixin:
             self._er = enviar_receber.EnviarReceber(
                 socket.gethostname(), local, remoto,
                 lambda: [{**p, "rede": p.get("rede") or ("demo" if demo else "")} for p in self.pcs()],
-                PASTA_ESTADO / "enviar_receber_tempos.json", ao_terminar=self._er_terminou)
+                armazem.caminho("enviar_receber_tempos.json"), ao_terminar=self._er_terminou)
         return self._er
 
     def enviar_receber_todas(self, quem):
@@ -147,7 +147,7 @@ class EnvioMixin:
         def ler(caminho):
             from conferente import texto_de_arquivo_dropbox
             return texto_de_arquivo_dropbox(caminho)
-        self.nf_indice = nf_achadas.Indice(PASTA_ESTADO / "nf_achadas.json")
+        self.nf_indice = nf_achadas.Indice(armazem.caminho("nf_achadas.json"))
         nf_achadas.iniciar(self.cfg, self.nf_indice, ler, ao_novas=lambda: self.atualizar_notas_emails(forcar=True))
 
     def _nf_achadas(self, sol):

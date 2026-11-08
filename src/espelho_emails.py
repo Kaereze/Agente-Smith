@@ -32,7 +32,7 @@ import socket
 import time
 
 from arquivos import salvar_json
-from config import PASTA_ESTADO
+import armazem
 from analise_nf import VERSAO as VERSAO_ANALISE, ler_compacto
 from controle_nf import reclama_falta_nota
 from log_util import configurar_logging
@@ -84,7 +84,7 @@ RECENTE_HORAS = ajustes.valor("email.enviados_recentes_horas")   # Itens Enviado
 URGENCIA_DIAS = ajustes.valor("email.urgencia_dias")   # sem resposta há mais que isso: aba Urgência
 MAX_PDF_BYTES = ajustes.valor("email.pdf_maximo_mb") * 1024 * 1024   # voucher/recibo de reserva é pequeno; PDF grande não é lido
 MAX_PDFS = ajustes.valor("email.pdfs_por_email")
-CAMINHO_ESTADO = PASTA_ESTADO / "espelho_emails.json"
+CAMINHO_ESTADO = armazem.caminho("espelho_emails.json")
 VERSAO_ESTADO = 6   # 6: Itens Enviados de 72 h (22/10/2026) — relê tudo 1 vez; 5: espelho literal + data certa dos avisos
 MAX_TEXTO = ajustes.valor("email.texto_maximo_caracteres")   # célula do Sheets aceita 50 mil
 MAX_CITADO = ajustes.valor("email.citado_maximo_caracteres")

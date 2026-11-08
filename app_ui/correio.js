@@ -264,6 +264,7 @@ document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-abrir-ficha]");
   if (!b || typeof abrirNotas !== "function") return;
   const chave = b.dataset.abrirFicha;
+  api("/api/acesso", { tipo: "ficha", item: chave }).catch(() => {});   // LGPD: quem abriu a ficha (sem nome nem CPF)
   abrirNotas({ filtro: "todas" });
   sel = chave; desenhar();
 });

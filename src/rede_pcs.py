@@ -11,7 +11,7 @@ import json
 import uuid
 
 import saude
-from config import PASTA_ESTADO
+import armazem
 import ajustes
 
 ABA_COMANDOS = "Comandos_PC"
@@ -20,7 +20,7 @@ COMANDOS = {"atualizar"}
 VALIDADE_COMANDO_MIN = ajustes.valor("atualizacao.validade_comando_minutos")   # pedido mais velho que isso não é executado (PC estava desligado)
 PC_ONLINE_SEGUNDOS = ajustes.valor("rede.pc_online_segundos")
 CONFERENCIA_ATRASADA_MIN = ajustes.valor("rede.conferencia_atrasada_minutos")   # conferente parado: sem volta do Outlook há mais que isso
-CAMINHO_STATUS_CONFERENCIA = PASTA_ESTADO / "confirmar_status.json"
+CAMINHO_STATUS_CONFERENCIA = armazem.caminho("confirmar_status.json")
 
 
 def pedido(para, comando, por, quando=None):
