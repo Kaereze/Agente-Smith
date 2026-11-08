@@ -9,13 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Em preparação, sem etiqueta] — 2026-11-07 (auditoria de segurança)
+## [2026.11.07] — 2026-11-07 (auditoria de segurança; leva junto tudo o que estava sem etiqueta desde 2026.11.03.2, inclusive a seção abaixo)
 
 ### Segurança
 - **`pypdf` 6.16.2 → 6.21.4**: a versão antiga tinha 26 falhas conhecidas (pip-audit). O Painel lê PDF de hóspede, que é arquivo vindo de fora. Só a `pypdf` tinha falha; as outras bibliotecas estão limpas.
 - **Cabeçalhos de segurança em toda resposta do Painel** (`nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin`), num ponto só (`Handler.end_headers`). Teste novo: `testes/test_cabecalhos_seguranca.py`.
 
-## [2026.11.03.3] — 2026-11-03 (aguarda publicação)
+## [2026.11.03.3] — 2026-11-03 (publicada junto com a 2026.11.07)
 
 ### Adicionado
 - **Ajustes em arquivo de chave e valor (`ajustes.json`)** (pedido do João): tempos, limites, assinaturas, mensagem padrão do e-mail, prazos e cores do e-mail podem ser trocados sem mexer no código. São **177 ajustes em 14 grupos**, cada um com explicação em português, mínimo e máximo. O arquivo fica **só no PC do administrador** (está no `.gitignore`, nunca sobe ao GitHub); `Bat\ajustes.bat` cria e abre no Bloco de Notas e depois confere o que foi digitado. Valor inválido ou chave com erro de digitação **não derruba o Painel**: vale o valor de fábrica e aparece um aviso na faixa de saúde. Assinaturas só de texto, nomes e ordem das assinaturas e a mensagem padrão também são ajustes (o que o João escreve soma ao de fábrica; `null` tira um item). A tela lê os tempos dela pela rota nova `/ajustes.js`. Novos: `src/ajustes.py`, `src/ajustes_tabela.py`, `ajustes.exemplo.json`, `Automacoes/gerar_ajustes_exemplo.py`, `Bat/ajustes.bat`; 18 testes novos. Guia no cofre: Ajustes (ajustes.json). O que **não** vira ajuste (portas, nomes de abas e colunas, identificadores do Windows e do Outlook) está explicado lá. Valem depois de reiniciar o Painel.
