@@ -242,3 +242,39 @@ def test_barra_lateral_e_uma_capsula_flutuante_no_meio_da_altura_com_tudo_junto(
     pagina.wait_for_timeout(350)
     assert pagina.evaluate("getComputedStyle(document.querySelector('.capsula .ln[aria-label=\"Visão geral\"]'), '::after').opacity") == "1"
     confere_a_tela(pagina)
+
+
+@pytest.mark.parametrize("largura,altura", [(1920, 1080), (1440, 900), (1000, 700)])
+@pytest.mark.parametrize("tela", ["visao", "correio", "maquinas", "gerencia", "fila"])
+def test_casco_centro_leve_cabe_na_janela_inteira_em_todo_tamanho(painel_demo, navegador, tela, largura, altura):
+    """João (08/11/2026): a barra flutuante deixou canto vazio e rodapé cortado. O casco todo (barra, topo, conteúdo, rodapé) tem de caber."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": altura})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, tela)
+        g = pg.evaluate("""() => { const r = s => document.querySelector(s)?.getBoundingClientRect(), c = r('.capsula'), rod = r('.rodape-status'), t = r('.topo'),
+          v = [...document.querySelectorAll('.palco > .vista')].find(x => x.offsetParent)?.getBoundingClientRect();
+          return { capsula: [c.left, c.right, c.top + c.height / 2], rodape: [rod.left, rod.right, rod.bottom], vista: [v.left, v.right, v.bottom], topo: t.height ? [t.left, t.right] : null,
+                   rolagem: document.documentElement.scrollWidth > innerWidth + 1, vertical: document.documentElement.scrollHeight > innerHeight + 1 } }""")
+        assert abs(g["capsula"][2] - altura / 2) <= 3, "a barra tem de ficar no meio da altura"
+        assert g["capsula"][1] <= g["vista"][0] + 1, "o conteúdo não pode ficar por baixo da barra"
+        assert g["topo"] is None or g["capsula"][1] <= g["topo"][0] + 1, "o topo não pode ficar por baixo da barra"
+        assert 0 <= g["rodape"][0] and g["rodape"][1] <= largura and g["rodape"][2] <= altura, f"rodapé cortado: {g['rodape']}"
+        assert g["vista"][1] <= largura and g["vista"][2] <= altura + 1, "o conteúdo passa da janela"
+        assert not g["rolagem"] and not g["vertical"], "a página rola (a barra de rolagem é só de dentro das telas)"
+        assert pg.erros == [] if hasattr(pg, "erros") else True
+    finally:
+        contexto.close()
+
+
+def test_barra_com_os_nomes_abertos_cabe_inteira_na_janela_e_empurra_o_conteudo(painel_demo, pagina):
+    """Com os nomes abertos a barra ficou cortada na esquerda (08/11/2026): a coluna dela tem de alargar junto."""
+    abrir(pagina, painel_demo, "visao")
+    pagina.locator("#btn-recolher").click()
+    pagina.wait_for_timeout(900)
+    g = pagina.evaluate("""() => { const c = document.querySelector('.capsula').getBoundingClientRect(), v = [...document.querySelectorAll('.palco > .vista')].find(x => x.offsetParent).getBoundingClientRect();
+      return { esq: c.left, dir: c.right, centro: c.top + c.height / 2, vistaEsq: v.left, texto: document.querySelector('.capsula .ln').getBoundingClientRect().left } }""")
+    assert g["esq"] >= 0 and g["texto"] >= g["esq"], f"barra cortada na esquerda: {g}"
+    assert g["dir"] <= g["vistaEsq"] + 1, "os nomes abertos não podem cobrir o conteúdo"
+    assert abs(g["centro"] - 450) <= 3
+    confere_a_tela(pagina)

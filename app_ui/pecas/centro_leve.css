@@ -1,0 +1,71 @@
+/* Centro leve (João, 08/11/2026): o casco inteiro do Painel num desenho só. Barra flutuante (barra_flutuante.css), topo de vidro,
+   conteúdo numa coluna central de até 1.500 px, cartões de vidro fosco e o rodapé encolhido numa pastilha flutuante embaixo.
+   Mesma margem (14 px) em tudo: nada de coluna vazia, canto morto nem rodapé cortado. Vem por último: vence as camadas antigas.
+   Desenho aprovado em "Segundo Cérebro/6 Documentos/Designs/2026-11-08 O Painel inteiro em vidro (3 opções).html" (opção 3). */
+:root{
+  --cl-vidro:rgba(22,22,22,.60);
+  --cl-rim:linear-gradient(150deg,rgba(255,255,255,.55),rgba(255,255,255,.05) 30%,rgba(255,255,255,.04) 70%,rgba(255,255,255,.36));
+  --cl-margem:14px;
+  --cl-coluna:1500px;
+}
+
+/* o chão da janela: escuro, com luzes bem suaves atrás (só para o vidro ter o que desfocar) */
+.app.modo-ol{display:block!important;position:relative;height:100vh;overflow:hidden;background:#131313!important}
+.app.modo-ol::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(560px 400px at 14% 10%,rgba(59,143,227,.20),transparent 70%),radial-gradient(580px 440px at 90% 6%,rgba(184,134,47,.13),transparent 70%),
+             radial-gradient(640px 480px at 72% 98%,rgba(59,143,227,.14),transparent 70%),radial-gradient(440px 340px at 3% 90%,rgba(232,72,79,.08),transparent 70%)}
+
+/* a barra sai da coluna: fica solta, no meio da altura, e o resto ocupa a janela inteira */
+.app.modo-ol .lateral{position:fixed!important;left:0;top:0;bottom:0;width:88px;pointer-events:none;z-index:70}
+.app.modo-ol .lateral::before{display:none}
+.app.modo-ol:not(.menu-fechado) .lateral{width:252px}   /* com os nomes a coluna da barra alarga junto (senão ela sai cortada na esquerda) */
+.app.modo-ol .lateral .capsula{pointer-events:auto}
+.app.modo-ol .palco{position:absolute;inset:0;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto!important;
+  padding:0 0 62px 88px;min-width:0;min-height:0;background:transparent!important}
+.app.modo-ol:not(.menu-fechado) .palco{padding-left:252px}   /* com os nomes abertos a barra empurra a tela, como sempre */
+.app.modo-ol .palco > .topo{grid-row:1}.app.modo-ol .palco > .vista{grid-row:2}.app.modo-ol .palco > .rodape-status{grid-row:3}
+.app.modo-ol .vista,.app.modo-ol .vista .rolagem,.app.modo-ol #v-correio.ol{background:transparent!important}
+
+/* topo de vidro, da largura da coluna */
+.app.modo-ol .palco > .topo{margin:var(--cl-margem) auto 0;width:calc(100% - var(--cl-margem));max-width:var(--cl-coluna);padding:8px 16px!important;border-radius:28px;
+  border:1px solid transparent;background:linear-gradient(var(--cl-vidro),var(--cl-vidro)) padding-box,var(--cl-rim) border-box!important;
+  backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+/* nas telas sem abas, o topo mostra onde você está ("Painel Fiscal / Visão geral") em vez de ficar vazio à esquerda */
+.app.modo-ol .trilha-nav{display:block;padding:0 8px;font-size:13px;color:#a8a8a8;white-space:nowrap}
+.app.modo-ol .trilha-nav b{color:#f0f0f0;font-weight:600}
+.app.modo-ol .palco:has(> #v-correio:not(.oculta)) .trilha-nav{display:none}
+/* conteúdo: coluna central */
+.app.modo-ol .palco > .vista{margin:12px auto 0;width:calc(100% - var(--cl-margem));max-width:var(--cl-coluna);min-height:0}
+
+/* rodapé: uma pastilha de vidro no meio de baixo (o estado do sistema, os avisos e os atalhos) */
+.app.modo-ol .palco > .rodape-status{position:fixed;left:calc(50% + 44px);bottom:var(--cl-margem);transform:translateX(-50%);width:auto;max-width:calc(100vw - 120px);
+  padding:4px 18px!important;gap:10px;border-radius:999px;border:1px solid transparent;background:linear-gradient(var(--cl-vidro),var(--cl-vidro)) padding-box,var(--cl-rim) border-box!important;
+  backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);box-shadow:0 14px 34px rgba(0,0,0,.45);z-index:80}
+.app.modo-ol:not(.menu-fechado) .palco > .rodape-status{left:calc(50% + 126px)}
+.app.modo-ol .rodape-status .rodape-esp{display:none}
+
+/* cartões: vidro fosco (principais) e vidro suave (um cartão dentro de outro) */
+.app.modo-ol :is(.rs-cartao,.cartao,.tabela-wrap,.g-kpi,.g-painel,.maq,.versao-ref,.fr-item,.cx-quadro,.cx-pastas,#cx-leitura.leitura,.leitura,.em-espera,.lig-num){
+  background:rgba(8,8,8,.55)!important;backdrop-filter:blur(26px) saturate(1.2);-webkit-backdrop-filter:blur(26px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.06)!important;border-top-color:rgba(255,255,255,.16)!important;border-radius:16px!important;
+  box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07)!important}
+.app.modo-ol :is(.c-top,.c-lista){background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:14px!important}
+.app.modo-ol .em-espera{background:transparent!important;backdrop-filter:none;box-shadow:none!important;border:0!important}
+
+/* a lista de e-mails e a faixa de comandos seguem o mesmo vidro */
+.app.modo-ol #v-correio .cx-faixa{background:transparent!important;border-bottom:1px solid rgba(255,255,255,.08)!important}
+
+/* janela do Robô e caixas de confirmação: o mesmo vidro com borda espelhada */
+.app.modo-ol .rb-fundo,.rb-fundo{padding:28px 28px 84px 104px}
+.rb-fundo .modal.rb-sheet,.modal-fundo .modal{border:1px solid transparent!important;border-radius:22px!important;
+  background:linear-gradient(rgba(16,16,16,.92),rgba(16,16,16,.92)) padding-box,var(--cl-rim) border-box!important;
+  backdrop-filter:blur(26px) saturate(1.3);-webkit-backdrop-filter:blur(26px) saturate(1.3);box-shadow:0 30px 80px rgba(0,0,0,.6)!important}
+.rb-gaveta,.rb-fim{border-radius:16px!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+
+/* janela estreita ou baixa: o mesmo desenho, mais compacto */
+@media (max-width:900px){
+  .app.modo-ol .palco > .rodape-status{left:calc(50% + 44px);max-width:calc(100vw - 112px);padding:4px 12px!important;gap:6px}
+  .app.modo-ol .palco > .topo{padding:6px 12px!important}
+}
+@media (max-height:700px){.app.modo-ol .palco{padding-bottom:54px}}
+@media (prefers-reduced-motion:reduce){.app.modo-ol .palco > *{transition:none}}

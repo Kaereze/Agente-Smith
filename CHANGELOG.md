@@ -9,6 +9,16 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.08.2] — 2026-11-08 (Centro leve em todas as telas)
+
+Desenho "Centro leve" aprovado pelo João (`Designs/2026-11-08 O Painel inteiro em vidro (3 opções).html`, opção 3, e o Artifact com todas as telas). Corrige o que a 2026.11.08.1 deixou: coluna vazia no canto, topo e rodapé do desenho antigo, rodapé cortado.
+
+### Mudou
+- **O casco inteiro num desenho só** (`app_ui/pecas/centro_leve.css`): a barra lateral flutuante de borda espelhada no meio da altura; **topo de vidro** da largura da coluna; **conteúdo numa coluna central** de até 1.500 px; **rodapé numa pastilha flutuante** no meio de baixo (com os avisos e o botão de caixas junto); mesma margem de 14 px em tudo; fundo com luzes suaves.
+- **Cartões de vidro fosco em todas as telas** (Resumo, Visão geral, E-mails, Monitoramento, Gerência, Notas fiscais), a janela do **Robô** e as caixas de confirmação em vidro com borda espelhada. Cartão dentro de cartão usa vidro suave.
+- Nas telas sem abas, o topo mostra "Painel Fiscal / tela atual" em vez de ficar vazio. Com os **nomes abertos**, a barra alarga junto e empurra a tela (corrigido: ficava cortada na esquerda).
+- Testes novos: o casco cabe na janela inteira em **1920×1080, 1440×900 e 1000×700** em 5 telas (barra no meio da altura, nada embaixo da barra, rodapé dentro da janela, sem rolagem), e a barra com os nomes abertos.
+
 ## [2026.11.08.1] — 2026-11-08 (organização, segurança, design e barra flutuante)
 
 ### Mudou
