@@ -1016,6 +1016,7 @@ function desenharPastas() {
   for (const p of pcs.sort((a, b) => (a.pc === meu ? -1 : b.pc === meu ? 1 : String(a.agente).localeCompare(String(b.agente), "pt")))) {
     const contas = [...new Set((p.contas_lista || []).map(c => String(c).toLowerCase()))]
       .map(c => ({ c, hotel: nomeDaCaixa(c), n: nl[c] || 0 })).sort((a, b) => a.hotel.localeCompare(b.hotel, "pt"));
+    if (!contas.length) continue;   // PC sem caixa de hotel (o de casa, por exemplo) não entra na lista de caixas (João, 07/11/2026)
     const aberto = cx.pcsAbertos[p.pc] ?? (p.pc === meu || contas.some(x => x.c === cx.caixaSel) || pcs.length === 1);
     const soma = contas.reduce((s, x) => s + x.n, 0);
     h += `<button type="button" class="ol-pc2 ${aberto ? "" : "fechado"}" data-ol-pc="${esc(p.pc)}" aria-expanded="${aberto}" title="${p.online ? "PC ligado" : "PC desligado"}">

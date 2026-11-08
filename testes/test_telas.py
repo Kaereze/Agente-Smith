@@ -186,3 +186,13 @@ def test_resumo_de_ontem_novo_abre_mostra_dica_e_troca_para_tabela_sem_cortar_na
     pagina.locator("[data-rd=hoje]").click()
     pagina.wait_for_selector(".rd-cab h1:has-text('Resumo de hoje')", timeout=3000)
     confere_a_tela(pagina)
+
+
+def test_pc_sem_caixas_nao_aparece_na_lista_de_pastas_do_email(painel_demo, pagina):
+    """João (07/11/2026): o PC de casa ("0 caixas") aparecia na lista de pastas. PC sem caixa de hotel não entra."""
+    abrir(pagina, painel_demo, "correio")
+    pagina.wait_for_selector(".ol-pc2", timeout=10000)
+    pagina.evaluate("st.pcs = [...st.pcs, { pc: 'PC-DE-CASA', agente: 'João', online: true, contas_lista: [] }]; desenharCorreio()")
+    pagina.wait_for_timeout(400)
+    nomes = pagina.evaluate("[...document.querySelectorAll('.ol-pc2')].map(e => e.textContent)")
+    assert nomes and not any("PC-DE-CASA" in n or "0 caixas" in n for n in nomes), nomes

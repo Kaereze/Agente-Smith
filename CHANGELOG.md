@@ -20,6 +20,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
   - A animação roda ao abrir a tela, ao trocar Ontem/Hoje ou quando os números mudam; **não repete** a cada atualização de 15 s.
   - Cores validadas para daltonismo (azul `#3b8fe3`, dourado `#b8862f`). SVG e CSS puros, sem biblioteca nova.
 - Saiu o CSS dos cartões antigos do resumo (`.rd-kpi`, `.rd-grade`, `.rd-painel`, `.rd-tab`). Ficaram `.rd-cab`, `.seg-rd` e as linhas de atenção.
+- **E-mail, lista de pastas:** PC sem nenhuma caixa de hotel (o de casa, "0 caixas") não aparece mais.
 
 ## [2026.11.07.1] — 2026-11-07 (design pedido pelo João)
 
