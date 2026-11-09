@@ -222,3 +222,35 @@ def test_lista_de_pedidos_fica_pronta_para_o_periodo_que_a_tela_pediu(monkeypatc
 def test_preparar_a_lista_nunca_derruba_o_ciclo():
     estado = types.SimpleNamespace(fila_da_tela=lambda d: 1 / 0)
     app_servidor.Estado.preparar_para_a_tela(estado)             # não levanta
+
+
+# ---------- excluir / urgência / concluir não esperam o Google ----------
+def test_evento_do_correio_vale_na_hora_e_grava_por_tras():
+    import threading as _th
+    from painel.estado_correio import CorreioMixin
+    gravou, solta = _th.Event(), _th.Event()
+    montou = []
+
+    class E(types.SimpleNamespace):
+        _evento_na_hora = CorreioMixin._evento_na_hora
+
+        def _montar_correio(self):
+            montou.append(list(self.eventos_pendentes))
+
+        def _gravar_eventos_pendentes(self):   # a ida ao Google: lenta de propósito
+            solta.wait(5)
+            gravou.set()
+
+    e = E(lock=_th.RLock(), eventos_pendentes=[])
+    e._evento_na_hora(["linha"])
+    assert montou == [["linha"]] and not gravou.is_set()          # a lista já refletiu, e a gravação ainda não terminou
+    solta.set()
+    assert gravou.wait(5)                                         # ... e ela acontece por trás
+
+
+def test_excluir_urgencia_e_concluir_nao_gravam_na_central_no_clique():
+    fonte = (_RAIZ / "src" / "painel" / "estado_correio.py").read_text(encoding="utf-8")
+    for nome in ("def excluir_email", "def marcar_urgencia", "def concluir_conversa", "def mover_email_nf"):
+        i = fonte.index(nome)
+        corpo = fonte[i:fonte.index("\n    def ", i + 10)]
+        assert "anexar_linhas" not in corpo and "_evento_na_hora" in corpo, nome

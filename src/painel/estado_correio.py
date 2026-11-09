@@ -188,10 +188,7 @@ class CorreioMixin:
         r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.MOVER_NF)
         if not r.get("ok"):
             return r
-        linha = espelho_emails.evento(e["id"], "EXCLUIR", agente)   # some da entrada pra equipe toda, na hora
-        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
-        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
-        self._montar_correio()
+        self._evento_na_hora([espelho_emails.evento(e["id"], "EXCLUIR", agente)])   # some da entrada pra equipe toda, na hora
         logger.info(f"📁 Tirar da entrada: e-mail de {e['de']} indo para \"{envio_nf.PASTA_NF_ENVIADA}\" (pedido de {agente})")
         return r
 
@@ -210,9 +207,7 @@ class CorreioMixin:
             else:
                 falhas.add(str(r.get("motivo", ""))[:120])
         if linhas:
-            self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, linhas)
-            self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + linhas
-            self._montar_correio()
+            self._evento_na_hora(linhas)
         logger.info(f"📁 Concluir: {feitos} e-mail(s) de {e0['de']} indo para \"{envio_nf.PASTA_NF_ENVIADA}\" (pedido de {agente})")
         return {"ok": feitos > 0, "movidos": feitos, "motivo": "; ".join(sorted(f for f in falhas if f))}
 
@@ -614,6 +609,14 @@ class CorreioMixin:
             logger.debug("lido no Outlook", exc_info=True)
         return {"ok": True}
 
+    def _evento_na_hora(self, linhas):
+        """Excluir, urgência e concluir valem na tela NA HORA (09/11/2026, fluidez): o evento entra na fila de pendentes (a lista já o
+        considera), e a gravação na Central (1-3 s) segue por trás, com nova tentativa na próxima volta se falhar. Antes o clique esperava."""
+        with self.lock:
+            self.eventos_pendentes.extend(linhas)
+        self._montar_correio()
+        threading.Thread(target=self._gravar_eventos_pendentes, daemon=True, name="eventos_correio").start()
+
     def _gravar_eventos_pendentes(self):
         with self.lock:
             pendentes, self.eventos_pendentes = self.eventos_pendentes, []
@@ -647,10 +650,7 @@ class CorreioMixin:
         r = self.envio_nf.pedir(sol, "", e["assunto"], e["caixa"], [], agente, responder=e["id"], acao=envio_nf.EXCLUIR)
         if not r.get("ok"):
             return r
-        linha = espelho_emails.evento(e["id"], "EXCLUIR", agente)
-        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
-        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
-        self._montar_correio()
+        self._evento_na_hora([espelho_emails.evento(e["id"], "EXCLUIR", agente)])
         return r
 
     def marcar_urgencia(self, id_email, marcar, agente):
@@ -664,10 +664,7 @@ class CorreioMixin:
                                 acao=envio_nf.URGENCIA)
         if not r.get("ok"):
             return r
-        linha = espelho_emails.evento(e["id"], "URGENTE" if marcar == "urgente" else "NAO_URGENTE", agente)
-        self.backend.anexar_linhas(self.central, espelho_emails.ABA_EVENTOS, [linha])
-        self.eventos_linhas = (self.eventos_linhas or [espelho_emails.CAB_EVENTOS]) + [linha]
-        self._montar_correio()
+        self._evento_na_hora([espelho_emails.evento(e["id"], "URGENTE" if marcar == "urgente" else "NAO_URGENTE", agente)])
         return r
 
     def encaminhar_email(self, corpo, quem):
