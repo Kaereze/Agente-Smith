@@ -205,8 +205,10 @@ _RAIZ = _Path(__file__).resolve().parents[1]
 def test_ciclo_publica_a_novidade_logo_depois_de_ler_a_central():
     fonte = fonte_servidor(_RAIZ)
     laco = fonte[fonte.index("def laco():"):fonte.index("esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)", fonte.index("def laco():"))]
-    ordem = [laco.index(t) for t in ("estado.atualizar()", "estado.preparar_para_a_tela()", "estado.versao_tela += 1", "estado.atualizar_notas_emails()")]
-    assert ordem == sorted(ordem), "publicar (e deixar a lista pronta) tem que vir ANTES das etapas lentas seguintes"
+    ordem = [laco.index(t) for t in ("estado.atualizar()", "estado.preparar_para_a_tela()", "estado.versao_tela += 1", "estado.salvar_cache()")]
+    assert ordem == sorted(ordem), "publicar (e deixar a lista pronta) tem que vir ANTES de gravar o cache"
+    for lenta in ("atualizar_notas_emails", "atualizar_fi", "atualizar_atividade"):
+        assert f"estado.{lenta}()" not in laco, f"{lenta} não pode travar a volta principal"
     assert laco.count("estado.versao_tela += 1") == 2          # e de novo no fim da volta, como sempre
 
 
@@ -254,3 +256,9 @@ def test_excluir_urgencia_e_concluir_nao_gravam_na_central_no_clique():
         i = fonte.index(nome)
         corpo = fonte[i:fonte.index("\n    def ", i + 10)]
         assert "anexar_linhas" not in corpo and "_evento_na_hora" in corpo, nome
+
+
+def test_etapas_lentas_rodam_cada_uma_na_sua_linha():
+    fonte = fonte_servidor(_RAIZ)
+    for etapa in ("atualizar_notas_emails", "atualizar_fi", "atualizar_atividade"):
+        assert "etapa_lenta(" in fonte and f"estado.{etapa}, " in fonte, etapa

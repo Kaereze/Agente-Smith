@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.9] — 2026-11-09 (fluidez: cliques instantâneos e etapas lentas em paralelo)
+
+### Mudou
+- **Excluir, marcar urgência, concluir e tirar da caixa de entrada valem na hora:** a gravação na Planilha Central (1-3 s) segue por trás, com nova tentativa na volta seguinte se falhar (`src/painel/estado_correio.py`, `_evento_na_hora`).
+- **Etapas lentas em linhas próprias:** notas dos e-mails (Dropbox), Fiscal Intelligence e atividade da equipe não rodam mais em fila dentro da volta principal (que chegava a 40-68 s). Pedido novo e cliques não esperam por elas; a tela é avisada quando cada uma termina (`src/app_servidor.py`, `etapa_lenta`).
+
 ## [2026.11.09.8] — 2026-11-09 (fluidez: o Painel responde mais rápido)
 
 ### Mudou

@@ -106,8 +106,7 @@ CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
 CAMINHO_VERSAO = armazem.caminho("versao_rodando.txt")
 SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
-ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.notas_emails", "painel.fiscal_intelligence", "painel.canceladas",
-                   "painel.atividade", "painel.salvar_cache")
+ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.canceladas", "painel.salvar_cache")
 ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
 HOTEIS_SEGUNDOS = ajustes.valor("google.reler_hoteis_segundos")   # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
@@ -975,21 +974,12 @@ def main():
             with medir("painel.volta_completa", logger=logger):
                 with medir("painel.atualizar", logger=logger):
                     estado.atualizar()
-                # Publica já o que veio da Central (09/11/2026, fluidez): antes a tela só era avisada no fim da volta INTEIRA, e as etapas
-                # seguintes (notas, Fiscal Intelligence, atividade...) levam 5-20 s. Um pedido novo esperava esse tempo para aparecer.
+                # Publica já o que veio da Central (09/11/2026, fluidez). As etapas lentas (notas dos e-mails, Fiscal Intelligence,
+                # atividade: 5-20 s cada) rodam cada uma na sua linha, abaixo: o pedido novo e os cliques não esperam por elas.
                 estado.preparar_para_a_tela()
                 estado.versao_tela += 1
-                with medir("painel.notas_emails", logger=logger):
-                    estado.atualizar_notas_emails()
-                with medir("painel.fiscal_intelligence", logger=logger):
-                    estado.atualizar_fi()
                 with medir("painel.canceladas", logger=logger):
                     estado.atualizar_canceladas()
-                with medir("painel.atividade", logger=logger):
-                    try:
-                        estado.atualizar_atividade()
-                    except Exception as e:   # a tela de Monitoramento segue com o último valor guardado
-                        logger.warning(f"⚠️ Não consegui ler a atividade da equipe ({str(e)[:100]})")
                 with medir("painel.salvar_cache", logger=logger):
                     estado.salvar_cache()
             estado.versao_tela += 1
@@ -999,7 +989,24 @@ def main():
             desempenho.MEDIDOR.talvez_resumir(logger)   # de tempos em tempos: as etapas mais pesadas, com média e p95
             esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)
 
+    def etapa_lenta(nome, trabalho, pausa):
+        """Uma etapa lenta na sua própria linha (09/11/2026, fluidez): antes as 3 rodavam em fila dentro da volta (a volta chegava a
+        40-60 s e a novidade esperava). Cada uma já se limita sozinha (NOTAS_EMAILS_SEGUNDOS, fi_minutos, ATIVIDADE_CACHE_SEGUNDOS)."""
+        def corre():
+            while True:
+                try:
+                    with desempenho.MEDIDOR.medir(nome, logger=logger):
+                        trabalho()
+                    estado.versao_tela += 1   # a tela busca de novo o que essa etapa trouxe
+                except Exception as e:   # a tela segue com o último valor guardado
+                    logger.warning(f"⚠️ {nome}: {str(e)[:100]}")
+                time.sleep(pausa)
+        threading.Thread(target=corre, daemon=True, name=nome).start()
+
     threading.Thread(target=laco, daemon=True).start()
+    etapa_lenta("painel.notas_emails", estado.atualizar_notas_emails, 5)
+    etapa_lenta("painel.fiscal_intelligence", estado.atualizar_fi, 30)
+    etapa_lenta("painel.atividade", estado.atualizar_atividade, 5)
     if not modo_demo and not so_ver:
         if not sem_outlook(cfg):   # PC só com o Painel não tem Outlook para vigiar nem para indexar
             estado.vigiar_caixa_de_saida()
