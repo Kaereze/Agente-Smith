@@ -90,12 +90,17 @@ function fhHtml() {
 }
 // Depois de redesenhar a tela com o menu aberto e a pessoa digitando: devolve o foco à busca
 function fhPosRender() {
+  // O menu mora fora da coluna da lista: a coluna é de vidro (backdrop-filter) e com overflow escondido, o que prendia o
+  // position: fixed dentro dela e cortava o menu (09/11/2026). Aqui ele vai para o container do app, onde "fixed" volta a seguir a janela.
+  const raiz = document.querySelector(".app.modo-ol") || document.body;
+  const novo = document.querySelector("[data-fh] .fh-menu");
+  if (novo || !FH.aberto) document.querySelectorAll(".fh-menu.fh-solto").forEach(m => { if (m !== novo) m.remove(); });   // sobra da tela anterior / menu fechado
   if (!FH.aberto) return;
-  // o menu fica solto na tela (position: fixed), logo abaixo do botão: a coluna estreita da lista não corta mais
-  const menu = document.querySelector(".fh-menu"), bt = document.querySelector("[data-fh-abrir]");
+  const menu = novo || document.querySelector(".fh-menu.fh-solto"), bt = document.querySelector("[data-fh-abrir]");
   if (menu && bt) {
-    const r = bt.getBoundingClientRect();
-    menu.style.top = Math.round(r.bottom + 6) + "px";
+    if (menu.parentElement !== raiz) { menu.classList.add("fh-solto"); raiz.appendChild(menu); }
+    const r = bt.getBoundingClientRect(), h = menu.offsetHeight;
+    menu.style.top = Math.round(Math.max(8, Math.min(r.bottom + 6, window.innerHeight - h - 8))) + "px";
     menu.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - 410))) + "px";
   }
   if (!FH.digitando) return;
@@ -127,7 +132,7 @@ document.addEventListener("click", e => {
   if (acao) return fhAcao(acao.dataset.fhAcao);
   if (ordem) { FH.ordem = FH.ordem === "antigo" ? "novo" : "antigo"; fhGuardarOrdem(); return fhMudou(); }
   if (nivel) return fhAlternarNivel(nivel.dataset.fhNivel);
-  if (FH.aberto && !e.target.closest("[data-fh]")) { FH.aberto = false; FH.digitando = false; fhMudou(); }
+  if (FH.aberto && !e.target.closest("[data-fh], .fh-menu")) { FH.aberto = false; FH.digitando = false; fhMudou(); }
 });
 document.addEventListener("change", e => {
   const h = e.target.closest?.("[data-fh-h]");

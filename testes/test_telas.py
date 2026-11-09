@@ -278,3 +278,47 @@ def test_barra_com_os_nomes_abertos_cabe_inteira_na_janela_e_empurra_o_conteudo(
     assert g["dir"] <= g["vistaEsq"] + 1, "os nomes abertos não podem cobrir o conteúdo"
     assert abs(g["centro"] - 450) <= 3
     confere_a_tela(pagina)
+
+
+@pytest.mark.parametrize("largura,altura", [(1920, 1080), (1440, 900), (1100, 800)])
+def test_menu_do_filtro_de_hoteis_abre_inteiro_colado_ao_botao_e_nao_e_cortado(painel_demo, navegador, largura, altura):
+    """João (09/11/2026): o menu "Meus hotéis" saía cortado pela coluna da lista (o vidro dela prendia o position: fixed e o overflow
+    escondia o resto; em 1440 px o menu nem aparecia no lugar). O menu fica fora da coluna: dentro da janela, colado ao botão, clicável."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": altura})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.wait_for_selector("[data-fh-abrir]", timeout=10000)
+        pg.locator("[data-fh-abrir]").first.click()
+        pg.wait_for_selector(".fh-menu", timeout=5000)
+        pg.wait_for_timeout(400)
+        r = pg.evaluate("""() => { const m = document.querySelector('.fh-menu').getBoundingClientRect(), b = document.querySelector('[data-fh-abrir]').getBoundingClientRect();
+          const cx = Math.round(m.left + m.width / 2), cy = Math.round(m.top + m.height / 2), topo = document.elementFromPoint(cx, cy);
+          return {m: [m.left, m.top, m.right, m.bottom], b: [b.left, b.bottom], dentro: !!(topo && topo.closest('.fh-menu')), w: innerWidth, h: innerHeight}; }""")
+        esq, topo, dir_, base = r["m"]
+        assert esq >= 0 and topo >= 0 and dir_ <= r["w"] and base <= r["h"], r                 # inteiro dentro da janela
+        assert abs(esq - r["b"][0]) <= 2 and abs(topo - (r["b"][1] + 6)) <= 2, r               # colado ao botão, não deslocado
+        assert r["dentro"], "algo cobre o menu (a coluna cortando ou outra peça por cima)"
+        pg.locator('.fh-menu [data-fh-h]').first.check()                                       # os cliques do menu solto seguem valendo
+        pg.wait_for_timeout(400)
+        assert pg.locator(".fh-menu").count() == 1 and pg.locator(".fh-menu [data-fh-h]:checked").count() == 1
+        pg.mouse.click(5, altura - 5)                                                          # clique fora fecha e não deixa sobra
+        pg.wait_for_timeout(400)
+        assert pg.locator(".fh-menu").count() == 0
+    finally:
+        contexto.close()
+
+
+@pytest.mark.parametrize("largura", [1100, 1000])
+def test_leitor_de_email_ocupa_o_resto_da_largura_quando_a_pasta_lateral_some(painel_demo, navegador, largura):
+    """Até 1180 px a pasta lateral some e a mesa tem 2 painéis; antes uma regra de 3 colunas vencia e o leitor ficava com 320 px e um vazio à direita."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": 800})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        r = pg.evaluate("""() => { const q = document.querySelector('.cx-quadro').getBoundingClientRect(), d = document.querySelector('.cx-direita').getBoundingClientRect(),
+          m = document.querySelector('#cx-mesa').getBoundingClientRect(); return {q: [q.left, q.right], d: [d.left, d.right], m: [m.left, m.right]}; }""")
+        assert r["d"][1] >= r["m"][1] - 2, r                      # o leitor vai até a borda direita da mesa
+        assert r["d"][0] >= r["q"][1] - 1 and r["d"][0] - r["q"][1] <= 20, r   # e começa logo depois da lista
+    finally:
+        contexto.close()

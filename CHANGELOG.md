@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.1] — 2026-11-09 (filtro de hotéis e leitor de e-mail cortados)
+
+### Corrigido
+- **Menu do filtro de hotéis ("Meus hotéis") saía cortado:** a coluna da lista, de vidro, prendia o `position: fixed` do menu e o `overflow` escondia o resto (em 1440 px ele abria deslocado, fora do lugar). O menu agora fica fora da coluna: abre colado ao botão, inteiro dentro da janela, e some ao clicar fora (`app_ui/pecas/filtro_hoteis.js`).
+- **Leitor de e-mail com vazio à direita em janela de até 1180 px:** a regra de 3 colunas vencia a de 2 quando a pasta lateral some; o leitor ficava com 320 px. Agora ocupa o resto da largura (`app_ui/pecas/centro_leve.css`).
+- Testes de tela novos (menu em 1920, 1440 e 1100 px; leitor em 1100 e 1000 px).
+
 ## [2026.11.09] — 2026-11-09 (PC só Painel sem automação no Outlook)
 
 ### Corrigido
