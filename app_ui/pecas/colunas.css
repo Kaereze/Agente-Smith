@@ -1,0 +1,42 @@
+/* Recolher as colunas dos E-mails (João, 09/11/2026). Pastas e lista viram uma tirinha de 40 px com uma seta; a leitura ganha o espaço.
+   Desenho aprovado no Artifact "Recolher Colunas do Painel". Vem depois de estilo.css e centro_leve.css: vence as larguras fixas deles. */
+/* ---- larguras (as três colunas; só vale com as pastas à vista, acima de 1180 px) ---- */
+@media (min-width:1181px){
+  .app.modo-ol #v-correio.ol:not(.sem-pastas) #cx-mesa{grid-template-columns:var(--col-p-w,286px) var(--col-l-w,320px) minmax(0,1fr);transition:grid-template-columns .26s cubic-bezier(.2,.8,.2,1)}
+}
+@media (min-width:801px) and (max-width:1180px){   /* as pastas já somem sozinhas: só a lista recolhe */
+  .app.modo-ol #v-correio.ol #cx-mesa{grid-template-columns:var(--col-l-w,320px) minmax(0,1fr);transition:grid-template-columns .26s cubic-bezier(.2,.8,.2,1)}
+}
+@media (min-width:801px){   /* "Esconder as pastas" do menu Exibir: lista + leitura */
+  .app.modo-ol #v-correio.ol.sem-pastas #cx-mesa{grid-template-columns:var(--col-l-w,340px) minmax(0,1fr);transition:grid-template-columns .26s cubic-bezier(.2,.8,.2,1)}
+}
+#v-correio.col-p-fechada{--col-p-w:40px}
+#v-correio.col-l-fechada{--col-l-w:40px}
+@media (prefers-reduced-motion:reduce){.app.modo-ol #v-correio.ol #cx-mesa{transition:none!important}}
+
+/* ---- a setinha de recolher ---- */
+.col-seta{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#a8a8a8;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s,color .15s}
+.col-seta:hover{background:rgba(255,255,255,.09);color:#fff}
+.col-seta:focus-visible,.col-tira:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+/* pastas: a barra tem altura zero e gruda no topo; a seta fica por cima do canto da linha "Favoritos" */
+#v-correio.ol .cx-pastas{position:relative}
+.cx-pastas > .col-barra{position:sticky;top:0;height:0;z-index:4;display:flex;justify-content:flex-end;padding-right:10px;overflow:visible}
+.cx-pastas > .col-barra .col-seta{margin-top:2px}
+/* lista: a barra fica fixa no canto de cima, à direita */
+#v-correio.ol .cx-quadro{position:relative}
+.cx-quadro > .col-barra{position:absolute;top:6px;right:8px;z-index:4}
+
+/* ---- a tirinha (coluna recolhida): seta para a direita e o nome na vertical, bem apagado ---- */
+.col-tira{display:none;position:absolute;inset:0;width:100%;flex-direction:column;align-items:center;gap:10px;padding:8px 0;background:transparent;border:0;cursor:pointer;color:#a8a8a8}
+.col-tira:hover{background:rgba(255,255,255,.04);color:#fff}
+.col-tira .col-seta-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center}
+.col-tira:hover .col-seta-ic{background:rgba(255,255,255,.09)}
+.col-tira .nome{writing-mode:vertical-rl;transform:rotate(180deg);font:11.5px "Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6f6f6f;white-space:nowrap}
+.col-tira .num{min-width:22px;padding:0 5px;border-radius:9px;background:#173b63;color:#cfe5fb;font:700 11px/18px "Segoe UI",sans-serif;text-align:center}
+.col-tira .num:empty{display:none}
+#v-correio.col-p-fechada .cx-pastas > .col-tira,#v-correio.col-l-fechada .cx-quadro > .col-tira{display:flex}
+/* coluna recolhida: só a tirinha aparece (o resto fica escondido e fora do teclado) */
+#v-correio.col-p-fechada .cx-pastas > :not(.col-tira){visibility:hidden}
+#v-correio.col-p-fechada .cx-pastas{overflow:hidden}
+#v-correio.col-l-fechada .cx-quadro > :not(.col-tira){visibility:hidden}
+#v-correio.col-l-fechada .cx-quadro{overflow:hidden}

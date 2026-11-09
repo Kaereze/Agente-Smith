@@ -52,6 +52,8 @@ function desenharCorreio() {
     cx.caixa === "enviados" ? `${lista.length} nas últimas 72 h` : `${nEm(lista.length)}${naoLidos ? ` · ${naoLidos} não lido${naoLidos === 1 ? "" : "s"}` : ""}`)
     + (FH.sel.size ? ` · ${FH.sel.size === 1 ? esc([...FH.sel][0]) : FH.sel.size + " hotéis"}` : "") + statusBusca(busca);
   desenharPastas();
+  garantirColunas();   // a seta e a tirinha das pastas (colunas.js)
+  const tiraN = $("cx-tira-l-n"); if (tiraN) tiraN.textContent = lista.length.toLocaleString("pt-BR");   // quantos e-mails, na tirinha da lista
   desenharFaixa();
   const nomePasta = cx.caixaSel ? nomeDaCaixa(cx.caixaSel) : "";
   const titulo = busca ? "Resultado da pesquisa" : cx.soForm ? "Formulários do robô" :

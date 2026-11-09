@@ -550,3 +550,64 @@ def test_minimizar_a_janela_de_escrever_guarda_o_rascunho_e_libera_o_painel(pain
     pagina.locator(".cb-x").click()
     pagina.wait_for_timeout(500)
     assert pagina.locator(".modal-minimizado").count() == 0 and pagina.locator(".modal.compor").count() == 0
+
+
+# ---------- Recolher as colunas dos E-mails (João, 09/11/2026) ----------
+def _colunas(pg):
+    return pg.evaluate("[...document.querySelectorAll('#cx-mesa > *')].map(c => Math.round(c.getBoundingClientRect().width))")
+
+
+def test_recolher_pastas_e_lista_com_a_seta_e_voltar_pela_tirinha(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        a = _colunas(pg)
+        assert a[0] == 286 and a[1] == 320, a                                                                # as duas abertas, como sempre
+        pg.click('.col-seta[data-colapsar="p"]')
+        pg.wait_for_timeout(500)
+        b = _colunas(pg)
+        assert b[0] == 40 and b[1] == 320 and b[2] == a[2] + 246, b                                          # a leitura ganhou o espaço
+        assert pg.locator('.col-tira[data-colapsar="p"]').is_visible() and "pastas" in pg.locator('.col-tira[data-colapsar="p"]').inner_text().lower()
+        pg.click('.col-seta[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        c = _colunas(pg)
+        assert c[0] == 40 and c[1] == 40 and c[2] == a[2] + 246 + 280, c
+        assert pg.inner_text("#cx-tira-l-n").strip(), "a tirinha da lista mostra quantos e-mails tem"
+        pg.evaluate("desenharCorreio()")                                                                     # as pastas são refeitas: a seta e a tirinha voltam
+        assert pg.locator(".cx-pastas > .col-barra").count() == 1 and pg.locator(".cx-pastas > .col-tira").count() == 1
+        pg.click('.col-tira[data-colapsar="p"]')
+        pg.wait_for_timeout(500)
+        d = _colunas(pg)
+        assert d[0] == 286 and d[1] == 40, d
+        assert pg.evaluate("localStorage.getItem('painel.colunas')") == "l"                                  # lembra como ficou
+        outra = contexto.new_page()                                                                          # outra janela do mesmo Painel já abre assim
+        abrir(outra, painel_demo, "correio")
+        assert outra.evaluate("document.getElementById('v-correio').classList.contains('col-l-fechada')")
+        assert not outra.evaluate("document.getElementById('v-correio').classList.contains('col-p-fechada')")
+        outra.close()
+        pg.bring_to_front()                                                                                  # aba em segundo plano não anima
+        pg.click('.col-tira[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        assert _colunas(pg)[:2] == [286, 320] and pg.evaluate("localStorage.getItem('painel.colunas')") == ""
+    finally:
+        contexto.close()
+
+
+def test_recolher_a_lista_em_janela_estreita_onde_as_pastas_ja_somem(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1100, "height": 800})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        a = _colunas(pg)
+        assert a[0] == 0 and a[1] == 320, a
+        pg.click('.col-seta[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        b = _colunas(pg)
+        assert b[1] == 40 and b[2] == a[2] + 280, b
+        assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+        pg.click('.col-tira[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        assert _colunas(pg)[1] == 320
+    finally:
+        contexto.close()
