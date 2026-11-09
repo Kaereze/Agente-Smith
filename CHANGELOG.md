@@ -9,6 +9,15 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.8] — 2026-11-09 (fluidez: o Painel responde mais rápido)
+
+### Mudou
+- **Consulta sem novidade** (a tela pergunta a cada 3 s): 148 → 56 ms (a comparação ignora campos que só mudam de hora, como "atualizado_em").
+- **Status do envio de NF:** deixou de ler a Planilha Central a cada pedido (17 s em média); agora uma leitura compartilhada, guardada por 3 s.
+- **Leitura dos hotéis:** aba que não mudou não é reinterpretada a cada 2 min (0,81 → 0,04 s no teste sintético).
+- **Cache em disco:** guarda só a janela que a tela usa (+15 dias): 14,6 → 10,2 MB; gravar 0,70 → 0,26 s.
+- **Novidade chega logo:** a tela é avisada assim que a Central é lida, já com a lista pronta, sem esperar as etapas lentas da volta (`src/app_servidor.py`, `src/painel/*`, `testes/test_fluidez.py`).
+
 ## [2026.11.09.7] — 2026-11-09 (recolher as colunas dos E-mails e minimizar a janela de escrever)
 
 Desenho das colunas aprovado pelo João no Artifact "Recolher Colunas do Painel".
