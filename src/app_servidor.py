@@ -706,14 +706,14 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             super().end_headers()
 
         def _json(self, corpo, codigo=200, comparar=False):
-            dados_ = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
+            texto = json.dumps(corpo, ensure_ascii=False, default=str)   # uma serialização só: a assinatura sai dela (fluidez, 09/11/2026)
             versao = ""
             if comparar and codigo == 200:   # velocidade 3: a tela já tem isso = não manda de novo
-                versao = assinatura_tela(corpo)
-                if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto
+                versao = assinatura_do_texto(texto)
+                if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto; nada de comprimir 2 MB à toa
                     junto = {k: corpo[k] for k in VOLATEIS_JUNTO if isinstance(corpo, dict) and k in corpo}
-                    dados_ = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str).encode("utf-8")
-            dados_, gz = comprimir_se_vale(dados_, self.headers.get("Accept-Encoding"))
+                    texto = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str)
+            dados_, gz = comprimir_se_vale(texto.encode("utf-8"), self.headers.get("Accept-Encoding"))
             try:
                 self.send_response(codigo)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -880,15 +880,19 @@ def comprimir_se_vale(dados, aceita):
     return gzip.compress(dados, compresslevel=4, mtime=0), True
 
 
+# Os campos que mudam sozinhos (VOLATEIS_TELA), em qualquer profundidade do JSON. Valor: texto, número, null ou booleano.
+_RE_VOLATEIS = re.compile(r'"(?:' + "|".join(sorted(VOLATEIS_TELA)) + r')": (?:"(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?|null|true|false)')
+
+
+def assinatura_do_texto(texto):
+    """Hash do JSON já serializado, sem os campos que mudam sozinhos. Uma passada só (09/11/2026, fluidez): antes a tela
+    percorria a estrutura inteira em Python e serializava de novo, uns 200 ms por resposta de 2 MB, mesmo sem novidade."""
+    return hashlib.sha1(_RE_VOLATEIS.sub("", texto).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
+
+
 def assinatura_tela(corpo):
     """Hash do que a tela mostra, sem o que muda sozinho a cada volta (VOLATEIS_TELA). Velocidade 3, 21/10/2026."""
-    def limpar(x):
-        if isinstance(x, dict):
-            return {k: limpar(v) for k, v in x.items() if k not in VOLATEIS_TELA}
-        if isinstance(x, list):
-            return [limpar(v) for v in x]
-        return x
-    return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
+    return assinatura_do_texto(json.dumps(corpo, ensure_ascii=False, default=str))
 
 
 def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):
