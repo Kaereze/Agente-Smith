@@ -47,7 +47,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   const titulo = novo ? "✉ Novo e-mail" : enc ? "↗ Encaminhar" : resp ? (resp.comNF ? "↩ Responder com a NF" : "↩ Responder") : "✉ Nova mensagem · Nota Fiscal";
   const miolo = `
     <div class="compor-topo"><span>${titulo}</span>${enc ? "" : pecaLigacao({ id: "nf-lig-etq", oculta: true })}<span id="nf-sub" class="compor-quem">carregando…</span>
-      ${alvo ? `<button class="descartar" id="nf-fechar" title="Descartar e voltar">Descartar</button>` : `<button class="fechar" id="nf-fechar" title="Descartar">×</button>`}</div>
+      ${alvo || novo ? `<button class="descartar" id="nf-fechar" title="Descartar e voltar">Descartar</button>` : `<button class="fechar" id="nf-fechar" title="Descartar">×</button>`}</div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
     <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
     <div class="compor-rodape"><div class="anel" id="nf-anel" style="width:22px;height:22px;border-width:2px;visibility:hidden"></div>
@@ -59,7 +59,7 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   } else {
     fundo = document.createElement("div");
     fundo.className = "modal-fundo";
-    fundo.innerHTML = `<div class="modal compor">${miolo}</div>`;
+    fundo.innerHTML = `<div class="modal compor${novo ? " novo-email" : ""}">${miolo}</div>`;
     document.body.appendChild(fundo);
   }
   const fechar = () => {

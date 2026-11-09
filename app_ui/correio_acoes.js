@@ -202,6 +202,12 @@ document.addEventListener("click", e => {
   if (d.cxExcluir) return souAdmin() ? excluirDireto(d.cxExcluir) : excluir(d.cxExcluir);
   if (d.cxNaolido) marcarNaoLido(d.cxNaolido);
 });
+// Novo e-mail (João, 09/11/2026): botão na faixa de comandos; a janela de escrever abre sozinha por cima, com a tela de trás desfocada,
+// e a caixa que envia se escolhe nela (DE). Vale em qualquer tela; não depende de e-mail aberto.
+document.addEventListener("click", ev => {
+  if (!ev.target.closest("[data-cx-novo]")) return;
+  abrirEnvioNF(null, { novo: true });
+});
 // Botão direito no e-mail (usuário, 20/10/2026): lido/não lido e urgência. Shift+F10 ou a tecla de menu abrem também.
 function abrirMenuEmail(id, x, y) {
   const env = cx.caixa === "enviados" ? (cx.dados?.enviados || []).find(m => m.id === id) : null;

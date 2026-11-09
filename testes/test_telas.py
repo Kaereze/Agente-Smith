@@ -498,3 +498,26 @@ def test_ficha_sem_pedido_ligado_e_texto_que_falha_nao_fica_lendo_para_sempre(pa
         assert "Não consegui" in pg.locator("#hp").inner_text() and pg.locator("[data-hp-abrir-email]").count() == 1
     finally:
         contexto.close()
+
+
+# ---------- Novo e-mail (João, 09/11/2026) ----------
+def test_novo_email_abre_a_janela_por_cima_com_a_tela_de_tras_desfocada(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    botao = pagina.locator("[data-cx-novo]:visible").first
+    assert botao.is_enabled(), "o botão vale sem nenhum e-mail aberto"
+    botao.click()
+    pagina.wait_for_selector(".modal.compor.novo-email #nf-de-txt", timeout=5000)
+    assert pagina.locator(".novo-email .compor-topo", has_text="Novo e-mail").count() == 1
+    assert pagina.locator(".novo-email .compor-topo .descartar").count() == 1
+    assert pagina.locator("#nf-de-txt").input_value().strip(), "a caixa que envia (DE) já vem escolhida"
+    assert "blur" in pagina.evaluate("getComputedStyle(document.querySelector('.modal-fundo')).backdropFilter")   # tela de trás desfocada
+    assert pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    pagina.locator(".novo-email .descartar").click()
+    pagina.wait_for_timeout(500)
+    assert pagina.locator(".modal.compor").count() == 0
+
+
+def test_botao_novo_email_fica_ao_lado_do_enviar_nf_e_nao_depende_de_email_aberto(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    assert pagina.evaluate("document.querySelector('[data-cx-novo]').closest('[data-cx-faixa]') === null")   # os botões [data-cx-faixa] só ligam com e-mail aberto
+    assert pagina.evaluate("""() => { const n = document.querySelector('.dir [data-cx-novo]'); return !!n && n.nextElementSibling?.matches('[data-cx-faixa="nf"]'); }""")

@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.5] — 2026-11-09 (Novo e-mail)
+
+Desenho aprovado pelo João no Artifact "Novo E-mail do Painel".
+
+### Adicionado
+- **Botão "Novo e-mail"** na faixa de comandos dos E-mails, ao lado de "Enviar NF". Abre a janela de escrever (a mesma do Painel) **por cima de tudo, com a tela de trás desfocada**, num formato mais compacto, com **Descartar** no topo. A caixa que envia se escolhe na linha **DE** (digita o hotel; mostra por qual PC sai e se ele está desligado); o assunto já vem como "Nota Fiscal - HOTEL". Vale sem nenhum e-mail aberto (`data-cx-novo`, `app_ui/pecas/novo_email.css`). O envio é o que já existia (PC dono da caixa).
+
 ## [2026.11.09.4] — 2026-11-09 (ficha do hóspede instantânea)
 
 ### Corrigido

@@ -1,0 +1,13 @@
+/* Novo e-mail (João, 09/11/2026): o botão na faixa de comandos e a janela de escrever por cima, com a tela de trás desfocada.
+   Desenho aprovado no Artifact "Novo E-mail do Painel". A janela é a mesma de escrever do Painel (painel_enviar_nf.js); aqui só o que é do Novo e-mail. */
+.modal-fundo:has(> .modal.compor){backdrop-filter:blur(10px) saturate(.9);-webkit-backdrop-filter:blur(10px) saturate(.9)}
+.modal.compor.novo-email{width:min(1000px,96vw)!important;height:auto!important;max-height:94vh!important}
+.novo-email .compor-topo{gap:12px;padding:12px 20px}
+.novo-email .compor-topo .descartar{margin-left:auto;background:transparent;border:1px solid #444;color:#f0f0f0;padding:7px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.novo-email .compor-topo .descartar:hover{border-color:#479ef5}
+.novo-email .compor-topo .descartar:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+/* o botão da faixa de comandos: azul, para achar de longe (como no desenho) */
+.app.modo-ol button.faixa-novo{background:#173b63!important;border:1px solid #2b5f96!important;color:#fff!important;font-weight:600;border-radius:6px}
+.app.modo-ol button.faixa-novo:hover{background:#1d4a7c!important}
+.app.modo-ol button.faixa-novo:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.app.modo-ol button.faixa-novo:disabled{opacity:1;cursor:pointer}
