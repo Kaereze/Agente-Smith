@@ -467,3 +467,34 @@ def test_ficha_do_hospede_cabe_na_janela_sem_rolar_para_o_lado(painel_demo, nave
         assert pg.evaluate(ESPREMIDOS) == []
     finally:
         contexto.close()
+
+
+def test_ficha_abre_na_hora_pelo_pedido_ligado_sem_esperar_o_texto_do_email(painel_demo, navegador):
+    """João (09/11/2026): "lendo o formulário" demorava (o texto vem do PC dono da caixa). O pedido já está no Painel: abre na hora."""
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        pg.route("**/api/correio/texto*", lambda r: r.abort())   # o texto do e-mail nunca chega
+        abrir(pg, painel_demo, "correio")
+        id_form = pg.evaluate("""() => { const f = cx.dados.emails.find(e => (e.classes || []).includes('formulario'));
+          st.fila[0].na_caixa = {...(st.fila[0].na_caixa || {}), id: f.id}; return f.id; }""")
+        pg.locator(f'.cx-l[data-id="{id_form}"]').click()
+        pg.wait_for_selector("#v-hospede .hp-campo", timeout=1500)                                      # sem esperar nada de rede
+        assert "Lendo" not in pg.locator("#hp").inner_text() and pg.locator("[data-hp-abrir-email]").count() == 1
+    finally:
+        contexto.close()
+
+
+def test_ficha_sem_pedido_ligado_e_texto_que_falha_nao_fica_lendo_para_sempre(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        pg.route("**/api/correio/texto*", lambda r: r.abort())
+        abrir(pg, painel_demo, "correio")
+        id_form = pg.evaluate("cx.dados.emails.find(e => (e.classes || []).includes('formulario')).id")
+        pg.locator(f'.cx-l[data-id="{id_form}"]').click()
+        pg.wait_for_selector("#v-hospede .hp-vazio", timeout=3000)
+        pg.wait_for_function("!document.querySelector('#hp').innerText.includes('Lendo')", timeout=9000)   # em 5 s vira aviso, com saída
+        assert "Não consegui" in pg.locator("#hp").inner_text() and pg.locator("[data-hp-abrir-email]").count() == 1
+    finally:
+        contexto.close()

@@ -42,7 +42,10 @@ function textoEmissao(d) {
 }
 
 // ---------- achar de onde vêm os dados ----------
-const hpEmailDoPedido = s => (cx.dados?.emails || []).find(e => e.solicitacao?.chave && e.solicitacao.chave === s?.chave);
+// O Painel já liga cada e-mail de formulário ao pedido (na_caixa.id = id do e-mail): é por aí que a ficha abre NA HORA, sem esperar o
+// texto do e-mail vir do PC dono da caixa (isso podia levar dezenas de segundos; João, 09/11/2026).
+const hpPedidoDoEmailId = id => id ? (st.fila || []).find(s => s.na_caixa?.id === id) || null : null;
+const hpEmailDoPedido = s => (cx.dados?.emails || []).find(e => (s?.na_caixa?.id && e.id === s.na_caixa.id) || (e.solicitacao?.chave && e.solicitacao.chave === s?.chave));
 function hpNomeDe(d) {
   return campoDoPedido(d, /nome.*titular/, /nome do hospede/) || campoDoPedido(d, ...CAMPO_NOME) || String(d.nome || "").trim() || "Hóspede do formulário";
 }
@@ -59,10 +62,10 @@ function hpOutrosPedidos(d) {
 }
 
 // ---------- abrir ----------
-function abrirHospede(chave, { lista = [] } = {}) {
+function abrirHospede(chave, { lista = [], emailId = "" } = {}) {
   const s = acharPedido(chave);
   if (!s) return;
-  Object.assign(hp, { chave: s.chave, dados: s, emailId: hpEmailDoPedido(s)?.id || "", lista: lista.length > 1 ? lista : [], carregando: false });
+  Object.assign(hp, { chave: s.chave, dados: s, emailId: emailId || hpEmailDoPedido(s)?.id || "", lista: lista.length > 1 ? lista : [], carregando: false });
   trocarVista("hospede");
 }
 const emailEhFormulario = e => !!e && e.pasta !== "enviado" && (e.classes || []).includes("formulario");
@@ -73,11 +76,15 @@ function hpPedidoDoFormulario(f) {
   return !mail || !carimbo ? null : (st.fila || []).find(s => String(s.email || "").trim().toLowerCase() === mail && String(s.carimbo || "").trim() === carimbo) || null;
 }
 function abrirHospedeDoEmail(e) {
-  const s = pedidoDoEmail(e) || hpPedidoDoFormulario(formDoTexto(cx.textos[e.id]?.texto));
-  if (s) { abrirHospede(s.chave); hp.emailId = e.id; return; }
+  const s = pedidoDoEmail(e) || hpPedidoDoEmailId(e.id) || hpPedidoDoFormulario(formDoTexto(cx.textos[e.id]?.texto));
+  if (s) return abrirHospede(s.chave, { emailId: e.id });
   const f = formDoTexto(cx.textos[e.id]?.texto);
-  Object.assign(hp, { chave: "", dados: f ? { ...f, hotel: e.hotel || "", nome: e.nome || "" } : null, emailId: e.id, lista: [], carregando: !f });
+  Object.assign(hp, { chave: "", dados: f ? { ...f, hotel: e.hotel || "", nome: e.nome || "" } : null, emailId: e.id, lista: [],
+    carregando: !f && (!cx.textos[e.id] || !!cx.textos[e.id].carregando) });   // texto que falhou ou não é formulário: avisa, não fica "lendo" para sempre
   trocarVista("hospede");
+  if (hp.carregando) setTimeout(() => {   // o PC dono da caixa não respondeu: 5 s e vira aviso, com o botão "Abrir o e-mail"
+    if (hp.carregando && hp.emailId === e.id && !hp.dados) { hp.carregando = false; if (pn.vista === "hospede") desenharHospede(); }
+  }, 5000);
 }
 function hospedeTextoChegou(id) {   // o texto do e-mail terminou de carregar
   if (pn.vista !== "hospede" || hp.emailId !== id || hp.chave) return;
@@ -126,8 +133,9 @@ function desenharHospede() {
   const d = hp.dados;
   const voltar = `<button type="button" class="hp-voltar" data-hp-voltar>‹ Voltar</button>`;
   if (!d) {
-    el.innerHTML = `<div class="hp-janela"><div class="hp-faixa">${voltar}</div><div class="hp-vazio">${hp.carregando ? "Lendo o formulário…" :
-      "Não achei os dados do formulário neste e-mail."}</div></div>`;
+    const abrir = hp.emailId ? `<p><button type="button" class="hp-bt" data-hp-abrir-email><svg class="ic"><use href="#i-mail"/></svg>Abrir o e-mail</button></p>` : "";
+    el.innerHTML = `<div class="hp-janela"><div class="hp-faixa">${voltar}</div><div class="hp-vazio">${hp.carregando ? "Lendo o formulário no PC dono da caixa…" :
+      "Não consegui ler os dados do formulário agora."}${abrir}</div></div>`;
     return;
   }
   const c = (...t) => campoDoPedido(d, ...t);

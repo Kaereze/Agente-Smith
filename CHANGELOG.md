@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.4] — 2026-11-09 (ficha do hóspede instantânea)
+
+### Corrigido
+- **A ficha do hóspede abre na hora:** ficava em "Lendo o formulário…" esperando o texto do e-mail vir do PC dono da caixa. Agora usa o pedido que o Painel já liga ao e-mail (`na_caixa.id`), sem nenhuma espera de rede. Só quando o pedido não está ligado ela lê o texto do e-mail, e passados 5 s vira um aviso com o botão "Abrir o e-mail" (antes podia ficar "lendo" para sempre). "Abrir e-mail do pedido" e "Enviar NF" também passam a achar o e-mail por essa ligação.
+
 ## [2026.11.09.3] — 2026-11-09 (Ficha do hóspede)
 
 Desenho aprovado pelo João no Artifact "Ficha do Hóspede".
