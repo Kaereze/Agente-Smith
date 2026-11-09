@@ -192,3 +192,33 @@ def test_salvar_cache_nao_grava_o_historico_inteiro(tmp_path, monkeypatch):
     gravado = pickle.loads((tmp_path / "cache.pkl").read_bytes())
     assert len(gravado["solicitacoes"]) == 20 and all(s["chave"].startswith("novo") for s in gravado["solicitacoes"])
     assert len(gravado["estados"]) == 20
+
+
+# ---------- a tela é avisada assim que a Central é lida, não só no fim da volta inteira ----------
+from pathlib import Path as _Path
+
+from codigo_fonte import fonte_servidor
+
+_RAIZ = _Path(__file__).resolve().parents[1]
+
+
+def test_ciclo_publica_a_novidade_logo_depois_de_ler_a_central():
+    fonte = fonte_servidor(_RAIZ)
+    laco = fonte[fonte.index("def laco():"):fonte.index("esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)", fonte.index("def laco():"))]
+    ordem = [laco.index(t) for t in ("estado.atualizar()", "estado.preparar_para_a_tela()", "estado.versao_tela += 1", "estado.atualizar_notas_emails()")]
+    assert ordem == sorted(ordem), "publicar (e deixar a lista pronta) tem que vir ANTES das etapas lentas seguintes"
+    assert laco.count("estado.versao_tela += 1") == 2          # e de novo no fim da volta, como sempre
+
+
+def test_lista_de_pedidos_fica_pronta_para_o_periodo_que_a_tela_pediu(monkeypatch):
+    chamadas = []
+    estado = types.SimpleNamespace(dias_pedidos_pela_tela=60, fila_da_tela=lambda d: chamadas.append(d))
+    app_servidor.Estado.preparar_para_a_tela(estado)
+    del estado.dias_pedidos_pela_tela
+    app_servidor.Estado.preparar_para_a_tela(estado)
+    assert chamadas == [60, 60]                                  # o pedido da tela; sem pedido ainda, o padrão dela (60)
+
+
+def test_preparar_a_lista_nunca_derruba_o_ciclo():
+    estado = types.SimpleNamespace(fila_da_tela=lambda d: 1 / 0)
+    app_servidor.Estado.preparar_para_a_tela(estado)             # não levanta

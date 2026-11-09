@@ -527,6 +527,14 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                               "emails": len(linhas or []), "atualizado": max((l["atualizado"] for l in linhas or []), default="")}
         return saida
 
+    def preparar_para_a_tela(self):
+        """Monta já, no ciclo de fundo, a lista de pedidos que a tela pede ao saber da novidade. Antes quem pagava a montagem
+        (~0,4 s com tudo livre, vários segundos com o servidor ocupado) era a primeira consulta da tela depois de cada mudança."""
+        try:
+            self.fila_da_tela(getattr(self, "dias_pedidos_pela_tela", None) or 60)   # o período que a tela pediu por último (60 = o padrão dela)
+        except Exception as e:
+            logger.debug(f"preparar a lista para a tela: {str(e)[:100]}")
+
     def salvar_cache(self, forcar=False):
         """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
         if not self.atualizado_em or (not forcar and self.relogio() - self.cache_salvo < SALVAR_CACHE_SEGUNDOS):
@@ -1011,6 +1019,10 @@ def main():
             with medir("painel.volta_completa", logger=logger):
                 with medir("painel.atualizar", logger=logger):
                     estado.atualizar()
+                # Publica já o que veio da Central (09/11/2026, fluidez): antes a tela só era avisada no fim da volta INTEIRA, e as etapas
+                # seguintes (notas, Fiscal Intelligence, atividade...) levam 5-20 s. Um pedido novo esperava esse tempo para aparecer.
+                estado.preparar_para_a_tela()
+                estado.versao_tela += 1
                 with medir("painel.notas_emails", logger=logger):
                     estado.atualizar_notas_emails()
                 with medir("painel.fiscal_intelligence", logger=logger):

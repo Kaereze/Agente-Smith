@@ -30,6 +30,7 @@ POST_NO_MODO_CASA = frozenset({"/api/agente", "/api/atualizar"})
 def _estado(c, q):
     dias = int(q.get("dias", "45") or 0)
     c.estado.vista_atual = q.get("vista", "")
+    c.estado.dias_pedidos_pela_tela = dias   # o ciclo de fundo deixa pronta a lista deste período (preparar_para_a_tela)
     e = c.estado
     return {
         "agente": c.agente(), "pc": c.pc, "erro": e.erro, "operadores": c.operadores_deste_pc(),
