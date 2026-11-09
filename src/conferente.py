@@ -22,7 +22,7 @@ from sistema.console_utf8 import garantir_utf8
 garantir_utf8()
 
 from sistema import armazem
-from config import PASTA_ESTADO, ErroDeConfig, carregar_config, e_principal
+from config import PASTA_ESTADO, ErroDeConfig, carregar_config, e_principal, sem_outlook
 from notas.controle_nf import (CORES_CATEGORIAS, MINIMO_TEXTO_LEGIVEL, abrir_registro, assunto_com_contador, e_email_do_robo,
                          ler_assunto_nf, categorias_atualizadas, nfs_sem_prova, paragrafo_status, reconferir, resumo_email,
                          trocar_paragrafo_status)
@@ -661,6 +661,9 @@ def main():
     except ErroDeConfig as e:
         logger.error(f"❌ {e}")
         return 1
+    if sem_outlook(cfg):   # PC só com o Painel: nada de Guardião nem de volta no Outlook (ele abre o Outlook sozinho)
+        logger.info("ℹ️ Este PC é só Painel (papel so_painel): o conferente não roda aqui e não abre o Outlook — sai.")
+        return 0
     trava = _travar_instancia_unica()
     if trava is None:
         logger.info("ℹ️ Já tem um conferente rodando nesta máquina — este sai.")
@@ -691,6 +694,9 @@ def main():
             cfg = carregar_config()   # hot reload
         except ErroDeConfig as e:
             logger.error(f"❌ {e}")
+        if sem_outlook(cfg):   # o papel mudou para só Painel com o conferente rodando: para de mexer no Outlook
+            logger.info("ℹ️ O papel deste PC virou so_painel: o conferente para.")
+            return 0
 
         if agora >= proxima_identidade:
             _identificar(cfg)
