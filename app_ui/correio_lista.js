@@ -196,11 +196,11 @@ function tagsEmail(e, cinza) {   // a peça única das etiquetas (pecas/etiqueta
 }
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-abrir-ficha]");
-  if (!b || typeof abrirNotas !== "function") return;
+  if (!b || typeof abrirHospede !== "function") return;
   const chave = b.dataset.abrirFicha;
   api("/api/acesso", { tipo: "ficha", item: chave }).catch(() => {});   // LGPD: quem abriu a ficha (sem nome nem CPF)
-  abrirNotas({ filtro: "todas" });
-  sel = chave; desenhar();
+  const termo = $("busca").value.trim();
+  abrirHospede(chave, { lista: termo.length >= 3 ? pedidosDaBusca(termo).map(p => p.chave).slice(0, 6) : [] });   // a ficha do hóspede (hospede.js)
 });
 
 // ---------- busca: direto no Outlook dos 4 PCs ----------

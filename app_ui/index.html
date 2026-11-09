@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/pecas/visao_geral.css">
 <link rel="stylesheet" href="/pecas/barra_flutuante.css">
 <link rel="stylesheet" href="/pecas/centro_leve.css">
+<link rel="stylesheet" href="/pecas/hospede.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -107,6 +108,7 @@
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
+    <section class="vista oculta" id="v-hospede" aria-label="Ficha do hóspede"><div class="rolagem hp" id="hp"></div></section>
     <section class="vista oculta" id="v-agentes"><iframe id="agentes-quadro" title="Agentes do Smith: mapa do sistema" referrerpolicy="no-referrer"></iframe></section>
     <section class="vista oculta ol" id="v-correio" aria-label="E-mails">
       <!-- Igual ao Outlook (usuário, 15/10/2026): faixa de comandos, caixas de entrada à esquerda, lista no meio, leitura à direita -->
@@ -210,6 +212,7 @@ const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
 <script src="/correio_leitura.js"></script>
 <script src="/correio_faixa.js"></script>
 <script src="/correio_ficha.js"></script>
+<script src="/hospede.js"></script>
 <script src="/correio_acoes.js"></script>
 <script src="/painel.js"></script>
 <script src="/painel_maquinas.js"></script>

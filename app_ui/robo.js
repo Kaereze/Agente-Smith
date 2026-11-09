@@ -410,7 +410,7 @@ document.addEventListener("click", ev => {
   if (d.rbMais) { rbz.abertos[d.rbMais] = !rbz.abertos[d.rbMais]; return rbRender(); }
   if (d.rbAjuda) { rbz.ajuda[d.rbAjuda] = !rbz.ajuda[d.rbAjuda]; return rbRender(); }
   if (d.rbCopiarAjuda) { const aj = rbAjuda((st.saude || [])[+d.rbCopiarAjuda]?.texto || ""); return rbCopiar((aj.passos || []).map((p, i) => `${i + 1}. ${p.replace(/<[^>]+>/g, "")}`).join("\n"), "Instruções copiadas"); }
-  if ("rbVerPedidos" in d) { rbFechar(); return trocarVista("fila"); }
+  if ("rbVerPedidos" in d) { rbFechar(); return abrirNotas({}); }   // a aba Notas fiscais está reservada: abre os formulários na Caixa de Entrada
   if ("rbMonit" in d) { rbFechar(); return trocarVista("maquinas"); }
   if (d.rbReg !== undefined) { rbz.abertaReg = rbz.abertaReg === +d.rbReg ? null : +d.rbReg; return rbRender(); }
   if (d.rbCopiarCru !== undefined) { const e = rbEventos()?.lista[+d.rbCopiarCru]; return e && rbCopiar(rbCru(e), "Linha copiada"); }

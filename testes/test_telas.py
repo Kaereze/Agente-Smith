@@ -342,3 +342,128 @@ def test_lista_de_agentes_abre_inteira_por_cima_de_tudo(painel_demo, navegador, 
         assert r["l"][0] >= 0 and r["l"][2] <= r["w"] and r["l"][3] <= r["h"], r      # e ela cabe na janela
     finally:
         contexto.close()
+
+
+# ---------- Ficha do hóspede (João, 09/11/2026) ----------
+def _emissao(pagina, campos, nome=""):
+    return pagina.evaluate("([campos, nome]) => textoEmissao({campos, nome})", [campos, nome])
+
+
+def test_texto_da_emissao_tem_o_formato_do_joao_e_nao_inventa_nada(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    campos = [["Check-in da Hospedagem", "28/10/2026"], ["Check-out da Hospedagem", "02/11/2026"], ["Nome do Titular da Reserva", "Marina Albuquerque Costa"],
+              ["Nome Tomador", "Outra Pessoa"], ["Informações necessárias na Nota Fiscal", "Nota da hospedagem. Estada 2202."]]
+    assert _emissao(pagina, campos).split("\n") == [
+        "DATA DE CHECK-IN : 28/10/2026", "DATA DE CHECK-OUT : 02/11/2026", "QUANTIDADE DE DIÁRIAS : 5", "VALOR DA DIÁRIA :", "",
+        "VALOR TOTAL :", "Marina Albuquerque Costa - ESTADA 2202"]
+
+
+def test_texto_da_emissao_estada_so_se_o_hospede_escreveu_o_numero(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    base = [["Nome do Titular da Reserva", "Ana Souza"], ["Check-in da Hospedagem", "01/11/2026"], ["Check-out da Hospedagem", "03/11/2026"]]
+
+    def ultima(campos):
+        return _emissao(pagina, campos).split("\n")[-1]
+    assert ultima(base) == "Ana Souza"                                                                     # nada escrito: só o nome
+    assert ultima(base + [["Informações necessárias na Nota Fiscal", "Preciso da nota da estada"]]) == "Ana Souza"   # "estada" sem número: não inventa
+    assert ultima(base + [["Informações necessárias na Nota Fiscal", "estada nº 3317, obrigada"]]) == "Ana Souza - ESTADA 3317"
+    assert ultima(base + [["Número da estada", "4410"]]) == "Ana Souza - ESTADA 4410"
+
+
+def test_texto_da_emissao_diaria_sempre_vazia_e_total_so_se_o_hospede_informou(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    base = [["Nome Tomador", "Empresa X Ltda"], ["Check-in da Hospedagem", "2026-10-28"], ["Check-out da Hospedagem", "2026-10-30"]]
+    sem = _emissao(pagina, base).split("\n")
+    assert sem[2] == "QUANTIDADE DE DIÁRIAS : 2" and sem[3] == "VALOR DA DIÁRIA :" and sem[5] == "VALOR TOTAL :"
+    assert sem[0] == "DATA DE CHECK-IN : 28/10/2026" and sem[-1] == "Empresa X Ltda"                    # data ISO vira dia/mês/ano; sem titular, o tomador
+    com = _emissao(pagina, base + [["Valor da Nota", "R$ 1.840,00"]]).split("\n")
+    assert com[3] == "VALOR DA DIÁRIA :" and com[5] == "VALOR TOTAL : R$ 1.840,00"
+
+
+def test_texto_da_emissao_sem_datas_ou_datas_ilegiveis_deixa_em_branco(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    linhas = _emissao(pagina, [["Nome Tomador", "Fulano"]]).split("\n")
+    assert linhas[:3] == ["DATA DE CHECK-IN : ", "DATA DE CHECK-OUT : ", "QUANTIDADE DE DIÁRIAS : "]
+    errado = _emissao(pagina, [["Check-in da Hospedagem", "05/11/2026"], ["Check-out da Hospedagem", "03/11/2026"], ["Nome Tomador", "Fulano"]]).split("\n")
+    assert errado[2] == "QUANTIDADE DE DIÁRIAS : "                                                       # check-out antes do check-in: nada de número
+    ilegivel = _emissao(pagina, [["Check-in da Hospedagem", "semana que vem"], ["Check-out da Hospedagem", "domingo"], ["Nome Tomador", "Fulano"]]).split("\n")
+    assert ilegivel[0] == "DATA DE CHECK-IN : semana que vem" and ilegivel[2] == "QUANTIDADE DE DIÁRIAS : "
+
+
+def _ids(pagina):
+    return pagina.evaluate("""() => { const t = cx.dados.emails.filter(e => e.pasta !== 'enviado');
+      return {form: t.find(e => (e.classes || []).includes('formulario'))?.id, normal: t.find(e => !(e.classes || []).includes('formulario'))?.id}; }""")
+
+
+def test_formulario_abre_a_ficha_do_hospede_e_email_normal_segue_igual(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    ids = _ids(pagina)
+    assert ids["form"] and ids["normal"], "a demonstração precisa ter um formulário e um e-mail normal"
+    pagina.evaluate("id => abrirEmail(id)", ids["normal"])
+    assert pagina.evaluate("pn.vista") == "correio"                                                       # e-mail normal: leitura de sempre
+    pagina.locator(f'.cx-l[data-id="{ids["form"]}"]').click()
+    pagina.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+    assert pagina.evaluate("pn.vista") == "hospede" and pagina.locator("#v-correio.oculta").count() == 1
+    assert pagina.locator("#v-fila.oculta").count() == 1                                                  # nunca cai na aba reservada
+    assert pagina.locator('.ln[data-vista="correio"][data-caixa="entrada"][aria-current="true"]').count() == 1   # a barra acende "Caixa de entrada"
+    assert pagina.locator(".hp-campo").count() >= 8 and pagina.locator(".hp-cab h2").inner_text().strip()
+    pagina.locator("[data-hp-voltar]").click()
+    assert pagina.evaluate("pn.vista") == "correio"
+
+
+def test_setas_na_lista_nao_pulam_para_a_ficha(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    ids = _ids(pagina)
+    pagina.evaluate("id => abrirEmail(id, true)", ids["form"])
+    assert pagina.evaluate("pn.vista") == "correio" and pagina.evaluate("cx.sel") == ids["form"]          # a seta mostra a leitura de sempre
+
+
+def test_pedido_da_pesquisa_abre_a_ficha_e_nao_a_aba_notas(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    nome = pagina.evaluate("st.fila[0].nome.split(' ')[0]")
+    pagina.fill("#busca", nome)
+    pagina.wait_for_selector("[data-abrir-ficha]", timeout=8000)
+    pagina.locator("[data-abrir-ficha]").first.click()
+    pagina.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+    assert pagina.locator("#v-fila.oculta").count() == 1 and pagina.locator("#v-hospede .hp-campo").count() >= 8
+
+
+def test_copiar_tudo_abre_janelinha_editavel_com_so_o_texto_da_emissao(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900}, permissions=["clipboard-read", "clipboard-write"])
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.evaluate("abrirHospede(st.fila.find(s => campoDoPedido(s, /check.?in/) && campoDoPedido(s, /check.?out/)).chave)")
+        pg.wait_for_selector("#v-hospede:not(.oculta) [data-hp-emissao]")
+        pg.locator("[data-hp-emissao]").click()
+        pg.wait_for_selector(".hp-pop #hp-pop-txt")
+        linhas = pg.input_value("#hp-pop-txt").split("\n")
+        assert linhas[0].startswith("DATA DE CHECK-IN : ") and linhas[3] == "VALOR DA DIÁRIA :" and linhas[4] == "" and linhas[5].startswith("VALOR TOTAL :")
+        assert pg.evaluate("navigator.clipboard.readText()").replace("\r", "") == "\n".join(linhas)          # já copia ao abrir
+        pg.fill("#hp-pop-txt", "ALTEREI AQUI")                                                           # editável
+        pg.keyboard.press("Escape")
+        assert pg.locator(".hp-pop").count() == 1, "Esc não pode perder o que foi editado"
+        pg.locator("#hp-pop-copiar").click()
+        pg.wait_for_timeout(200)
+        assert pg.evaluate("navigator.clipboard.readText()") == "ALTEREI AQUI"
+        pg.locator(".hp-pop button:has-text('Fechar')").click()
+        pg.wait_for_timeout(500)
+        assert pg.locator(".hp-pop").count() == 0
+    finally:
+        contexto.close()
+
+
+@pytest.mark.parametrize("largura", [1440, 1100, 420])
+def test_ficha_do_hospede_cabe_na_janela_sem_rolar_para_o_lado(painel_demo, navegador, largura):
+    contexto = navegador.new_context(viewport={"width": largura, "height": 900})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.evaluate("abrirHospede(st.fila[0].chave)")
+        pg.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+        pg.wait_for_timeout(300)
+        assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+        assert pg.evaluate("(() => { const r = document.querySelector('#v-hospede .hp-janela').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; })()")
+        assert pg.evaluate(ESPREMIDOS) == []
+    finally:
+        contexto.close()

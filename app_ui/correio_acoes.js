@@ -333,7 +333,7 @@ document.addEventListener("keydown", e => {
     e.preventDefault();
     const todas = [...document.querySelectorAll("#cx-lista .cx-l")], i = todas.indexOf(l);
     const prox = todas[Math.max(0, Math.min(todas.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
-    prox?.focus(); if (prox?.dataset.id) abrirEmail(prox.dataset.id);   // como no Outlook: a seta já abre o e-mail
+    prox?.focus(); if (prox?.dataset.id) abrirEmail(prox.dataset.id, true);   // como no Outlook: a seta já abre o e-mail
   }
   if (e.key === "Escape" && !document.querySelector(".modal-fundo") && cx.sel && !(typeof envNF !== "undefined" && envNF && envNF.alvo)) { cx.sel = null; desenharCorreio(); }
 });

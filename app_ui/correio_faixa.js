@@ -102,7 +102,7 @@ function desenharFaixaGlobal() {
   const bt = (attr, ic, txt, cls = "") => `<button type="button" class="${cls}" ${attr}>${SVG(IC[ic])} ${txt}</button>`;
   // as abas Página Inicial/Enviar/Receber/Exibir só aparecem nos e-mails (usuário, 20/10/2026): aqui, sempre os comandos principais
   el.innerHTML = bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
-      bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
+      `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
   pintarSync();
 }

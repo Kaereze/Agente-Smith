@@ -9,6 +9,18 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.3] — 2026-11-09 (Ficha do hóspede)
+
+Desenho aprovado pelo João no Artifact "Ficha do Hóspede".
+
+### Adicionado
+- **Ficha do hóspede** (`app_ui/hospede.js`, `app_ui/pecas/hospede.css`): quando chega um **formulário**, o Painel abre uma página só com os dados que o hóspede preencheu (campos do formulário, na ordem, cada um com **Copiar**), a situação do pedido por extenso, o que o Painel conferiu (CPF/CNPJ, nome, CEP, datas), os e-mails e os outros pedidos dele(a). Abre ao clicar num e-mail de formulário ou num "Pedido do formulário" da pesquisa. **E-mail normal segue a leitura de sempre**; as setas ↑ ↓ da lista também continuam mostrando a leitura.
+- **Copiar tudo para a emissão:** janelinha **editável** só com o texto da emissão (DATA DE CHECK-IN, DATA DE CHECK-OUT, QUANTIDADE DE DIÁRIAS, VALOR DA DIÁRIA, VALOR TOTAL e o nome). Nada é inventado: diária sempre em branco; total só se o hóspede informou "Valor da Nota"; diárias são só a conta das datas; "ESTADA nnnn" só se o hóspede escreveu o número. Já copia ao abrir; depois de editar, Esc e clique fora não fecham.
+- A demonstração ganhou e-mails de formulário fictícios (`demo.py`).
+
+### Mudou
+- **A aba "Notas fiscais" (reservada para a emissão automática) não recebe mais nada:** os cartões e gráficos da Visão geral e o "Ver pedidos" do robô abrem a Caixa de Entrada em "Formulários do robô" (as atrasadas, a Urgência); o botão "Notas fiscais" saiu da faixa de comandos do e-mail; um endereço desconhecido cai na Visão geral. Só o item do menu lateral continua apontando para ela.
+
 ## [2026.11.09.2] — 2026-11-09 (lista de agentes por cima de tudo)
 
 ### Corrigido
