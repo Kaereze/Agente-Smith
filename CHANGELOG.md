@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.6] — 2026-11-09 (minimizar a janela de escrever)
+
+### Adicionado
+- **Minimizar a janela de escrever, como no Outlook:** botão "–" no topo da janela (Novo e-mail, Responder com a NF, Pedir dados). Ela vira uma **barrinha embaixo à direita** (título + assunto) e o Painel volta a ser usado (pastas, caixas, leitura) sem tela desfocada; o rascunho fica guardado. Clicar na barra volta ao e-mail. O × da barra descarta, com **dois cliques** (não perde o rascunho por engano). Um rascunho de cada vez: abrir outro Novo e-mail/Responder com um minimizado volta a ele e avisa (`app_ui/painel_enviar_nf.js`, `app_ui/pecas/novo_email.css`).
+
 ## [2026.11.09.5] — 2026-11-09 (Novo e-mail)
 
 Desenho aprovado pelo João no Artifact "Novo E-mail do Painel".

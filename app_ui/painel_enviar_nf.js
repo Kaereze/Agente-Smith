@@ -41,12 +41,16 @@ const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1
 // Escrever (responder, responder com NF, encaminhar, enviar NF). Com `alvo`, igual ao Outlook (usuário, 09/10/2026): abre
 // DENTRO do painel de leitura, com o e-mail original citado embaixo — sem janela por cima. Sem alvo: janela (como antes).
 async function abrirEnvioNF(chave, resp = null, alvo = null) {
+  // Já tem um e-mail minimizado (João, 09/11/2026): um rascunho de cada vez. Em vez de abrir outro por cima e perder este, volta a ele.
+  const minimizado = document.querySelector(".modal-minimizado");
+  if (minimizado) { minimizado.querySelector(".cb-abrir")?.click(); toast("Você já tem um e-mail em andamento: continue por aqui ou descarte antes de abrir outro", true); return; }
   if (document.querySelector(".modal-fundo")) return;
   if (envNF && envNF.alvo) { $("nf-msg")?.focus(); toast("Termine ou descarte a mensagem que está escrevendo", true); return; }
   const enc = !!resp?.encaminhar, novo = !!resp?.novo;
   const titulo = novo ? "✉ Novo e-mail" : enc ? "↗ Encaminhar" : resp ? (resp.comNF ? "↩ Responder com a NF" : "↩ Responder") : "✉ Nova mensagem · Nota Fiscal";
   const miolo = `
     <div class="compor-topo"><span>${titulo}</span>${enc ? "" : pecaLigacao({ id: "nf-lig-etq", oculta: true })}<span id="nf-sub" class="compor-quem">carregando…</span>
+      ${alvo ? "" : `<button type="button" class="minimizar" id="nf-min" title="Minimizar: o e-mail fica guardado embaixo, à direita, e você usa o Painel" aria-label="Minimizar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>`}
       ${alvo || novo ? `<button class="descartar" id="nf-fechar" title="Descartar e voltar">Descartar</button>` : `<button class="fechar" id="nf-fechar" title="Descartar">×</button>`}</div>
     <div class="barra-prog" id="nf-barra" style="visibility:hidden"><i></i></div>
     <div class="compor-corpo" id="nf-corpo"><div class="vazio">Carregando…</div></div>
@@ -64,11 +68,32 @@ async function abrirEnvioNF(chave, resp = null, alvo = null) {
   }
   const fechar = () => {
     clearTimeout(envNF?.timer); envNF = null;
+    if (fundo?.classList.contains("modal-minimizado")) fundo.classList.replace("modal-minimizado", "modal-fundo");   // a saída animada só vale para .modal-fundo
     if (fundo) fundo.remove();
     if (alvo) { alvo.classList.remove("compondo"); alvo.id === "cx-leitura" ? desenharLeituraCorreio() : desenharDetalhe(); }
   };
   envNF = { chave, resp, alvo, fechar, anexos: [], carregando: true };   // já reserva: a atualização de 15 s não apaga o que se escreve
   $("nf-fechar").onclick = fechar;
+  if (fundo) {   // Minimizar, como no Outlook: a janela some, fica uma barrinha embaixo à direita e o Painel volta a ser usado; o rascunho continua aqui
+    const barra = document.createElement("div");
+    barra.className = "compor-barra";
+    barra.innerHTML = `<button type="button" class="cb-abrir" title="Voltar ao e-mail"><b>${titulo}</b><span class="cb-txt"></span></button>
+      <button type="button" class="cb-x" title="Descartar este e-mail" aria-label="Descartar este e-mail">×</button>`;
+    fundo.appendChild(barra);
+    const restaurar = () => { fundo.classList.replace("modal-minimizado", "modal-fundo"); ($("nf-msg") || $("nf-para"))?.focus(); };
+    $("nf-min").onclick = () => {
+      barra.querySelector(".cb-txt").textContent = ($("nf-assunto")?.value || $("nf-para")?.value || "sem assunto").trim();
+      fundo.classList.replace("modal-fundo", "modal-minimizado");
+      barra.querySelector(".cb-abrir").focus();
+    };
+    barra.querySelector(".cb-abrir").onclick = restaurar;
+    barra.querySelector(".cb-x").onclick = e => {   // descartar daqui precisa de 2 cliques (não perde o rascunho por engano)
+      const b = e.currentTarget;
+      if (b.dataset.certo) return fechar();
+      b.dataset.certo = "1"; b.textContent = "Descartar?";
+      setTimeout(() => { delete b.dataset.certo; b.textContent = "×"; }, 3000);
+    };
+  }
   const o = await api(novo ? "/api/email/novo" : resp ? `/api/email/opcoes?id=${encodeURIComponent(resp.id)}` : `/api/envio_nf/opcoes?chave=${encodeURIComponent(chave)}`);
   if (!envNF) return;
   if (o.erro) { $("nf-corpo").innerHTML = `<div class="vazio">${esc(o.erro)}</div>`; return; }

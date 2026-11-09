@@ -3,7 +3,7 @@
 .modal-fundo:has(> .modal.compor){backdrop-filter:blur(10px) saturate(.9);-webkit-backdrop-filter:blur(10px) saturate(.9)}
 .modal.compor.novo-email{width:min(1000px,96vw)!important;height:auto!important;max-height:94vh!important}
 .novo-email .compor-topo{gap:12px;padding:12px 20px}
-.novo-email .compor-topo .descartar{margin-left:auto;background:transparent;border:1px solid #444;color:#f0f0f0;padding:7px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.novo-email .compor-topo .descartar{margin-left:0;background:transparent;border:1px solid #444;color:#f0f0f0;padding:7px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
 .novo-email .compor-topo .descartar:hover{border-color:#479ef5}
 .novo-email .compor-topo .descartar:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
 /* o botão da faixa de comandos: azul, para achar de longe (como no desenho) */
@@ -11,3 +11,22 @@
 .app.modo-ol button.faixa-novo:hover{background:#1d4a7c!important}
 .app.modo-ol button.faixa-novo:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
 .app.modo-ol button.faixa-novo:disabled{opacity:1;cursor:pointer}
+
+/* Minimizar a janela de escrever (João, 09/11/2026), como no Outlook: vira uma barrinha embaixo à direita e o Painel volta a ser usado.
+   Enquanto minimizada ela deixa de ser .modal-fundo, então nada trava, não há tela desfocada e Esc/atalhos do Painel voltam ao normal. */
+.compor-topo .minimizar{margin-left:auto;background:transparent;border:1px solid #444;color:#f0f0f0;border-radius:8px;width:34px;height:32px;display:inline-grid;place-items:center;cursor:pointer;padding:0}
+.compor-topo .minimizar:hover{border-color:#479ef5}
+.compor-topo .minimizar:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+.modal-minimizado{position:fixed;right:18px;bottom:64px;z-index:60;display:block}
+.modal-minimizado > .modal{display:none}
+.compor-barra{display:none}
+.modal-minimizado > .compor-barra{display:flex;align-items:center;gap:6px;width:min(380px,calc(100vw - 36px));padding:6px;border-radius:12px;
+  background:rgba(28,28,28,.94);border:1px solid #479ef5;box-shadow:0 14px 34px rgba(0,0,0,.55);backdrop-filter:blur(14px);animation:janelaEntra .2s ease-out both}
+.cb-abrir{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;background:transparent;border:0;color:#f0f0f0;border-radius:8px;padding:8px 10px;cursor:pointer;font:inherit}
+.cb-abrir:hover{background:rgba(255,255,255,.07)}
+.cb-abrir b{flex:none;font-weight:600}
+.cb-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a8a8a8}
+.cb-x{flex:none;min-width:34px;height:32px;border:1px solid #444;background:transparent;color:#a8a8a8;border-radius:8px;cursor:pointer;font:inherit;padding:0 8px}
+.cb-x:hover{color:#ff8d95;border-color:#7b3a3f}
+.cb-abrir:focus-visible,.cb-x:focus-visible{outline:2px solid #479ef5;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.modal-minimizado > .compor-barra{animation:none}}

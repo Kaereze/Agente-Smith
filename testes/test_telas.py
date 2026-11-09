@@ -521,3 +521,32 @@ def test_botao_novo_email_fica_ao_lado_do_enviar_nf_e_nao_depende_de_email_abert
     abrir(pagina, painel_demo, "correio")
     assert pagina.evaluate("document.querySelector('[data-cx-novo]').closest('[data-cx-faixa]') === null")   # os botões [data-cx-faixa] só ligam com e-mail aberto
     assert pagina.evaluate("""() => { const n = document.querySelector('.dir [data-cx-novo]'); return !!n && n.nextElementSibling?.matches('[data-cx-faixa="nf"]'); }""")
+
+
+def test_minimizar_a_janela_de_escrever_guarda_o_rascunho_e_libera_o_painel(painel_demo, pagina):
+    """João (09/11/2026): minimizar como no Outlook. A janela vira uma barrinha, o Painel volta a ser usado, o rascunho fica guardado."""
+    abrir(pagina, painel_demo, "correio")
+    pagina.locator("[data-cx-novo]:visible").first.click()
+    pagina.wait_for_selector(".modal.compor.novo-email #nf-para", timeout=8000)
+    pagina.fill("#nf-assunto", "ASSUNTO DO RASCUNHO")
+    pagina.fill("#nf-para", "x@exemplo.com")
+    pagina.locator("#nf-min").click()
+    assert pagina.locator(".modal-minimizado").count() == 1 and pagina.locator(".modal-fundo").count() == 0     # nada trava, sem tela desfocada
+    assert pagina.locator(".modal-minimizado .compor-barra").is_visible() and not pagina.locator(".modal-minimizado .modal").is_visible()
+    assert "ASSUNTO DO RASCUNHO" in pagina.locator(".cb-txt").inner_text()
+    id_normal = pagina.evaluate("cx.dados.emails.find(e => !(e.classes || []).includes('formulario')).id")
+    pagina.locator(f'.cx-l[data-id="{id_normal}"]').click()                                                       # o Painel volta a ser usado
+    assert pagina.evaluate("cx.sel") == id_normal
+    pagina.locator("[data-cx-novo]:visible").first.click()                                                        # Novo e-mail de novo: volta ao rascunho
+    pagina.wait_for_selector(".modal-fundo .modal.compor")
+    assert pagina.locator(".modal.compor").count() == 1 and pagina.locator(".modal-minimizado").count() == 0
+    assert pagina.input_value("#nf-assunto") == "ASSUNTO DO RASCUNHO" and pagina.input_value("#nf-para") == "x@exemplo.com"
+    pagina.locator("#nf-min").click()
+    pagina.locator(".cb-abrir").click()                                                                           # clicar na barra também restaura
+    assert pagina.locator(".modal-fundo .modal.compor").is_visible()
+    pagina.locator("#nf-min").click()
+    pagina.locator(".cb-x").click()
+    assert pagina.locator(".modal-minimizado").count() == 1, "descartar da barra pede um segundo clique"
+    pagina.locator(".cb-x").click()
+    pagina.wait_for_timeout(500)
+    assert pagina.locator(".modal-minimizado").count() == 0 and pagina.locator(".modal.compor").count() == 0
