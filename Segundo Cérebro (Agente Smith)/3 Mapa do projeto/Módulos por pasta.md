@@ -89,6 +89,7 @@ Mexa aqui quando uma TELA precisa de um número novo, uma rota nova ou um jeito 
 | `app_dados` | Dados do app: monta a fila de solicitações a partir da Central e da aba Tratamento. |
 | `app_envio` | Botão "Enviar pendentes" do Painel, com o andamento ao vivo. |
 | `atividade` | O que os robôs de TODOS os PCs fizeram, numa aba só da Planilha Central (Atividade_Robo). |
+| `cache_disco` | Leitura segura do cache em disco (painel_cache.pkl). |
 | `contagem_painel` | Contagem do fim de semana pelo Painel (usuário, 11/10/2026). |
 | `demo` | Modo demonstração: o Painel inteiro com dados FICTÍCIOS — pra abrir no PC de casa, sem Google, sem Outlook, |
 | `desempenho` | Medidor de desempenho (28/10/2026, pedido do João: "deixar o programa mais otimizado e fluido"). |
@@ -98,6 +99,7 @@ Mexa aqui quando uma TELA precisa de um número novo, uma rota nova ou um jeito 
 | `estado_sistema` | Estado do sistema: versão e atualização, comandos entre PCs, saúde e os vigias em segundo plano. |
 | `painel_metricas` | Números das telas Visão geral e Hotéis, juntando a Central (solicitações), o Mail Analytics e as |
 | `relatorio_semana` | Relatório do dia e da semana na Gerência (usuário, 11/10/2026): os números que o Mail Analytics já grava na planilha dele |
+| `resposta_http` | Resposta da API para a tela: gzip e a assinatura que decide se "não mudou nada" (`__igual`). |
 | `rotas_api` | Tabela de rotas da API do Painel (30/10/2026): o que cada endereço faz, num lugar só. |
 | `saude` | Saúde do sistema — uma faixa vermelha no topo do Painel quando algo sai do normal (usuário, 11/10/2026). |
 

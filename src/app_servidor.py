@@ -8,12 +8,9 @@ janela abre já carregada. O último estado também vai pro disco (painel_cache.
 sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 """
 import datetime
-import gzip
-import hashlib
 import hmac
 import json
 import os
-import io
 import pickle
 import re
 import secrets
@@ -52,6 +49,8 @@ from central import fiscal_intelligence
 from painel import painel_metricas as metricas
 from painel import agentes_smith
 from painel import rotas_api
+from painel.cache_disco import ler_cache_seguro   # noqa: F401  (usado por testes)
+from painel.resposta_http import VOLATEIS_JUNTO, VOLATEIS_TELA, assinatura_do_texto, assinatura_tela, comprimir_se_vale   # noqa: F401
 from painel import desempenho
 from sistema.arquivos import salvar_json
 from central.hoteis import CadastroHoteis
@@ -107,28 +106,8 @@ CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
 CAMINHO_VERSAO = armazem.caminho("versao_rodando.txt")
 SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
-# Cache em disco (Fase 1, 05/11/2026): lê só estes tipos. Um arquivo trocado por outro com código dentro não roda nada: é recusado
-# (o Painel então lê tudo de novo do Google, como sempre fez sem cache).
-_TIPOS_DO_CACHE = {("datetime", "datetime"), ("datetime", "date"), ("datetime", "timezone"), ("datetime", "timedelta"),
-                   ("central.hoteis", "CadastroHoteis"), ("notas.modelos", "Hotel"), ("notas.modelos", "Solicitacao"),
-                   ("collections", "OrderedDict"), ("collections", "defaultdict"), ("builtins", "set"), ("builtins", "frozenset")}
-
-
-class _LeitorDoCache(pickle.Unpickler):
-    def find_class(self, modulo, nome):
-        if (modulo, nome) not in _TIPOS_DO_CACHE:
-            raise pickle.UnpicklingError(f"tipo fora da lista no cache: {modulo}.{nome}")
-        return super().find_class(modulo, nome)
-
-
-def ler_cache_seguro(dados):
-    return _LeitorDoCache(io.BytesIO(dados)).load()
-
-
 ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.notas_emails", "painel.fiscal_intelligence", "painel.canceladas",
                    "painel.atividade", "painel.salvar_cache")
-VOLATEIS_TELA ={"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
-VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
 ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
 HOTEIS_SEGUNDOS = ajustes.valor("google.reler_hoteis_segundos")   # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
@@ -884,29 +863,6 @@ def abrir_janela():
     perfil = armazem.caminho("app_edge")   # perfil separado: a janela não se mistura com o Edge do usuário
     subprocess.Popen([edge, f"--app={url}", f"--user-data-dir={perfil}", "--window-size=1440,900",
                       "--no-first-run", "--no-default-browser-check"])
-
-
-def comprimir_se_vale(dados, aceita):
-    """gzip só quando o navegador aceita e o corpo passa de 1 KB (auditoria 27/10/2026: /api/estado 1,8 MB -> 202 KB).
-    -> (bytes, comprimido?)"""
-    if len(dados) < 1024 or "gzip" not in (aceita or "").lower():
-        return dados, False
-    return gzip.compress(dados, compresslevel=4, mtime=0), True
-
-
-# Os campos que mudam sozinhos (VOLATEIS_TELA), em qualquer profundidade do JSON. Valor: texto, número, null ou booleano.
-_RE_VOLATEIS = re.compile(r'"(?:' + "|".join(sorted(VOLATEIS_TELA)) + r')": (?:"(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?|null|true|false)')
-
-
-def assinatura_do_texto(texto):
-    """Hash do JSON já serializado, sem os campos que mudam sozinhos. Uma passada só (09/11/2026, fluidez): antes a tela
-    percorria a estrutura inteira em Python e serializava de novo, uns 200 ms por resposta de 2 MB, mesmo sem novidade."""
-    return hashlib.sha1(_RE_VOLATEIS.sub("", texto).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
-
-
-def assinatura_tela(corpo):
-    """Hash do que a tela mostra, sem o que muda sozinho a cada volta (VOLATEIS_TELA). Velocidade 3, 21/10/2026."""
-    return assinatura_do_texto(json.dumps(corpo, ensure_ascii=False, default=str))
 
 
 def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):
