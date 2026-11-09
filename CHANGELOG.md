@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09] — 2026-11-09 (PC só Painel sem automação no Outlook)
+
+### Corrigido
+- **PC com papel `so_painel` não abre mais o Outlook sozinho:** o conferente (e o Guardião, que reabria o Outlook a cada 60 s) agora sai na hora nesse papel, e também para se o papel mudar com ele rodando.
+- O instalador completo (`coracao.ps1`) no papel `so_painel` não identifica o PC pelo Outlook e remove a tarefa `SolicitacoesNF_Conferente` em vez de recriá-la.
+
 ## [2026.11.08.2] — 2026-11-08 (Centro leve em todas as telas)
 
 Desenho "Centro leve" aprovado pelo João (`Designs/2026-11-08 O Painel inteiro em vidro (3 opções).html`, opção 3, e o Artifact com todas as telas). Corrige o que a 2026.11.08.1 deixou: coluna vazia no canto, topo e rodapé do desenho antigo, rodapé cortado.
