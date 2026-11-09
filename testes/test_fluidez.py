@@ -170,3 +170,25 @@ def test_aba_descadastrada_e_esquecida(cfg, planilha):
     leitor.esquecer_menos({})
     leitor.ler(aba, "ESTRELA CENTRO", linhas, cfg)
     assert leitor.interpretadas == 2
+
+
+# ---------- cache em disco: só a janela que a tela usa ----------
+def test_cache_guarda_so_os_pedidos_da_janela_com_os_estados_deles():
+    sols = [{"chave": "velho", "data": "2025-01-10"}, {"chave": "recente", "data": "2026-11-01"}, {"chave": "sem_data", "data": ""}, {"chave": "limite", "data": "2026-07-01"}]
+    estados = {"velho": {"n": 1}, "recente": {"n": 2}, "sem_data": {"n": 3}, "limite": {"n": 4}, "orfao": {"n": 5}}
+    ficam, est = _dados.podar_para_cache(sols, estados, "2026-07-01")
+    assert [s["chave"] for s in ficam] == ["recente", "sem_data", "limite"]                      # o dia do corte entra; sem data não some
+    assert set(est) == {"recente", "sem_data", "limite"}                                          # estado de pedido que saiu também sai
+
+
+def test_salvar_cache_nao_grava_o_historico_inteiro(tmp_path, monkeypatch):
+    import datetime as dt
+    import pickle
+    sols = [{"chave": f"antigo{i}", "data": "2024-03-01"} for i in range(500)] + [{"chave": f"novo{i}", "data": dt.date.today().isoformat()} for i in range(20)]
+    estado = types.SimpleNamespace(atualizado_em="agora", relogio=lambda: 1e9, cache_salvo=0, lock=threading.Lock(), solicitacoes=sols,
+                                   estados={s["chave"]: {} for s in sols}, status={}, fi={}, cadastro=None, abas_hotel={})
+    monkeypatch.setattr(app_servidor, "CAMINHO_CACHE", tmp_path / "cache.pkl")
+    app_servidor.Estado.salvar_cache(estado, forcar=True)
+    gravado = pickle.loads((tmp_path / "cache.pkl").read_bytes())
+    assert len(gravado["solicitacoes"]) == 20 and all(s["chave"].startswith("novo") for s in gravado["solicitacoes"])
+    assert len(gravado["estados"]) == 20

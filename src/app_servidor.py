@@ -134,6 +134,7 @@ ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novi
 HOTEIS_SEGUNDOS = ajustes.valor("google.reler_hoteis_segundos")   # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = ajustes.valor("google.reler_tratamento_inteiro_segundos")   # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
 JANELA_PAINEL_DIAS = ajustes.valor("limpeza.painel_janela_dias")
+MARGEM_CACHE_DIAS = 15   # o cache em disco guarda a janela da tela + esta margem (o histórico inteiro volta na 1ª leitura da Central)
 RESOLVIDA_HORAS = ajustes.valor("limpeza.resolvida_horas")   # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
@@ -530,8 +531,10 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
         if not self.atualizado_em or (not forcar and self.relogio() - self.cache_salvo < SALVAR_CACHE_SEGUNDOS):
             return
+        desde = (datetime.date.today() - datetime.timedelta(days=JANELA_PAINEL_DIAS + MARGEM_CACHE_DIAS)).isoformat()
         with self.lock:
-            dados_cache = {"versao": VERSAO_CACHE, "solicitacoes": self.solicitacoes, "estados": self.estados,
+            solicitacoes_cache, estados_cache = dados.podar_para_cache(self.solicitacoes, self.estados, desde)
+            dados_cache = {"versao": VERSAO_CACHE, "solicitacoes": solicitacoes_cache, "estados": estados_cache,
                            "status": self.status, "atualizado_em": self.atualizado_em, "fi": self.fi,
                            "cadastro": self.cadastro, "abas_hotel": self.abas_hotel}
         try:

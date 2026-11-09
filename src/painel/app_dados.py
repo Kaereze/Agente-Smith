@@ -105,6 +105,16 @@ def ler_solicitacoes(aba, hotel, linhas, cfg):
     return saida
 
 
+def podar_para_cache(solicitacoes, estados, desde):
+    """O que vale a pena guardar no cache em disco: só os pedidos de `desde` (AAAA-MM-DD) em diante, com os estados deles.
+    (09/11/2026, fluidez) O cache guardava as 17 mil solicitações de todo o histórico (10 MB): gravar custava ~1 s com o servidor
+    parado, a cada 2 min. A tela só mostra os últimos dias; o histórico inteiro volta sozinho na primeira leitura da Central.
+    Pedido sem data fica (na dúvida, não some). -> (solicitações, estados)"""
+    ficam = [s for s in solicitacoes if not s.get("data") or s["data"] >= desde]
+    chaves = {s["chave"] for s in ficam}
+    return ficam, {k: v for k, v in estados.items() if k in chaves}
+
+
 class LeituraDeHoteis:
     """Guarda o que ler_solicitacoes devolveu para cada aba enquanto as linhas, o hotel e a configuração forem os mesmos.
     (09/11/2026, fluidez) O Painel relê as abas dos hotéis a cada 2 min, mas elas só mudam quando a cópia roda (a cada 10-30 min):
