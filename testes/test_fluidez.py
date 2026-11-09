@@ -116,3 +116,57 @@ def test_se_o_google_falha_o_status_sai_da_fila_que_o_painel_ja_tem():
     e = _estado_de_mentira(_Backend(falha=True))
     r = e.situacao_envio("ENV-1")
     assert r["estado"] == "aguardando" and r["fila"] is None          # None: o envio_nf usa a fila da última volta; nada de erro na tela
+
+
+# ---------- leitura dos hotéis: só reinterpreta a aba que mudou ----------
+import copy as _copy
+
+from painel import app_dados as _dados
+
+
+def _leitura(cfg, planilha, aba="ESTRELA"):
+    from test_app import ESTRELA
+    return ESTRELA, planilha.aba(ESTRELA)
+
+
+def test_aba_que_nao_mudou_nao_e_reinterpretada(cfg, planilha):
+    aba, linhas = _leitura(cfg, planilha)
+    leitor = _dados.LeituraDeHoteis()
+    primeira = leitor.ler(aba, "ESTRELA CENTRO", _copy.deepcopy(linhas), cfg)
+    segunda = leitor.ler(aba, "ESTRELA CENTRO", _copy.deepcopy(linhas), cfg)        # a mesma aba lida de novo: linhas iguais
+    assert leitor.interpretadas == 1
+    assert primeira == segunda == _dados.ler_solicitacoes(aba, "ESTRELA CENTRO", linhas, cfg)   # e o resultado é idêntico ao de interpretar de verdade
+
+
+def test_mudou_uma_celula_ou_o_hotel_ou_a_configuracao_reinterpreta(cfg, planilha):
+    aba, linhas = _leitura(cfg, planilha)
+    leitor = _dados.LeituraDeHoteis()
+    leitor.ler(aba, "ESTRELA CENTRO", _copy.deepcopy(linhas), cfg)
+    alterada = _copy.deepcopy(linhas)
+    alterada[1][-1] = "TRUE" if alterada[1][-1] != "TRUE" else ""                    # o robô marcou Enviado numa linha
+    leitor.ler(aba, "ESTRELA CENTRO", alterada, cfg)
+    assert leitor.interpretadas == 2
+    leitor.ler(aba, "OUTRO NOME", alterada, cfg)                                    # hotel renomeado no cadastro
+    assert leitor.interpretadas == 3
+    outra = _copy.deepcopy(cfg)
+    outra["formato_data_planilha"] = "brasileiro" if cfg.get("formato_data_planilha") != "brasileiro" else "americano"
+    leitor.ler(aba, "OUTRO NOME", alterada, outra)                                  # configuração mudou
+    assert leitor.interpretadas == 4
+
+
+def test_quem_usa_os_pedidos_pode_acrescentar_campos_sem_sujar_o_que_esta_guardado(cfg, planilha):
+    aba, linhas = _leitura(cfg, planilha)
+    leitor = _dados.LeituraDeHoteis()
+    a = leitor.ler(aba, "ESTRELA CENTRO", linhas, cfg)
+    a[0]["marca_de_outra_etapa"] = True
+    b = leitor.ler(aba, "ESTRELA CENTRO", linhas, cfg)
+    assert "marca_de_outra_etapa" not in b[0]
+
+
+def test_aba_descadastrada_e_esquecida(cfg, planilha):
+    aba, linhas = _leitura(cfg, planilha)
+    leitor = _dados.LeituraDeHoteis()
+    leitor.ler(aba, "ESTRELA CENTRO", linhas, cfg)
+    leitor.esquecer_menos({})
+    leitor.ler(aba, "ESTRELA CENTRO", linhas, cfg)
+    assert leitor.interpretadas == 2

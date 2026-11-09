@@ -200,6 +200,7 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
         self._fila_status, self._lendo_fila_status = None, threading.Lock()   # leitura curta da fila de envios (estado_envio._fila_para_status)
+        self.leitura_hoteis = dados.LeituraDeHoteis()   # a aba que não mudou não é reinterpretada (fluidez, 09/11/2026)
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
         self.solicitacoes, self.estados, self.status = [], {}, {}
         self.atualizado_em, self.erro = None, ""
@@ -306,7 +307,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                 solicitacoes = []
                 with desempenho.MEDIDOR.medir("painel.atualizar.interpretar_hoteis", 10.0, logger):
                     for aba, hotel in abas.items():
-                        solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
+                        solicitacoes += self.leitura_hoteis.ler(aba, hotel, lidas.get(aba, []), self.cfg)   # só reinterpreta a aba que mudou
+                    self.leitura_hoteis.esquecer_menos(abas)
                 self.hoteis_lidos_em = agora
             else:
                 solicitacoes = self.solicitacoes

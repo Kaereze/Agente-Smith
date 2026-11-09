@@ -6,6 +6,8 @@ Como a ordem é decidida pelo servidor do Google, dois PCs clicando "Assumir" ao
 resolvem sem trava: vale a linha que entrou primeiro.
 """
 import datetime
+import hashlib
+import json
 import re
 
 from central.sheets import (VALORES_PENDENTE, _achar_coluna, _achar_colunas, _celula, _coluna_da_linha, _dados_para_conferencia,
@@ -101,6 +103,39 @@ def ler_solicitacoes(aba, hotel, linhas, cfg):
                                         cfg.get("colunas_documento", {}), esconder),
         })
     return saida
+
+
+class LeituraDeHoteis:
+    """Guarda o que ler_solicitacoes devolveu para cada aba enquanto as linhas, o hotel e a configuração forem os mesmos.
+    (09/11/2026, fluidez) O Painel relê as abas dos hotéis a cada 2 min, mas elas só mudam quando a cópia roda (a cada 10-30 min):
+    reinterpretar as 17 mil linhas custava ~7 s de CPU por leitura, e durante esses segundos as respostas da tela andavam devagar.
+    Devolve cópias rasas dos pedidos: quem usa depois pode acrescentar campos sem sujar o que está guardado."""
+    CHAVES_CFG = ("colunas", "formato_data_planilha", "colunas_ocultas", "colunas_documento")
+
+    def __init__(self):
+        self._memo = {}   # aba -> (assinatura, pedidos)
+        self.interpretadas = 0   # quantas abas foram mesmo interpretadas (para os testes e a medição)
+
+    @staticmethod
+    def _assinatura(hotel, linhas, cfg):
+        corpo = repr(linhas).encode("utf-8", "replace")
+        ajustes_ = json.dumps([cfg.get(k) for k in LeituraDeHoteis.CHAVES_CFG], sort_keys=True, default=str)
+        return hashlib.md5(corpo + repr(hotel).encode("utf-8", "replace") + ajustes_.encode("utf-8"), usedforsecurity=False).digest()
+
+    def ler(self, aba, hotel, linhas, cfg):
+        assinatura = self._assinatura(hotel, linhas, cfg)
+        guardado = self._memo.get(aba)
+        if guardado and guardado[0] == assinatura:
+            return [dict(s) for s in guardado[1]]
+        pedidos = ler_solicitacoes(aba, hotel, linhas, cfg)
+        self.interpretadas += 1
+        self._memo[aba] = (assinatura, pedidos)
+        return [dict(s) for s in pedidos]
+
+    def esquecer_menos(self, abas):
+        """Abas que saíram da lista (hotel descadastrado) não ficam ocupando memória."""
+        for aba in [a for a in self._memo if a not in abas]:
+            del self._memo[aba]
 
 
 def partes_esperadas(sol, est):
