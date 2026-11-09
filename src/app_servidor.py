@@ -199,6 +199,7 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
+        self._fila_status, self._lendo_fila_status = None, threading.Lock()   # leitura curta da fila de envios (estado_envio._fila_para_status)
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
         self.solicitacoes, self.estados, self.status = [], {}, {}
         self.atualizado_em, self.erro = None, ""

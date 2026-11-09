@@ -59,3 +59,60 @@ def test_assinatura_nova_nao_se_deixa_enganar_por_campo_volatil_digitado_pelo_ho
     a = _com(lambda c: c["fila"][1].update(obs='ok", "dias": 3, "x": "y'))
     b = _com(lambda c: c["fila"][1].update(obs='ok", "dias": 4, "x": "y'))
     assert app_servidor.assinatura_tela(a) != app_servidor.assinatura_tela(b)
+
+
+# ---------- status do envio: nada de ir ao Google a cada consulta da tela ----------
+import threading
+import time
+import types
+
+from painel import estado_envio
+from emails import envio_nf
+
+
+class _Backend:
+    """Google de mentira: conta as leituras e pode demorar ou falhar."""
+    def __init__(self, demora=0.0, falha=False):
+        self.leituras, self.demora, self.falha = 0, demora, falha
+
+    def ler_abas(self, planilha, nomes, faixas=None):
+        self.leituras += 1
+        time.sleep(self.demora)
+        if self.falha:
+            raise OSError("sem rede")
+        return {envio_nf.ABA_FILA: [envio_nf.CAB_FILA]}, {}
+
+
+def _estado_de_mentira(backend):
+    classe = next(c for c in vars(estado_envio).values() if isinstance(c, type) and hasattr(c, "situacao_envio"))
+    e = types.SimpleNamespace(backend=backend, central="planilha", _fila_status=None, _lendo_fila_status=threading.Lock(),
+                              FILA_STATUS_SEGUNDOS=3.0, envio_nf=types.SimpleNamespace(locais={}, fila={"x": 1}, situacao=lambda i, f: {"estado": "aguardando", "fila": f}))
+    e._fila_para_status = types.MethodType(classe._fila_para_status, e)
+    e.situacao_envio = types.MethodType(classe.situacao_envio, e)
+    return e
+
+
+def test_consultas_seguidas_do_status_leem_o_google_uma_vez_so():
+    b = _Backend()
+    e = _estado_de_mentira(b)
+    for _ in range(25):
+        e.situacao_envio("ENV-1")
+    assert b.leituras == 1
+
+
+def test_consultas_ao_mesmo_tempo_nao_viram_varias_leituras_iguais():
+    b = _Backend(demora=0.3)
+    e = _estado_de_mentira(b)
+    respostas = []
+    fios = [threading.Thread(target=lambda: respostas.append(e.situacao_envio("ENV-1"))) for _ in range(8)]
+    for f in fios:
+        f.start()
+    for f in fios:
+        f.join()
+    assert b.leituras == 1 and len(respostas) == 8                    # um lê; os outros seguem com o que o Painel já tem, sem esperar o Google
+
+
+def test_se_o_google_falha_o_status_sai_da_fila_que_o_painel_ja_tem():
+    e = _estado_de_mentira(_Backend(falha=True))
+    r = e.situacao_envio("ENV-1")
+    assert r["estado"] == "aguardando" and r["fila"] is None          # None: o envio_nf usa a fila da última volta; nada de erro na tela
