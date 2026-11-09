@@ -75,3 +75,7 @@
 @media (min-width:801px) and (max-width:1180px){
   .app.modo-ol #v-correio.ol #cx-mesa,.app.modo-ol #v-correio.ol.sem-pastas #cx-mesa{grid-template-columns:320px minmax(0,1fr)}
 }
+
+/* Seletor "Caixa de: agente" (e qualquer menu que abre do topo) por cima de TUDO (09/11/2026): o topo de vidro vinha antes do conteúdo e
+   ficava por baixo dele, então a lista de agentes aparecia cortada pelos cartões. Topo acima do conteúdo e abaixo só do rodapé (80). */
+.app.modo-ol .palco > .topo{position:relative;z-index:70;overflow:visible}

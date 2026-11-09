@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.2] — 2026-11-09 (lista de agentes por cima de tudo)
+
+### Corrigido
+- **A lista "Caixa de: agente" aparecia cortada** (pelos cartões de Notas fiscais e de E-mails): a barra de vidro do topo ficava por baixo do conteúdo. Agora o topo fica acima do conteúdo e a lista abre inteira, por cima de tudo (`app_ui/pecas/centro_leve.css`). Teste de tela novo em 1440 e 1100 px, nas duas telas.
+
 ## [2026.11.09.1] — 2026-11-09 (filtro de hotéis e leitor de e-mail cortados)
 
 ### Corrigido

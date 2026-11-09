@@ -322,3 +322,23 @@ def test_leitor_de_email_ocupa_o_resto_da_largura_quando_a_pasta_lateral_some(pa
         assert r["d"][0] >= r["q"][1] - 1 and r["d"][0] - r["q"][1] <= 20, r   # e começa logo depois da lista
     finally:
         contexto.close()
+
+
+@pytest.mark.parametrize("tela", ["correio", "fila"])
+@pytest.mark.parametrize("largura,altura", [(1440, 900), (1100, 800)])
+def test_lista_de_agentes_abre_inteira_por_cima_de_tudo(painel_demo, navegador, tela, largura, altura):
+    """João (09/11/2026): a lista "Caixa de: agente" aparecia cortada pelos cartões (o topo de vidro ficava por baixo do conteúdo)."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": altura})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, tela)
+        pg.locator("#sc-botao:visible").first.click()
+        pg.wait_for_timeout(500)
+        r = pg.evaluate("""() => { const l = document.querySelector('#sc-lista').getBoundingClientRect(), pontos = [];
+          for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.05, 0.5, 0.97]) {
+            const t = document.elementFromPoint(l.left + l.width * fx, l.top + l.height * fy); pontos.push(!!(t && t.closest('#sc-lista'))); }
+          return {l: [l.left, l.top, l.right, l.bottom], w: innerWidth, h: innerHeight, pontos}; }""")
+        assert all(r["pontos"]), r                                                    # nada cobre nenhum canto nem o meio da lista
+        assert r["l"][0] >= 0 and r["l"][2] <= r["w"] and r["l"][3] <= r["h"], r      # e ela cabe na janela
+    finally:
+        contexto.close()
