@@ -12,6 +12,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 ## [2026.11.10] — 2026-11-10 (total da Caixa de entrada)
 
 ### Mudou
+- **PC da Clara com o nome dela:** `DESKTOP-FA8HRTN` aparecia como "Bernardo" (a detecção pelas contas via caixas dele). Agora o `config.json` fixa o nome por PC (`nomes_dos_pcs`) e isso vale mais que a detecção e que a escolha na tela (`nome_fixo_do_pc` em `src/app_servidor.py`).
 - **O número vermelho da Caixa de entrada** (menu da esquerda) agora é o **total de e-mails de todas as caixas de entrada somadas** (lidos e não lidos), e não só os não lidos. As pílulas de cada caixa e de cada PC continuam contando os não lidos (`app_ui/correio.js`).
 
 ## [2026.11.09.9] — 2026-11-09 (fluidez: cliques instantâneos e etapas lentas em paralelo)

@@ -262,3 +262,22 @@ def test_etapas_lentas_rodam_cada_uma_na_sua_linha():
     fonte = fonte_servidor(_RAIZ)
     for etapa in ("atualizar_notas_emails", "atualizar_fi", "atualizar_atividade"):
         assert "etapa_lenta(" in fonte and f"estado.{etapa}, " in fonte, etapa
+
+
+# ---------- o nome do PC fixado na configuração (PC da Clara) ----------
+def test_nome_fixo_do_pc_vale_mais_que_a_escolha_na_tela(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_servidor, "_NOME_FIXO", ["", -1e9])
+    monkeypatch.setattr(app_servidor, "CAMINHO_PREFS", tmp_path / "app.json")
+    app_servidor.salvar_pref("agente", "Bernardo")
+    monkeypatch.setattr(app_servidor.socket, "gethostname", lambda: "desktop-fa8hrtn")           # maiúscula/minúscula não importa
+    monkeypatch.setattr(app_servidor, "carregar_config", lambda **kw: {"nomes_dos_pcs": {"DESKTOP-FA8HRTN": "Clara"}})
+    assert app_servidor.nome_do_agente() == "Clara"
+    monkeypatch.setattr(app_servidor.socket, "gethostname", lambda: "OUTRO-PC")
+    app_servidor._NOME_FIXO[1] = -1e9                                                            # força reler (o valor vale 30 s)
+    assert app_servidor.nome_do_agente() == "Bernardo"                                           # outros PCs seguem como antes
+
+
+def test_pc_da_clara_esta_na_configuracao():
+    import json
+    cfg = json.loads((_RAIZ / "config.json").read_text(encoding="utf-8"))
+    assert cfg["nomes_dos_pcs"]["DESKTOP-FA8HRTN"] in cfg["agentes"]

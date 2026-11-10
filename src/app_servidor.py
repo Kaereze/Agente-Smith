@@ -143,7 +143,27 @@ def salvar_pref(chave, valor):
 TEMAS_OK = ("", "light", "dark")
 
 
+_NOME_FIXO = ["", -1e9]   # [nome, quando foi lido]
+
+
+def nome_fixo_do_pc():
+    """Nome do operador que a configuração fixa para ESTE PC (config.json > nomes_dos_pcs), ou "". Vale mais que a detecção pelas
+    contas e que a escolha na tela (10/11/2026: o PC da Clara tem caixas de hotéis do Bernardo e era detectado como Bernardo)."""
+    agora = time.monotonic()
+    if agora - _NOME_FIXO[1] < 30:   # o nome é pedido a cada requisição: relê o arquivo só de 30 em 30 s
+        return _NOME_FIXO[0]
+    try:
+        nomes = carregar_config(exigir_chave=False).get("nomes_dos_pcs") or {}
+        nome = str({k.upper(): v for k, v in nomes.items()}.get(socket.gethostname().upper(), "") or "")
+    except Exception:
+        nome = ""
+    _NOME_FIXO[:] = [nome, agora]
+    return nome
+
+
 def nome_do_agente():
+    if fixo := nome_fixo_do_pc():
+        return fixo
     try:
         nome = json.load(open(CAMINHO_PREFS, encoding="utf-8")).get("agente")
         if nome:
