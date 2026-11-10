@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.10] — 2026-11-10 (total da Caixa de entrada)
+
+### Mudou
+- **O número vermelho da Caixa de entrada** (menu da esquerda) agora é o **total de e-mails de todas as caixas de entrada somadas** (lidos e não lidos), e não só os não lidos. As pílulas de cada caixa e de cada PC continuam contando os não lidos (`app_ui/correio.js`).
+
 ## [2026.11.09.9] — 2026-11-09 (fluidez: cliques instantâneos e etapas lentas em paralelo)
 
 ### Mudou

@@ -38,7 +38,7 @@ function desenharLateralCorreio() {
   const c = cx.dados?.contagem || {};
   const n = (id, v, alerta) => { const el = $(id); if (!el) return; el.textContent = v ? v.toLocaleString("pt-BR") : "";
     el.classList.toggle("alerta-n", !!(alerta && v)); };
-  n("nav-entrada-n", emailsDa("entrada").filter(e => e.lido === false).length);   // não lidos do Outlook, do agente escolhido
+  n("nav-entrada-n", emailsDa("entrada").length);   // TOTAL de e-mails de todas as caixas de entrada somadas (lidos e não lidos), do agente escolhido (João, 10/11/2026)
   n("nav-urgencia-n", emailsDa("urgencia").length, true);
 }
 
