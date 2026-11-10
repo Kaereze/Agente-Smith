@@ -26,6 +26,7 @@ CNPJ e nome de **empresa** não são dado pessoal (a LGPD protege pessoa física
 | Outlook de cada PC | E-mails dos hóspedes e as NFs enviadas | Regra do Outlook de cada PC | Dono do PC |
 | `estado/indice_emails.sqlite` (cada PC, desde 20/10/2026) | Índice para pesquisa: remetente, para, assunto, data, nome dos anexos e o texto (até 1.500 letras do que o hóspede escreveu) das caixas dos hotéis daquele PC | 12 meses (faxina diária em `indice_emails.Indice.faxina`); o que sai do Outlook sai do índice em até 30 min | Só o PC (fora do git e do Google) |
 | `estado/backup_central_*.json` (PC do João) | Cópia da Central para recuperar erro | 24 h (144 cópias, `sincronizar._limpar_backups_antigos`) | Só o PC |
+| `estado/copias/AAAAMMDD_HHMMSS.zip` (todo PC real) | Cópia de segurança dos dados do PC (inclui o que tem dado de hóspede) | As 7 últimas, uma a cada 12 h (`limpeza.copias_guardadas`); só neste PC; o pedido do titular não apaga dentro delas, elas se renovam sozinhas em ~3,5 dias | Só o PC |
 | `estado/backup_tratamento_*.json` (PC do João) | Cópia do Tratamento antes da faxina | Últimos dias (`faxina._backup`) | Só o PC |
 | `logs/solicitacoes_nf.log` | Avisos do robô (às vezes hotel e e-mail) | 5 arquivos de 5 MB, giram sozinhos | Só o PC |
 | `logs/saida_console_sincronizar.txt` (PC do João) | Tudo o que a cópia escreve na tela | Gira em 5 MB, atual + 2 antigas (desde 20/10/2026) | Só o PC |

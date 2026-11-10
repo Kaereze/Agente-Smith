@@ -60,6 +60,7 @@ from painel.estado_envio import EnvioMixin
 from painel.estado_rede import RedeMixin, VERIFICAR_ATUALIZACAO_MINUTOS, TELAS, SEM_REDE_SEGUNDOS, JANELA_ABERTA_SEGUNDOS, ATIVIDADE_CACHE_SEGUNDOS   # noqa: F401
 from painel.estado_correio import CorreioMixin, ENVIADOS_RAPIDO_SEGUNDOS, NOTAS_EMAILS_SEGUNDOS, _kw_ligacao   # noqa: F401  (nomes usados por testes e rotas)
 from sistema import armazem
+from sistema import copias
 from config import PASTA_ESTADO, PASTA_LOGS, PASTA_PROJETO, caminho_chave_google, carregar_config, e_principal, sem_outlook
 from sistema import limpeza
 from sistema.log_util import configurar_logging
@@ -907,6 +908,20 @@ def travar_instancia_unica():
 _TRAVA = None   # fica aberta enquanto o Painel vive
 
 
+def _copias_em_segundo_plano():
+    """Cópia de segurança dos dados deste PC: ao abrir (se já passou o tempo) e depois de hora em hora (09/11/2026)."""
+    def laco():
+        time.sleep(60)   # deixa o Painel abrir e carregar primeiro
+        while True:
+            try:
+                if copias.precisa_de_copia():
+                    copias.fazer_copia()
+            except Exception as e:
+                logger.warning(f"⚠️ Cópia de segurança não saiu: {str(e)[:100]}")
+            time.sleep(3600)
+    threading.Thread(target=laco, daemon=True, name="copias").start()
+
+
 def main():
     global _TRAVA
     sem_janela = "--sem-janela" in sys.argv
@@ -941,7 +956,13 @@ def main():
         estado = Estado(BackendSoLeitura(caminho_chave_google(cfg)), cfg)
         logger.info("🏠 MODO CASA: dados reais, só visualização (não grava na Central, não mexe no Outlook)")
     else:
+        curados = []
+        try:
+            curados = copias.autocurar()   # arquivo de dados quebrado volta da última cópia boa, antes de qualquer módulo abrir (09/11/2026)
+        except Exception as e:   # a cópia nunca derruba o Painel
+            logger.warning(f"Conferência dos dados não rodou: {str(e)[:100]}")
         estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
+        estado.curados = curados
     estado.demo = modo_demo
     estado.so_ver = so_ver
     if not modo_demo and estado.carregar_cache():
@@ -1012,6 +1033,8 @@ def main():
             estado.vigiar_caixa_de_saida()
             estado.iniciar_indice()
         estado.iniciar_nf_achadas()
+    if not modo_demo and not so_ver:
+        _copias_em_segundo_plano()
     try:
         acessos.limpar()   # registro de acessos: só os últimos 12 meses
     except Exception as e:

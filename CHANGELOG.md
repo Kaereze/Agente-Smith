@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.09.10] — 2026-11-09 (cópia de segurança e autocura dos dados deste PC)
+
+### Adicionado
+- **Cópia de segurança automática** (`src/sistema/copias.py`): a cada 12 h (e ao abrir o Painel, se já passou o tempo) um `.zip` em `estado/copias/` com todos os dados do catálogo (JSON, índice de e-mails em SQLite pela API de backup, registro de acessos), com `manifesto.json` (tamanho e SHA-256). Guarda as 7 últimas. Ajustes: `limpeza.copia_a_cada_horas`, `limpeza.copias_guardadas`.
+- **Autocura ao abrir:** arquivo de dados que não abre (JSON quebrado, SQLite que falha no `integrity_check`) é separado como `*.quebrado-AAAAMMDD_HHMMSS` (nada é apagado) e a última versão boa volta da cópia; sem cópia boa, o módulo dono refaz do Outlook/Planilha. A faixa de saúde avisa o que aconteceu.
+- **Aviso na faixa de saúde** se este PC nunca fez cópia ou a última tem mais de 36 h.
+- `ferramentas/restaurar_copia.py` (`listar`, `conferir`, `agora`, `restaurar`): restaurar confere a cópia inteira antes de mexer e guarda o que existia como `*.antes-de-restaurar-<hora>`.
+
+### Mudou
+- Catálogo de dados (`armazem.py`): nova pasta `copias` (marcada como dado pessoal, 7 últimas). Mapa dos dados e dos módulos regenerados. Mapa de Agentes do Smith ganhou o bloco "Cópias de segurança".
+
 ## [2026.11.09.9] — 2026-11-09 (fluidez: cliques instantâneos e etapas lentas em paralelo)
 
 ### Mudou

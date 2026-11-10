@@ -13,6 +13,7 @@ from emails import outlook_vivo
 from rede import rede_pcs
 from painel import saude
 from sistema import armazem
+from sistema import copias
 from config import e_principal
 from sistema.log_util import configurar_logging
 import ajustes
@@ -42,6 +43,11 @@ class SistemaMixin:
         lista = saude.problemas(self.pcs())
         lista += saude.pedidos_sem_envio(list(getattr(self, "solicitacoes", []) or []))   # pedido parado (15/10/2026)
         lista += saude.ajustes_com_erro()   # ajustes.json com chave errada ou valor fora do aceito (04/11/2026)
+        if not getattr(self, "demo", False) and not getattr(self, "so_ver", False):
+            lista += copias.resumo_para_saude()   # cópia de segurança dos dados deste PC (09/11/2026)
+            lista += [{"nivel": "aviso", "pc": "", "texto": f"O arquivo {c['arquivo']} estava quebrado e foi separado"
+                       + (f"; voltei a versão da cópia {c['restaurado_de']}." if c.get("restaurado_de") else "; o Painel refaz do Outlook/Planilha.")}
+                      for c in getattr(self, "curados", [])]
         rel = getattr(self, "_ultimo_relatorio", None)
         if rel:
             lista += saude.mail_analytics_atrasado(rel.get("ultimo_dia"), datetime.date.today())

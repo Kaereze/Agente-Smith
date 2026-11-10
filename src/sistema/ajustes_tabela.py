@@ -448,6 +448,8 @@ ENTRADAS = [
      None),
     ('limpeza.faxina_a_cada_horas', 20, 1, 168, 'De quantas em quantas horas a faxina roda.', None),
     ('limpeza.backups_guardados', 3, 1, 30, 'Quantas cópias de segurança são mantidas.', None),
+    ('limpeza.copia_a_cada_horas', 12, 1, 168, 'De quantas em quantas horas o Painel faz a cópia de segurança dos dados deste PC.', None),
+    ('limpeza.copias_guardadas', 7, 1, 60, 'Quantas cópias de segurança dos dados deste PC são mantidas.', None),
     ('limpeza.ligacoes_dias', 400, 30, 1500, 'Por quantos dias as ligações marcadas são guardadas.', None),
     ('limpeza.contagem_painel_dias', 14, 3, 365, 'Por quantos dias a contagem diária do Painel é mantida.', None),
     ('limpeza.recontar_hoje_minutos', 60, 5, 720, 'De quantos em quantos minutos a contagem de hoje é refeita.', None),

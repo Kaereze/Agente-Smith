@@ -40,6 +40,7 @@ tags: [cerebro/documentos, lgpd, dados]
 | `enviar_receber_tempos.json` | Quanto tempo cada PC levou no Enviar/Receber (para estimar o próximo) | não | enquanto o Painel precisa | `enviar_receber` |
 | `cota_google` | Consumo da cota do Google deste PC, por programa | não | enquanto o Painel precisa | `cota_google` |
 | `acessos` | Registro de quem abriu e-mail, anexo ou ficha (sem nome nem CPF do hóspede) | não | 12 meses | `acessos` |
+| `copias` | Cópias de segurança dos dados deste PC (um .zip por rodada, com conferência de integridade) | **sim** | as 7 últimas (ajustes.json: limpeza.copias_guardadas) | `copias` |
 | `app_webview` | Cache do navegador da janela do Painel (limpo ao abrir) | não | enquanto o Painel precisa | `limpeza` |
 | `app_edge` | Cache do navegador da janela, quando abre pelo Edge (limpo ao abrir) | não | enquanto o Painel precisa | `limpeza` |
 | `_painel.lock` | Trava: um servidor do Painel por PC | não | enquanto o Painel precisa | `app_servidor` |

@@ -131,6 +131,7 @@ Mexa aqui só quando for algo que vale para o programa inteiro. Quase sempre nã
 | `armazem` | Armazém: o catálogo de TODO dado que o Painel grava neste PC (08/11/2026). |
 | `arquivos` | Gravação atômica de JSON. |
 | `console_utf8` | Console em UTF-8 (acentos e emojis no Windows). |
+| `copias` | Cópias de segurança dos dados deste PC (09/11/2026): o "banco local" ganha rede de proteção. |
 | `limpeza` | Limpeza do que cresce sozinho (27/10/2026, auditoria): cache da janela do Painel e sobra de registros. |
 | `lock_execucao` | Trava entre processos: cópia, envio e conferência nunca rodam juntos. |
 | `log_util` | Log de cada programa em logs/ (20/10/2026): robô = solicitacoes_nf.log, conferente.log, painel.log. |

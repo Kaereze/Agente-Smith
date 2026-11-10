@@ -60,6 +60,8 @@ DADOS = {d.arquivo: d for d in [
     _d("enviar_receber_tempos.json", "json", "Quanto tempo cada PC levou no Enviar/Receber (para estimar o próximo)", "enviar_receber"),
     _d("cota_google", "pasta", "Consumo da cota do Google deste PC, por programa", "cota_google"),
     _d("acessos", "pasta", "Registro de quem abriu e-mail, anexo ou ficha (sem nome nem CPF do hóspede)", "acessos", False, "12 meses", False),
+    _d("copias", "pasta", "Cópias de segurança dos dados deste PC (um .zip por rodada, com conferência de integridade)", "copias", True,
+       "as 7 últimas (ajustes.json: limpeza.copias_guardadas)", False),
     _d("app_webview", "pasta", "Cache do navegador da janela do Painel (limpo ao abrir)", "limpeza"),
     _d("app_edge", "pasta", "Cache do navegador da janela, quando abre pelo Edge (limpo ao abrir)", "limpeza"),
     _d("_painel.lock", "trava", "Trava: um servidor do Painel por PC", "app_servidor"),
