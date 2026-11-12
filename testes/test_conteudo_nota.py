@@ -152,7 +152,7 @@ def test_mesmo_cnpj_outra_estadia_nao_e_a_nota():
     nota = ("NOTA FISCAL DE SERVIÇO " * 10) + " Tomador CNPJ 12.345.678/0001-90 Consorcio Planex "
     nota += "Hospedagem diária período 18/09/2026 a 19/09/2026 emitida em 24/09/2026"
     res, prova = conferir_conteudo(sol, nota)
-    assert res == "nao_confere" and "datas" in prova
+    assert res == "possivel" and "datas" in prova   # regra do João (12/11/2026): documento igual e datas diferentes = amarela
 
 
 def test_pediu_consumo_nota_de_diaria_nao_e_a_nota():
@@ -224,3 +224,53 @@ def test_nf_anexada_com_assunto_fora_do_padrao_so_conclui_se_for_de_quem_pediu()
              "anexos": ["NF 582 - WAGNER EXEMPLO - 59767.pdf"]}
     assert r2.aplicar_envio(outro, ["pdf"], ler_texto=lambda: "") == ("NF-A-01", "tratativa")
     assert r2.solicitacoes["NF-A-01"]["nfs"] == {}
+
+
+# ---------- Regra do João (12/11/2026): verde só com CPF/CNPJ + check-in E check-out; o resto é "possível NF" (amarela) ----------
+def _nota_inventada(doc, ini, fim):
+    return ("NOTA FISCAL DE SERVICOS " * 10) + f" Tomador CPF/CNPJ {doc} Maria Exemplo Silva DATA DE CHECK-IN: {ini} DATA DE CHECK-OUT: {fim} "
+
+
+def _pedido_inventado(**mudancas):
+    sol = {"documentos": ["12345678909"], "datas": ["10/11/2026", "11/11/2026"], "nomes": ["Maria Exemplo Silva"], "valores": [], "servicos": []}
+    sol.update(mudancas)
+    return sol
+
+
+def test_regra_amarela_documento_e_as_duas_datas_iguais_e_verde():
+    res, _ = conferir_conteudo(_pedido_inventado(), _nota_inventada("123.456.789-09", "10/11/2026", "11/11/2026"))
+    assert res == "confere"
+
+
+def test_regra_amarela_documento_igual_e_datas_de_outra_estadia_e_possivel():
+    res, prova = conferir_conteudo(_pedido_inventado(), _nota_inventada("123.456.789-09", "01/10/2026", "03/10/2026"))
+    assert res == "possivel" and "não é a do pedido" in prova
+
+
+def test_regra_amarela_so_uma_das_datas_bate_e_possivel():
+    res, prova = conferir_conteudo(_pedido_inventado(), _nota_inventada("123.456.789-09", "10/11/2026", "20/11/2026"))
+    assert res == "possivel" and "só uma das datas" in prova
+
+
+def test_regra_amarela_documento_diferente_com_nome_e_datas_iguais_e_possivel():
+    res, prova = conferir_conteudo(_pedido_inventado(), _nota_inventada("987.654.321-00", "10/11/2026", "11/11/2026"))
+    assert res == "possivel" and "nome confere" in prova
+
+
+def test_regra_amarela_nota_de_outra_pessoa_sem_nada_igual_continua_descartada():
+    sol = _pedido_inventado(nomes=["Fulano De Tal"])
+    res, _ = conferir_conteudo(sol, _nota_inventada("987.654.321-00", "01/10/2026", "03/10/2026"))
+    assert res == "nao_confere"
+
+
+def test_nota_do_dropbox_com_documento_igual_e_datas_diferentes_vira_amarela_e_nao_conclui():
+    # NOTA_OCR é de check-out 15/09; o pedido (inventado) é de outra estadia, com o mesmo CNPJ
+    r = _registro(_sol([("CNPJ Tomador", "26295687000123"), ("Check-in da Hospedagem", "01/10/2026"),
+                        ("Check-out da Hospedagem", "03/10/2026")]))
+    ref = r.aplicar_nota_dropbox("X:/PC 2 - CLARA/NF 801 - KESYA.pdf", ("801", "KESYA"),
+                                 datetime.datetime(2026, 9, 18, 16, 0), lambda: NOTA_OCR, "PC 2 - CLARA")
+    if ref is None:   # a nota de exemplo só traz a data de check-out; o que importa é nunca ficar verde
+        assert situacao(r.solicitacoes["NF-A-01"])[0] != "ok"
+        return
+    tipo, _ = situacao(r.solicitacoes["NF-A-01"])
+    assert tipo == "conferir" and r.solicitacoes["NF-A-01"]["nfs"]["801"]["conferir"] is True

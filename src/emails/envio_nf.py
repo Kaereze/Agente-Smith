@@ -522,8 +522,8 @@ def sugestoes_dropbox(sol, cfg, limite=6, ler_texto=None):
     achadas = []
     for nota, mtime, nome, caminho, nf in candidatas[:CANDIDATAS_SUGESTAO]:
         resultado, prova = conferir_conteudo(alvo, ler_texto(caminho, mtime))
-        if resultado == "confere":
-            achadas.append({"nome": nome, "nf": nf[0], "forte": True, "nota": nota, "prova": prova,
+        if resultado in ("confere", "possivel"):
+            achadas.append({"nome": nome, "nf": nf[0], "forte": resultado == "confere", "nota": nota, "prova": prova,
                             "modificado": datetime.datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M"),
                             "rel": os.path.relpath(caminho, raiz) if raiz else caminho})
     return achadas[:limite]

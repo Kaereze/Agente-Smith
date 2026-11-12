@@ -186,6 +186,8 @@ def achadas_do_pedido(indice, sol, nfs_do_pedido, ligadas_de_outros, outros_do_d
         concorrentes = [o for o in outros_do_documento.get(doc, []) if conferir_conteudo(o, e.get("texto", ""))[0] == "confere"]
         if resultado == "confere":
             item = {"forte": True, "outra": com_nf, "possivel": bool(concorrentes)}
+        elif resultado == "possivel" and not concorrentes:
+            item = {"forte": False, "outra": com_nf, "possivel": True}   # amarela: o documento bate, as datas não (ou o inverso)
         elif com_nf and not concorrentes:
             item = {"forte": False, "outra": True, "possivel": False}   # pedido já com NF e a nota não é de outro pedido
         else:

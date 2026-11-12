@@ -121,7 +121,8 @@ def test_formulario_digitado_errado_so_avisa():
 def test_conferencia_continua_casando_e_leva_o_alerta():
     sol = {"documentos": ["52084748593"], "valores": ["237,40"], "datas": ["19/08/2026"], "nomes": ["Augusto Teixeira"]}
     resultado, provas = conferir_conteudo(sol, DANFSE)
-    assert resultado == "confere" and "⚠ CPF/CNPJ da NF" in provas
+    # regra do João (12/11/2026): nome e data batem, mas o CPF/CNPJ da nota não é o do pedido = amarela, nunca verde
+    assert resultado == "possivel" and "⚠ CPF/CNPJ da NF" in provas
 
 
 def test_painel_le_o_alerta_e_some_com_esta_certo():

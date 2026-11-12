@@ -68,7 +68,9 @@ def test_pedido_com_nf_ganha_outra_nota_quando_datas_ou_valor_diferem(tmp_path):
     ind = indice(tmp_path, {"NF 2230 - X.pdf": (nota(ini="12/10/2026", fim="14/10/2026", valor="980,00"), 1)})
     r = achadas(ind, sol(), nfs=["2186"])
     assert len(r) == 1 and r[0]["outra"] and not r[0]["forte"]
-    assert achadas(ind, sol()) == []   # sem NF ligada, nota de outras datas não é deste pedido
+    # sem NF ligada: o documento bate e as datas não = amarela (12/11/2026), nunca "forte"
+    sem_nf = achadas(ind, sol())
+    assert len(sem_nf) == 1 and not sem_nf[0]["forte"] and sem_nf[0]["possivel"]
 
 
 def test_nota_que_e_mais_de_outro_pedido_nao_polui_este_pedido_ja_com_nf(tmp_path):

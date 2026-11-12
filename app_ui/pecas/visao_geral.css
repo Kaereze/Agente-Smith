@@ -1,6 +1,6 @@
 /* Visão geral centralizada e a parte de baixo no mesmo desenho do Resumo (João, 08/11/2026): sem peso, sem poluição.
    Só estilo: nenhuma conta mudou. A animação reaproveita a entrada que a Visão já tem (classe .anima, que o Painel só liga ao abrir a tela). */
-#visao > *{max-width:1380px;margin-left:auto;margin-right:auto}
+#visao > *{max-width:var(--cl-coluna,2000px);margin-left:auto;margin-right:auto}
 
 /* título de cada bloco com uma linha fina que separa, em vez de texto solto */
 #visao .sec-tit{display:flex;align-items:center;gap:12px;margin:22px auto 10px}

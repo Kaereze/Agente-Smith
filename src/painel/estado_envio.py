@@ -321,6 +321,8 @@ class EnvioMixin:
             diferente = documento_diferente(provas, texto)
             if resultado == "nao_confere":
                 avisos.append(f"{nome}: não parece ser a nota deste pedido ({prova})")
+            elif resultado == "possivel":
+                avisos.append(f"{nome}: pode não ser a nota deste pedido, confira ({prova})")
             elif diferente.startswith("⚠"):
                 avisos.append(f"{nome}: {diferente[2:]}")
         return {"avisos": avisos, "conferidas": conferidas, "pedido": sol.get("nome", "")}

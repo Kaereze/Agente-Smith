@@ -1,12 +1,12 @@
 /* Centro leve (João, 08/11/2026): o casco inteiro do Painel num desenho só. Barra flutuante (barra_flutuante.css), topo de vidro,
-   conteúdo numa coluna central de até 1.500 px, cartões de vidro fosco e o rodapé encolhido numa pastilha flutuante embaixo.
+   conteúdo numa coluna central de até 2.000 px, cartões de vidro fosco e o rodapé encolhido numa pastilha flutuante embaixo.
    Mesma margem (14 px) em tudo: nada de coluna vazia, canto morto nem rodapé cortado. Vem por último: vence as camadas antigas.
    Desenho aprovado em "Segundo Cérebro/6 Documentos/Designs/2026-11-08 O Painel inteiro em vidro (3 opções).html" (opção 3). */
 :root{
   --cl-vidro:rgba(22,22,22,.60);
   --cl-rim:linear-gradient(150deg,rgba(255,255,255,.55),rgba(255,255,255,.05) 30%,rgba(255,255,255,.04) 70%,rgba(255,255,255,.36));
   --cl-margem:14px;
-  --cl-coluna:1500px;
+  --cl-coluna:2000px;
 }
 
 /* o chão da janela: escuro, com luzes bem suaves atrás (só para o vidro ter o que desfocar) */
@@ -21,9 +21,9 @@
 .app.modo-ol:not(.menu-fechado) .lateral{width:252px}   /* com os nomes a coluna da barra alarga junto (senão ela sai cortada na esquerda) */
 .app.modo-ol .lateral .capsula{pointer-events:auto}
 .app.modo-ol .palco{position:absolute;inset:0;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto!important;
-  padding:0 0 62px 88px;min-width:0;min-height:0;background:transparent!important}
+  padding:0 0 62px 104px;min-width:0;min-height:0;background:transparent!important}
 .app.modo-ol:not(.menu-fechado) .palco{padding-left:252px}   /* com os nomes abertos a barra empurra a tela, como sempre */
-.app.modo-ol .palco > .topo{grid-row:1}.app.modo-ol .palco > .vista{grid-row:2}.app.modo-ol .palco > .rodape-status{grid-row:3}
+.app.modo-ol .palco > .topo{position:relative;z-index:40;grid-row:1}   /* o menu "Caixa de…" abre por cima da lista, não por baixo dela */.app.modo-ol .palco > .vista{grid-row:2}.app.modo-ol .palco > .rodape-status{grid-row:3}
 .app.modo-ol .vista,.app.modo-ol .vista .rolagem,.app.modo-ol #v-correio.ol{background:transparent!important}
 
 /* topo de vidro, da largura da coluna */

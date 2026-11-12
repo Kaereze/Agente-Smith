@@ -9,6 +9,14 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.12] — 2026-11-12 (NF amarela: "possível NF")
+
+Regra do João: a NF só fica verde com CPF/CNPJ **e** check-in **e** check-out iguais aos do pedido. O resto é amarela, para a pessoa conferir e enviar a NF ou excluir o e-mail.
+
+- **Mudou:** documento igual e datas de outra estadia deixa de ser descartado e vira "possível NF" (amarela). Só uma das datas bater, ou CPF/CNPJ da nota diferente com nome e data parecidos, também vira amarela (antes ficava verde com aviso). Mês do check-out errado na nota continua valendo, como antes.
+- **Adicionado:** nota do Dropbox que parece ser de um único pedido, sem fechar, marca o pedido como "confira" (nunca conclui). Em Enviar NF aparece como sugestão amarela, com o motivo.
+- **Não feito (de propósito):** número da estada como prova forte. O pedido ainda não guarda a estada; falta o João dizer de onde ela vem.
+
 ## [2026.11.08.2] — 2026-11-08 (Centro leve em todas as telas)
 
 Desenho "Centro leve" aprovado pelo João (`Designs/2026-11-08 O Painel inteiro em vidro (3 opções).html`, opção 3, e o Artifact com todas as telas). Corrige o que a 2026.11.08.1 deixou: coluna vazia no canto, topo e rodapé do desenho antigo, rodapé cortado.

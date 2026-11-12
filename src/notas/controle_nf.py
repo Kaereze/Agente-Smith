@@ -276,7 +276,10 @@ def _normalizar_texto_nota(texto):
 
 
 def conferir_conteudo(sol, texto):
-    """-> ("confere" | "nao_confere" | "sem_texto", provas legíveis)
+    """-> ("confere" | "possivel" | "nao_confere" | "sem_texto", provas legíveis)
+
+    "possivel" = amarela (12/11/2026): parece a nota, mas o CPF/CNPJ não bate ou as datas não são as do pedido.
+    Nunca conclui o pedido sozinha: a pessoa confere e envia a NF ou exclui o e-mail.
 
     Confere com CPF/CNPJ, ou com dois entre valor, data e nome. Mesmo com o documento batendo,
     a estadia e o serviço da nota têm que ser os do pedido: empresas se hospedam várias vezes.
@@ -303,15 +306,27 @@ def conferir_conteudo(sol, texto):
         provas.append("nome confere")
     desc = ler_descricao_nota(texto)
     pedidas = {d[:5] for d in sol.get("datas", [])}
+    datas_parciais = False   # regra do João (12/11/2026): check-in E check-out da nota têm que ser os do pedido; senão é "possível NF" (amarela)
     if desc and desc["checkin"] and pedidas:
-        # Basta um dos dois: a nota às vezes sai com o mês do check-out errado
-        if not ({desc["checkin"], desc["checkout"]} & pedidas):
-            return "nao_confere", " · ".join(provas + [f"estadia da nota (check-in {desc['checkin']}) não é a do pedido"])
+        na_nota = {desc["checkin"], desc["checkout"]} - {None}
+        if not (na_nota & pedidas):
+            motivo = f"estadia da nota (check-in {desc['checkin']}) não é a do pedido"
+            if doc:
+                return "possivel", " · ".join(provas + [motivo])   # o documento bate, as datas não: alguém confere (enviar ou excluir o e-mail)
+            return "nao_confere", " · ".join(provas + [motivo])
+        # mês do check-out errado na nota é erro comum: vale quando o check-in bate inteiro e o DIA do check-out é o do pedido
+        so_mes_errado = bool(desc["checkin"] in pedidas and desc["checkout"] and desc["checkout"][:2] in {d[:2] for d in pedidas})
+        if not na_nota <= pedidas and not so_mes_errado:
+            datas_parciais = True
+            provas.append(f"só uma das datas da nota é a do pedido (nota {'/'.join(sorted(na_nota))})")
         if not data:
             provas.append(f"check-in {desc['checkin']} confere")
             data = desc["checkin"]
     elif sol.get("datas") and not data and len(datas_nota) >= 2:
-        return "nao_confere", " · ".join(provas + ["datas da estadia não batem"])
+        motivo = "datas da estadia não batem"
+        if doc:
+            return "possivel", " · ".join(provas + [motivo])
+        return "nao_confere", " · ".join(provas + [motivo])
     pedidos = set(sol.get("servicos", []))
     na_nota = desc["servicos"] if desc and desc["servicos"] else servicos_no_texto(t)
     if pedidos and na_nota and not (pedidos & na_nota):
@@ -320,6 +335,9 @@ def conferir_conteudo(sol, texto):
     if doc or (valor and (data or nome)) or (nome and data):
         # é a nota do pedido (estadia, valor, nome), mas pode ter saído pra outro CPF/CNPJ (Etapa 2, 09/10/2026)
         diferente = "" if doc else documento_diferente(sol, texto)
+        if datas_parciais or (not doc and sol.get("documentos")):
+            # datas só em parte, ou nota sem o CPF/CNPJ do pedido (nome e data parecidos): possível NF, nunca verde sozinha
+            return "possivel", " · ".join(provas + ([diferente] if diferente else []))
         return "confere", " · ".join(provas + ([diferente] if diferente else []))
     return "nao_confere", " · ".join(provas) or "nada da solicitação aparece na nota"
 
@@ -609,7 +627,17 @@ class Registro:
         avaliadas = {ref: conferir_conteudo(s, texto) for ref, s in abertas.items()}
         conferem = [ref for ref, (res, _) in avaliadas.items() if res == "confere"]
         if not conferem:
-            return None
+            # Amarela (João, 12/11/2026): um único pedido parece ser o da nota (CPF/CNPJ ou datas não fecham): marca "confira"
+            possiveis = [ref for ref, (res, _) in avaliadas.items() if res == "possivel"]
+            if len(possiveis) != 1:
+                return None
+            ref = possiveis[0]
+            self.solicitacoes[ref]["nfs"][nf[0]] = {
+                "data": data.isoformat(timespec="seconds"), "assunto": os.path.basename(caminho), "entry_id": chave,
+                "prova": f"possível NF · {avaliadas[ref][1]} · achada no Dropbox ({fonte})", "conferir": True,
+            }
+            self._marcar_para_atualizar(ref)
+            return ref
         # Várias batem: vale a com CPF/CNPJ; sem documento e ambígua, não marca nenhuma
         com_doc = [r for r in conferem if "do tomador confere" in avaliadas[r][1]]
         escolhidas = com_doc or conferem

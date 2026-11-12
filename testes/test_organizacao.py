@@ -22,11 +22,20 @@ def test_so_ficam_em_src_os_pontos_de_entrada_e_cada_assunto_tem_pasta_com_expli
         assert len(doc) > 80 and "Mexa aqui" in doc, f"{p.name}/__init__.py precisa explicar, em linguagem simples, quando mexer ali"
 
 
+def _ignorada_pelo_git(pasta):
+    """Pasta que só existe neste PC (o .gitignore a esconde): não faz parte do projeto, não precisa de explicação."""
+    import subprocess
+    try:
+        return subprocess.run(["git", "check-ignore", "-q", pasta.name], cwd=RAIZ, capture_output=True).returncode == 0
+    except OSError:
+        return False
+
+
 def test_comece_aqui_cita_toda_pasta_da_raiz_e_toda_pasta_de_src():
     texto = (RAIZ / "COMECE_AQUI.md").read_text(encoding="utf-8")
     ignoradas = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache", ".gitattributes", "Segundo Cérebro"}
     for p in sorted(RAIZ.iterdir()):
-        if p.is_dir() and p.name not in ignoradas:
+        if p.is_dir() and p.name not in ignoradas and not _ignorada_pelo_git(p):
             assert f"`{p.name}/`" in texto or f"`{p.name}/` e" in texto or p.name.startswith(".") and f"`{p.name}/`" in texto, f"COMECE_AQUI.md não explica a pasta {p.name}/"
     for p in SRC.iterdir():
         if p.is_dir() and p.name != "__pycache__":
