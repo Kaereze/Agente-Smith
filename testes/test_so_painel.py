@@ -58,6 +58,21 @@ def test_o_servidor_nao_vigia_nem_indexa_outlook_no_pc_so_painel():
     assert "self.envio_nf.ler_contas = lambda: []" in fonte
 
 
+def test_conferente_nao_roda_nem_abre_o_outlook_no_pc_so_painel():
+    fonte = (RAIZ / "src" / "conferente.py").read_text(encoding="utf-8")
+    ini = fonte.index("def main():")
+    # sai antes de travar a instância e antes de ligar o Guardião (que reabre o Outlook a cada 60 s)
+    assert 0 < fonte.index("if sem_outlook(cfg):", ini) < fonte.index("_travar_instancia_unica()", ini) < fonte.index("iniciar_guardiao()", ini)
+    assert fonte.count("if sem_outlook(cfg):") == 2                          # também para se o papel mudar com ele rodando
+
+
+def test_instalador_completo_nao_recria_o_conferente_no_pc_so_painel():
+    ps = (RAIZ / "Automacoes" / "coracao.ps1").read_text(encoding="utf-8")
+    assert ps.count('$papel -eq "so_painel"') == 2
+    assert ps.index('$papel -eq "so_painel"') < ps.index("src\\identidade.py")     # nem identifica pelo Outlook
+    assert 'Unregister-ScheduledTask -TaskName "SolicitacoesNF_Conferente"' in ps
+
+
 def test_tela_pc_so_painel_fica_fora_do_filtro_de_agentes_e_abre_em_todos():
     html = pagina(RAIZ / "app_ui")
     assert '(st.pcs || []).filter(p => p.papel !== "so_painel").map(p => p.agente)' in html

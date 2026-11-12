@@ -16,7 +16,7 @@ def fonte(raiz, nome):
 def fonte_servidor(raiz):
     """O servidor inteiro: app_servidor + a tabela de rotas + as quatro partes do Estado."""
     src = Path(raiz) / "src"
-    return "".join(p.read_text(encoding="utf-8") for p in [src / "app_servidor.py", src / "painel" / "rotas_api.py", *sorted((src / "painel").glob("estado_*.py"))])
+    return "".join(p.read_text(encoding="utf-8") for p in [src / "app_servidor.py", src / "painel" / "rotas_api.py", src / "painel" / "resposta_http.py", src / "painel" / "cache_disco.py", *sorted((src / "painel").glob("estado_*.py"))])
 
 
 def modulos(raiz):

@@ -20,6 +20,9 @@
 <link rel="stylesheet" href="/pecas/visao_geral.css">
 <link rel="stylesheet" href="/pecas/barra_flutuante.css">
 <link rel="stylesheet" href="/pecas/centro_leve.css">
+<link rel="stylesheet" href="/pecas/hospede.css">
+<link rel="stylesheet" href="/pecas/novo_email.css">
+<link rel="stylesheet" href="/pecas/colunas.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -63,7 +66,7 @@
       <button class="ln raiz" aria-label="Gerência" data-vista="gerencia" title="Painel do gerente — em teste; depois só ele terá acesso"><svg class="ic"><use href="#i-cadeado"/></svg>Gerência<span class="n em-teste">teste</span></button>
     </div>
     <div class="nav-grupo" role="group" aria-labelledby="rot-emails"><span class="rot-nav" id="rot-emails">E-mails (4 PCs)</span>
-      <button class="ln raiz" aria-label="Caixa de entrada" data-vista="correio" data-caixa="entrada" title="Sem resposta, das caixas dos 4 PCs (o número é de não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
+      <button class="ln raiz" aria-label="Caixa de entrada" data-vista="correio" data-caixa="entrada" title="Todos os e-mails das caixas de entrada dos PCs, somados (lidos e não lidos)"><svg class="ic"><use href="#i-caixa"/></svg>Caixa de entrada<span class="n" id="nav-entrada-n"></span></button>
       <button class="ln raiz" aria-label="Urgência" data-vista="correio" data-caixa="urgencia" title="Pedido de correção de NF, NF com CPF/CNPJ diferente do pedido ou mais de 7 dias sem resposta"><svg class="ic"><use href="#i-alerta"/></svg>Urgência<span class="n" id="nav-urgencia-n"></span></button>
       <button class="ln raiz" aria-label="Itens enviados" data-vista="correio" data-caixa="enviados" title="O que saiu das caixas dos hotéis nas últimas 72 h"><svg class="ic"><use href="#i-enviar"/></svg>Itens enviados</button>
     </div>
@@ -107,6 +110,7 @@
     <section class="vista oculta" id="v-visao"><div class="rolagem" id="visao"></div></section>
     <section class="vista oculta monit" id="v-maquinas"><nav class="abas-monit" aria-label="Monitoramento"></nav><div class="rolagem" id="maquinas"></div></section>
     <section class="vista oculta" id="v-gerencia"><div class="rolagem" id="gerencia"></div></section>
+    <section class="vista oculta" id="v-hospede" aria-label="Ficha do hóspede"><div class="rolagem hp" id="hp"></div></section>
     <section class="vista oculta" id="v-agentes"><iframe id="agentes-quadro" title="Agentes do Smith: mapa do sistema" referrerpolicy="no-referrer"></iframe></section>
     <section class="vista oculta ol" id="v-correio" aria-label="E-mails">
       <!-- Igual ao Outlook (usuário, 15/10/2026): faixa de comandos, caixas de entrada à esquerda, lista no meio, leitura à direita -->
@@ -117,8 +121,11 @@
         <div class="det-op" id="det-op-emails" aria-live="polite"></div></div>
       <div class="mesa" id="cx-mesa">
         <aside class="cx-pastas" id="cx-pastas" aria-label="Caixas de entrada"></aside>
-        <section class="quadro cx-quadro" aria-label="Lista de e-mails"><div class="cx-lcab" id="cx-lcab"></div>
-          <div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div></section>
+        <section class="quadro cx-quadro" aria-label="Lista de e-mails">
+          <div class="col-barra"><button type="button" class="col-seta" data-colapsar="l" aria-label="Recolher a lista" title="Recolher a lista"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+          <div class="cx-lcab" id="cx-lcab"></div>
+          <div class="linhas" id="cx-lista" role="listbox" aria-label="E-mails"></div>
+          <button type="button" class="col-tira" data-colapsar="l" aria-label="Mostrar a lista de e-mails" title="Mostrar a lista de e-mails"><span class="col-seta-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nome">Lista</span><span class="num" id="cx-tira-l-n"></span></button></section>
         <div class="cx-direita">   <!-- quem mandou em cima da leitura -->
           <div class="cx-acoes vazio-acoes" id="cx-acoes" aria-live="polite"></div>
           <article class="leitura" id="cx-leitura" aria-live="polite"></article>
@@ -210,6 +217,8 @@ const PAGINA = "__PAGINA__";   // versão da tela que esta janela carregou
 <script src="/correio_leitura.js"></script>
 <script src="/correio_faixa.js"></script>
 <script src="/correio_ficha.js"></script>
+<script src="/hospede.js"></script>
+<script src="/colunas.js"></script>
 <script src="/correio_acoes.js"></script>
 <script src="/painel.js"></script>
 <script src="/painel_maquinas.js"></script>

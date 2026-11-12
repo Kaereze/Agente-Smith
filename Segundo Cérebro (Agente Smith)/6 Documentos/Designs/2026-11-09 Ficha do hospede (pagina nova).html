@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ficha do hóspede</title>
+<style>
+:root{--fundo:#161616;--painel:#1f1f1f;--cartao:#242424;--borda:#333;--borda2:#4a4a4a;--texto:#f0f0f0;--texto2:#d0d0d0;--apagado:#a8a8a8;--azul:#479ef5;--azul2:#6cb8f6;--azul-fundo:#173b63;
+  --verde:#3da755;--verde-fundo:#1d2620;--verde-titulo:#24362a;--ouro:#a8895c;--erro:#ff8d95;--erro-fundo:#3a2326;--ambar:#f2c76b;--ambar-fundo:#45391d;
+  --vidro:rgba(36,36,38,.72)}
+@media (prefers-color-scheme:light){:root{}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(900px 500px at 15% -10%,#1d3550 0,transparent 60%),radial-gradient(800px 500px at 100% 110%,#3a2326 0,transparent 55%),var(--fundo);color:var(--texto);font:14px/1.45 "Segoe UI",system-ui,sans-serif;padding:24px 16px 60px}
+h1,h2,h3{margin:0;font-weight:600}
+.wrap{max-width:1380px;margin:0 auto}
+.intro{margin:0 0 18px}
+.intro h1{font-size:22px}
+.intro p{margin:6px 0 0;color:var(--apagado);max-width:880px}
+.abas{display:flex;gap:8px;margin:18px 0 14px}
+.abas button{font:inherit;color:var(--texto2);background:transparent;border:1px solid var(--borda2);border-radius:999px;padding:7px 16px;cursor:pointer}
+.abas button[aria-selected="true"]{background:var(--azul-fundo);border-color:var(--azul);color:#fff}
+.opcao[hidden]{display:none}
+.janela{border:1px solid var(--borda2);border-radius:18px;background:rgba(20,20,22,.6);padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.topo{display:flex;align-items:center;gap:14px;background:var(--vidro);border:1px solid var(--borda2);border-radius:28px;padding:8px 16px;backdrop-filter:blur(14px)}
+.trilha{color:var(--apagado);white-space:nowrap}.trilha b{color:var(--texto);font-weight:600}
+.busca{flex:1;max-width:560px;margin-left:auto;display:flex;align-items:center;gap:8px;background:#2b2b2b;border:1px solid var(--borda2);border-radius:8px;padding:7px 12px;color:var(--texto2)}
+.busca mark{background:#7a6620;color:#fff;border-radius:3px;padding:0 1px}
+.corpo{display:grid;grid-template-columns:350px minmax(0,1fr);gap:12px;margin-top:12px}
+.col{background:var(--painel);border:1px solid var(--borda);border-radius:10px;min-width:0}
+.col-t{padding:14px 16px 10px;border-bottom:1px solid var(--borda);font-weight:600}
+.col-t small{color:var(--apagado);font-weight:400;margin-left:6px}
+.res{padding:10px 10px 14px;display:flex;flex-direction:column;gap:8px}
+.card-res{background:var(--cartao);border:1px solid var(--borda);border-radius:8px;padding:11px 12px;cursor:pointer}
+.card-res.sel{background:#2d2d2d;border-color:var(--azul);box-shadow:inset 3px 0 0 var(--azul)}
+.card-res .n{font-size:15px;font-weight:600}
+.card-res .l2{display:flex;justify-content:space-between;gap:8px;margin-top:3px;color:var(--azul2);font-size:13px}
+.card-res .l3{margin-top:6px;color:var(--apagado);font-size:12.5px}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--borda2);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:600;line-height:20px;white-space:nowrap}
+.chip.nf{background:var(--azul-fundo);border-color:#2b5f96;color:#cfe5fb}
+.chip.ok{background:var(--verde-fundo);border-color:#2f6a3d;color:#9fe0ad}
+.chip.alerta{background:var(--erro-fundo);border-color:#7b3a3f;color:var(--erro)}
+.chip.med{background:var(--ambar-fundo);border-color:#7a6430;color:var(--ambar)}
+.mais{margin:2px 10px 4px;padding:10px 12px;border:1px dashed var(--borda2);border-radius:8px;color:var(--texto2);display:flex;justify-content:space-between;cursor:pointer}
+.mais b{color:var(--azul2);font-weight:600}
+/* ficha */
+.ficha-cab{padding:18px 22px 14px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;border-bottom:1px solid var(--borda)}
+.ficha-cab h2{font-size:24px;letter-spacing:-.01em}
+.ficha-cab .sub{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center;color:var(--texto2)}
+.acoes{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.bt{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--borda2);background:#2b2b2b;color:var(--texto);padding:8px 14px;cursor:pointer}
+.bt.prim{background:var(--verde);border-color:var(--verde);color:#08210f}
+.faixa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-bottom:1px solid var(--borda);background:var(--verde-fundo)}
+.etapa{padding:12px 16px;border-right:1px solid #2a3a2f;font-size:13px}
+.etapa:last-child{border-right:0}
+.etapa b{display:block;font-size:13.5px}
+.etapa span{color:var(--apagado)}
+.etapa.feito b::before{content:"✓ ";color:var(--verde)}
+.etapa.agora{background:var(--verde-titulo)}
+.etapa.agora b::before{content:"● ";color:var(--ambar)}
+.etapa.falta b{color:var(--apagado)}
+.etapa.falta b::before{content:"○ ";}
+.grade{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 22px 22px}
+.sec{background:var(--cartao);border:1px solid var(--borda);border-radius:8px;overflow:hidden;min-width:0}
+.sec.larga{grid-column:1 / -1}
+.sec>h3{font:600 11px "Segoe UI",sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#1d1d1d;background:var(--ouro);padding:7px 14px}
+.lin{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid #2e2e2e}
+.sec>h3+.lin{border-top:0}
+.lin .r{color:var(--apagado);font-size:13px}
+.lin .v{font-size:15px;overflow:hidden;text-overflow:ellipsis}
+.lin .v.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:14.5px;letter-spacing:.01em}
+.cp{font:inherit;font-size:12px;color:var(--azul2);background:transparent;border:1px solid var(--borda2);border-radius:6px;padding:2px 9px;cursor:pointer}
+.ema{display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 14px;border-top:1px solid #2e2e2e}
+.sec>h3+.ema{border-top:0}
+.ema time{color:var(--azul2);font-size:13px}
+.ema .as{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rodape-aviso{margin-top:12px;color:var(--apagado);font-size:12.5px}
+/* opção B */
+.pilulas{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--borda)}
+.pilula{display:flex;flex-direction:column;border:1px solid var(--borda2);border-radius:10px;padding:7px 14px;background:#262626;cursor:pointer;min-width:170px}
+.pilula b{font-size:13.5px}.pilula span{font-size:12px;color:var(--apagado)}
+.pilula.sel{background:var(--azul-fundo);border-color:var(--azul)}
+.pilula.sel span{color:#cfe5fb}
+.tabelao{margin:16px 22px 0;border:1px solid var(--borda2);border-radius:8px;overflow:hidden}
+.tabelao table{width:100%;border-collapse:collapse}
+.tabelao th{background:var(--ouro);color:#1d1d1d;text-align:left;font:700 12px "Segoe UI",sans-serif;padding:8px 14px;letter-spacing:.04em;text-transform:uppercase}
+.tabelao td{padding:10px 14px;border-top:1px solid #333;background:#262626;font-size:15px}
+.tabelao td.r{width:230px;color:var(--apagado);font-size:13.5px}
+.tabelao td.a{width:76px;text-align:right}
+.duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:16px 22px 22px}
+@media (max-width:1100px){.corpo{grid-template-columns:290px minmax(0,1fr)}.grade,.duas{grid-template-columns:1fr}.faixa{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <h1>Ficha do hóspede — página nova (para aprovar)</h1>
+    <p>Hoje, ao clicar num <b>Pedido do formulário</b> na pesquisa, o Painel te joga na aba Notas fiscais (que agora está reservada para a emissão automática). Aqui estão duas formas de uma <b>página própria do hóspede</b>, separada do e-mail: tudo do pedido numa tela só, cada dado com botão Copiar, a situação escrita por extenso e os e-mails do hóspede logo abaixo. Dados 100% fictícios.</p>
+  </div>
+  <div class="abas" role="tablist">
+    <button role="tab" aria-selected="true" data-op="a">Opção A · lista de hóspedes + ficha lado a lado</button>
+    <button role="tab" aria-selected="false" data-op="b">Opção B · ficha em página inteira, hóspedes em abas</button>
+  </div>
+
+  <!-- ============ OPÇÃO A ============ -->
+  <section class="opcao" id="op-a">
+    <div class="janela">
+      <div class="topo"><span class="trilha">Pesquisa › <b>Hóspedes</b></span>
+        <div class="busca">🔍 <span>Marina <mark>Albuq</mark> — 4 hóspedes · 12 e-mails</span></div></div>
+      <div class="corpo">
+        <div class="col">
+          <div class="col-t">Pedidos do formulário<small>4 encontrados</small></div>
+          <div class="res">
+            <div class="card-res sel"><div class="n">Marina Albuquerque Costa</div>
+              <div class="l2"><span>ESTRELA CENTRO</span><span>03/11/2026</span></div>
+              <div class="l3"><span class="chip nf">Sem NF</span> <span class="chip med">vence em 1 dia</span></div></div>
+            <div class="card-res"><div class="n">Marina Albuquerque Costa</div>
+              <div class="l2"><span>COIMBRA</span><span>12/09/2026</span></div>
+              <div class="l3"><span class="chip ok">NF 1042 enviada</span></div></div>
+            <div class="card-res"><div class="n">Marcos Albuquerque Lima</div>
+              <div class="l2"><span>LAPA</span><span>28/08/2026</span></div>
+              <div class="l3"><span class="chip ok">NF 977 enviada</span></div></div>
+            <div class="card-res"><div class="n">Marinaldo Albuquerque</div>
+              <div class="l2"><span>HANGAR</span><span>02/08/2026</span></div>
+              <div class="l3"><span class="chip alerta">Falta dado · CPF/CNPJ</span></div></div>
+          </div>
+          <div class="mais"><span>E-mails com esse nome</span><b>12 · Abrir na Caixa de Entrada</b></div>
+        </div>
+
+        <div class="col">
+          <div class="ficha-cab">
+            <div><h2>Marina Albuquerque Costa</h2>
+              <div class="sub"><span class="chip">ESTRELA CENTRO</span><span class="chip nf">Sem NF emitida</span><span class="chip med">Prazo vence em 1 dia (05/11)</span><span>Pedido de 03/11/2026 às 14:20</span></div></div>
+            <div class="acoes"><button class="bt">Abrir e-mail do pedido</button><button class="bt prim">Enviar NF</button></div>
+          </div>
+          <div class="faixa">
+            <div class="etapa feito"><b>Pedido recebido</b><span>03/11 · 14:20</span></div>
+            <div class="etapa feito"><b>Dados conferidos</b><span>nada faltando</span></div>
+            <div class="etapa agora"><b>Emitir a NF</b><span>falta emitir</span></div>
+            <div class="etapa falta"><b>Enviar ao hóspede</b><span>depois da emissão</span></div>
+          </div>
+          <div class="grade">
+            <div class="sec"><h3>Quem recebe a nota</h3>
+              <div class="lin"><span class="r">Nome</span><span class="v">Marina Albuquerque Costa</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">CPF / CNPJ</span><span class="v mono">123.456.789-09</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">E-mail</span><span class="v">marina.costa@exemplo.com</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">Telefone</span><span class="v mono">(71) 99999-0000</span><button class="cp">Copiar</button></div></div>
+            <div class="sec"><h3>A estada</h3>
+              <div class="lin"><span class="r">Titular da reserva</span><span class="v">Marina Albuquerque Costa</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">Reserva</span><span class="v mono">R-48213</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">Check-in → check-out</span><span class="v">28/10 → 02/11 · 5 diárias</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">Hotel</span><span class="v">ESTRELA CENTRO</span><span></span></div></div>
+            <div class="sec"><h3>O que ela pede</h3>
+              <div class="lin"><span class="r">Pedido</span><span class="v">Nota fiscal da hospedagem completa</span><span></span></div>
+              <div class="lin"><span class="r">Valor da nota</span><span class="v mono">R$ 1.840,00</span><button class="cp">Copiar</button></div>
+              <div class="lin"><span class="r">Divisão</span><span class="v">Uma nota só</span><span></span></div></div>
+            <div class="sec"><h3>Notas fiscais</h3>
+              <div class="lin"><span class="r">Emitidas</span><span class="v">Nenhuma ainda</span><span></span></div>
+              <div class="lin"><span class="r">Outros pedidos dela</span><span class="v">NF 1042 enviada em 14/09 (COIMBRA)</span><span></span></div></div>
+            <div class="sec larga"><h3>E-mails dela</h3>
+              <div class="ema"><time>03/11</time><span class="as">Solicitação de Nota Fiscal — Hotel Estrela Centro</span><span class="chip">Formulário</span></div>
+              <div class="ema"><time>04/11</time><span class="as">Re: Solicitação de Nota Fiscal — faltou o telefone</span><span class="chip ok">Respondido</span></div>
+              <div class="ema"><time>12/09</time><span class="as">NF 1042 — Hotel Coimbra</span><span class="chip ok">Enviado</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="rodape-aviso">Opção A: ótima para pesquisar vários hóspedes parecidos e comparar. Clicar num e-mail da lista de baixo abre aquele e-mail na Caixa de Entrada; clicar em "Abrir na Caixa de Entrada" abre a pesquisa de e-mails com esse nome.</p>
+  </section>
+
+  <!-- ============ OPÇÃO B ============ -->
+  <section class="opcao" id="op-b" hidden>
+    <div class="janela">
+      <div class="topo"><span class="trilha">Pesquisa › <b>Hóspede</b> › Marina Albuquerque Costa</span>
+        <div class="busca">🔍 <span>Marina <mark>Albuq</mark> — 4 hóspedes · 12 e-mails</span></div></div>
+      <div class="col" style="margin-top:12px">
+        <div class="pilulas">
+          <div class="pilula sel"><b>Marina Albuquerque Costa</b><span>ESTRELA CENTRO · 03/11 · sem NF</span></div>
+          <div class="pilula"><b>Marina Albuquerque Costa</b><span>COIMBRA · 12/09 · NF 1042 enviada</span></div>
+          <div class="pilula"><b>Marcos Albuquerque Lima</b><span>LAPA · 28/08 · NF 977 enviada</span></div>
+          <div class="pilula"><b>Marinaldo Albuquerque</b><span>HANGAR · 02/08 · falta CPF/CNPJ</span></div>
+          <div class="pilula" style="border-style:dashed"><b>E-mails (12)</b><span>Abrir na Caixa de Entrada</span></div>
+        </div>
+        <div class="ficha-cab">
+          <div><h2>Marina Albuquerque Costa</h2>
+            <div class="sub"><span class="chip">ESTRELA CENTRO</span><span class="chip nf">Sem NF emitida</span><span class="chip med">Prazo vence em 1 dia (05/11)</span><span>Pedido de 03/11/2026 às 14:20</span></div></div>
+          <div class="acoes"><button class="bt">Copiar tudo para a emissão</button><button class="bt">Abrir e-mail do pedido</button><button class="bt prim">Enviar NF</button></div>
+        </div>
+        <div class="faixa">
+          <div class="etapa feito"><b>Pedido recebido</b><span>03/11 · 14:20</span></div>
+          <div class="etapa feito"><b>Dados conferidos</b><span>nada faltando</span></div>
+          <div class="etapa agora"><b>Emitir a NF</b><span>falta emitir</span></div>
+          <div class="etapa falta"><b>Enviar ao hóspede</b><span>depois da emissão</span></div>
+        </div>
+        <div class="tabelao"><table>
+          <tr><th colspan="3">Dados para emitir a nota</th></tr>
+          <tr><td class="r">Nome do tomador</td><td>Marina Albuquerque Costa</td><td class="a"><button class="cp">Copiar</button></td></tr>
+          <tr><td class="r">CPF / CNPJ</td><td style="font-family:Consolas,monospace">123.456.789-09</td><td class="a"><button class="cp">Copiar</button></td></tr>
+          <tr><td class="r">E-mail</td><td>marina.costa@exemplo.com</td><td class="a"><button class="cp">Copiar</button></td></tr>
+          <tr><td class="r">Check-in → check-out</td><td>28/10 → 02/11 · 5 diárias</td><td class="a"><button class="cp">Copiar</button></td></tr>
+          <tr><td class="r">Valor da nota</td><td style="font-family:Consolas,monospace">R$ 1.840,00 · uma nota só</td><td class="a"><button class="cp">Copiar</button></td></tr>
+          <tr><td class="r">O que pede</td><td>Nota fiscal da hospedagem completa</td><td class="a"></td></tr>
+        </table></div>
+        <div class="duas">
+          <div class="sec"><h3>Histórico de notas dela</h3>
+            <div class="lin"><span class="r">COIMBRA · 12/09</span><span class="v">NF 1042 enviada em 14/09</span><span></span></div>
+            <div class="lin"><span class="r">ESTRELA CENTRO · 03/11</span><span class="v">Aguardando emissão</span><span></span></div></div>
+          <div class="sec"><h3>E-mails dela</h3>
+            <div class="ema"><time>03/11</time><span class="as">Solicitação de Nota Fiscal</span><span class="chip">Formulário</span></div>
+            <div class="ema"><time>04/11</time><span class="as">Re: faltou o telefone</span><span class="chip ok">Respondido</span></div>
+            <div class="ema"><time>12/09</time><span class="as">NF 1042 — Hotel Coimbra</span><span class="chip ok">Enviado</span></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="rodape-aviso">Opção B: foco em UM hóspede por vez, com a tabela de dados parecida com a do formulário (cabeçalho dourado) para copiar campo a campo na hora de emitir. Os outros hóspedes da pesquisa ficam nas pílulas do topo.</p>
+  </section>
+</div>
+<script>
+document.querySelectorAll('[data-op]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-op]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+  document.getElementById('op-a').hidden=b.dataset.op!=='a';document.getElementById('op-b').hidden=b.dataset.op!=='b';}));
+</script>
+</body>
+</html>

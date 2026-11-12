@@ -146,11 +146,15 @@ registrarFiltro("nf-situacao", { escolher: v => { if (origem === "form") filtro 
                                  redesenhar: () => desenhar() });
 fhOuvir(() => { pagina = 0; if (typeof pn !== "undefined" && pn.vista === "fila") desenhar(); });   // Notas fiscais: vários hotéis (pecas/filtro_hoteis.js)
 
-// Visão geral e outros atalhos abrem a tela de notas já filtrada
-function abrirNotas({ filtro: f = "aberto", agente = "", origem: o = "form" } = {}) {
-  origem = o; if (o === "form") filtro = f; else filtroEmail = f;
-  agenteF = ""; if (agente) escopo = agente; FH.sel = new Set(); envio = "todos"; pagina = 0; sel = null; emailSel = null;
-  $("busca").value = ""; guardarCaixa(); trocarVista("fila");
+// Visão geral e outros atalhos: a aba "Notas fiscais" está reservada para a emissão automática (João, 07/11/2026) e nada manda mais
+// para ela (09/11/2026). Quem pedia "as notas" abre a Caixa de Entrada em "Formulários do robô" (as atrasadas, a Urgência), com o agente
+// escolhido. O nome continua abrirNotas só para não mexer em quem já chama.
+function abrirNotas({ filtro: f = "aberto", agente = "" } = {}) {
+  if (agente) { escopo = agente; guardarCaixa(); }
+  FH.sel = new Set(); $("busca").value = "";
+  cx.sel = null; cx.caixaSel = ""; cx.rapido = ""; cx.soNaoLidos = false;
+  cx.caixa = f === "atrasadas" ? "urgencia" : "entrada"; cx.soForm = f !== "atrasadas";
+  trocarVista("correio");
 }
 
 // Filtro de uma situação só: a coluna não repete a etiqueta, mostra quem está cuidando

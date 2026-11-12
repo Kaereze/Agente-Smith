@@ -278,3 +278,336 @@ def test_barra_com_os_nomes_abertos_cabe_inteira_na_janela_e_empurra_o_conteudo(
     assert g["dir"] <= g["vistaEsq"] + 1, "os nomes abertos não podem cobrir o conteúdo"
     assert abs(g["centro"] - 450) <= 3
     confere_a_tela(pagina)
+
+
+@pytest.mark.parametrize("largura,altura", [(1920, 1080), (1440, 900), (1100, 800)])
+def test_menu_do_filtro_de_hoteis_abre_inteiro_colado_ao_botao_e_nao_e_cortado(painel_demo, navegador, largura, altura):
+    """João (09/11/2026): o menu "Meus hotéis" saía cortado pela coluna da lista (o vidro dela prendia o position: fixed e o overflow
+    escondia o resto; em 1440 px o menu nem aparecia no lugar). O menu fica fora da coluna: dentro da janela, colado ao botão, clicável."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": altura})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.wait_for_selector("[data-fh-abrir]", timeout=10000)
+        pg.locator("[data-fh-abrir]").first.click()
+        pg.wait_for_selector(".fh-menu", timeout=5000)
+        pg.wait_for_timeout(400)
+        r = pg.evaluate("""() => { const m = document.querySelector('.fh-menu').getBoundingClientRect(), b = document.querySelector('[data-fh-abrir]').getBoundingClientRect();
+          const cx = Math.round(m.left + m.width / 2), cy = Math.round(m.top + m.height / 2), topo = document.elementFromPoint(cx, cy);
+          return {m: [m.left, m.top, m.right, m.bottom], b: [b.left, b.bottom], dentro: !!(topo && topo.closest('.fh-menu')), w: innerWidth, h: innerHeight}; }""")
+        esq, topo, dir_, base = r["m"]
+        assert esq >= 0 and topo >= 0 and dir_ <= r["w"] and base <= r["h"], r                 # inteiro dentro da janela
+        assert abs(esq - r["b"][0]) <= 2 and abs(topo - (r["b"][1] + 6)) <= 2, r               # colado ao botão, não deslocado
+        assert r["dentro"], "algo cobre o menu (a coluna cortando ou outra peça por cima)"
+        pg.locator('.fh-menu [data-fh-h]').first.check()                                       # os cliques do menu solto seguem valendo
+        pg.wait_for_timeout(400)
+        assert pg.locator(".fh-menu").count() == 1 and pg.locator(".fh-menu [data-fh-h]:checked").count() == 1
+        pg.mouse.click(5, altura - 5)                                                          # clique fora fecha e não deixa sobra
+        pg.wait_for_timeout(400)
+        assert pg.locator(".fh-menu").count() == 0
+    finally:
+        contexto.close()
+
+
+@pytest.mark.parametrize("largura", [1100, 1000])
+def test_leitor_de_email_ocupa_o_resto_da_largura_quando_a_pasta_lateral_some(painel_demo, navegador, largura):
+    """Até 1180 px a pasta lateral some e a mesa tem 2 painéis; antes uma regra de 3 colunas vencia e o leitor ficava com 320 px e um vazio à direita."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": 800})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        r = pg.evaluate("""() => { const q = document.querySelector('.cx-quadro').getBoundingClientRect(), d = document.querySelector('.cx-direita').getBoundingClientRect(),
+          m = document.querySelector('#cx-mesa').getBoundingClientRect(); return {q: [q.left, q.right], d: [d.left, d.right], m: [m.left, m.right]}; }""")
+        assert r["d"][1] >= r["m"][1] - 2, r                      # o leitor vai até a borda direita da mesa
+        assert r["d"][0] >= r["q"][1] - 1 and r["d"][0] - r["q"][1] <= 20, r   # e começa logo depois da lista
+    finally:
+        contexto.close()
+
+
+@pytest.mark.parametrize("tela", ["correio", "fila"])
+@pytest.mark.parametrize("largura,altura", [(1440, 900), (1100, 800)])
+def test_lista_de_agentes_abre_inteira_por_cima_de_tudo(painel_demo, navegador, tela, largura, altura):
+    """João (09/11/2026): a lista "Caixa de: agente" aparecia cortada pelos cartões (o topo de vidro ficava por baixo do conteúdo)."""
+    contexto = navegador.new_context(viewport={"width": largura, "height": altura})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, tela)
+        pg.locator("#sc-botao:visible").first.click()
+        pg.wait_for_timeout(500)
+        r = pg.evaluate("""() => { const l = document.querySelector('#sc-lista').getBoundingClientRect(), pontos = [];
+          for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.05, 0.5, 0.97]) {
+            const t = document.elementFromPoint(l.left + l.width * fx, l.top + l.height * fy); pontos.push(!!(t && t.closest('#sc-lista'))); }
+          return {l: [l.left, l.top, l.right, l.bottom], w: innerWidth, h: innerHeight, pontos}; }""")
+        assert all(r["pontos"]), r                                                    # nada cobre nenhum canto nem o meio da lista
+        assert r["l"][0] >= 0 and r["l"][2] <= r["w"] and r["l"][3] <= r["h"], r      # e ela cabe na janela
+    finally:
+        contexto.close()
+
+
+# ---------- Ficha do hóspede (João, 09/11/2026) ----------
+def _emissao(pagina, campos, nome=""):
+    return pagina.evaluate("([campos, nome]) => textoEmissao({campos, nome})", [campos, nome])
+
+
+def test_texto_da_emissao_tem_o_formato_do_joao_e_nao_inventa_nada(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    campos = [["Check-in da Hospedagem", "28/10/2026"], ["Check-out da Hospedagem", "02/11/2026"], ["Nome do Titular da Reserva", "Marina Albuquerque Costa"],
+              ["Nome Tomador", "Outra Pessoa"], ["Informações necessárias na Nota Fiscal", "Nota da hospedagem. Estada 2202."]]
+    assert _emissao(pagina, campos).split("\n") == [
+        "DATA DE CHECK-IN : 28/10/2026", "DATA DE CHECK-OUT : 02/11/2026", "QUANTIDADE DE DIÁRIAS : 5", "VALOR DA DIÁRIA :", "",
+        "VALOR TOTAL :", "Marina Albuquerque Costa - ESTADA 2202"]
+
+
+def test_texto_da_emissao_estada_so_se_o_hospede_escreveu_o_numero(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    base = [["Nome do Titular da Reserva", "Ana Souza"], ["Check-in da Hospedagem", "01/11/2026"], ["Check-out da Hospedagem", "03/11/2026"]]
+
+    def ultima(campos):
+        return _emissao(pagina, campos).split("\n")[-1]
+    assert ultima(base) == "Ana Souza"                                                                     # nada escrito: só o nome
+    assert ultima(base + [["Informações necessárias na Nota Fiscal", "Preciso da nota da estada"]]) == "Ana Souza"   # "estada" sem número: não inventa
+    assert ultima(base + [["Informações necessárias na Nota Fiscal", "estada nº 3317, obrigada"]]) == "Ana Souza - ESTADA 3317"
+    assert ultima(base + [["Número da estada", "4410"]]) == "Ana Souza - ESTADA 4410"
+
+
+def test_texto_da_emissao_diaria_sempre_vazia_e_total_so_se_o_hospede_informou(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    base = [["Nome Tomador", "Empresa X Ltda"], ["Check-in da Hospedagem", "2026-10-28"], ["Check-out da Hospedagem", "2026-10-30"]]
+    sem = _emissao(pagina, base).split("\n")
+    assert sem[2] == "QUANTIDADE DE DIÁRIAS : 2" and sem[3] == "VALOR DA DIÁRIA :" and sem[5] == "VALOR TOTAL :"
+    assert sem[0] == "DATA DE CHECK-IN : 28/10/2026" and sem[-1] == "Empresa X Ltda"                    # data ISO vira dia/mês/ano; sem titular, o tomador
+    com = _emissao(pagina, base + [["Valor da Nota", "R$ 1.840,00"]]).split("\n")
+    assert com[3] == "VALOR DA DIÁRIA :" and com[5] == "VALOR TOTAL : R$ 1.840,00"
+
+
+def test_texto_da_emissao_sem_datas_ou_datas_ilegiveis_deixa_em_branco(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    linhas = _emissao(pagina, [["Nome Tomador", "Fulano"]]).split("\n")
+    assert linhas[:3] == ["DATA DE CHECK-IN : ", "DATA DE CHECK-OUT : ", "QUANTIDADE DE DIÁRIAS : "]
+    errado = _emissao(pagina, [["Check-in da Hospedagem", "05/11/2026"], ["Check-out da Hospedagem", "03/11/2026"], ["Nome Tomador", "Fulano"]]).split("\n")
+    assert errado[2] == "QUANTIDADE DE DIÁRIAS : "                                                       # check-out antes do check-in: nada de número
+    ilegivel = _emissao(pagina, [["Check-in da Hospedagem", "semana que vem"], ["Check-out da Hospedagem", "domingo"], ["Nome Tomador", "Fulano"]]).split("\n")
+    assert ilegivel[0] == "DATA DE CHECK-IN : semana que vem" and ilegivel[2] == "QUANTIDADE DE DIÁRIAS : "
+
+
+def _ids(pagina):
+    return pagina.evaluate("""() => { const t = cx.dados.emails.filter(e => e.pasta !== 'enviado');
+      return {form: t.find(e => (e.classes || []).includes('formulario'))?.id, normal: t.find(e => !(e.classes || []).includes('formulario'))?.id}; }""")
+
+
+def test_formulario_abre_a_ficha_do_hospede_e_email_normal_segue_igual(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    ids = _ids(pagina)
+    assert ids["form"] and ids["normal"], "a demonstração precisa ter um formulário e um e-mail normal"
+    pagina.evaluate("id => abrirEmail(id)", ids["normal"])
+    assert pagina.evaluate("pn.vista") == "correio"                                                       # e-mail normal: leitura de sempre
+    pagina.locator(f'.cx-l[data-id="{ids["form"]}"]').click()
+    pagina.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+    assert pagina.evaluate("pn.vista") == "hospede" and pagina.locator("#v-correio.oculta").count() == 1
+    assert pagina.locator("#v-fila.oculta").count() == 1                                                  # nunca cai na aba reservada
+    assert pagina.locator('.ln[data-vista="correio"][data-caixa="entrada"][aria-current="true"]').count() == 1   # a barra acende "Caixa de entrada"
+    assert pagina.locator(".hp-campo").count() >= 8 and pagina.locator(".hp-cab h2").inner_text().strip()
+    pagina.locator("[data-hp-voltar]").click()
+    assert pagina.evaluate("pn.vista") == "correio"
+
+
+def test_setas_na_lista_nao_pulam_para_a_ficha(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    ids = _ids(pagina)
+    pagina.evaluate("id => abrirEmail(id, true)", ids["form"])
+    assert pagina.evaluate("pn.vista") == "correio" and pagina.evaluate("cx.sel") == ids["form"]          # a seta mostra a leitura de sempre
+
+
+def test_pedido_da_pesquisa_abre_a_ficha_e_nao_a_aba_notas(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    nome = pagina.evaluate("st.fila[0].nome.split(' ')[0]")
+    pagina.fill("#busca", nome)
+    pagina.wait_for_selector("[data-abrir-ficha]", timeout=8000)
+    pagina.locator("[data-abrir-ficha]").first.click()
+    pagina.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+    assert pagina.locator("#v-fila.oculta").count() == 1 and pagina.locator("#v-hospede .hp-campo").count() >= 8
+
+
+def test_copiar_tudo_abre_janelinha_editavel_com_so_o_texto_da_emissao(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900}, permissions=["clipboard-read", "clipboard-write"])
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.evaluate("abrirHospede(st.fila.find(s => campoDoPedido(s, /check.?in/) && campoDoPedido(s, /check.?out/)).chave)")
+        pg.wait_for_selector("#v-hospede:not(.oculta) [data-hp-emissao]")
+        pg.locator("[data-hp-emissao]").click()
+        pg.wait_for_selector(".hp-pop #hp-pop-txt")
+        linhas = pg.input_value("#hp-pop-txt").split("\n")
+        assert linhas[0].startswith("DATA DE CHECK-IN : ") and linhas[3] == "VALOR DA DIÁRIA :" and linhas[4] == "" and linhas[5].startswith("VALOR TOTAL :")
+        assert pg.evaluate("navigator.clipboard.readText()").replace("\r", "") == "\n".join(linhas)          # já copia ao abrir
+        pg.fill("#hp-pop-txt", "ALTEREI AQUI")                                                           # editável
+        pg.keyboard.press("Escape")
+        assert pg.locator(".hp-pop").count() == 1, "Esc não pode perder o que foi editado"
+        pg.locator("#hp-pop-copiar").click()
+        pg.wait_for_timeout(200)
+        assert pg.evaluate("navigator.clipboard.readText()") == "ALTEREI AQUI"
+        pg.locator(".hp-pop button:has-text('Fechar')").click()
+        pg.wait_for_timeout(500)
+        assert pg.locator(".hp-pop").count() == 0
+    finally:
+        contexto.close()
+
+
+@pytest.mark.parametrize("largura", [1440, 1100, 420])
+def test_ficha_do_hospede_cabe_na_janela_sem_rolar_para_o_lado(painel_demo, navegador, largura):
+    contexto = navegador.new_context(viewport={"width": largura, "height": 900})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        pg.evaluate("abrirHospede(st.fila[0].chave)")
+        pg.wait_for_selector("#v-hospede:not(.oculta) .hp-janela")
+        pg.wait_for_timeout(300)
+        assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+        assert pg.evaluate("(() => { const r = document.querySelector('#v-hospede .hp-janela').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; })()")
+        assert pg.evaluate(ESPREMIDOS) == []
+    finally:
+        contexto.close()
+
+
+def test_ficha_abre_na_hora_pelo_pedido_ligado_sem_esperar_o_texto_do_email(painel_demo, navegador):
+    """João (09/11/2026): "lendo o formulário" demorava (o texto vem do PC dono da caixa). O pedido já está no Painel: abre na hora."""
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        pg.route("**/api/correio/texto*", lambda r: r.abort())   # o texto do e-mail nunca chega
+        abrir(pg, painel_demo, "correio")
+        id_form = pg.evaluate("""() => { const f = cx.dados.emails.find(e => (e.classes || []).includes('formulario'));
+          st.fila[0].na_caixa = {...(st.fila[0].na_caixa || {}), id: f.id}; return f.id; }""")
+        pg.locator(f'.cx-l[data-id="{id_form}"]').click()
+        pg.wait_for_selector("#v-hospede .hp-campo", timeout=1500)                                      # sem esperar nada de rede
+        assert "Lendo" not in pg.locator("#hp").inner_text() and pg.locator("[data-hp-abrir-email]").count() == 1
+    finally:
+        contexto.close()
+
+
+def test_ficha_sem_pedido_ligado_e_texto_que_falha_nao_fica_lendo_para_sempre(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        pg.route("**/api/correio/texto*", lambda r: r.abort())
+        abrir(pg, painel_demo, "correio")
+        id_form = pg.evaluate("cx.dados.emails.find(e => (e.classes || []).includes('formulario')).id")
+        pg.locator(f'.cx-l[data-id="{id_form}"]').click()
+        pg.wait_for_selector("#v-hospede .hp-vazio", timeout=3000)
+        pg.wait_for_function("!document.querySelector('#hp').innerText.includes('Lendo')", timeout=9000)   # em 5 s vira aviso, com saída
+        assert "Não consegui" in pg.locator("#hp").inner_text() and pg.locator("[data-hp-abrir-email]").count() == 1
+    finally:
+        contexto.close()
+
+
+# ---------- Novo e-mail (João, 09/11/2026) ----------
+def test_novo_email_abre_a_janela_por_cima_com_a_tela_de_tras_desfocada(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    botao = pagina.locator("[data-cx-novo]:visible").first
+    assert botao.is_enabled(), "o botão vale sem nenhum e-mail aberto"
+    botao.click()
+    pagina.wait_for_selector(".modal.compor.novo-email #nf-de-txt", timeout=5000)
+    assert pagina.locator(".novo-email .compor-topo", has_text="Novo e-mail").count() == 1
+    assert pagina.locator(".novo-email .compor-topo .descartar").count() == 1
+    assert pagina.locator("#nf-de-txt").input_value().strip(), "a caixa que envia (DE) já vem escolhida"
+    assert "blur" in pagina.evaluate("getComputedStyle(document.querySelector('.modal-fundo')).backdropFilter")   # tela de trás desfocada
+    assert pagina.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    pagina.locator(".novo-email .descartar").click()
+    pagina.wait_for_timeout(500)
+    assert pagina.locator(".modal.compor").count() == 0
+
+
+def test_botao_novo_email_fica_ao_lado_do_enviar_nf_e_nao_depende_de_email_aberto(painel_demo, pagina):
+    abrir(pagina, painel_demo, "correio")
+    assert pagina.evaluate("document.querySelector('[data-cx-novo]').closest('[data-cx-faixa]') === null")   # os botões [data-cx-faixa] só ligam com e-mail aberto
+    assert pagina.evaluate("""() => { const n = document.querySelector('.dir [data-cx-novo]'); return !!n && n.nextElementSibling?.matches('[data-cx-faixa="nf"]'); }""")
+
+
+def test_minimizar_a_janela_de_escrever_guarda_o_rascunho_e_libera_o_painel(painel_demo, pagina):
+    """João (09/11/2026): minimizar como no Outlook. A janela vira uma barrinha, o Painel volta a ser usado, o rascunho fica guardado."""
+    abrir(pagina, painel_demo, "correio")
+    pagina.locator("[data-cx-novo]:visible").first.click()
+    pagina.wait_for_selector(".modal.compor.novo-email #nf-para", timeout=8000)
+    pagina.fill("#nf-assunto", "ASSUNTO DO RASCUNHO")
+    pagina.fill("#nf-para", "x@exemplo.com")
+    pagina.locator("#nf-min").click()
+    assert pagina.locator(".modal-minimizado").count() == 1 and pagina.locator(".modal-fundo").count() == 0     # nada trava, sem tela desfocada
+    assert pagina.locator(".modal-minimizado .compor-barra").is_visible() and not pagina.locator(".modal-minimizado .modal").is_visible()
+    assert "ASSUNTO DO RASCUNHO" in pagina.locator(".cb-txt").inner_text()
+    id_normal = pagina.evaluate("cx.dados.emails.find(e => !(e.classes || []).includes('formulario')).id")
+    pagina.locator(f'.cx-l[data-id="{id_normal}"]').click()                                                       # o Painel volta a ser usado
+    assert pagina.evaluate("cx.sel") == id_normal
+    pagina.locator("[data-cx-novo]:visible").first.click()                                                        # Novo e-mail de novo: volta ao rascunho
+    pagina.wait_for_selector(".modal-fundo .modal.compor")
+    assert pagina.locator(".modal.compor").count() == 1 and pagina.locator(".modal-minimizado").count() == 0
+    assert pagina.input_value("#nf-assunto") == "ASSUNTO DO RASCUNHO" and pagina.input_value("#nf-para") == "x@exemplo.com"
+    pagina.locator("#nf-min").click()
+    pagina.locator(".cb-abrir").click()                                                                           # clicar na barra também restaura
+    assert pagina.locator(".modal-fundo .modal.compor").is_visible()
+    pagina.locator("#nf-min").click()
+    pagina.locator(".cb-x").click()
+    assert pagina.locator(".modal-minimizado").count() == 1, "descartar da barra pede um segundo clique"
+    pagina.locator(".cb-x").click()
+    pagina.wait_for_timeout(500)
+    assert pagina.locator(".modal-minimizado").count() == 0 and pagina.locator(".modal.compor").count() == 0
+
+
+# ---------- Recolher as colunas dos E-mails (João, 09/11/2026) ----------
+def _colunas(pg):
+    return pg.evaluate("[...document.querySelectorAll('#cx-mesa > *')].map(c => Math.round(c.getBoundingClientRect().width))")
+
+
+def test_recolher_pastas_e_lista_com_a_seta_e_voltar_pela_tirinha(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1440, "height": 900})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        a = _colunas(pg)
+        assert a[0] == 286 and a[1] == 320, a                                                                # as duas abertas, como sempre
+        pg.click('.col-seta[data-colapsar="p"]')
+        pg.wait_for_timeout(500)
+        b = _colunas(pg)
+        assert b[0] == 40 and b[1] == 320 and b[2] == a[2] + 246, b                                          # a leitura ganhou o espaço
+        assert pg.locator('.col-tira[data-colapsar="p"]').is_visible() and "pastas" in pg.locator('.col-tira[data-colapsar="p"]').inner_text().lower()
+        pg.click('.col-seta[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        c = _colunas(pg)
+        assert c[0] == 40 and c[1] == 40 and c[2] == a[2] + 246 + 280, c
+        assert pg.inner_text("#cx-tira-l-n").strip(), "a tirinha da lista mostra quantos e-mails tem"
+        pg.evaluate("desenharCorreio()")                                                                     # as pastas são refeitas: a seta e a tirinha voltam
+        assert pg.locator(".cx-pastas > .col-barra").count() == 1 and pg.locator(".cx-pastas > .col-tira").count() == 1
+        pg.click('.col-tira[data-colapsar="p"]')
+        pg.wait_for_timeout(500)
+        d = _colunas(pg)
+        assert d[0] == 286 and d[1] == 40, d
+        assert pg.evaluate("localStorage.getItem('painel.colunas')") == "l"                                  # lembra como ficou
+        outra = contexto.new_page()                                                                          # outra janela do mesmo Painel já abre assim
+        abrir(outra, painel_demo, "correio")
+        assert outra.evaluate("document.getElementById('v-correio').classList.contains('col-l-fechada')")
+        assert not outra.evaluate("document.getElementById('v-correio').classList.contains('col-p-fechada')")
+        outra.close()
+        pg.bring_to_front()                                                                                  # aba em segundo plano não anima
+        pg.click('.col-tira[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        assert _colunas(pg)[:2] == [286, 320] and pg.evaluate("localStorage.getItem('painel.colunas')") == ""
+    finally:
+        contexto.close()
+
+
+def test_recolher_a_lista_em_janela_estreita_onde_as_pastas_ja_somem(painel_demo, navegador):
+    contexto = navegador.new_context(viewport={"width": 1100, "height": 800})
+    pg = contexto.new_page()
+    try:
+        abrir(pg, painel_demo, "correio")
+        a = _colunas(pg)
+        assert a[0] == 0 and a[1] == 320, a
+        pg.click('.col-seta[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        b = _colunas(pg)
+        assert b[1] == 40 and b[2] == a[2] + 280, b
+        assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+        pg.click('.col-tira[data-colapsar="l"]')
+        pg.wait_for_timeout(500)
+        assert _colunas(pg)[1] == 320
+    finally:
+        contexto.close()

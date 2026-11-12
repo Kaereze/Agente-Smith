@@ -70,6 +70,8 @@
   "_ajuda_agente_principal": "PC do agente principal (detectado pelas contas do Outlook) copia, envia e atende o menu; os outros só conferem",
   "agente_principal": "João",
   "_ajuda_agentes": "E-mail por agente (só se destino_envio = agente)",
+  "_ajuda_nomes_dos_pcs": "Nome do operador de um PC, pelo nome do computador. Vale mais que a detecção pelas contas e que a escolha na tela (o PC da Clara tem caixas de Bernardo e era detectado como Bernardo)",
+  "nomes_dos_pcs": {"DESKTOP-FA8HRTN": "Clara"},
   "agentes": {
     "João": "",
     "Cristian": "notafiscal@redeandradedunashotel.com.br",

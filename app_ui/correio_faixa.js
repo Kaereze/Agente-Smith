@@ -76,7 +76,7 @@ const IC = { resp: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 015 5v5"/>',
   enc: '<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 00-5 5v5"/>', lixo: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
   arq: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/>', mover: '<path d="M3 7h7l2 2h9v10H3z"/>',
   lido: '<path d="M3 9l9-6 9 6v10H3z"/><path d="M3 9l9 6 9-6"/>', band: '<path d="M5 21V4h11l-2 4 2 4H5"/>', nf: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
-  sync: '<path d="M20 11a8 8 0 00-14-5L4 8M4 4v4h4M4 13a8 8 0 0014 5l2-2M20 20v-4h-4"/>', novo: '<path d="M12 5v14M5 12h14"/>',
+  sync: '<path d="M20 11a8 8 0 00-14-5L4 8M4 4v4h4M4 13a8 8 0 0014 5l2-2M20 20v-4h-4"/>', novo: '<path d="M12 5v14M5 12h14"/>', novoemail: '<path d="M3 6h13v12H3z"/><path d="M3 7l6.5 5L16 7"/><path d="M19 4v6M16 7h6"/>',
   env: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>', pastas: '<path d="M3 6h7l2 2h9v11H3z"/>', tema: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
   chapeu: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>', caixa: '<path d="M3 13h5l1 3h6l1-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/>',
   alerta: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>', form: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9.5 15h5M9.5 12h5"/>' };
@@ -92,7 +92,7 @@ function desenharFaixa() {
       bt('data-ol-acao="tema"', "tema", "Tema do Painel") + bt('data-ol-acao="prof"', "chapeu", "Modo professor")
     : bt('data-cx-faixa="resp"', "resp", "Responder", 'title="Ctrl+R"') + bt('data-cx-faixa="resp"', "todos", "Responder a todos") + bt('data-cx-faixa="enc"', "enc", "Encaminhar", 'title="Ctrl+F"') +
       `<span class="sep"></span>` + bt('data-cx-faixa="lido"', "lido", "Não lido/Lido", 'title="Ctrl+U / Ctrl+Q"') + bt("", "band", "Sinalizar", nao) +
-      `<div class="dir">${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
+      `<div class="dir">${bt("data-cx-novo", "novoemail", "Novo e-mail", 'class="faixa-novo" title="Escrever um e-mail novo: você escolhe a caixa do hotel que envia"')}${bt('data-cx-faixa="nf"', "nf", "Enviar NF", 'title="Responder com a NF · Ctrl+Shift+R"')}${bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas")}</div>`;
   pintarSync();
 }
 function desenharFaixaGlobal() {
@@ -102,7 +102,7 @@ function desenharFaixaGlobal() {
   const bt = (attr, ic, txt, cls = "") => `<button type="button" class="${cls}" ${attr}>${SVG(IC[ic])} ${txt}</button>`;
   // as abas Página Inicial/Enviar/Receber/Exibir só aparecem nos e-mails (usuário, 20/10/2026): aqui, sempre os comandos principais
   el.innerHTML = bt('data-vista="correio" data-caixa="entrada"', "caixa", "Caixa de Entrada") +
-      bt('data-vista="fila"', "form", "Notas fiscais") + `<span class="sep"></span>` +
+      `<span class="sep"></span>` +
       bt('data-ol-acao="pendentes"', "env", "Enviar pendentes") + bt('data-ol-acao="sync"', "sync", "Enviar/Receber todas");
   pintarSync();
 }

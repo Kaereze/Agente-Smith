@@ -28,11 +28,14 @@ function escrever(id, modo) {   // modo: "resp" | "nf" | "enc"
   if (cx.sel !== id) { cx.sel = id; desenharCorreio(); }
   abrirEnvioNF(null, { id, comNF: modo === "nf", encaminhar: modo === "enc", citacao: citacaoHtml(id) }, alvo);
 }
-function abrirEmail(id) {
+// semFicha: as setas ↑ ↓ andam pela lista mostrando a leitura de sempre (a ficha do hóspede abre no clique), e "Abrir e-mail do pedido" também.
+function abrirEmail(id, semFicha = false) {
   if (typeof envNF !== "undefined" && envNF && envNF.alvo && cx.sel !== id) { toast("Envie ou descarte a mensagem que está escrevendo", true); return; }
   cx.sel = id;
   const e = itemSelecionado();
-  desenharCorreio();
+  // Chegou um formulário (João, 09/11/2026): abre a ficha do hóspede no lugar do leitor. E-mail normal segue a leitura de sempre.
+  const ficha = !semFicha && !cx.semFicha && typeof emailEhFormulario === "function" && emailEhFormulario(e);
+  if (ficha) abrirHospedeDoEmail(e); else desenharCorreio();
   if (!e) return;
   carregarTexto(e);
   const alvoH = alvoHistorico(e);
@@ -42,7 +45,7 @@ function abrirEmail(id) {
     api("/api/correio/evento", { ids: [e.id], acao: "LIDO" });
     e.lido = true;
     if (cx.dados?.contagem) cx.dados.contagem.entrada_nao_lidos = Math.max(0, cx.dados.contagem.entrada_nao_lidos - 1);
-    desenharLateralCorreio(); desenharCorreio();
+    desenharLateralCorreio(); if (!ficha) desenharCorreio();
   }
   delete cx.manterNaoLido[e.id];
 }
@@ -55,6 +58,7 @@ async function carregarTexto(e) {
   const r = await api("/api/correio/texto?" + q);
   cx.textos[chave] = r.erro ? { erro: r.erro } : r;
   if (cx.sel === chave || cx.hist.aberto === chave) desenharLeituraCorreio();   // pré-carregado: só guarda
+  if (typeof hospedeTextoChegou === "function") hospedeTextoChegou(chave);   // a ficha do hóspede esperava o texto do formulário
 }
 // Abrir na hora (usuário, 15/10/2026: "quando eu clicar, abrir instantaneamente"): o texto dos primeiros e-mails da
 // lista e dos vizinhos do aberto já vem antes do clique; as fotos do e-mail aberto também

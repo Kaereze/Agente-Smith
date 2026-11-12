@@ -141,9 +141,14 @@ Ok $chave
 
 # 6. Identidade do PC (Outlook x Cadastro_Hoteis)
 Passo 6 "Identidade deste PC (Outlook aberto?)"
-& $venvPy src\identidade.py
-if ($LASTEXITCODE -ne 0) { Aviso "Nao identifiquei agora (Outlook fechado?). O conferente tenta de novo sozinho ao ligar." }
 $papel = (& $venvPy -c "import sys; sys.path.insert(0,'src'); from config import carregar_config; print(carregar_config()['papel'])").Trim()
+if ($papel -eq "so_painel") {
+    Aviso "PC so Painel (config.local.json): nao identifico pelo Outlook (nao abre o Outlook)."
+} else {
+    & $venvPy src\identidade.py
+    if ($LASTEXITCODE -ne 0) { Aviso "Nao identifiquei agora (Outlook fechado?). O conferente tenta de novo sozinho ao ligar." }
+    $papel = (& $venvPy -c "import sys; sys.path.insert(0,'src'); from config import carregar_config; print(carregar_config()['papel'])").Trim()
+}
 Ok "Papel deste PC: $papel"
 
 # 7. Seguranca: segredo da rede, biblioteca de cifra, firewall e relogio (so mexe no PC se NAO for -SoConferir)
@@ -176,8 +181,15 @@ $i = 0; while ((Test-Path (Join-Path $pasta "estado\_execucao.lock")) -and $i -l
 Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
     Where-Object { $_.CommandLine -like "*$pasta*conferente*" } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -Confirm:$false }
-& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_conferente.ps1") | Out-Null
-Ok "Tarefa SolicitacoesNF_Conferente ligada"
+if ($papel -eq "so_painel") {   # so visualiza e pede envio: o conferente (e o Guardiao que reabre o Outlook) nao existe aqui
+    if (Get-ScheduledTask -TaskName "SolicitacoesNF_Conferente" -ErrorAction SilentlyContinue) {
+        Unregister-ScheduledTask -TaskName "SolicitacoesNF_Conferente" -Confirm:$false
+    }
+    Aviso "Pulado: PC so Painel nao roda conferente nem abre o Outlook sozinho (tarefa removida se existia)."
+} else {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $pasta "Automacoes\agendar_conferente.ps1") | Out-Null
+    Ok "Tarefa SolicitacoesNF_Conferente ligada"
+}
 
 # 8. Copia + envio: so no PC principal
 Passo 9 "Copia das planilhas + envio"

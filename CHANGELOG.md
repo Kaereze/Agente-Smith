@@ -9,13 +9,83 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [2026.11.12] — 2026-11-12 (NF amarela: "possível NF")
+## [2026.11.12.1] — 2026-11-12 (NF amarela: "possível NF")
 
 Regra do João: a NF só fica verde com CPF/CNPJ **e** check-in **e** check-out iguais aos do pedido. O resto é amarela, para a pessoa conferir e enviar a NF ou excluir o e-mail.
 
 - **Mudou:** documento igual e datas de outra estadia deixa de ser descartado e vira "possível NF" (amarela). Só uma das datas bater, ou CPF/CNPJ da nota diferente com nome e data parecidos, também vira amarela (antes ficava verde com aviso). Mês do check-out errado na nota continua valendo, como antes.
 - **Adicionado:** nota do Dropbox que parece ser de um único pedido, sem fechar, marca o pedido como "confira" (nunca conclui). Em Enviar NF aparece como sugestão amarela, com o motivo.
 - **Não feito (de propósito):** número da estada como prova forte. O pedido ainda não guarda a estada; falta o João dizer de onde ela vem.
+## [2026.11.10] — 2026-11-10 (total da Caixa de entrada)
+
+### Mudou
+- **PC da Clara com o nome dela:** `DESKTOP-FA8HRTN` aparecia como "Bernardo" (a detecção pelas contas via caixas dele). Agora o `config.json` fixa o nome por PC (`nomes_dos_pcs`) e isso vale mais que a detecção e que a escolha na tela (`nome_fixo_do_pc` em `src/app_servidor.py`).
+- **O número vermelho da Caixa de entrada** (menu da esquerda) agora é o **total de e-mails de todas as caixas de entrada somadas** (lidos e não lidos), e não só os não lidos. As pílulas de cada caixa e de cada PC continuam contando os não lidos (`app_ui/correio.js`).
+
+## [2026.11.09.9] — 2026-11-09 (fluidez: cliques instantâneos e etapas lentas em paralelo)
+
+### Mudou
+- **Excluir, marcar urgência, concluir e tirar da caixa de entrada valem na hora:** a gravação na Planilha Central (1-3 s) segue por trás, com nova tentativa na volta seguinte se falhar (`src/painel/estado_correio.py`, `_evento_na_hora`).
+- **Etapas lentas em linhas próprias:** notas dos e-mails (Dropbox), Fiscal Intelligence e atividade da equipe não rodam mais em fila dentro da volta principal (que chegava a 40-68 s). Pedido novo e cliques não esperam por elas; a tela é avisada quando cada uma termina (`src/app_servidor.py`, `etapa_lenta`).
+
+## [2026.11.09.8] — 2026-11-09 (fluidez: o Painel responde mais rápido)
+
+### Mudou
+- **Consulta sem novidade** (a tela pergunta a cada 3 s): 148 → 56 ms (a comparação ignora campos que só mudam de hora, como "atualizado_em").
+- **Status do envio de NF:** deixou de ler a Planilha Central a cada pedido (17 s em média); agora uma leitura compartilhada, guardada por 3 s.
+- **Leitura dos hotéis:** aba que não mudou não é reinterpretada a cada 2 min (0,81 → 0,04 s no teste sintético).
+- **Cache em disco:** guarda só a janela que a tela usa (+15 dias): 14,6 → 10,2 MB; gravar 0,70 → 0,26 s.
+- **Novidade chega logo:** a tela é avisada assim que a Central é lida, já com a lista pronta, sem esperar as etapas lentas da volta (`src/app_servidor.py`, `src/painel/*`, `testes/test_fluidez.py`).
+
+## [2026.11.09.7] — 2026-11-09 (recolher as colunas dos E-mails e minimizar a janela de escrever)
+
+Desenho das colunas aprovado pelo João no Artifact "Recolher Colunas do Painel".
+
+### Adicionado
+- **Recolher as colunas dos E-mails:** a coluna das **pastas** e a da **lista** têm uma setinha ‹ no canto de cima, à direita. Ela recolhe a coluna para uma **tirinha fina** (seta › e o nome na vertical; a da lista mostra quantos e-mails tem) e a leitura do e-mail ganha o espaço, com animação suave. Clicar na tirinha traz a coluna de volta. As duas são independentes, o Painel **lembra como ficou** (`localStorage` "painel.colunas") e vale também em janela estreita (onde as pastas já somem sozinhas, só a lista recolhe) (`app_ui/colunas.js`, `app_ui/pecas/colunas.css`).
+- **Minimizar a janela de escrever, como no Outlook:** botão "–" no topo da janela (Novo e-mail, Responder com a NF, Pedir dados). Ela vira uma **barrinha embaixo à direita** (título + assunto) e o Painel volta a ser usado (pastas, caixas, leitura) sem tela desfocada; o rascunho fica guardado. Clicar na barra volta ao e-mail. O × da barra descarta, com **dois cliques** (não perde o rascunho por engano). Um rascunho de cada vez: abrir outro Novo e-mail/Responder com um minimizado volta a ele e avisa (`app_ui/painel_enviar_nf.js`, `app_ui/pecas/novo_email.css`).
+
+## [2026.11.09.5] — 2026-11-09 (Novo e-mail)
+
+Desenho aprovado pelo João no Artifact "Novo E-mail do Painel".
+
+### Adicionado
+- **Botão "Novo e-mail"** na faixa de comandos dos E-mails, ao lado de "Enviar NF". Abre a janela de escrever (a mesma do Painel) **por cima de tudo, com a tela de trás desfocada**, num formato mais compacto, com **Descartar** no topo. A caixa que envia se escolhe na linha **DE** (digita o hotel; mostra por qual PC sai e se ele está desligado); o assunto já vem como "Nota Fiscal - HOTEL". Vale sem nenhum e-mail aberto (`data-cx-novo`, `app_ui/pecas/novo_email.css`). O envio é o que já existia (PC dono da caixa).
+
+## [2026.11.09.4] — 2026-11-09 (ficha do hóspede instantânea)
+
+### Corrigido
+- **A ficha do hóspede abre na hora:** ficava em "Lendo o formulário…" esperando o texto do e-mail vir do PC dono da caixa. Agora usa o pedido que o Painel já liga ao e-mail (`na_caixa.id`), sem nenhuma espera de rede. Só quando o pedido não está ligado ela lê o texto do e-mail, e passados 5 s vira um aviso com o botão "Abrir o e-mail" (antes podia ficar "lendo" para sempre). "Abrir e-mail do pedido" e "Enviar NF" também passam a achar o e-mail por essa ligação.
+
+## [2026.11.09.3] — 2026-11-09 (Ficha do hóspede)
+
+Desenho aprovado pelo João no Artifact "Ficha do Hóspede".
+
+### Adicionado
+- **Ficha do hóspede** (`app_ui/hospede.js`, `app_ui/pecas/hospede.css`): quando chega um **formulário**, o Painel abre uma página só com os dados que o hóspede preencheu (campos do formulário, na ordem, cada um com **Copiar**), a situação do pedido por extenso, o que o Painel conferiu (CPF/CNPJ, nome, CEP, datas), os e-mails e os outros pedidos dele(a). Abre ao clicar num e-mail de formulário ou num "Pedido do formulário" da pesquisa. **E-mail normal segue a leitura de sempre**; as setas ↑ ↓ da lista também continuam mostrando a leitura.
+- **Copiar tudo para a emissão:** janelinha **editável** só com o texto da emissão (DATA DE CHECK-IN, DATA DE CHECK-OUT, QUANTIDADE DE DIÁRIAS, VALOR DA DIÁRIA, VALOR TOTAL e o nome). Nada é inventado: diária sempre em branco; total só se o hóspede informou "Valor da Nota"; diárias são só a conta das datas; "ESTADA nnnn" só se o hóspede escreveu o número. Já copia ao abrir; depois de editar, Esc e clique fora não fecham.
+- A demonstração ganhou e-mails de formulário fictícios (`demo.py`).
+
+### Mudou
+- **A aba "Notas fiscais" (reservada para a emissão automática) não recebe mais nada:** os cartões e gráficos da Visão geral e o "Ver pedidos" do robô abrem a Caixa de Entrada em "Formulários do robô" (as atrasadas, a Urgência); o botão "Notas fiscais" saiu da faixa de comandos do e-mail; um endereço desconhecido cai na Visão geral. Só o item do menu lateral continua apontando para ela.
+
+## [2026.11.09.2] — 2026-11-09 (lista de agentes por cima de tudo)
+
+### Corrigido
+- **A lista "Caixa de: agente" aparecia cortada** (pelos cartões de Notas fiscais e de E-mails): a barra de vidro do topo ficava por baixo do conteúdo. Agora o topo fica acima do conteúdo e a lista abre inteira, por cima de tudo (`app_ui/pecas/centro_leve.css`). Teste de tela novo em 1440 e 1100 px, nas duas telas.
+
+## [2026.11.09.1] — 2026-11-09 (filtro de hotéis e leitor de e-mail cortados)
+
+### Corrigido
+- **Menu do filtro de hotéis ("Meus hotéis") saía cortado:** a coluna da lista, de vidro, prendia o `position: fixed` do menu e o `overflow` escondia o resto (em 1440 px ele abria deslocado, fora do lugar). O menu agora fica fora da coluna: abre colado ao botão, inteiro dentro da janela, e some ao clicar fora (`app_ui/pecas/filtro_hoteis.js`).
+- **Leitor de e-mail com vazio à direita em janela de até 1180 px:** a regra de 3 colunas vencia a de 2 quando a pasta lateral some; o leitor ficava com 320 px. Agora ocupa o resto da largura (`app_ui/pecas/centro_leve.css`).
+- Testes de tela novos (menu em 1920, 1440 e 1100 px; leitor em 1100 e 1000 px).
+
+## [2026.11.09] — 2026-11-09 (PC só Painel sem automação no Outlook)
+
+### Corrigido
+- **PC com papel `so_painel` não abre mais o Outlook sozinho:** o conferente (e o Guardião, que reabria o Outlook a cada 60 s) agora sai na hora nesse papel, e também para se o papel mudar com ele rodando.
+- O instalador completo (`coracao.ps1`) no papel `so_painel` não identifica o PC pelo Outlook e remove a tarefa `SolicitacoesNF_Conferente` em vez de recriá-la.
 
 ## [2026.11.08.2] — 2026-11-08 (Centro leve em todas as telas)
 

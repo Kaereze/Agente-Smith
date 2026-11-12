@@ -1,0 +1,99 @@
+/* Ficha do hóspede (João, 09/11/2026): a página que abre quando chega um formulário. Desenho aprovado no Artifact "Ficha do Hóspede".
+   Mesmo casco do Painel (vidro, borda espelhada, cantos de 18 px); só escuro, como o resto do modo Outlook. Tudo com o prefixo .hp-. */
+#v-hospede .rolagem{padding:0}
+.hp{--hp-vidro:var(--cl-vidro,rgba(22,22,22,.6));--hp-rim:var(--cl-rim,linear-gradient(150deg,rgba(255,255,255,.55),rgba(255,255,255,.05) 30%,rgba(255,255,255,.04) 70%,rgba(255,255,255,.36)));
+  --hp-linha:#333;--hp-linha2:#444;--hp-texto:#f0f0f0;--hp-texto2:#d0d0d0;--hp-apagado:#a8a8a8;--hp-azul:#479ef5;--hp-azul2:#6cb8f6;--hp-ouro:#c9a66b}
+.hp-janela{border-radius:18px;border:1px solid transparent;color:var(--hp-texto);font:14px/1.45 "Segoe UI",system-ui,sans-serif;
+  background:linear-gradient(var(--hp-vidro),var(--hp-vidro)) padding-box,var(--hp-rim) border-box;backdrop-filter:blur(18px) saturate(1.35);box-shadow:0 14px 34px rgba(0,0,0,.4);margin-bottom:8px}
+.hp-janela h2,.hp-janela h3,.hp-janela p{margin:0}
+.hp-vazio{padding:60px 22px;text-align:center;color:var(--hp-apagado)}
+
+.hp-faixa{display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--hp-linha);flex-wrap:wrap}
+.hp-voltar,.hp-mails{font:inherit;color:var(--hp-texto2);background:#2b2b2b;border:1px solid var(--hp-linha2);border-radius:8px;padding:6px 12px;cursor:pointer}
+.hp-voltar:hover,.hp-mails:hover{border-color:var(--hp-azul)}
+.hp-mails{margin-left:auto;color:var(--hp-azul2);background:transparent;border-style:dashed}
+.hp-pils{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:0}
+.hp-pil{display:flex;flex-direction:column;text-align:left;min-width:0;max-width:260px;border:1px solid var(--hp-linha2);border-radius:10px;padding:6px 14px;background:#262626;color:inherit;font:inherit;cursor:pointer}
+.hp-pil b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hp-pil span{font-size:12px;color:var(--hp-apagado);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hp-pil[aria-pressed="true"]{background:#173b63;border-color:var(--hp-azul)}
+.hp-pil[aria-pressed="true"] span{color:#cfe5fb}
+.hp-voltar:focus-visible,.hp-mails:focus-visible,.hp-pil:focus-visible,.hp-bt:focus-visible,.hp-cp:focus-visible,.hp-link:focus-visible,.hp-pop-x:focus-visible{outline:2px solid var(--hp-azul);outline-offset:2px}
+
+.hp-cab{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;padding:18px 22px 14px}
+.hp-cab h2{font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.15}
+.hp-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px;color:var(--hp-texto2)}
+.hp-chip{display:inline-flex;align-items:center;border:1px solid var(--hp-linha2);border-radius:6px;padding:0 8px;font-size:12px;font-weight:600;line-height:21px;white-space:nowrap}
+.hp-chip.ok{background:#1d2620;border-color:#2f6a3d;color:#9fe0ad}
+.hp-chip.med{background:#45391d;border-color:#7a6430;color:#f2c76b}
+.hp-chip.mau{background:#3a2326;border-color:#7b3a3f;color:#ff8d95}
+.hp-acoes{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.hp-bt{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--hp-linha2);background:#2b2b2b;color:var(--hp-texto);padding:8px 14px;cursor:pointer}
+.hp-bt:hover{border-color:var(--hp-azul)}
+.hp-bt.prim{background:#3da755;border-color:#3da755;color:#08210f}
+.hp-bt svg{width:16px;height:16px;flex:none}
+
+.hp-miolo{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;padding:4px 22px 22px;min-width:0}
+.hp-form{min-width:0;display:flex;flex-direction:column;gap:14px}
+.hp-sec,.hp-card{border:1px solid var(--hp-linha);border-radius:12px;background:rgba(36,36,36,.55);min-width:0}
+.hp-sec{padding:14px 16px 16px}
+.hp-sec-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.hp-sec-t h3{font:600 11.5px "Segoe UI",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hp-ouro)}
+.hp-sec-t small{color:var(--hp-apagado);font-size:12px}
+.hp-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.hp-inteiro{grid-column:1 / -1}
+.hp-rot{display:block;font-size:12px;color:var(--hp-apagado);margin-bottom:4px}
+.hp-campo{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 8px 8px 12px;border:1px solid var(--hp-linha2);border-radius:8px;background:#1a1a1a;min-width:0}
+.hp-campo.longo{align-items:flex-start}
+.hp-v{flex:1;min-width:0;font-size:15px;overflow-wrap:anywhere}
+.hp-campo.longo .hp-v{white-space:pre-line}
+.hp-v.mono{font-family:"Cascadia Mono",Consolas,monospace;font-size:14.5px}
+.hp-campo.vazio{border-color:#7b3a3f;background:#3a2326}
+.hp-campo.vazio .hp-v{color:#ff8d95;font-style:italic}
+.hp-selo{font-size:11.5px;font-weight:700;border-radius:5px;padding:0 6px;line-height:19px;white-space:nowrap}
+.hp-selo.ok{background:#1d2620;color:#9fe0ad;border:1px solid #2f6a3d}
+.hp-selo.mau{background:#3a2326;color:#ff8d95;border:1px solid #7b3a3f}
+.hp-cp{flex:none;border:1px solid var(--hp-linha2);background:transparent;border-radius:6px;padding:3px 9px;font:inherit;font-size:12px;color:var(--hp-azul2);cursor:pointer}
+.hp-cp:hover{border-color:var(--hp-azul)}
+
+.hp-lado{display:flex;flex-direction:column;gap:12px;min-width:0}
+.hp-card{padding:14px 16px}
+.hp-card h3{font:600 11.5px "Segoe UI",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hp-apagado);margin-bottom:10px}
+.hp-situ{font-size:15px;font-weight:600;margin-bottom:12px}
+.hp-et{list-style:none;margin:0;padding:0}
+.hp-et li{position:relative;padding:0 0 12px 24px;font-size:13.5px}
+.hp-et li:last-child{padding-bottom:0}
+.hp-et li::before{content:"";position:absolute;left:5px;top:5px;width:9px;height:9px;border-radius:50%;border:2px solid var(--hp-linha2);background:#131313}
+.hp-et li::after{content:"";position:absolute;left:9px;top:16px;bottom:-4px;width:2px;background:var(--hp-linha)}
+.hp-et li:last-child::after{display:none}
+.hp-et li.feito::before{background:#3da755;border-color:#3da755}
+.hp-et li.agora::before{background:#f2c76b;border-color:#f2c76b;box-shadow:0 0 0 4px rgba(242,199,107,.18)}
+.hp-et li small{display:block;color:var(--hp-apagado);font-size:12.5px}
+.hp-et li.falta{color:var(--hp-apagado)}
+.hp-conf{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.hp-conf li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px}
+.hp-conf .m{font-weight:700}.hp-conf .m.ok{color:#9fe0ad}.hp-conf .m.mau{color:#ff8d95}
+.hp-lst{list-style:none;margin:0;padding:0}
+.hp-lst li{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #2e2e2e;font-size:13.5px}
+.hp-lst li:first-child{border-top:0;padding-top:0}
+.hp-lst li.vazio{display:block;color:var(--hp-apagado)}
+.hp-lst time{color:var(--hp-azul2)}
+.hp-link{font:inherit;text-align:left;color:var(--hp-texto);background:transparent;border:0;padding:0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hp-link:hover{color:var(--hp-azul2);text-decoration:underline}
+
+/* a janelinha da emissão: só o texto, editável */
+.modal.hp-pop{width:min(420px,calc(100vw - 32px));max-height:none;background:#1f1f1f;color:#f0f0f0;border-radius:18px;border:1px solid #444}
+.hp-pop-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 16px 8px}
+.hp-pop-cab h3{font-size:15px;font-weight:600;margin:0}
+.hp-pop-cab small{display:block;color:var(--hp-apagado,#a8a8a8);font-size:12.5px;margin-top:2px}
+.hp-pop-x{border:0;background:transparent;color:#a8a8a8;font-size:20px;line-height:1;cursor:pointer;border-radius:8px;padding:2px 8px}
+.hp-pop-x:hover{background:rgba(255,255,255,.08);color:#f0f0f0}
+.hp-pop-txt{display:block;width:calc(100% - 32px);margin:4px 16px 6px;padding:12px 14px;border:1px solid #444;border-radius:10px;background:#1a1a1a;color:#f0f0f0;
+  font:13.5px/1.6 "Cascadia Mono",Consolas,monospace;resize:vertical;min-height:150px}
+.hp-pop-txt:focus{outline:0;border-color:#479ef5;box-shadow:0 0 0 3px rgba(71,158,245,.2)}
+.hp-pop-dica{margin:0 16px 12px;color:#a8a8a8;font-size:12.5px}
+.hp-pop-dica.editado{color:#f2c76b}
+.hp-pop-ac{display:flex;gap:8px;justify-content:flex-end;padding:0 16px 14px}
+
+@media (max-width:1180px){.hp-miolo{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.hp-campos{grid-template-columns:minmax(0,1fr)}.hp-mails{margin-left:0}.hp-acoes{margin-left:0}.hp-cab,.hp-miolo,.hp-faixa{padding-left:14px;padding-right:14px}}

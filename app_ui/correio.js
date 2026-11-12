@@ -27,6 +27,7 @@ async function carregarCorreio(soSeMudou = false) {   // soSeMudou: volta autom�
     if (typeof desenharSeletorCaixa === "function") desenharSeletorCaixa();
     if (pn.vista === "correio") desenharCorreio();
     else if (pn.vista === "fila") desenharAbasNotas();   // e-mails chegaram: atualiza os números das abas
+    else if (pn.vista === "hospede" && typeof desenharHospede === "function") desenharHospede();   // ficha do hóspede: e-mails dele(a)
     else if (pn.vista === "visao" && typeof desenharVisao === "function") desenharVisao();   // 23/10/2026: abria com "E-mails na caixa: 0"
   } catch (e) { /* a próxima volta tenta de novo */ }
 }
@@ -37,7 +38,7 @@ function desenharLateralCorreio() {
   const c = cx.dados?.contagem || {};
   const n = (id, v, alerta) => { const el = $(id); if (!el) return; el.textContent = v ? v.toLocaleString("pt-BR") : "";
     el.classList.toggle("alerta-n", !!(alerta && v)); };
-  n("nav-entrada-n", emailsDa("entrada").filter(e => e.lido === false).length);   // não lidos do Outlook, do agente escolhido
+  n("nav-entrada-n", emailsDa("entrada").length);   // TOTAL de e-mails de todas as caixas de entrada somadas (lidos e não lidos), do agente escolhido (João, 10/11/2026)
   n("nav-urgencia-n", emailsDa("urgencia").length, true);
 }
 

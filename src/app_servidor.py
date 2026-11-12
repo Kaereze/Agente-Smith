@@ -8,12 +8,9 @@ janela abre já carregada. O último estado também vai pro disco (painel_cache.
 sobreviver a um reinício. Todos os PCs leem e gravam a mesma Planilha Central.
 """
 import datetime
-import gzip
-import hashlib
 import hmac
 import json
 import os
-import io
 import pickle
 import re
 import secrets
@@ -52,6 +49,8 @@ from central import fiscal_intelligence
 from painel import painel_metricas as metricas
 from painel import agentes_smith
 from painel import rotas_api
+from painel.cache_disco import ler_cache_seguro   # noqa: F401  (usado por testes)
+from painel.resposta_http import VOLATEIS_JUNTO, VOLATEIS_TELA, assinatura_do_texto, assinatura_tela, comprimir_se_vale   # noqa: F401
 from painel import desempenho
 from sistema.arquivos import salvar_json
 from central.hoteis import CadastroHoteis
@@ -107,33 +106,13 @@ CANCELADAS_MINUTOS = ajustes.valor("google.canceladas_minutos")
 CAMINHO_VERSAO = armazem.caminho("versao_rodando.txt")
 SALVAR_CACHE_SEGUNDOS = ajustes.valor("limpeza.salvar_cache_segundos")
 VERSAO_CACHE = 1
-# Cache em disco (Fase 1, 05/11/2026): lê só estes tipos. Um arquivo trocado por outro com código dentro não roda nada: é recusado
-# (o Painel então lê tudo de novo do Google, como sempre fez sem cache).
-_TIPOS_DO_CACHE = {("datetime", "datetime"), ("datetime", "date"), ("datetime", "timezone"), ("datetime", "timedelta"),
-                   ("central.hoteis", "CadastroHoteis"), ("notas.modelos", "Hotel"), ("notas.modelos", "Solicitacao"),
-                   ("collections", "OrderedDict"), ("collections", "defaultdict"), ("builtins", "set"), ("builtins", "frozenset")}
-
-
-class _LeitorDoCache(pickle.Unpickler):
-    def find_class(self, modulo, nome):
-        if (modulo, nome) not in _TIPOS_DO_CACHE:
-            raise pickle.UnpicklingError(f"tipo fora da lista no cache: {modulo}.{nome}")
-        return super().find_class(modulo, nome)
-
-
-def ler_cache_seguro(dados):
-    return _LeitorDoCache(io.BytesIO(dados)).load()
-
-
-ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.notas_emails", "painel.fiscal_intelligence", "painel.canceladas",
-                   "painel.atividade", "painel.salvar_cache")
-VOLATEIS_TELA ={"atualizado_em", "visto", "dias"}   # mudam sozinhos a cada volta: fora da comparação do "igual"
-VOLATEIS_JUNTO = ("atualizado_em", "pcs")            # ... e estes vão junto com o {"__igual"} (cabeçalho em dia)
+ETAPAS_DA_VOLTA = ("painel.atualizar", "painel.canceladas", "painel.salvar_cache")
 ACORDAR_MIN_SEGUNDOS = ajustes.valor("google.reler_no_minimo_segundos")   # novidade do robô relê na hora, mas no máximo 1 vez a cada 12 s (cota do Google: 7/min)
 # Leitura leve (08/10/2026): a cada 15 s o Painel baixava ~11 MB (abas dos hotéis + Tratamento inteira). Agora:
 HOTEIS_SEGUNDOS = ajustes.valor("google.reler_hoteis_segundos")   # abas dos hotéis: só mudam com a cópia de 30 em 30 min -> relidas a cada 2 min
 TRATAMENTO_COMPLETO_SEGUNDOS = ajustes.valor("google.reler_tratamento_inteiro_segundos")   # Tratamento: a cada 15 s só as linhas novas; inteira a cada 10 min (garantia)
 JANELA_PAINEL_DIAS = ajustes.valor("limpeza.painel_janela_dias")
+MARGEM_CACHE_DIAS = 15   # o cache em disco guarda a janela da tela + esta margem (o histórico inteiro volta na 1ª leitura da Central)
 RESOLVIDA_HORAS = ajustes.valor("limpeza.resolvida_horas")   # solicitação resolvida fica 24 h na lista e some (o Outlook/planilha guardam)
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
@@ -164,7 +143,27 @@ def salvar_pref(chave, valor):
 TEMAS_OK = ("", "light", "dark")
 
 
+_NOME_FIXO = ["", -1e9]   # [nome, quando foi lido]
+
+
+def nome_fixo_do_pc():
+    """Nome do operador que a configuração fixa para ESTE PC (config.json > nomes_dos_pcs), ou "". Vale mais que a detecção pelas
+    contas e que a escolha na tela (10/11/2026: o PC da Clara tem caixas de hotéis do Bernardo e era detectado como Bernardo)."""
+    agora = time.monotonic()
+    if agora - _NOME_FIXO[1] < 30:   # o nome é pedido a cada requisição: relê o arquivo só de 30 em 30 s
+        return _NOME_FIXO[0]
+    try:
+        nomes = carregar_config(exigir_chave=False).get("nomes_dos_pcs") or {}
+        nome = str({k.upper(): v for k, v in nomes.items()}.get(socket.gethostname().upper(), "") or "")
+    except Exception:
+        nome = ""
+    _NOME_FIXO[:] = [nome, agora]
+    return nome
+
+
 def nome_do_agente():
+    if fixo := nome_fixo_do_pc():
+        return fixo
     try:
         nome = json.load(open(CAMINHO_PREFS, encoding="utf-8")).get("agente")
         if nome:
@@ -199,6 +198,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
         self.envio_nf.avisar_dono = self._avisar_dono_envio   # envio direto pela rede (21/10/2026)
         self.central = cfg["planilha_central_id"]
         self.lock = threading.Lock()
+        self._fila_status, self._lendo_fila_status = None, threading.Lock()   # leitura curta da fila de envios (estado_envio._fila_para_status)
+        self.leitura_hoteis = dados.LeituraDeHoteis()   # a aba que não mudou não é reinterpretada (fluidez, 09/11/2026)
         self.abas_hotel, self.abas_lidas_em = {}, -1e9
         self.solicitacoes, self.estados, self.status = [], {}, {}
         self.atualizado_em, self.erro = None, ""
@@ -305,7 +306,8 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                 solicitacoes = []
                 with desempenho.MEDIDOR.medir("painel.atualizar.interpretar_hoteis", 10.0, logger):
                     for aba, hotel in abas.items():
-                        solicitacoes += dados.ler_solicitacoes(aba, hotel, lidas.get(aba, []), self.cfg)
+                        solicitacoes += self.leitura_hoteis.ler(aba, hotel, lidas.get(aba, []), self.cfg)   # só reinterpreta a aba que mudou
+                    self.leitura_hoteis.esquecer_menos(abas)
                 self.hoteis_lidos_em = agora
             else:
                 solicitacoes = self.solicitacoes
@@ -523,12 +525,22 @@ class Estado(CorreioMixin, RedeMixin, EnvioMixin, SistemaMixin):
                               "emails": len(linhas or []), "atualizado": max((l["atualizado"] for l in linhas or []), default="")}
         return saida
 
+    def preparar_para_a_tela(self):
+        """Monta já, no ciclo de fundo, a lista de pedidos que a tela pede ao saber da novidade. Antes quem pagava a montagem
+        (~0,4 s com tudo livre, vários segundos com o servidor ocupado) era a primeira consulta da tela depois de cada mudança."""
+        try:
+            self.fila_da_tela(getattr(self, "dias_pedidos_pela_tela", None) or 60)   # o período que a tela pediu por último (60 = o padrão dela)
+        except Exception as e:
+            logger.debug(f"preparar a lista para a tela: {str(e)[:100]}")
+
     def salvar_cache(self, forcar=False):
         """Último estado em disco: depois de reiniciar o PC a janela já abre com dados."""
         if not self.atualizado_em or (not forcar and self.relogio() - self.cache_salvo < SALVAR_CACHE_SEGUNDOS):
             return
+        desde = (datetime.date.today() - datetime.timedelta(days=JANELA_PAINEL_DIAS + MARGEM_CACHE_DIAS)).isoformat()
         with self.lock:
-            dados_cache = {"versao": VERSAO_CACHE, "solicitacoes": self.solicitacoes, "estados": self.estados,
+            solicitacoes_cache, estados_cache = dados.podar_para_cache(self.solicitacoes, self.estados, desde)
+            dados_cache = {"versao": VERSAO_CACHE, "solicitacoes": solicitacoes_cache, "estados": estados_cache,
                            "status": self.status, "atualizado_em": self.atualizado_em, "fi": self.fi,
                            "cadastro": self.cadastro, "abas_hotel": self.abas_hotel}
         try:
@@ -706,14 +718,14 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             super().end_headers()
 
         def _json(self, corpo, codigo=200, comparar=False):
-            dados_ = json.dumps(corpo, ensure_ascii=False, default=str).encode("utf-8")
+            texto = json.dumps(corpo, ensure_ascii=False, default=str)   # uma serialização só: a assinatura sai dela (fluidez, 09/11/2026)
             versao = ""
             if comparar and codigo == 200:   # velocidade 3: a tela já tem isso = não manda de novo
-                versao = assinatura_tela(corpo)
-                if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto
+                versao = assinatura_do_texto(texto)
+                if self.headers.get("X-Versao") == versao:   # só a hora da leitura e os PCs vão junto; nada de comprimir 2 MB à toa
                     junto = {k: corpo[k] for k in VOLATEIS_JUNTO if isinstance(corpo, dict) and k in corpo}
-                    dados_ = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str).encode("utf-8")
-            dados_, gz = comprimir_se_vale(dados_, self.headers.get("Accept-Encoding"))
+                    texto = json.dumps({"__igual": True, **junto}, ensure_ascii=False, default=str)
+            dados_, gz = comprimir_se_vale(texto.encode("utf-8"), self.headers.get("Accept-Encoding"))
             try:
                 self.send_response(codigo)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -872,25 +884,6 @@ def abrir_janela():
                       "--no-first-run", "--no-default-browser-check"])
 
 
-def comprimir_se_vale(dados, aceita):
-    """gzip só quando o navegador aceita e o corpo passa de 1 KB (auditoria 27/10/2026: /api/estado 1,8 MB -> 202 KB).
-    -> (bytes, comprimido?)"""
-    if len(dados) < 1024 or "gzip" not in (aceita or "").lower():
-        return dados, False
-    return gzip.compress(dados, compresslevel=4, mtime=0), True
-
-
-def assinatura_tela(corpo):
-    """Hash do que a tela mostra, sem o que muda sozinho a cada volta (VOLATEIS_TELA). Velocidade 3, 21/10/2026."""
-    def limpar(x):
-        if isinstance(x, dict):
-            return {k: limpar(v) for k, v in x.items() if k not in VOLATEIS_TELA}
-        if isinstance(x, list):
-            return [limpar(v) for v in x]
-        return x
-    return hashlib.sha1(json.dumps(limpar(corpo), ensure_ascii=False, default=str).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
-
-
 def esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo, relogio=time.monotonic, dormir=time.sleep):
     """Espera a próxima leitura da Central: 15 s com a janela aberta, 1 min fechada. Novidade do robô (21/10/2026)
     adianta, com a janela aberta e pelo menos ACORDAR_MIN_SEGUNDOS depois da última leitura. Enquanto espera, olha a
@@ -1001,17 +994,12 @@ def main():
             with medir("painel.volta_completa", logger=logger):
                 with medir("painel.atualizar", logger=logger):
                     estado.atualizar()
-                with medir("painel.notas_emails", logger=logger):
-                    estado.atualizar_notas_emails()
-                with medir("painel.fiscal_intelligence", logger=logger):
-                    estado.atualizar_fi()
+                # Publica já o que veio da Central (09/11/2026, fluidez). As etapas lentas (notas dos e-mails, Fiscal Intelligence,
+                # atividade: 5-20 s cada) rodam cada uma na sua linha, abaixo: o pedido novo e os cliques não esperam por elas.
+                estado.preparar_para_a_tela()
+                estado.versao_tela += 1
                 with medir("painel.canceladas", logger=logger):
                     estado.atualizar_canceladas()
-                with medir("painel.atividade", logger=logger):
-                    try:
-                        estado.atualizar_atividade()
-                    except Exception as e:   # a tela de Monitoramento segue com o último valor guardado
-                        logger.warning(f"⚠️ Não consegui ler a atividade da equipe ({str(e)[:100]})")
                 with medir("painel.salvar_cache", logger=logger):
                     estado.salvar_cache()
             estado.versao_tela += 1
@@ -1021,7 +1009,24 @@ def main():
             desempenho.MEDIDOR.talvez_resumir(logger)   # de tempos em tempos: as etapas mais pesadas, com média e p95
             esperar_proxima_volta(estado, ultimo_uso, em_uso, em_fundo)
 
+    def etapa_lenta(nome, trabalho, pausa):
+        """Uma etapa lenta na sua própria linha (09/11/2026, fluidez): antes as 3 rodavam em fila dentro da volta (a volta chegava a
+        40-60 s e a novidade esperava). Cada uma já se limita sozinha (NOTAS_EMAILS_SEGUNDOS, fi_minutos, ATIVIDADE_CACHE_SEGUNDOS)."""
+        def corre():
+            while True:
+                try:
+                    with desempenho.MEDIDOR.medir(nome, logger=logger):
+                        trabalho()
+                    estado.versao_tela += 1   # a tela busca de novo o que essa etapa trouxe
+                except Exception as e:   # a tela segue com o último valor guardado
+                    logger.warning(f"⚠️ {nome}: {str(e)[:100]}")
+                time.sleep(pausa)
+        threading.Thread(target=corre, daemon=True, name=nome).start()
+
     threading.Thread(target=laco, daemon=True).start()
+    etapa_lenta("painel.notas_emails", estado.atualizar_notas_emails, 5)
+    etapa_lenta("painel.fiscal_intelligence", estado.atualizar_fi, 30)
+    etapa_lenta("painel.atividade", estado.atualizar_atividade, 5)
     if not modo_demo and not so_ver:
         if not sem_outlook(cfg):   # PC só com o Painel não tem Outlook para vigiar nem para indexar
             estado.vigiar_caixa_de_saida()

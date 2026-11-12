@@ -293,9 +293,32 @@ class BackendDemo:
                             por_pc[pc][ie] = {**self.arquivo[-1], "pc": pc}
                         continue
                 por_pc[pc][i] = item
+        self._gerar_formularios(por_pc, hospedes)
         self._enviados = enviados
         self._por_pc = por_pc
         self._publicar_correio()
+
+    def _gerar_formularios(self, por_pc, hospedes):
+        """E-mails do Emissor Automático (classe "formulario"): os dados vêm no texto, como na caixa de verdade. Sorteio separado:
+        não muda os outros dados fictícios. O primeiro traz "Estada 2202" (a ficha só usa o número que o hóspede escreveu)."""
+        rf = random.Random(20261109)
+        agora = self.agora
+        for n, (hotel, caixa, agente, nome, email, quando, ci, co) in enumerate(rf.sample(hospedes, min(6, len(hospedes)))):
+            pc = PCS.get(agente, "DEMO-JOAO")
+            q = agora - datetime.timedelta(hours=rf.randint(1, 30), minutes=rf.randint(0, 59))
+            cpf = _cpf(rf)
+            pede = "Nota fiscal da hospedagem completa." + (" Estada 2202." if n == 0 else "")
+            linhas = ["Dados para emissão de Nota Fiscal", f"Enviado por: {email}", "Campo	Valor", "Termos de aceite	Estou de acordo",
+                      f"Documento Tomador	{cpf}", f"Nome Tomador	{nome}", "CEP	40170-110", "Telefone para contato	71999990000",
+                      f"CPF do Titular da Reserva	{cpf}", f"Nome do Titular da Reserva	{nome}",
+                      f"Check-in da Hospedagem	{ci:%d/%m/%Y}", f"Check-out da Hospedagem	{co:%d/%m/%Y}",
+                      f"Informações necessárias na Nota Fiscal	{pede}", "Nota Dividida	Não", f"Enviado em: {q:%d/%m/%Y %H:%M:%S}"]
+            i = _id(pc, email, "formulario", q.isoformat())
+            item = {"id": i, "entry_id": i, "pasta": ee.ENTRADA, "caixa": caixa, "hotel": hotel, "de": "emissor@demo.exemplo", "nome": "Formulário",
+                    "para": caixa, "assunto": f"Dados para emissão de Nota Fiscal - {hotel}", "quando": q.isoformat(timespec="seconds"),
+                    "anexos": [], "texto": "\n".join(linhas), "citado": "", "quartos": [0, []], "classes": ["formulario"]}
+            self.arquivo.append({**item, "pc": pc})
+            por_pc[pc][i] = item
 
     def _publicar_correio(self):
         for pc, itens in self._por_pc.items():
