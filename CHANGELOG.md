@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.16] — 2026-11-16 (envio sem espera, Camila no lugar do Afonso, nomes dos PCs)
+
+- **Mudou:** depois de pedir o envio, a tela não mostra mais a bolinha "Enviando": só um aviso curto de pedido entregue. Só a falha aparece (pílula vermelha com "Ver"). A conferência segue em silêncio, a cada 5 s.
+- **Corrigido:** a consulta "e o meu envio?" não espera mais o Google (média 4 s, até 40 s): responde na hora com a última leitura e uma tarefa por trás atualiza.
+- **Mudou:** a assinatura do Afonso saiu e entrou a da Camila (CAMILA CASTILHOS / AUXILIAR FINANCEIRO / REDE ANDRADE HOTÉIS).
+- **Corrigido:** nomes fixos dos PCs em `config.json > nomes_dos_pcs`: `DESKTOP-DF2300B` = Bernardo (aparecia como Clara) e `DESKTOP-7M6539V` = Camila.
+
 ## [2026.11.12.1] — 2026-11-12 (NF amarela: "possível NF")
 
 Regra do João: a NF só fica verde com CPF/CNPJ **e** check-in **e** check-out iguais aos do pedido. O resto é amarela, para a pessoa conferir e enviar a NF ou excluir o e-mail.

@@ -425,20 +425,20 @@
       "clara",
       "bernardo",
       "ingrid",
-      "afonso"
+      "camila"
     ],
     "_ajuda_nomes": "Nome mostrado de cada assinatura de IMAGEM. Se o código não estiver aqui, o nome é o código com inicial maiúscula. Para tirar um da lista, ponha null.",
     "nomes": {
       "joao": "João"
     },
-    "_ajuda_textos": "Assinaturas só de TEXTO: o código, o nome e as linhas que entram depois do \"Atenciosamente,\". Para incluir alguém, copie o bloco do Afonso e troque. Para tirar, ponha null.",
+    "_ajuda_textos": "Assinaturas só de TEXTO: o código, o nome e as linhas que entram depois do \"Atenciosamente,\". Para incluir alguém, copie o bloco da Camila e troque. Para tirar, ponha null.",
     "textos": {
-      "afonso": {
-        "nome": "Afonso Pereira",
+      "camila": {
+        "nome": "Camila Castilhos",
         "linhas": [
-          "AFONSO PEREIRA",
+          "CAMILA CASTILHOS",
           "AUXILIAR FINANCEIRO",
-          "REDE ANDRADE HOTEIS"
+          "REDE ANDRADE HOTÉIS"
         ]
       }
     },

@@ -88,8 +88,26 @@ def _estado_de_mentira(backend):
     e = types.SimpleNamespace(backend=backend, central="planilha", _fila_status=None, _lendo_fila_status=threading.Lock(),
                               FILA_STATUS_SEGUNDOS=3.0, envio_nf=types.SimpleNamespace(locais={}, fila={"x": 1}, situacao=lambda i, f: {"estado": "aguardando", "fila": f}))
     e._fila_para_status = types.MethodType(classe._fila_para_status, e)
+    e._ler_fila_status = types.MethodType(classe._ler_fila_status, e)
     e.situacao_envio = types.MethodType(classe.situacao_envio, e)
     return e
+
+
+def _espera_leitura(e, ate=5.0):
+    """A leitura da fila agora roda por trás (a consulta da tela nunca espera o Google): espera o fio terminar."""
+    fim = time.monotonic() + ate
+    while time.monotonic() < fim and e._lendo_fila_status.locked():
+        time.sleep(0.01)
+
+
+def test_consulta_do_status_nao_espera_o_google():
+    b = _Backend(demora=0.6)
+    e = _estado_de_mentira(b)
+    inicio = time.monotonic()
+    e.situacao_envio("ENV-1")
+    assert time.monotonic() - inicio < 0.3                                # volta na hora, com o Google lento
+    _espera_leitura(e)
+    assert b.leituras == 1
 
 
 def test_consultas_seguidas_do_status_leem_o_google_uma_vez_so():

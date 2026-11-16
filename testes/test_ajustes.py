@@ -78,14 +78,14 @@ def test_prioridade_media_precisa_ser_menor_que_a_alta(arquivo):
 
 def test_assinaturas_somam_as_de_fabrica_e_null_tira(arquivo):
     arquivo({"assinaturas": {
-        "textos": {"ana": {"nome": "Ana Souza", "linhas": ["ANA SOUZA", "FINANCEIRO"]}, "afonso": None},
+        "textos": {"ana": {"nome": "Ana Souza", "linhas": ["ANA SOUZA", "FINANCEIRO"]}, "camila": None},
         "nomes": {"joao": "João Carlos", "cristian": None},
         "ordem": ["ana", "joao"]}})
     textos = ajustes.valor("assinaturas.textos")
     assert textos == {"ana": {"nome": "Ana Souza", "linhas": ["ANA SOUZA", "FINANCEIRO"]}} and ajustes.erros() == []
     assert ajustes.valor("assinaturas.nomes") == {"joao": "João Carlos"} and ajustes.valor("assinaturas.ordem") == ["ana", "joao"]
     arquivo({"assinaturas": {"textos": {"Ana Maria": {"nome": "x", "linhas": ["y"]}}}})
-    assert "só pode ter letras minúsculas e números" in "\n".join(ajustes.erros()) and "afonso" in ajustes.valor("assinaturas.textos")
+    assert "só pode ter letras minúsculas e números" in "\n".join(ajustes.erros()) and "camila" in ajustes.valor("assinaturas.textos")
     arquivo({"assinaturas": {"textos": {"ana": {"nome": "Ana"}}}})
     assert 'precisa de "nome" e de 1 a 8 "linhas"' in "\n".join(ajustes.erros())
 

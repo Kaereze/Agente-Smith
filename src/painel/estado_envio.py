@@ -330,25 +330,22 @@ class EnvioMixin:
     FILA_STATUS_SEGUNDOS = 3.0   # quanto tempo a leitura da fila de envios (Google) vale para quem pergunta o status
 
     def _fila_para_status(self):
-        """A fila de envios para responder "e o meu envio?" (09/11/2026, fluidez). Antes CADA consulta da tela ia ao Google
-        (17 s em média, até 60 s); com vários envios andando eram várias leituras iguais ao mesmo tempo. Agora:
-        - leitura de menos de FILA_STATUS_SEGUNDOS atrás vale para todo mundo;
-        - só UM pedido lê de cada vez; quem chega no meio usa a última leitura (ou a da volta de 15 s do Painel);
-        - se o Google falhar, o status sai da fila que o Painel já tem, em vez de dar erro na tela.
-        -> a fila dobrada, ou None (e o envio_nf usa a dele)."""
+        """A fila de envios para responder "e o meu envio?" (09/11/2026, fluidez; 16/11/2026, sem esperar o Google nunca).
+        A consulta da tela NUNCA espera o Google: devolve na hora a última leitura (ou None, e o envio_nf usa a da volta de 15 s do
+        Painel) e, se ela já está velha, manda UM fio ler por trás. Antes a consulta que pegava a leitura esperava o Google
+        (média 4 s, até 40 s) e a tela ficava com a "bolinha" de envio rodando todo esse tempo.
+        -> a fila dobrada, ou None."""
         guardada = self._fila_status
-        if guardada and time.monotonic() - guardada[0] < self.FILA_STATUS_SEGUNDOS:
-            return guardada[1]
-        if not self._lendo_fila_status.acquire(blocking=False):
-            return guardada[1] if guardada else None
+        if (not guardada or time.monotonic() - guardada[0] >= self.FILA_STATUS_SEGUNDOS)                 and self._lendo_fila_status.acquire(blocking=False):
+            threading.Thread(target=self._ler_fila_status, daemon=True, name="fila_status").start()
+        return guardada[1] if guardada else None
+
+    def _ler_fila_status(self):
         try:
             lida = self.backend.ler_abas(self.central, [envio_nf.ABA_FILA])[0].get(envio_nf.ABA_FILA, [[]])
-            fresca = envio_nf.dobrar_fila(lida)
-            self._fila_status = (time.monotonic(), fresca)
-            return fresca
+            self._fila_status = (time.monotonic(), envio_nf.dobrar_fila(lida))
         except Exception as e:
             logger.debug(f"status do envio: leitura da fila falhou ({str(e)[:80]}); uso a da última volta")
-            return guardada[1] if guardada else None
         finally:
             self._lendo_fila_status.release()
 

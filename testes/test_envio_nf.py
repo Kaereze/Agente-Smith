@@ -521,22 +521,22 @@ def test_selo_da_ingrid_entra_depois_da_equipe_e_vira_o_padrao_dela():
     assert [s["nome"] for s in en.selos()][4] == "Ingrid"
 
 
-def test_selo_so_de_texto_do_afonso_sem_imagem():
-    """03/11/2026 (João): assinatura do Afonso é a mensagem padrão + estas 3 linhas, exatamente, sem imagem."""
+def test_selo_so_de_texto_da_camila_sem_imagem():
+    """03/11/2026 (João): assinatura da Camila (16/11/2026, no lugar da do Afonso) é a mensagem padrão + estas 3 linhas, exatamente, sem imagem."""
     lista = en.selos()
-    assert [s["id"] for s in lista][:6] == ["joao", "cristian", "clara", "bernardo", "ingrid", "afonso"]
-    afonso = next(s for s in lista if s["id"] == "afonso")
-    assert afonso["nome"] == "Afonso Pereira" and afonso["texto"] == ["AFONSO PEREIRA", "AUXILIAR FINANCEIRO", "REDE ANDRADE HOTEIS"]
-    assert all(s["texto"] is None for s in lista if s["id"] != "afonso")                 # os outros continuam de imagem
-    assert en.selo_do_agente("Afonso Pereira") == "afonso" and en.selo_do_agente("Afonso") == "afonso"
-    assert en.selo_valido("afonso") and en.selo_valido("ingrid") and not en.selo_valido("fulano") and not en.selo_valido("")
-    assert en.caminho_selo("afonso") is None                                              # não há PNG: o e-mail não leva imagem
+    assert [s["id"] for s in lista][:6] == ["joao", "cristian", "clara", "bernardo", "ingrid", "camila"]
+    camila = next(s for s in lista if s["id"] == "camila")
+    assert camila["nome"] == "Camila Castilhos" and camila["texto"] == ["CAMILA CASTILHOS", "AUXILIAR FINANCEIRO", "REDE ANDRADE HOTÉIS"]
+    assert all(s["texto"] is None for s in lista if s["id"] != "camila")                 # os outros continuam de imagem
+    assert en.selo_do_agente("Camila Castilhos") == "camila" and en.selo_do_agente("Camila") == "camila"
+    assert en.selo_valido("camila") and en.selo_valido("ingrid") and not en.selo_valido("fulano") and not en.selo_valido("")
+    assert en.caminho_selo("camila") is None                                              # não há PNG: o e-mail não leva imagem
 
 
-def test_corpo_do_email_do_afonso_tem_a_mensagem_padrao_e_as_tres_linhas_sem_imagem():
-    html = en.corpo_com_selo("", "afonso")
+def test_corpo_do_email_da_camila_tem_a_mensagem_padrao_e_as_tres_linhas_sem_imagem():
+    html = en.corpo_com_selo("", "camila")
     assert "Prezado(a) hóspede" in html and "Atenciosamente," in html and "cid:" not in html and "<img" not in html
-    assert html.index("Atenciosamente,") < html.index("AFONSO PEREIRA<br>AUXILIAR FINANCEIRO<br>REDE ANDRADE HOTEIS")
+    assert html.index("Atenciosamente,") < html.index("CAMILA CASTILHOS<br>AUXILIAR FINANCEIRO<br>REDE ANDRADE HOTÉIS")
     assert "cid:selo_nf" in en.corpo_com_selo("", "ingrid")                                # o selo de imagem segue igual
 
 

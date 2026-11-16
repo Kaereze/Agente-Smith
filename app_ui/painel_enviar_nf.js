@@ -432,6 +432,7 @@ function seguirEnvio(id, ctx) {
     box.id = "envios-andamento"; box.setAttribute("aria-live", "polite");
     document.body.appendChild(box);
   }
+  toast("Pedido de envio entregue");   // um aviso curto e pronto: nada fica girando na tela
   andamento[id] = { ctx, estado: "entregue" };
   desenharEnvio(id);
   verEnvio(id);
@@ -447,13 +448,13 @@ async function verEnvio(id) {
     const resp = a.ctx.resp;
     if (resp && !resp.encaminhar && !resp.novo) correioRespondido(resp.id);
     carregar(); desenharEnvio(id);
-    a.timer = setTimeout(() => fecharEnvio(id), 3500);   // a pílula some sozinha
+    a.timer = setTimeout(() => fecharEnvio(id), 500);
     return;
   }
   if (s.estado === "falhou" || s.estado === "sem_resposta") { a.estado = "falhou"; return desenharEnvio(id); }
   a.estado = s.estado === "enviando" ? "saindo" : "entregue";
   desenharEnvio(id);
-  a.timer = setTimeout(() => verEnvio(id), 2000);
+  a.timer = setTimeout(() => verEnvio(id), 5000);   // conferência em silêncio, só para avisar se falhar
 }
 function desenharEnvio(id) {
   // Aviso em pílula (22/10/2026, desenho "Aviso de envio", Opção B): uma linha só. Erro não some: vira pílula vermelha
@@ -461,6 +462,9 @@ function desenharEnvio(id) {
   const a = andamento[id], box = $("envios-andamento");
   if (!a || !box) return;
   const falhou = a.estado === "falhou", cartao = falhou && a.aberto;
+  // 16/11/2026 (João): "se a requisição já foi enviada ela precisa sumir da minha tela". Entregue, saindo ou enviado não mostram nada;
+  // quem se vira com o envio é o PC dono. Só a FALHA aparece (pílula vermelha), porque aí a pessoa precisa agir.
+  if (!falhou) { box.querySelector(`[data-env="${id}"]`)?.remove(); return; }
   let card = box.querySelector(`[data-env="${id}"]`);
   if (card && card.dataset.forma !== (cartao ? "cartao" : "pilula")) { card.remove(); card = null; }
   if (!card) {

@@ -478,7 +478,7 @@ ENTRADAS = [
      None),
     ('assinaturas.largura_imagem_pixels', 520, 200, 900, 'Largura da imagem da assinatura dentro do e-mail, em pixels.', None),
     ('assinaturas.ordem',
-     ['joao', 'cristian', 'clara', 'bernardo', 'ingrid', 'afonso'],
+     ['joao', 'cristian', 'clara', 'bernardo', 'ingrid', 'camila'],
      None,
      None,
      'Ordem em que as assinaturas aparecem na lista (use o código de cada uma, em minúsculas). Quem não está aqui vai para o fim.',
@@ -491,11 +491,11 @@ ENTRADAS = [
      'um da lista, ponha null.',
      'selos_nomes'),
     ('assinaturas.textos',
-     {'afonso': {'nome': 'Afonso Pereira', 'linhas': ['AFONSO PEREIRA', 'AUXILIAR FINANCEIRO', 'REDE ANDRADE HOTEIS']}},
+     {'camila': {'nome': 'Camila Castilhos', 'linhas': ['CAMILA CASTILHOS', 'AUXILIAR FINANCEIRO', 'REDE ANDRADE HOTÉIS']}},
      None,
      None,
      'Assinaturas só de TEXTO: o código, o nome e as linhas que entram depois do "Atenciosamente,". Para incluir alguém, copie o '
-     'bloco do Afonso e troque. Para tirar, ponha null.',
+     'bloco da Camila e troque. Para tirar, ponha null.',
      'selos_textos'),
     ('assinaturas.mensagem_padrao',
      'Prezado(a) hóspede,\n'
