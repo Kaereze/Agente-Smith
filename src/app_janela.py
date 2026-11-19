@@ -174,6 +174,48 @@ class Api:
             ESTADO["janela"].destroy()
         return True
 
+    # ---------- Tamanho da tela (19/11/2026): o zoom do próprio WebView2, igual ao Ctrl + e -, mas escolhido pelo Painel ----------
+    ESCALA_MIN, ESCALA_MAX = 0.75, 1.5
+
+    def _no_webview(self, fazer):
+        """Roda `fazer(webview2)` na linha da janela (o WinForms só deixa mexer no controle por lá). -> o que ela devolver, ou None."""
+        janela = ESTADO.get("janela")
+        form = getattr(janela, "native", None)
+        controle = getattr(form, "webview", None)
+        if form is None or controle is None:
+            return None
+        from System import Action
+        saida = {}
+
+        def corpo():
+            try:
+                saida["v"] = fazer(controle)
+            except Exception:
+                saida["v"] = None
+        form.Invoke(Action(corpo))
+        return saida.get("v")
+
+    def escala_atual(self):
+        v = self._no_webview(lambda w: w.ZoomFactor)
+        return round(float(v), 2) if v else 1.0
+
+    def definir_escala(self, fator):
+        """Põe o zoom da janela (0,75 a 1,5) e desliga o zoom solto (Ctrl + roda do mouse, Ctrl + e -). -> o zoom que ficou."""
+        try:
+            fator = max(self.ESCALA_MIN, min(self.ESCALA_MAX, float(fator)))
+        except (TypeError, ValueError):
+            return self.escala_atual()
+
+        def fazer(w):
+            try:
+                w.CoreWebView2.Settings.IsZoomControlEnabled = False
+            except Exception:
+                pass   # versão do WebView2 sem a opção: o zoom pelo Painel funciona do mesmo jeito
+            w.ZoomFactor = fator
+            return w.ZoomFactor
+        v = self._no_webview(fazer)
+        return round(float(v), 2) if v else self.escala_atual()
+
 
 def esconder_em_vez_de_fechar():
     """O X esconde (fica pronto pra abrir na hora). Desligar/reiniciar o Windows ou "Fechar o Painel" fecham de vez."""
