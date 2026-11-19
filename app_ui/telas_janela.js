@@ -134,7 +134,8 @@ function desenharOperador(atual, lista, pc) {
       <span class="n">${esc(o)}<span class="s">${o === atual ? "você, neste PC" : "trocar para " + esc(o)}</span></span>${o === atual ? SVG_OK : ""}</button>`).join("") +
     (!opLista.includes("João") ? `<div class="op-nota">O usuário João só é usado no PC dele.</div>` : "") +
     (window.pywebview ? `<div class="op-sep"></div><button class="op-item sair" id="op-sair" title="O X só esconde a janela (abre na hora). Isto fecha de verdade.">
-      <span class="av">${SVG_DESLIGAR}</span><span class="n">Fechar o Painel<span class="s">o X da janela só esconde</span></span></button>` : "");
+      <span class="av">${SVG_DESLIGAR}</span><span class="n">Fechar o Painel<span class="s">o X da janela só esconde</span></span></button>` : "") +
+    (window.painelEscala ? window.painelEscala.html() : "");
 }
 document.addEventListener("click", e => { if (e.target.closest("#op-sair")) window.pywebview?.api?.sair(); });
 window.addEventListener("pywebviewready", () => { opAtual = null; carregar(); });   // o botão "Fechar o Painel" só existe na janela do app
@@ -148,6 +149,26 @@ function menuOperador(abrir) {
     m.style.bottom = Math.max(8, Math.round(innerHeight - b.bottom)) + "px";
   }
 }
+// Pergunta antes de trocar quem trabalha neste PC. O Painel passa a mostrar e contar as caixas como se fosse essa pessoa.
+function confirmarTrocaDeOperador(nome) {
+  return new Promise(resolver => {
+    if (document.querySelector(".modal-fundo")) return resolver(false);
+    const fundo = document.createElement("div");
+    fundo.className = "modal-fundo";
+    fundo.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="troca-t" style="width:min(460px,94vw)">
+      <div class="modal-topo"><div><h3 id="troca-t">Trocar este PC para ${esc(nome)}?</h3>
+        <div class="sub">O Painel passa a mostrar e a contar as caixas como se fosse ${esc(nome)}. Troque só se este PC mudou de dono.</div></div></div>
+      <div class="modal-rodape"><button type="button" id="troca-nao">Cancelar</button><button type="button" class="prim" id="troca-sim">Trocar para ${esc(nome)}</button></div></div>`;
+    document.body.appendChild(fundo);
+    const fechar = ok => { fundo.remove(); document.removeEventListener("keydown", tecla, true); resolver(ok); };
+    const tecla = ev => { if (ev.key === "Escape") { ev.stopPropagation(); fechar(false); } };
+    document.addEventListener("keydown", tecla, true);
+    $("troca-nao").onclick = () => fechar(false);
+    $("troca-sim").onclick = () => fechar(true);
+    fundo.addEventListener("click", ev => { if (ev.target === fundo) fechar(false); });
+    $("troca-nao").focus();   // o foco começa em Cancelar: Enter sem querer não troca
+  });
+}
 $("op-btn").addEventListener("click", e => { e.stopPropagation(); menuOperador(); });
 $("op-menu").addEventListener("click", async e => {
   const item = e.target.closest("[data-op]");
@@ -156,6 +177,7 @@ $("op-menu").addEventListener("click", async e => {
   const nome = item.dataset.op;
   menuOperador(false);
   if (nome === opAtual) return;
+  if (!(await confirmarTrocaDeOperador(nome))) return;   // 19/11/2026: trocar sem querer zerou a caixa do João duas vezes (08/11 e 11/11)
   const r = await api("/api/agente", {nome});
   if (r.ok) { desenharOperador(nome, opLista); toast("Operador: " + nome); carregar(); } else toast(r.motivo, true);
 });

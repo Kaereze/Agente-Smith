@@ -1,0 +1,35 @@
+/* Sistema de medidas do Painel (João, 19/11/2026, repaginação etapa 2). UMA régua de 8 px para tudo.
+   Regra: tela nova usa só estes valores (var(--ds-...)); tela antiga migra aos poucos, medindo com ferramentas/medir_design.py.
+   Desenho aprovado em "Segundo Cérebro/6 Documentos/Designs/2026-11-19 Auditoria de usabilidade (Nielsen).html". */
+:root{
+  /* espaçamento: gap, padding e margem */
+  --ds-s1:4px;    /* ícone e texto */
+  --ds-s2:8px;    /* entre itens */
+  --ds-s3:12px;   /* dentro de botão */
+  --ds-s4:16px;   /* dentro de cartão */
+  --ds-s5:24px;   /* entre cartões */
+  --ds-s6:32px;   /* entre blocos */
+  --ds-s7:48px;   /* entre seções */
+
+  /* tamanhos de texto (7, no lugar dos 25 que existiam) */
+  --ds-t12:12px;  /* etiqueta e apoio */
+  --ds-t13:13px;  /* tabela e metadados */
+  --ds-t14:14px;  /* texto padrão */
+  --ds-t16:16px;  /* título de cartão */
+  --ds-t20:20px;  /* título de tela */
+  --ds-t28:28px;  /* número de destaque */
+  --ds-t40:40px;  /* número grande */
+
+  /* cantos (4, no lugar dos 20 que existiam) */
+  --ds-r4:4px;    /* campos */
+  --ds-r8:8px;    /* botões */
+  --ds-r12:12px;  /* cartões e janelas */
+  --ds-rpilula:999px;  /* estados e etiquetas */
+
+  /* camadas (z-index): quem abre por cima de quem */
+  --ds-z-conteudo:1;
+  --ds-z-barra:40;      /* topo e barra lateral */
+  --ds-z-menu:60;       /* menus que abrem sobre o conteúdo (Caixa de, operador, filtros) */
+  --ds-z-janela:80;     /* janelas e fundo escurecido */
+  --ds-z-aviso:100;     /* avisos e confirmações, sempre por cima */
+}
