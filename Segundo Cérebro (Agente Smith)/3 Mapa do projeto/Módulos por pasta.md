@@ -37,6 +37,7 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 | `hoteis` | Cadastro único de hotéis: casa os nomes que cada fonte usa com o nome do Cadastro_Hoteis. |
 | `rede_util` | Retry com backoff exponencial para erros passageiros da API do Google. |
 | `sheets` | Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log. |
+| `supabase` | Conexão com o Supabase (banco de dados central, 20/11/2026): só o necessário para ler, gravar, apagar e dar sinal de vida. |
 | `tratamento` | Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP. |
 | `vigia_formularios` | Cópia rápida dos formulários (23/10/2026, OK do João): pedido do hóspede no Painel em ~10-20 s, e não 6-12 min. |
 

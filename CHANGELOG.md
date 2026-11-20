@@ -17,6 +17,8 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 ### Adicionado
 - **Velocidade de cada PC em Monitoramento:** cada Painel publica (na coluna de saúde de PCs_Painel) quanto a volta, a leitura do Google e a resposta da tela demoram, e o cartão do PC mostra "Velocidade: volta 6 s (pior 17 s) · Google 5 s · tela até 0,2 s", em amarelo quando o pior passa de 30 s. Assim o lag dos PCs do trabalho aparece daqui de casa. Só números em segundos, nenhum dado de hóspede. PC de versão antiga mostra "sem medida".
 
+- **Conexão com o banco central (Supabase), ainda sem uso:** `src/central/supabase.py` lê, grava (upsert), apaga e dá sinal de vida pela API REST, sem biblioteca nova, com tempo limite e repetição em erro passageiro (ajustes `banco.*`). Só funciona se existir `chave-supabase.json` ao lado da chave do Google; sem ele nada muda e a Planilha Central segue valendo. `ferramentas/supabase_tabelas.sql` cria as tabelas de teste (com segurança RLS ligada) e `ferramentas/testar_supabase.py` mede o tempo real de gravar e ler, com dados fictícios.
+
 ### Corrigido
 - O "pior tempo" (p95) do registro de desempenho agora arredonda para cima: com poucas medidas ele saía menor que a média.
 

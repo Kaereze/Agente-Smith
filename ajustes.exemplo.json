@@ -84,6 +84,13 @@
     "_ajuda_canceladas_minutos": "De quanto em quanto tempo o Painel relê a lista de NFs canceladas. (aceita de 1 a 240; de fábrica 10)",
     "canceladas_minutos": 10
   },
+  "banco": {
+    "_ajuda": "Conversa com o banco de dados central (Supabase): tempos e limites.",
+    "_ajuda_tentativa_segundos": "Tempo máximo de cada tentativa de falar com o banco (Supabase). (aceita de 3 a 60, pode ter casa decimal com PONTO, como 4.5; de fábrica 10)",
+    "tentativa_segundos": 10,
+    "_ajuda_chamada_limite_segundos": "Tempo máximo da chamada inteira ao banco, somando as tentativas e as esperas. (aceita de 5 a 120, pode ter casa decimal com PONTO, como 4.5; de fábrica 20)",
+    "chamada_limite_segundos": 20
+  },
   "atualizacao": {
     "_ajuda": "Atualização dos PCs entre si e aviso de reinício.",
     "_ajuda_verificar_github_minutos": "De quanto em quanto tempo cada PC confere se há versão nova no GitHub. (aceita de 5 a 120; de fábrica 15)",
