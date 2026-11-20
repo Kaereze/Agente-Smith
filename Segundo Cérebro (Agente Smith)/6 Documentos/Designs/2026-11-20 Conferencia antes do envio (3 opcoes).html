@@ -1,0 +1,240 @@
+<title>Conferência antes do envio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: três desenhos empilhados, cada um uma janela do Painel com dados inventados. Painel escuro de propósito (é o visual do Painel Fiscal): cinzas, azul, âmbar, vermelho, sem verde. */
+:root{
+  --fundo:#161616; --folha:#202020; --folha-2:#2a2a2a; --linha:#3a3a3a; --tinta:#f0f0f0; --tinta-2:#cfcfcf; --tinta-3:#a8a8a8;
+  --azul:#479ef5; --azul-fundo:#16314d; --ambar:#e6b34a; --ambar-fundo:#3a3015; --erro:#ff8d95; --erro-fundo:#3d2226;
+  --fonte:"Segoe UI",system-ui,-apple-system,sans-serif; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:15px/1.5 var(--fonte);
+  padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:1120px;margin:0 auto}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:44px 0 4px}
+.sub{color:var(--tinta-3);margin:0 0 18px;max-width:80ch}
+.nota{background:var(--folha);border:1px solid var(--linha);border-radius:10px;padding:12px 16px;color:var(--tinta-2);max-width:80ch;margin:0 0 8px}
+.nota b{color:var(--tinta)}
+.rotulo{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--azul);margin-bottom:2px}
+.cenario{color:var(--tinta-3);font-size:13px;margin:0 0 12px;max-width:90ch}
+
+/* janela do Painel */
+.janela{background:var(--folha);border:1px solid var(--linha);border-radius:14px;overflow:hidden}
+.j-topo{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--linha);background:var(--folha-2)}
+.j-topo b{font-weight:600}
+.j-topo .dir{margin-left:auto;color:var(--tinta-3);font-size:13px}
+.j-corpo{padding:16px}
+.dois{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}
+@media (max-width:860px){.dois{grid-template-columns:minmax(0,1fr)}}
+
+/* campos do e-mail */
+.campo{display:grid;grid-template-columns:70px minmax(0,1fr);gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--linha)}
+.campo .r{color:var(--tinta-3);font-size:13px}
+.campo .v{overflow-wrap:anywhere}
+.anexo{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--linha);border-radius:8px;padding:6px 10px;background:var(--folha-2);font-size:13px}
+.corpo-msg{margin-top:12px;background:#fff;color:#1b1b1b;border-radius:8px;padding:14px 16px;font:14px/1.5 Calibri,Arial,sans-serif}
+.btn{font:inherit;font-weight:600;border-radius:9px;border:1px solid var(--linha);background:var(--folha-2);color:var(--tinta);padding:8px 16px;cursor:pointer}
+.btn.azul{background:var(--azul);border-color:var(--azul);color:#06131f}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.rodape-j{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--linha);background:var(--folha-2)}
+.rodape-j .txt{color:var(--tinta-2);font-size:13px;flex:1 1 220px}
+
+/* estados: sempre com palavra, nunca só cor */
+.est{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.est.ok{background:var(--folha-2);color:var(--tinta-2);border:1px solid var(--linha)}
+.est.difere{background:var(--erro-fundo);color:var(--erro)}
+.est.falta{background:var(--ambar-fundo);color:var(--ambar)}
+.est svg{width:12px;height:12px;flex:none}
+
+/* A: lista de conferência ao lado */
+.painel-conf{background:var(--folha-2);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;align-self:start}
+.painel-conf h3{margin:0 0 2px;font-size:14px}
+.painel-conf .res{color:var(--tinta-3);font-size:13px;margin:0 0 8px}
+.item{padding:9px 0;border-top:1px solid var(--linha)}
+.item .t{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.item .t span:first-child{font-weight:600;font-size:14px}
+.cmp{display:grid;grid-template-columns:62px minmax(0,1fr);gap:2px 8px;margin-top:6px;font-size:13px;color:var(--tinta-2)}
+.cmp i{font-style:normal;color:var(--tinta-3)}
+.cmp .dif{color:var(--erro);font-weight:600}
+.item.compacto .cmp{display:none}
+.item .acao{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.mini{font:inherit;font-size:13px;border-radius:7px;border:1px solid var(--linha);background:var(--folha);color:var(--tinta);padding:4px 10px;cursor:pointer}
+.mini:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+/* B: faixa de chips */
+.faixa{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;background:var(--folha-2);border:1px solid var(--linha);border-radius:12px;margin-bottom:12px}
+.faixa .resumo{font-weight:600;margin-right:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;border-radius:999px;border:1px solid var(--linha);background:var(--folha);color:var(--tinta);padding:5px 12px;cursor:pointer}
+.chip[aria-expanded=true]{border-color:var(--azul);background:var(--azul-fundo)}
+.chip.difere{border-color:#6b3a40}
+.chip.falta{border-color:#6b5a25}
+.chip:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.detalhe{border:1px solid var(--linha);border-radius:10px;padding:10px 14px;margin:-4px 0 12px;background:var(--folha-2)}
+.detalhe .cmp{grid-template-columns:90px minmax(0,1fr);font-size:14px}
+
+/* C: ficha de emissão */
+.ficha{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+@media (max-width:700px){.ficha{grid-template-columns:minmax(0,1fr)}}
+.cp{background:var(--folha-2);border:1px solid var(--linha);border-radius:10px;padding:9px 12px;min-width:0}
+.cp .r{display:flex;justify-content:space-between;gap:8px;color:var(--tinta-3);font-size:12px}
+.cp .v{font-size:16px;font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+.cp .de{font-size:12px;color:var(--tinta-3);margin-top:2px}
+.cp.largo{grid-column:1/-1}
+.cp.difere{border-color:#6b3a40}
+.cp.falta{border-color:#6b5a25}
+.texto-em{white-space:pre-wrap;font:13.5px/1.55 Consolas,"Cascadia Mono",monospace;color:var(--tinta-2);margin:4px 0 0}
+.passos{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none;font-size:13px;color:var(--tinta-3)}
+.passos li{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--linha)}
+.passos li.atual{color:var(--tinta);border-color:var(--azul);background:var(--azul-fundo);font-weight:600}
+.lado{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:700px){.lado{grid-template-columns:minmax(0,1fr)}}
+.pdf{background:#fff;color:#222;border-radius:8px;padding:14px;font:12.5px/1.45 Arial,sans-serif;min-height:150px}
+.pdf b{display:block;font-size:13px;margin-bottom:6px}
+.pdf mark{background:#ffd5d8;color:#8a0f1c;padding:0 2px;border-radius:3px}
+
+.vantagens{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:4px;color:var(--tinta-2);font-size:14px}
+.vantagens li::before{content:"+ ";color:var(--azul);font-weight:700}
+.vantagens li.contra::before{content:"− ";color:var(--ambar)}
+.rodape-doc{color:var(--tinta-3);font-size:13px;margin-top:40px;border-top:1px solid var(--linha);padding-top:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main>
+<h1>Conferência antes do envio</h1>
+<p class="sub">Três desenhos para o operador conferir a NF antes de mandar o e-mail. Hoje a conferência só roda depois do clique em Enviar e só aparece quando algo está errado. Aqui ela roda assim que o PDF entra, mostra o que foi comparado e deixa a ficha de emissão já preenchida.</p>
+<div class="nota"><b>Dados inventados.</b> "Marcos Exemplo", CPF de exemplo, hotel e valores de mentira. Nada vem do Painel real. Os botões abaixo funcionam só para você sentir o desenho; nada é enviado.</div>
+<div class="nota"><b>O que muda nos três:</b> a conferência acontece sozinha quando o PDF da NF é anexado (sem esperar o Enviar); o que está certo ocupa pouco; o que difere mostra os dois valores lado a lado; o botão Enviar diz o que falta resolver.</div>
+
+<!-- ===================== A ===================== -->
+<h2><span class="rotulo">Opção A</span><br>Lista de conferência ao lado</h2>
+<p class="cenario">A janela de e-mail de hoje, com uma coluna nova à direita. Cada linha é uma coisa conferida: pedido de um lado, PDF do outro. A linha que difere abre sozinha.</p>
+<div class="janela" id="A">
+  <div class="j-topo"><b>Enviar NF</b><span>Pedido de Marcos Exemplo · Hotel Exemplo Praia</span><span class="dir">por este PC</span></div>
+  <div class="j-corpo dois">
+    <div>
+      <div class="campo"><span class="r">De</span><span class="v">Hotel Exemplo Praia · notafiscal@hotelexemplo.example</span></div>
+      <div class="campo"><span class="r">Para</span><span class="v">marcos@exemplo.example</span></div>
+      <div class="campo"><span class="r">Assunto</span><span class="v">NF 1234 - MARCOS EXEMPLO - 5678</span></div>
+      <div class="campo"><span class="r">Anexo</span><span class="v"><span class="anexo">NF 1234 - MARCOS EXEMPLO - 5678.pdf · 84 KB</span></span></div>
+      <div class="corpo-msg">Prezado Marcos,<br>Segue a nota fiscal referente à sua estadia de 12/11 a 16/11.<br><br>Atenciosamente,<br>Setor Fiscal</div>
+    </div>
+    <aside class="painel-conf" aria-label="Conferência da NF com o pedido">
+      <h3>Conferência da NF</h3>
+      <p class="res" id="A-res">1 ponto difere · 1 faltou ler · 4 conferem</p>
+      <div class="item compacto"><div class="t"><span>Documento</span><span class="est ok"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg>Confere</span></div></div>
+      <div class="item compacto"><div class="t"><span>Nome</span><span class="est ok"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg>Confere</span></div></div>
+      <div class="item" id="A-valor"><div class="t"><span>Valor total</span><span class="est difere">Difere</span></div>
+        <div class="cmp"><i>Pedido</i><span>R$ 1.280,00</span><i>PDF</i><span class="dif">R$ 1.208,00</span></div>
+        <div class="acao"><button class="mini" data-a="corrigir">Voltar e corrigir</button><button class="mini" data-a="aceitar">O PDF está certo</button></div></div>
+      <div class="item compacto"><div class="t"><span>Hotel emitente</span><span class="est ok"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg>Confere</span></div></div>
+      <div class="item compacto"><div class="t"><span>Destinatário</span><span class="est ok"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg>Confere</span></div></div>
+      <div class="item"><div class="t"><span>Check-in e check-out</span><span class="est falta">Não achei no PDF</span></div>
+        <div class="cmp"><i>Pedido</i><span>12/11 a 16/11</span><i>PDF</i><span>sem datas no texto</span></div></div>
+    </aside>
+  </div>
+  <div class="rodape-j"><button class="btn azul" id="A-ir" disabled>Enviar</button><span class="txt" id="A-txt">Resolva o valor para enviar. As datas só avisam, não travam.</span></div>
+</div>
+<ul class="vantagens">
+  <li>O operador vê o que foi comparado e com quê, não só "tem erro".</li>
+  <li>O que confere vira uma linha curta; o olho vai direto para o que difere.</li>
+  <li class="contra">Ocupa uma coluna: abaixo de 1100 px ela desce para baixo do e-mail.</li>
+</ul>
+
+<!-- ===================== B ===================== -->
+<h2><span class="rotulo">Opção B</span><br>Faixa de chips acima do e-mail</h2>
+<p class="cenario">Mais leve: a janela fica igual e ganha uma faixa de uma linha. Cada chip abre os dois valores logo abaixo. Quando tudo confere, a faixa vira uma frase só.</p>
+<div class="janela" id="B">
+  <div class="j-topo"><b>Enviar NF</b><span>Pedido de Marcos Exemplo · Hotel Exemplo Praia</span><span class="dir">por este PC</span></div>
+  <div class="j-corpo">
+    <div class="faixa" role="group" aria-label="Conferência da NF">
+      <span class="resumo">Conferência: 1 difere, 1 faltou ler</span>
+      <button class="chip" aria-expanded="false" data-d="B-doc">Documento <span class="est ok">Confere</span></button>
+      <button class="chip" aria-expanded="false" data-d="B-nome">Nome <span class="est ok">Confere</span></button>
+      <button class="chip difere" aria-expanded="true" data-d="B-valor">Valor <span class="est difere">Difere</span></button>
+      <button class="chip falta" aria-expanded="false" data-d="B-datas">Datas <span class="est falta">Faltou ler</span></button>
+    </div>
+    <div class="detalhe" id="B-valor"><div class="cmp"><i>Pedido</i><span>R$ 1.280,00 (4 diárias de R$ 320,00)</span><i>PDF da NF</i><span class="dif">R$ 1.208,00</span></div>
+      <div class="acao" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="mini">Voltar e corrigir</button><button class="mini">O PDF está certo</button></div></div>
+    <div class="detalhe" id="B-doc" hidden><div class="cmp"><i>Pedido</i><span>CPF 111.444.777-35</span><i>PDF da NF</i><span>CPF 111.444.777-35</span></div></div>
+    <div class="detalhe" id="B-nome" hidden><div class="cmp"><i>Pedido</i><span>MARCOS EXEMPLO</span><i>PDF da NF</i><span>MARCOS EXEMPLO</span></div></div>
+    <div class="detalhe" id="B-datas" hidden><div class="cmp"><i>Pedido</i><span>12/11 a 16/11</span><i>PDF da NF</i><span>sem datas no texto do PDF</span></div></div>
+    <div class="campo"><span class="r">Para</span><span class="v">marcos@exemplo.example</span></div>
+    <div class="campo"><span class="r">Assunto</span><span class="v">NF 1234 - MARCOS EXEMPLO - 5678</span></div>
+    <div class="campo"><span class="r">Anexo</span><span class="v"><span class="anexo">NF 1234 - MARCOS EXEMPLO - 5678.pdf · 84 KB</span></span></div>
+    <div class="corpo-msg">Prezado Marcos,<br>Segue a nota fiscal referente à sua estadia de 12/11 a 16/11.<br><br>Atenciosamente,<br>Setor Fiscal</div>
+  </div>
+  <div class="rodape-j"><button class="btn azul" disabled>Enviar</button><span class="txt">Resolva o valor para enviar.</span></div>
+</div>
+<ul class="vantagens">
+  <li>Quase não muda a janela que os operadores já conhecem.</li>
+  <li>Cabe bem em tela estreita: os chips quebram de linha.</li>
+  <li class="contra">Para ver os dois valores é preciso um clique no chip (a opção A mostra sem clicar).</li>
+</ul>
+
+<!-- ===================== C ===================== -->
+<h2><span class="rotulo">Opção C</span><br>Ficha de emissão pré-pronta, depois a conferência</h2>
+<p class="cenario">Junta a ficha do hóspede com o envio. Primeiro a ficha, já preenchida a partir do pedido, com o texto de emissão pronto para copiar. Quando a NF sai do sistema da prefeitura, arrasta o PDF e a mesma tela compara pedido e PDF lado a lado.</p>
+<div class="janela" id="C">
+  <div class="j-topo"><b>Emissão e envio da NF</b><span>Pedido de Marcos Exemplo · Hotel Exemplo Praia</span></div>
+  <div class="j-corpo">
+    <ol class="passos"><li>1 Dados do pedido</li><li>2 Emitir no sistema</li><li class="atual">3 Conferir a NF</li><li>4 Enviar</li></ol>
+    <div class="ficha">
+      <div class="cp"><div class="r"><span>Hóspede</span><span class="est ok">Confere com o PDF</span></div><div class="v">MARCOS EXEMPLO</div></div>
+      <div class="cp"><div class="r"><span>CPF</span><span class="est ok">Confere com o PDF</span></div><div class="v">111.444.777-35</div></div>
+      <div class="cp difere"><div class="r"><span>Valor total</span><span class="est difere">Difere</span></div><div class="v">R$ 1.280,00</div><div class="de">PDF diz R$ 1.208,00</div></div>
+      <div class="cp falta"><div class="r"><span>Check-in e check-out</span><span class="est falta">Não achei no PDF</span></div><div class="v">12/11 a 16/11 · 4 diárias</div></div>
+      <div class="cp largo"><div class="r"><span>Texto da emissão (pronto para colar no sistema)</span><button class="mini" id="C-copiar">Copiar texto</button></div>
+        <pre class="texto-em">HOSPEDAGEM: MARCOS EXEMPLO
+PERIODO: 12/11/2026 A 16/11/2026
+DIARIAS: 4</pre></div>
+    </div>
+    <div class="lado">
+      <div class="cp"><div class="r"><span>Pedido</span></div><div class="v">Valor R$ 1.280,00</div><div class="de">4 diárias de R$ 320,00</div></div>
+      <div class="pdf"><b>NF 1234 · PDF anexado</b>Tomador: MARCOS EXEMPLO<br>CPF: 111.444.777-35<br>Valor dos serviços: R$ <mark>1.208,00</mark><br>Discriminação: Hospedagem</div>
+    </div>
+  </div>
+  <div class="rodape-j"><button class="btn">Voltar e corrigir o valor</button><button class="btn azul" disabled>Montar e-mail</button><span class="txt">O e-mail só é montado quando o valor estiver resolvido.</span></div>
+</div>
+<ul class="vantagens">
+  <li>Tudo numa tela só: dados do pedido, texto de emissão, PDF e conferência. Menos troca de janela.</li>
+  <li>É o desenho que mais encurta o trabalho do operador, porque a ficha já vem pronta.</li>
+  <li class="contra">É a maior mudança: pede reorganizar o Enviar NF e a Ficha do hóspede em um fluxo só.</li>
+</ul>
+
+<p class="rodape-doc">Minha sugestão: começar pela <b>A</b> (menor risco, o operador vê o que foi comparado) e depois levar a ficha pré-pronta da <b>C</b> para dentro dela. Nada deste desenho foi construído no Painel; só entra depois da sua aprovação.</p>
+</main>
+
+<script>
+// Só para sentir o desenho: nada é enviado e nada é gravado.
+(function () {
+  var ok = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6.5 5 9l5-6"/></svg>';
+  var ir = document.getElementById("A-ir"), txt = document.getElementById("A-txt"), res = document.getElementById("A-res");
+  var valor = document.getElementById("A-valor");
+  if (valor) valor.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-a]"); if (!b) return;
+    if (b.dataset.a === "aceitar") {
+      valor.classList.add("compacto");
+      valor.querySelector(".est").className = "est ok"; valor.querySelector(".est").innerHTML = ok + "Confirmado por você";
+      valor.querySelector(".acao").hidden = true;
+      res.textContent = "Nenhum ponto difere · 1 faltou ler · 5 conferem";
+      ir.disabled = false; txt.textContent = "Pronto para enviar. A data só avisa.";
+    } else { txt.textContent = "Volta para o e-mail para você corrigir o valor."; }
+  });
+  document.querySelectorAll(".chip").forEach(function (c) {
+    c.addEventListener("click", function () {
+      var alvo = document.getElementById(c.dataset.d), abrir = alvo.hidden;
+      document.querySelectorAll("#B .detalhe").forEach(function (d) { d.hidden = true; });
+      document.querySelectorAll("#B .chip").forEach(function (x) { x.setAttribute("aria-expanded", "false"); });
+      if (abrir) { alvo.hidden = false; c.setAttribute("aria-expanded", "true"); }
+    });
+  });
+  var cp = document.getElementById("C-copiar");
+  if (cp) cp.addEventListener("click", function () {
+    var t = document.querySelector("#C .texto-em").textContent;
+    try { navigator.clipboard.writeText(t).then(function () { cp.textContent = "Copiado"; }, function () { cp.textContent = "Selecione e copie"; }); }
+    catch (e) { cp.textContent = "Selecione e copie"; }
+  });
+})();
+</script>

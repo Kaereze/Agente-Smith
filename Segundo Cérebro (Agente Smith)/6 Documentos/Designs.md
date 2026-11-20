@@ -95,6 +95,10 @@ certificado, desconectado) e do alerta do Windows no PC dono e no do João. Espe
 
 ![[2026-10-26 Alerta de Outlook parado.png|700]]
 
+### Conferência antes do envio (3 opções) · 20/11/2026
+- Pedido do João: conferência da NF antes do envio, ficha de emissão pré-pronta, mais fluido. Hoje a conferência só roda depois do clique em Enviar e só aparece quando há erro. **A:** lista de conferência ao lado (pedido x PDF). **B:** faixa de chips acima do e-mail. **C:** ficha de emissão pré-pronta + conferência lado a lado, tudo numa tela. Sugestão: começar pela A e levar a ficha da C para dentro. **Aguardando aprovação; nada construído.** Só dados inventados.
+- **Abrir a página:** [[2026-11-20 Conferencia antes do envio (3 opcoes).html|Conferência 20/11]]
+
 ### Auditoria do Painel (passada com as skills) · 20/11/2026
 - Mesma nota geral (8,1): o que foi feito depois (cópia de segurança, abas de admin no PC de casa) ainda não foi entregue aos PCs, então não conta. Novas seções: **achados desta passada** (foco do teclado, contraste, margens, menu cortado), **velocidade** (medida só no PC de casa) e **alertas de hoje**. A lista "O que falta" passou a começar pela conferência antes do envio e a ficha de emissão pré-prontas, e por medir os 4 processos no PC do trabalho.
 - **Abrir a página:** [[2026-11-20 Auditoria do Painel.html|Auditoria 20/11]]
