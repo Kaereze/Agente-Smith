@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.20] — 2026-11-20 (abas de admin no PC de casa do João)
+
+### Mudou
+- **Monitoramento e Agentes do Smith também aparecem no PC de casa do João**, que não é o principal. Nova lista `painel.pcs_admin` no `config.json` (nome do computador; hoje `DESKTOP-7J2E10S`): ali o João escolhe a si mesmo como operador e ganha as abas de admin. O PC **não** passa a copiar nem enviar e-mail (isso continua sendo o papel "principal"), e nos outros PCs nada muda: o servidor confere o nome do computador (`pc_de_admin` em `src/app_servidor.py`).
+
 ## [2026.11.16] — 2026-11-16 (envio sem espera, Camila no lugar do Afonso, nomes dos PCs)
 
 - **Mudou:** depois de pedir o envio, a tela não mostra mais a bolinha "Enviando": só um aviso curto de pedido entregue. Só a falha aparece (pílula vermelha com "Ver"). A conferência segue em silêncio, a cada 5 s.
