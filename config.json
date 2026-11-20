@@ -157,6 +157,8 @@
   },
   "_ajuda_painel": "Visão geral/Hotéis: dados a partir de 'desde'; Fiscal Intelligence (Mail Analytics) só é lido, a cada fi_minutos",
   "painel": {
+    "_ajuda_pcs_admin": "PCs (nome do computador) onde o João também vê as abas de admin (Monitoramento, Agentes), sem ser o principal. Hoje: o PC de casa. Não faz o PC copiar nem enviar e-mail",
+    "pcs_admin": ["DESKTOP-7J2E10S"],
     "desde": "2026-09-01",
     "fiscal_intelligence_id": "1e78L9EJeYzW_jWOZF5jqKPKu9vmKs1ZBstV_2FLZ_rY",
     "fi_minutos": 5,

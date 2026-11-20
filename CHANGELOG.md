@@ -11,6 +11,8 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 
 ## [não entregue] — 2026-11-27 (tela nova em React: 1ª parte, desligada nos PCs)
 
+- **Mudou (feito em 20/11, nunca entregue; trazido para esta ramificação em 27/11):** Monitoramento e Agentes do Smith também aparecem no PC de casa do João, que não é o principal. Nova lista `painel.pcs_admin` no `config.json` (nome do computador; hoje `DESKTOP-7J2E10S`): ali o João escolhe a si mesmo como operador e ganha as abas de admin. O PC **não** passa a copiar nem enviar e-mail (isso continua sendo o papel "principal"), e nos outros PCs nada muda: o servidor confere o nome do computador (`pc_de_admin` em `src/app_servidor.py`).
+
 - **Adicionado:** a tela nova do Painel em **React** (`app_react/`, montada em `app_ui/v2/`), no visual aprovado em 27/11 (vidro verde e creme, claro e escuro). Primeira parte: a moldura (cápsula, topo em pílula, rodapé em linha própria), a **Visão geral** em perguntas (frase do dia, gráficos, "o que precisa de atenção", só com números reais) e a **Caixa de entrada** (só leitura; responder e enviar NF ainda levam para a tela de hoje). Peças únicas em componentes, como um só `BotaoEnviarNF` para todas as telas.
 - **Adicionado:** o servidor abre a tela nova em `/v2/` e a de hoje em `/classica` (a reserva). O interruptor `"tela": "react"` no `config.local.json` faz a nova abrir em `/`; sem ele, nada muda nos PCs. Testes em `test_tela_react.py`.
 - **Mudou:** `ferramentas/medir_design.py` não conta o CSS montado da tela nova (ela tem a régua própria em `app_react/src/estilo/tema.css`).

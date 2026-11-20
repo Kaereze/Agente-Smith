@@ -24,3 +24,15 @@ def test_admins_vem_da_configuracao(monkeypatch):
     assert app_servidor.e_admin_aqui(cfg, "Clara")
     _papel(monkeypatch, False)
     assert app_servidor.operadores_deste_pc(cfg) == ["Cristian", "Bernardo"]
+
+
+def test_pc_extra_do_admin_ganha_as_abas_sem_virar_principal(monkeypatch):
+    """PC de casa do João (20/11/2026): vê Monitoramento/Agentes, mas só ele, e só no PC listado em painel.pcs_admin."""
+    _papel(monkeypatch, False)
+    monkeypatch.setattr(app_servidor.socket, "gethostname", lambda: "desktop-7j2e10s")   # maiúscula/minúscula não importa
+    cfg = {**CFG, "painel": {"pcs_admin": ["DESKTOP-7J2E10S"]}}
+    assert app_servidor.e_admin_aqui(cfg, "João") and not app_servidor.e_admin_aqui(cfg, "Clara")
+    assert app_servidor.operadores_deste_pc(cfg) == ["João", "Cristian", "Clara", "Bernardo"]
+    assert not app_servidor.e_principal(cfg)   # continua sem copiar nem enviar: papel principal é outra coisa
+    monkeypatch.setattr(app_servidor.socket, "gethostname", lambda: "DESKTOP-OUTRO")
+    assert not app_servidor.e_admin_aqui(cfg, "João") and app_servidor.operadores_deste_pc(cfg) == ["Cristian", "Clara", "Bernardo"]

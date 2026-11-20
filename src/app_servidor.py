@@ -674,18 +674,24 @@ def admins_do_painel(cfg):
     return list((cfg.get("painel", {}) or {}).get("admins") or ["João"])
 
 
+def pc_de_admin(cfg):
+    """PC extra do administrador (ex.: o de casa, que não é o principal): lista `painel.pcs_admin` no config.json, pelo nome do computador.
+    Só dá as abas de admin ao João ali; NÃO faz o PC copiar, enviar nem rodar o robô (isso é o papel "principal")."""
+    return socket.gethostname().upper() in {str(x).upper() for x in (cfg.get("painel", {}) or {}).get("pcs_admin") or []}
+
+
 def operadores_deste_pc(cfg, liberado=False):
     """Operadores que este PC pode escolher (22/10/2026): o administrador (João) só no PC dele; nos outros PCs ele não
     aparece nem é aceito. liberado: modo casa e demonstração (só leitura / dados fictícios)."""
     todos = [k for k in cfg.get("agentes", {}) if not str(k).startswith("_")]
-    if liberado or e_principal(cfg):
+    if liberado or e_principal(cfg) or pc_de_admin(cfg):
         return todos
     return [k for k in todos if k not in admins_do_painel(cfg)]
 
 
 def e_admin_aqui(cfg, nome, liberado=False):
-    """Só o João, e só no PC dele (os outros PCs não ganham as opções de admin trocando de usuário)."""
-    return bool(liberado) or (nome in admins_do_painel(cfg) and e_principal(cfg))
+    """Só o João, e só no PC dele — o principal ou um PC listado em painel.pcs_admin (os outros PCs não ganham as opções de admin trocando de usuário)."""
+    return bool(liberado) or (nome in admins_do_painel(cfg) and (e_principal(cfg) or pc_de_admin(cfg)))
 
 
 def _cronometrado(metodo, verbo):
