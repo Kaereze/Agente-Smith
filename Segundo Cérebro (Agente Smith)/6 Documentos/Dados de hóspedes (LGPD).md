@@ -98,3 +98,12 @@ Feita com `gdpr-data-handling`, `security-review`, `secret-scanning` e `ci-cd-se
 - **Registro de quem viu o dado** (`src/privacidade/acessos.py`): cada abertura de e-mail, anexo ou ficha anota quando, quem, de qual PC e uma referência curta do item (nunca nome, CPF, e-mail nem texto). Fica em `estado/acessos/AAAA-MM.jsonl`, 12 meses. Só neste PC.
 - **Pedido do titular** (`ferramentas/pedido_titular.py`): `localizar` mostra só quantidades por arquivo; `apagar-indice` tira os e-mails da pessoa do índice de pesquisa; `apagar-cache` apaga um cache reconstruível. **Continua valendo o passo a passo acima**: o dado nasce no Outlook e na planilha do hotel, e NF emitida não se apaga (guarda de 5 anos). Apagar só aqui, com a fonte intacta, faz o Painel ler de novo.
 - **Ainda é decisão sua**: o prazo por tipo de dado (hoje o índice guarda 12 meses; dá para reduzir em `ajustes.json`, chave `email.indice_dias`), quem responde ao titular e o registro do pedido.
+
+## Banco central (Supabase) em 20/11/2026: a fila de envio sai do PC (decisão do João)
+- **O que vai para o banco:** a fila de envio (`Envios_NF`): hora, id, evento, PC, quem pediu e o pedido em JSON, que leva **o e-mail do destinatário (muitas vezes o hóspede), o assunto e a mensagem**. Os PDFs das notas (`Envios_NF_Anexos`) **não** vão: continuam só na planilha.
+- **Onde:** projeto "Painel Fiscal" no Supabase, região **São Paulo** (`sa-east-1`), plano gratuito. O provedor é uma empresa dos EUA: **confirmar com o jurídico** se isso conta como transferência internacional.
+- **Quem entra:** só PC com credencial própria (usuário do Supabase Auth) e cujo e-mail esteja na lista `pcs_autorizados`. A chave publicável sozinha não lê nem grava a fila (regras RLS em `ferramentas/supabase_fila.sql`). Cadastro aberto desligado.
+- **Quanto tempo:** a faxina apaga do banco o que passa de `limpeza.registros_dias` (3 dias).
+- **Liga por PC e só depois do teste:** `config.local.json > banco > abas`. Padrão: desligado.
+- **Ainda sem backup automático** no plano gratuito (a cópia local do `copias.py` não cobre o banco ainda).
+- **Pedido do titular:** a ferramenta `pedido_titular.py` ainda não procura no banco. Enquanto a fila for apagada em 3 dias, o risco é baixo, mas a ferramenta precisa aprender isso antes de ligar o modo `banco`.

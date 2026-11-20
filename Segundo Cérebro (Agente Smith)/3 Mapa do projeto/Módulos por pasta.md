@@ -31,13 +31,14 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 
 | Módulo | Para que serve |
 |---|---|
+| `banco_abas` | Espelho de abas da Planilha Central no banco (Supabase), 20/11/2026: a fila de envio (`Envios_NF`) também mora no banco. |
 | `cota_google` | Orçamento da cota do Google Sheets, dividido entre os programas dos 4 PCs. |
 | `faxina` | Faxina diária da Central (só no PC principal) — pra nada virar bola de neve (usuário, 08/10/2026). |
 | `fiscal_intelligence` | Leitura (somente) da planilha Fiscal Intelligence, gravada pelo Mail Analytics. |
 | `hoteis` | Cadastro único de hotéis: casa os nomes que cada fonte usa com o nome do Cadastro_Hoteis. |
 | `rede_util` | Retry com backoff exponencial para erros passageiros da API do Google. |
 | `sheets` | Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log. |
-| `supabase` | Conexão com o Supabase (banco de dados central, 20/11/2026): só o necessário para ler, gravar, apagar e dar sinal de vida. |
+| `supabase` | Conexão com o Supabase (banco de dados central, 20/11/2026): ler, gravar, apagar, dar sinal de vida e entrar com a credencial do PC. |
 | `tratamento` | Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP. |
 | `vigia_formularios` | Cópia rápida dos formulários (23/10/2026, OK do João): pedido do hóspede no Painel em ~10-20 s, e não 6-12 min. |
 

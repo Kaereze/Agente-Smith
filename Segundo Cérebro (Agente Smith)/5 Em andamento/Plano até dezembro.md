@@ -55,3 +55,6 @@ Contas a pagar, faturamento, caixa, cancelamentos e substituições; relatórios
 | Mascarar CPF na tela | João (estacionado) |
 
 Outras ideias soltas: [[Ideias e pendências]].
+
+## Atualização de 20/11/2026: banco central em andamento (Fase 4)
+Pedido do João: tirar a lentidão com um banco parecido com o Supabase, de graça. Feito: projeto "Painel Fiscal" (São Paulo, plano gratuito; o plano Pro de ~R$ 110 não é necessário), conexão testada de casa (gravar 0,12 s, ler 0,11 s contra ~5 s do Google), entrada por credencial de cada PC, espelho da fila de envio em modo `sombra` (desligado por padrão) e ferramenta de comparação. **Próximos passos:** (1) João cria o usuário de cada PC e roda `supabase_fila.sql`; (2) ligar `sombra` num PC do trabalho e comparar por alguns dias; (3) ligar nos 4; (4) modo `banco`, que é o que acelera o envio. A volta de 2 minutos só acelera quando as abas dos hotéis e a Tratamento também forem (decisão pendente do João, pois levam nome e CPF).

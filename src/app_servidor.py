@@ -948,6 +948,7 @@ def main():
         return 0
 
     from central.sheets import BackendGoogle
+    from central import banco_abas
     cota_google.configurar("painel")
     modo_demo = "--demo" in sys.argv   # PC de casa: dados fictícios, sem Google/Outlook/chave (src/painel/demo.py)
     cfg = carregar_config(exigir_chave=not modo_demo)
@@ -964,10 +965,10 @@ def main():
     elif so_ver:
         from central.sheets import BackendSoLeitura
         CAMINHO_CACHE = armazem.caminho("painel_cache_casa.pkl")
-        estado = Estado(BackendSoLeitura(caminho_chave_google(cfg)), cfg)
+        estado = Estado(banco_abas.envolver(BackendSoLeitura(caminho_chave_google(cfg)), cfg, somente_leitura=True), cfg)
         logger.info("🏠 MODO CASA: dados reais, só visualização (não grava na Central, não mexe no Outlook)")
     else:
-        estado = Estado(BackendGoogle(caminho_chave_google(cfg)), cfg)
+        estado = Estado(banco_abas.envolver(BackendGoogle(caminho_chave_google(cfg)), cfg), cfg)
     estado.demo = modo_demo
     estado.so_ver = so_ver
     if not modo_demo and estado.carregar_cache():

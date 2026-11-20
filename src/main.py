@@ -426,7 +426,9 @@ def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_loc
     backend = None
     log_exec = Execucao(origem, quem, cfg["modo"])
     try:
-        backend = BackendGoogle(caminho_chave_google(cfg), somente_leitura=cfg["modo"] == "SIMULACAO")
+        from central import banco_abas   # espelho da fila no banco (desligado por padrão); aqui sem segundo plano: o robô termina e fecha
+        backend = banco_abas.envolver(BackendGoogle(caminho_chave_google(cfg), somente_leitura=cfg["modo"] == "SIMULACAO"), cfg,
+                                      somente_leitura=cfg["modo"] == "SIMULACAO", segundo_plano=False)
         # caixa do hotel em outro PC: o PC dono manda (usuário, 15/10/2026: não usar a caixa do Ondina)
         return executar(cfg, backend, com_pc_dono(OutlookNF(cfg), backend, cfg), log_exec=log_exec, selecao=selecao)
     except Exception as e:

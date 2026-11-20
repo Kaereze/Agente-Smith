@@ -114,7 +114,7 @@ def test_sinal_de_vida_grava_uma_linha_por_pc_com_hora_em_utc():
 def test_carregar_le_o_arquivo_e_confere_o_endereco(tmp_path):
     ok = tmp_path / "chave-supabase.json"
     ok.write_text(json.dumps({"url": URL + "/", "chave": CHAVE_NOVA}), encoding="utf-8")
-    assert supabase.carregar(ok) == (URL, CHAVE_NOVA)
+    assert supabase.carregar(ok) == (URL, CHAVE_NOVA, "", "")
     for dados in ({"url": "http://abcdefghijkl.supabase.co", "chave": CHAVE_NOVA},   # sem https
                   {"url": "https://exemplo.com", "chave": CHAVE_NOVA},               # não é Supabase
                   {"url": URL, "chave": "curta"}):
@@ -137,3 +137,68 @@ def test_carregar_sem_arquivo_ou_com_arquivo_quebrado_explica_sem_mostrar_o_cont
 def test_o_caminho_padrao_fica_ao_lado_da_chave_do_google_e_a_config_pode_trocar():
     assert supabase.caminho_da_chave({}).endswith("chave-supabase.json")
     assert supabase.caminho_da_chave({"supabase": {"caminho_chave": "D:\\x\\k.json"}}) == "D:\\x\\k.json"
+
+
+# ---- entrada de cada PC (Supabase Auth) e leitura em páginas ----
+SENHA = "senha-secreta-de-teste"
+
+
+def entrada(token="T1", renova="R1", expira=3600):
+    return Resposta(corpo={"access_token": token, "refresh_token": renova, "expires_in": expira})
+
+
+def banco_com_credencial(*respostas, agora=None):
+    s, relogio = Sessao(*respostas), agora or [1000.0]
+    return Banco(URL, CHAVE_NOVA, email="pc@exemplo.com", senha=SENHA, sessao=s, tentativa_segundos=5, limite_segundos=60,
+                 relogio=lambda: relogio[0]), s, relogio
+
+
+def test_carregar_aceita_email_e_senha_juntos_e_recusa_um_sem_o_outro(tmp_path):
+    f = tmp_path / "k.json"
+    f.write_text(json.dumps({"url": URL, "chave": CHAVE_NOVA, "email": "a@b.com", "senha": SENHA}), encoding="utf-8")
+    assert supabase.carregar(f) == (URL, CHAVE_NOVA, "a@b.com", SENHA)
+    f.write_text(json.dumps({"url": URL, "chave": CHAVE_NOVA, "email": "a@b.com"}), encoding="utf-8")
+    with pytest.raises(ErroBanco, match="juntos"):
+        supabase.carregar(f)
+
+
+def test_com_credencial_entra_uma_vez_e_manda_o_token_do_pc_nas_chamadas():
+    b, s, _ = banco_com_credencial(entrada(), Resposta(corpo=[]), Resposta(corpo=[]))
+    b.ler("aba_linhas")
+    b.ler("aba_linhas")
+    entradas = [p for p in s.pedidos if "/auth/v1/token" in p[1]]
+    assert len(entradas) == 1 and entradas[0][2]["params"] == {"grant_type": "password"}
+    assert json.loads(entradas[0][2]["data"].decode("utf-8")) == {"email": "pc@exemplo.com", "password": SENHA}
+    leituras = [p for p in s.pedidos if "/rest/v1/" in p[1]]
+    assert all(p[2]["headers"]["Authorization"] == "Bearer T1" and p[2]["headers"]["apikey"] == CHAVE_NOVA for p in leituras)
+
+
+def test_token_perto_de_vencer_e_renovado_com_o_refresh_token():
+    b, s, relogio = banco_com_credencial(entrada("T1", "R1", 3600), Resposta(corpo=[]), entrada("T2", "R2", 3600), Resposta(corpo=[]))
+    b.ler("t")
+    relogio[0] += 3600 - 30   # falta menos de um minuto
+    b.ler("t")
+    segunda = [p for p in s.pedidos if "/auth/v1/token" in p[1]][1]
+    assert segunda[2]["params"] == {"grant_type": "refresh_token"}
+    assert [p for p in s.pedidos if "/rest/v1/" in p[1]][-1][2]["headers"]["Authorization"] == "Bearer T2"
+
+
+def test_401_numa_chamada_entra_de_novo_uma_vez_e_acerta():
+    b, s, _ = banco_com_credencial(entrada("T1"), Resposta(401, texto="JWT expired"), entrada("T2"), Resposta(corpo=[{"ok": 1}]))
+    assert b.ler("t") == [{"ok": 1}]
+    assert len([p for p in s.pedidos if "/rest/v1/" in p[1]]) == 2
+
+
+def test_senha_errada_vira_erro_claro_sem_mostrar_a_senha_e_sem_insistir():
+    b, s, _ = banco_com_credencial(Resposta(400, texto='{"error":"invalid_grant","email":"pc@exemplo.com"}'))
+    with pytest.raises(ErroBanco) as e:
+        b.ler("t")
+    assert e.value.codigo == 401 and SENHA not in str(e.value) and "pc@exemplo.com" not in str(e.value)
+    assert len(s.pedidos) == 1
+
+
+def test_ler_tudo_junta_as_paginas_ate_vir_uma_incompleta():
+    b, s = banco(Resposta(corpo=[{"id": 1}, {"id": 2}]), Resposta(corpo=[{"id": 3}]))
+    assert b.ler_tudo("aba_linhas", {"aba": "eq.X"}, colunas="id", ordem="id.asc", pagina=2) == [{"id": 1}, {"id": 2}, {"id": 3}]
+    assert [p[2]["params"].get("offset") for p in s.pedidos] == [None, 2]
+    assert all(p[2]["params"]["limit"] == 2 and p[2]["params"]["order"] == "id.asc" for p in s.pedidos)

@@ -19,6 +19,8 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 
 - **Conexão com o banco central (Supabase), ainda sem uso:** `src/central/supabase.py` lê, grava (upsert), apaga e dá sinal de vida pela API REST, sem biblioteca nova, com tempo limite e repetição em erro passageiro (ajustes `banco.*`). Só funciona se existir `chave-supabase.json` ao lado da chave do Google; sem ele nada muda e a Planilha Central segue valendo. `ferramentas/supabase_tabelas.sql` cria as tabelas de teste (com segurança RLS ligada) e `ferramentas/testar_supabase.py` mede o tempo real de gravar e ler, com dados fictícios.
 
+- **Fila de envio também no banco (Supabase, São Paulo), desligada por padrão:** `src/central/banco_abas.py` espelha a aba `Envios_NF`. Modo `sombra`: a planilha manda e o banco recebe cópia por trás, sem atrasar nem derrubar o envio. Modo `banco`: o banco manda (grava primeiro, lê do banco) e a planilha recebe cópia; é o que acelera o envio, e só vale com os 4 PCs já em `sombra`. Liga por PC em `config.local.json > banco > abas` (`config.json` traz `banco.abas` vazio: nada muda). Cada PC entra com a sua credencial (`email` e `senha` no `chave-supabase.json`) e o banco só aceita PCs da lista `pcs_autorizados` (`ferramentas/supabase_fila.sql`). Faxina do banco, `ferramentas/comparar_fila_banco.py` (diz se o banco acompanha a planilha) e a fila medida em `ferramentas/testar_supabase.py`. Os PDFs de anexo continuam só na planilha.
+
 ### Corrigido
 - O "pior tempo" (p95) do registro de desempenho agora arredonda para cima: com poucas medidas ele saía menor que a média.
 

@@ -155,6 +155,8 @@
     "atualizar_segundos": 15,
     "atualizar_segundos_fundo": 60
   },
+  "_ajuda_banco": "Banco central (Supabase). abas: {nome da aba: modo}. \"sombra\" = a planilha manda e o banco recebe uma cópia; \"banco\" = o banco manda (só com os 4 PCs já em sombra e iguais). Vazio = tudo como antes. Ligue por PC no config.local.json",
+  "banco": {"abas": {}},
   "_ajuda_painel": "Visão geral/Hotéis: dados a partir de 'desde'; Fiscal Intelligence (Mail Analytics) só é lido, a cada fi_minutos",
   "painel": {
     "_ajuda_pcs_admin": "PCs (nome do computador) onde o João também vê as abas de admin (Monitoramento, Agentes), sem ser o principal. Hoje: o PC de casa. Não faz o PC copiar nem enviar e-mail",
