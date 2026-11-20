@@ -14,6 +14,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 ### Mudou
 - **Monitoramento e Agentes do Smith também aparecem no PC de casa do João**, que não é o principal. Nova lista `painel.pcs_admin` no `config.json` (nome do computador; hoje `DESKTOP-7J2E10S`): ali o João escolhe a si mesmo como operador e ganha as abas de admin. O PC **não** passa a copiar nem enviar e-mail (isso continua sendo o papel "principal"), e nos outros PCs nada muda: o servidor confere o nome do computador (`pc_de_admin` em `src/app_servidor.py`).
 
+### Adicionado
+- **Velocidade de cada PC em Monitoramento:** cada Painel publica (na coluna de saúde de PCs_Painel) quanto a volta, a leitura do Google e a resposta da tela demoram, e o cartão do PC mostra "Velocidade: volta 6 s (pior 17 s) · Google 5 s · tela até 0,2 s", em amarelo quando o pior passa de 30 s. Assim o lag dos PCs do trabalho aparece daqui de casa. Só números em segundos, nenhum dado de hóspede. PC de versão antiga mostra "sem medida".
+
+### Corrigido
+- O "pior tempo" (p95) do registro de desempenho agora arredonda para cima: com poucas medidas ele saía menor que a média.
+
 ## [2026.11.16] — 2026-11-16 (envio sem espera, Camila no lugar do Afonso, nomes dos PCs)
 
 - **Mudou:** depois de pedir o envio, a tela não mostra mais a bolinha "Enviando": só um aviso curto de pedido entregue. Só a falha aparece (pílula vermelha com "Ver"). A conferência segue em silêncio, a cada 5 s.

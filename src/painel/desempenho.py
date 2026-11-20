@@ -10,6 +10,7 @@ resumo no próprio log a cada 10 min.
 """
 import collections
 import contextlib
+import math
 import logging
 import re
 import threading
@@ -83,7 +84,7 @@ class Medidor:
         saida = {}
         for etapa, (recentes, (n, maior, lentas, ultimo), soma) in copia.items():
             ordenados = sorted(recentes)
-            p95 = ordenados[int(0.95 * (len(ordenados) - 1))] if ordenados else 0.0
+            p95 = ordenados[math.ceil(0.95 * (len(ordenados) - 1))] if ordenados else 0.0   # arredonda para cima: com poucas medidas o p95 não pode ser menor que a média
             saida[etapa] = {"n": n, "ultimo_ms": round(ultimo * 1000), "medio_ms": round(soma / n * 1000) if n else 0,
                             "p95_ms": round(p95 * 1000), "max_ms": round(maior * 1000), "lentas": lentas}
         return dict(sorted(saida.items(), key=lambda kv: -kv[1]["medio_ms"]))

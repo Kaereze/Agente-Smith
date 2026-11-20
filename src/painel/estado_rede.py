@@ -15,6 +15,7 @@ from emails import espelho_emails
 from emails import outlook_vivo
 from rede import rede_local
 from rede import rede_pcs
+from painel import desempenho
 from painel import saude
 from config import e_principal, sem_outlook
 from sistema.log_util import configurar_logging
@@ -47,7 +48,18 @@ class RedeMixin:
                 f"aberto|{tela}|{datetime.datetime.now():%H:%M}" if aberta else "fechado",
                 saude.coluna(getattr(self, "saida_travada", 0), self._ultima_copia(), self._planilhas_sem_cadastro(),
                              self._ultimo_robo(), getattr(self, "ultimo_recebido", ""), getattr(self, "motivo_outlook", ""),
-                             getattr(self, "caixas_senha", []))]
+                             getattr(self, "caixas_senha", []), self._lag_deste_pc())]
+
+    @staticmethod
+    def _lag_deste_pc():
+        """Quanto este PC demora (segundos): volta do Painel, leitura do Google e resposta da tela. Só números, nada de hóspede."""
+        r = desempenho.MEDIDOR.resumo()
+        volta, google, tela = (r.get(k) for k in ("painel.volta_completa", "painel.atualizar.ler_central", "GET /api/estado"))
+        if not volta:
+            return ""
+        def s(x, campo):
+            return round((x or {}).get(campo, 0) / 1000, 1)
+        return "/".join(str(n) for n in (s(volta, "medio_ms"), s(volta, "p95_ms"), s(google, "medio_ms"), s(google, "p95_ms"), s(tela, "p95_ms")))
 
     def _rede(self, lidas, solicitacoes):
         if getattr(self, "so_ver", False):   # modo casa: só olha; não executa comando nem se registra como PC

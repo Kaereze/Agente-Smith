@@ -67,6 +67,9 @@ function desenharMaquinas() {
     const ponto = !p.online ? "" : p.outlook === "fechado" ? "off" : cls === "alerta" ? "warn" : "on";
     const versao = antigo ? `<span class="ruim-txt">código antigo, atualize</span>`
       : p.versao === d.versao ? `<span class="dado">${esc(p.versao)}</span> · igual a este PC` : `<span class="dado">${esc(p.versao)}</span> · <span class="alerta-txt">diferente deste PC</span>`;
+    // velocidade deste PC (20/11/2026): o próprio PC publica quanto a volta, o Google e a tela demoram
+    const lag = p.lag ? `${p.lag.volta_p95 > 30 ? `<span class="alerta-txt">` : `<span>`}volta ${p.lag.volta.toFixed(0)} s (pior ${p.lag.volta_p95.toFixed(0)} s)</span><div class="dica">Google ${p.lag.google.toFixed(0)} s · tela até ${p.lag.tela_p95.toFixed(1)} s</div>`
+      : `<span class="dica">sem medida${antigo ? "" : " (ainda ou versão antiga)"}</span>`;
     const conf = antigo ? "sem informação" : p.conferencia_atrasada ? `<span class="ruim-txt">parada (${haQuanto(p.conferencia)})</span>`
       : p.conferencia ? haQuanto(p.conferencia) : "aguardando a primeira volta";
     return `<article class="maq ${cls}"><div class="maq-cab"><div><b><span class="op-av" style="background:${corOp(p.agente)}">${esc(inicial(p.agente))}</span>${esc(p.agente || "?")}</b><span class="dado">${esc(p.pc)}${p.pc === d.este_pc ? " · este PC" : ""}</span></div>
@@ -74,6 +77,7 @@ function desenharMaquinas() {
       <dl><dt>Visto</dt><dd>${haQuanto(p.visto.replace(" ", "T"))}</dd>
         <dt>Outlook</dt><dd>${antigo ? "sem informação" : p.outlook === "aberto" ? `<span style="color:var(--ok)">aberto</span>` : `<span class="ruim-txt">${esc(p.outlook || "?")}</span>`}</dd>
         <dt>Conferência</dt><dd>${conf}${p.conferencia_resumo ? `<div class="dica">${esc(p.conferencia_resumo)}</div>` : ""}</dd>
+        <dt>Velocidade</dt><dd>${lag}</dd>
         <dt>Versão</dt><dd>${versao}</dd>
         <dt>Caixas</dt><dd class="dado">${p.caixas}</dd><dt>Papel</dt><dd>${esc(p.papel || "")}</dd></dl>
       ${usoHtml(p)}${logDoPc(d, p)}

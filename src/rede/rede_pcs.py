@@ -102,7 +102,7 @@ def ler_pcs(linhas, agora=None):
                     "contas_lista": [c.strip().lower() for c in l[2].split(",") if c.strip()],
                     "online": online, "visto": l[3], "outlook": l[4], "versao": l[5], "papel": l[6],
                     "conferencia": conf_quando, "conferencia_resumo": conf_resumo,
-                    "rede": l[8], "cota": l[9], "uso": l[10], "saude": saude.ler_coluna(l[11]),   # "aberto|E-mails|hh:mm" = Painel aberto agora, em qual tela   # "ip:porta" (busca ao vivo) e "leituras/escritas" no último minuto
+                    "rede": l[8], "cota": l[9], "uso": l[10], "saude": saude.ler_coluna(l[11]), "lag": saude.ler_lag(saude.ler_coluna(l[11]).get("lag")),   # "aberto|E-mails|hh:mm" = Painel aberto agora, em qual tela   # "ip:porta" (busca ao vivo) e "leituras/escritas" no último minuto
                     # sem nenhuma volta ainda (PC acabou de ligar) não é "parada"
                     "conferencia_atrasada": bool(online and l[4] == "aberto" and conf_dt and
                                                  (agora - conf_dt).total_seconds() > CONFERENCIA_ATRASADA_MIN * 60)})

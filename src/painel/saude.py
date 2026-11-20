@@ -93,7 +93,7 @@ def motivo_texto(mot, caixas=()):
     return texto
 
 
-def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido="", motivo="", caixas_senha=()):
+def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido="", motivo="", caixas_senha=(), lag=""):
     """-> texto da coluna "Saúde" deste PC: "saida=2;copia=2026-10-11T13:14:38;cad=CAMPO GRANDE|IDEAL;robo=iso;rec=iso"."""
     partes = [f"saida={int(saida_travada or 0)}"]
     if ultima_copia:
@@ -106,6 +106,8 @@ def coluna(saida_travada, ultima_copia="", sem_cadastro=(), robo="", recebido=""
         partes.append(f"rec={recebido}")
     if motivo:
         partes.append(f"mot={motivo}")
+    if lag:
+        partes.append(f"lag={lag}")   # "volta média/volta p95/Google média/Google p95/tela p95", em segundos (20/11/2026)
     if motivo == "senha" and caixas_senha:
         partes.append("cxs=" + "|".join(str(x).replace(";", ",").replace("=", "-") for x in caixas_senha))
     return ";".join(partes)
@@ -179,6 +181,15 @@ def ler_coluna(texto):
     saida["cad"] = [x for x in str(saida.get("cad", "")).split("|") if x]
     saida["cxs"] = [x for x in str(saida.get("cxs", "")).split("|") if x]
     return saida
+
+
+def ler_lag(texto):
+    """"6.9/17.4/5.0/13.2/0.2" -> {volta, volta_p95, google, google_p95, tela_p95} em segundos; None se o PC não publica."""
+    try:
+        v = [float(x) for x in str(texto or "").split("/")]
+    except ValueError:
+        return None
+    return dict(zip(("volta", "volta_p95", "google", "google_p95", "tela_p95"), v)) if len(v) == 5 else None
 
 
 def nome_da_caixa(caixa):

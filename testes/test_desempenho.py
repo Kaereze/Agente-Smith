@@ -136,3 +136,18 @@ def test_volta_lenta_diz_onde_foi_o_tempo_e_volta_rapida_fica_quieta():
     with m.medir("painel.volta_completa"):
         perf.t += 2
     assert m.quebra_da_volta("painel.volta_completa", ("painel.atualizar",)) == ""
+
+
+def test_o_pc_publica_quanto_demora_e_a_central_le_de_volta():
+    """20/11/2026: o João vê daqui o lag dos PCs do trabalho (Monitoramento > Velocidade). Só números, em segundos."""
+    from painel import saude, desempenho
+    from painel.estado_rede import RedeMixin
+    desempenho.MEDIDOR.registrar("painel.volta_completa", 6.0)
+    desempenho.MEDIDOR.registrar("painel.volta_completa", 18.0)
+    desempenho.MEDIDOR.registrar("painel.atualizar.ler_central", 4.0)
+    desempenho.MEDIDOR.registrar("GET /api/estado", 0.2)
+    texto = RedeMixin._lag_deste_pc()
+    lag = saude.ler_lag(saude.ler_coluna(saude.coluna(0, lag=texto))["lag"])
+    assert lag["volta_p95"] >= lag["volta"] > 0 and lag["google"] > 0 and lag["tela_p95"] > 0
+    assert saude.ler_lag("") is None and saude.ler_lag("abc") is None and saude.ler_lag("1/2/3") is None   # PC de versão antiga: "sem medida"
+    assert "lag" not in saude.ler_coluna(saude.coluna(0))
