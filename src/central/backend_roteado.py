@@ -70,6 +70,16 @@ class BackendRoteado:
             raise ErroPlanilha("este PC está em modo somente leitura: não grava na Central")
         return True
 
+    # ---------------------------------------------------------------- só do servidor (o Google não "avisa" quando muda)
+    def atende_pelo_servidor(self, planilha_id, aba):
+        """Esta aba mora no servidor central? (então dá para esperar a mudança dela em vez de ficar perguntando)"""
+        return self._lado(planilha_id, aba) is self._api
+
+    def esperar_mudanca(self, planilha_id, aba, versao_vista, segundos=20):
+        if not self.atende_pelo_servidor(planilha_id, aba):
+            raise ErroPlanilha(f"a aba '{aba}' é do Google: não dá para esperar mudança nela")
+        return self._api.esperar_mudanca(planilha_id, aba, versao_vista, segundos)
+
     # ---------------------------------------------------------------- leitura
     def listar_abas(self, planilha_id):
         if planilha_id != self._central:

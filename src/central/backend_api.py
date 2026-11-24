@@ -22,12 +22,12 @@ class BackendAPI:
         self._token = token
         self._tempo = tempo
 
-    def _chamar(self, metodo, *args, **kwargs):
+    def _chamar(self, metodo, *args, _tempo=None, **kwargs):
         corpo = json.dumps({"metodo": metodo, "args": list(args), "kwargs": kwargs}, ensure_ascii=False).encode("utf-8")
         pedido = urllib.request.Request(self._url + "/v1/chamar", data=corpo, method="POST",
                                         headers={"Content-Type": "application/json; charset=utf-8", "X-Token": self._token})
         try:
-            with urllib.request.urlopen(pedido, timeout=self._tempo) as r:   # nosec B310: o endereço vem da configuração (http da rede do escritório)
+            with urllib.request.urlopen(pedido, timeout=_tempo or self._tempo) as r:   # nosec B310: o endereço vem da configuração (http da rede do escritório)
                 resposta = json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             try:
@@ -74,3 +74,11 @@ class BackendAPI:
 
     def apagar_aba(self, planilha_id, aba):
         self._chamar("apagar_aba", planilha_id, aba)
+
+    # ---- só do servidor (o Google não tem)
+    def versoes_das_abas(self, planilha_id, nomes):
+        return self._chamar("versoes_das_abas", planilha_id, list(nomes))
+
+    def esperar_mudanca(self, planilha_id, aba, versao_vista, segundos=20):
+        """Fica pendurado no servidor até a aba mudar (ou até `segundos`) e devolve a versão de agora."""
+        return self._chamar("esperar_mudanca", planilha_id, aba, versao_vista, segundos, _tempo=segundos + 10)

@@ -24,7 +24,8 @@ def test_o_cliente_tem_os_mesmos_metodos_e_argumentos_do_backend_google():
         google = list(inspect.signature(getattr(sheets.BackendGoogle, nome)).parameters)
         assert list(inspect.signature(getattr(BackendAPI, nome)).parameters) == google, nome
         assert list(inspect.signature(getattr(Armazem, nome)).parameters) == google, nome
-    assert set(publicos) == servidor.METODOS
+    assert set(publicos) == servidor.METODOS_DO_BACKEND   # o servidor tem esses mais os extras (versões e espera)
+    assert servidor.METODOS == servidor.METODOS_DO_BACKEND | servidor.METODOS_EXTRAS
 
 
 # ---------------------------------------------------------------- armazém

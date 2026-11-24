@@ -8,7 +8,7 @@ Rotas:
   POST /v1/chamar   -> {"metodo": "ler_abas", "args": [...], "kwargs": {...}}  (com o cabeçalho X-Token)
 
 Segurança: sem o token certo nada é lido nem gravado. O token vem da variável CENTRAL_TOKEN (nunca do código, nunca do
-repositório); sem ele o servidor nem sobe. Só os métodos da lista METODOS podem ser chamados.
+repositório); sem ele o servidor nem sobe. Só os métodos da lista METODOS podem ser chamados (os 11 do backend mais `versoes_das_abas` e `esperar_mudanca`).
 """
 import hmac
 import json
@@ -18,8 +18,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from servidor_central.armazem import Armazem, ErroArmazem
 
-METODOS = frozenset({"listar_abas", "ler_abas", "escrever", "criar_aba_status", "criar_aba_log", "inserir_no_topo",
-                     "substituir_aba", "garantir_colunas", "anexar_linhas", "apagar_linhas", "apagar_aba"})
+METODOS_DO_BACKEND = frozenset({"listar_abas", "ler_abas", "escrever", "criar_aba_status", "criar_aba_log", "inserir_no_topo",
+                                "substituir_aba", "garantir_colunas", "anexar_linhas", "apagar_linhas", "apagar_aba"})
+METODOS_EXTRAS = frozenset({"versoes_das_abas", "esperar_mudanca"})   # só o servidor tem: o Google não "avisa" quando uma aba muda
+METODOS = METODOS_DO_BACKEND | METODOS_EXTRAS
 LIMITE_CORPO = 32 * 1024 * 1024   # as partes de anexo das NFs vão em abas: pedido grande é normal, infinito não
 PORTA = 8770
 
@@ -48,7 +50,8 @@ def criar_handler(armazem, token):
 
         def do_GET(self):
             if self.path == "/v1/saude":
-                return self._responder({"ok": True, "abas": sum(len(armazem.listar_abas(p)) for p in armazem.planilhas())})
+                return self._responder({"ok": True, "abas": sum(len(armazem.listar_abas(p)) for p in armazem.planilhas()),
+                                        "esperando": armazem.esperando})
             self._responder({"ok": False, "erro": "rota desconhecida"}, 404)
 
         def do_POST(self):

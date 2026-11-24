@@ -1032,6 +1032,7 @@ def main():
             estado.vigiar_caixa_de_saida()
             estado.iniciar_indice()
         estado.iniciar_nf_achadas()
+        estado.iniciar_vigia_de_envios()   # servidor central ligado: avisa o PC dono do envio na hora
     try:
         acessos.limpar()   # registro de acessos: só os últimos 12 meses
     except Exception as e:

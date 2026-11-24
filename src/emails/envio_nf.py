@@ -867,6 +867,7 @@ def arquivos_do_pedido(pedido, cfg, linhas_anexos, id_envio):
 class ServicoEnvio:
     """Roda dentro do Painel de cada PC (thread do laço de atualização)."""
     avisar_dono = None                         # o Painel liga: (pc, corpo) -> resposta do PC dono pela rede
+    fila_ao_vivo = False                       # servidor central: o Painel vigia a fila e atende na hora (iniciar_vigia_de_envios)
     conferir_envio = None                      # os testes trocam: (conta, id, desde) -> {"enviados", "saida", "completo"}
     reconferir_apos, falhou_apos = RECONFERIR_ENVIO_APOS, FALHOU_SEM_ACHAR_APOS
 
@@ -888,6 +889,7 @@ class ServicoEnvio:
         self.caixas_de_hotel = lambda: {}              # o Painel troca: {caixa: hotel} do cadastro (e-mail do robô)
         self.reconferidos = {}                         # id -> quando conferiu de novo um e-mail do robô sem confirmação
         self.lock = threading.Lock()
+        self.lock_da_fila = threading.Lock()           # quem atende a fila (a volta do Painel ou o vigia do servidor) atende de cada vez
         # Painel: função que roda um trabalho por trás (thread). Com ela, o clique em Enviar responde na hora e a gravação do
         # pedido no Google e o envio seguem por trás (29/10/2026). Sem ela (testes), tudo acontece na chamada, como sempre foi.
         self.segundo_plano = None
@@ -897,12 +899,14 @@ class ServicoEnvio:
     # chamado a cada volta do laço do Painel, com as abas já lidas no batch da Central
     def tick(self, lidas, agente):
         self.agente = agente
-        self.fila = dobrar_fila(lidas.get(ABA_FILA, [[]]))
+        if not self.fila_ao_vivo:   # com o servidor central, quem mantém a fila em dia é o vigia (atender_fila), na hora
+            self.fila = dobrar_fila(lidas.get(ABA_FILA, [[]]))
         self.pcs_linhas = lidas.get(ABA_PCS, [[]])
         self._ler_contas(datetime.timedelta(minutes=10))
         if self.publicado_em is None or self.relogio() - self.publicado_em > datetime.timedelta(seconds=60):
             self._publicar(agente)
-        self.executar_pendentes()
+        if not self.fila_ao_vivo:
+            self.executar_pendentes()
         try:
             listar_notas_dropbox(self.cfg)   # deixa a lista do Dropbox pronta pro "Enviar NF" abrir na hora
         except Exception:
@@ -999,7 +1003,7 @@ class ServicoEnvio:
                     return
                 if destino == self.pc:
                     self._executar(id_envio, self.fila[id_envio])
-                elif self.avisar_dono:
+                elif self.avisar_dono and not self.fila_ao_vivo:   # com o servidor, o PC dono acorda sozinho
                     self._acordar_dono(destino, id_envio)
 
             self.segundo_plano(por_tras)
@@ -1009,7 +1013,7 @@ class ServicoEnvio:
             self.fila[id_envio] = {"pedido": pedido, "pedido_em": _iso(self.relogio()), "quem": quem,
                                    "assumido_por": "", "resultado": None, "detalhe": "", "pc": ""}
             threading.Thread(target=self._executar, args=(id_envio, self.fila[id_envio]), daemon=True).start()
-        elif self.avisar_dono:   # o PEDIDO já está gravado: o aviso pela rede só adianta a vez do PC dono
+        elif self.avisar_dono and not self.fila_ao_vivo:   # o PEDIDO já está gravado: o aviso pela rede só adianta a vez do PC dono
             threading.Thread(target=self._acordar_dono, args=(destino, id_envio), daemon=True).start()
         return {"ok": True, "id": id_envio, "destino": destino, "aviso": motivo}
 
@@ -1025,6 +1029,13 @@ class ServicoEnvio:
             with self.lock:
                 self.locais.setdefault(id_envio, {"estado": r["estado"], "detalhe": r.get("detalhe", ""),
                                                   "pc": r.get("pc") or destino})
+
+    def atender_fila(self, linhas):
+        """A fila Envios_NF acabou de mudar no servidor central: guarda a nova e atende o que for deste PC, na hora, sem esperar a
+        volta de 15 s do Painel. Chamado pelo vigia (estado_envio.iniciar_vigia_de_envios)."""
+        with self.lock_da_fila:
+            self.fila = dobrar_fila(linhas)
+            self.executar_pendentes()
 
     def receber_pela_rede(self, corpo):
         """O PC que pediu avisou pela rede (envio direto, 21/10/2026). Vale o que está gravado na fila, não o que veio

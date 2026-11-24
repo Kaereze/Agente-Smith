@@ -126,6 +126,40 @@ class EnvioMixin:
         self.versao_tela += 1
         return {"ok": True, "ligado": bool(ligado)}
 
+    VIGIA_ENVIOS_ESPERA = 20        # segundos que o vigia fica pendurado no servidor esperando a fila mudar
+    VIGIA_ENVIOS_RELER = 60         # mesmo sem novidade, relê a fila a cada tanto (rede de segurança)
+
+    def iniciar_vigia_de_envios(self):
+        """Servidor central ligado: o PC passa a ser avisado NA HORA quando a fila Envios_NF muda (um pedido novo, o resultado de um
+        envio), em vez de esperar a volta de 15 s do Painel ou do aviso direto entre PCs (que dá timeout quando a porta está
+        fechada). Sem servidor (Google), não faz nada. -> True se ligou."""
+        atende = getattr(self.backend, "atende_pelo_servidor", None)
+        if not (atende and atende(self.central, envio_nf.ABA_FILA)):
+            return False
+        self.envio_nf.fila_ao_vivo = True
+        threading.Thread(target=self._vigiar_envios, daemon=True, name="vigia_envios").start()
+        logger.info("📡 Envios: este PC é avisado pelo servidor central assim que a fila muda")
+        return True
+
+    def _vigiar_envios(self):
+        versao, lida_em, falhas = -1, -1e9, 0
+        while not getattr(self, "parar_vigia", False):   # os testes param o vigia; no Painel ele roda até fechar
+            try:
+                nova = self.backend.esperar_mudanca(self.central, envio_nf.ABA_FILA, versao, self.VIGIA_ENVIOS_ESPERA)
+                if nova != versao or time.monotonic() - lida_em >= self.VIGIA_ENVIOS_RELER:
+                    linhas = self.backend.ler_abas(self.central, [envio_nf.ABA_FILA])[0].get(envio_nf.ABA_FILA, [[]])
+                    versao, lida_em = nova, time.monotonic()
+                    self.envio_nf.atender_fila(linhas)
+                    self.versao_tela += 1   # a tela busca de novo o estado dos envios
+                if falhas:
+                    logger.info("📡 Envios: o servidor central voltou")
+                falhas = 0
+            except Exception as e:
+                falhas += 1
+                if falhas == 1:
+                    logger.warning(f"⚠️ Envios: o servidor central não respondeu ({str(e)[:100]}); tentando de novo")
+                time.sleep(min(30, 2 * falhas))
+
     def _avisar_dono_envio(self, pc, corpo):
         """Avisa o PC dono pela rede. Sem caminho até ele (outra faixa de rede, firewall, desligado) = erro, e o pedido
         segue pela fila Envios_NF como sempre."""
@@ -335,6 +369,8 @@ class EnvioMixin:
         Painel) e, se ela já está velha, manda UM fio ler por trás. Antes a consulta que pegava a leitura esperava o Google
         (média 4 s, até 40 s) e a tela ficava com a "bolinha" de envio rodando todo esse tempo.
         -> a fila dobrada, ou None."""
+        if self.envio_nf.fila_ao_vivo:   # servidor central: a fila do Painel já está em dia (vigia), não há o que ler
+            return None
         guardada = self._fila_status
         if (not guardada or time.monotonic() - guardada[0] >= self.FILA_STATUS_SEGUNDOS)                 and self._lendo_fila_status.acquire(blocking=False):
             threading.Thread(target=self._ler_fila_status, daemon=True, name="fila_status").start()

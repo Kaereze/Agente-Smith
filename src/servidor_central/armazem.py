@@ -9,6 +9,8 @@ cabeçalho, a 2 é a primeira de dados. O `planilha_id` separa uma planilha da o
 Pontos que copiam o jeito do Google:
 - ler devolve só até a última linha com algo; célula vazia no fim da linha não aparece;
 - aba que não existe na leitura vai para o dicionário de erros, sem derrubar as outras;
+- cada aba tem um **número de versão** que sobe a cada gravação; `esperar_mudanca` segura a chamada até a versão mudar (ou dar o
+  tempo), e é assim que um PC "fica sabendo" de um pedido de envio no instante em que ele chega, sem perguntar de segundo em segundo;
 - `anexar_linhas`, `apagar_linhas` e `inserir_no_topo` são atômicos (uma transação só): o que outro PC acrescentou no fim
   enquanto isso fica intacto. Aqui isso é de graça; no Google dependia de um pedido só.
 """
@@ -16,9 +18,13 @@ import json
 import re
 import sqlite3
 import threading
+import time
 
 _CELULA = re.compile(r"^'((?:[^']|'')*)'!([A-Za-z]+)(\d+)$")           # 'Aba'!K5
 _FAIXA = re.compile(r"^([A-Za-z]+)(\d*)(?::([A-Za-z]*)(\d*))?$")       # A100:H  ·  A1:C5  ·  A2
+
+
+TEMPO_MAXIMO_DE_ESPERA = 25.0   # segundos que `esperar_mudanca` pode segurar uma chamada
 
 
 class ErroArmazem(Exception):
@@ -59,7 +65,13 @@ class Armazem:
             CREATE TABLE IF NOT EXISTS abas (p TEXT NOT NULL, aba TEXT NOT NULL, PRIMARY KEY (p, aba));
             CREATE TABLE IF NOT EXISTS linhas (p TEXT NOT NULL, aba TEXT NOT NULL, n INTEGER NOT NULL, v TEXT NOT NULL,
                                                PRIMARY KEY (p, aba, n));
+            CREATE TABLE IF NOT EXISTS versoes (p TEXT NOT NULL, aba TEXT NOT NULL, v INTEGER NOT NULL, PRIMARY KEY (p, aba));
         """)
+        # A versão também fica na memória, com a sua própria trava: quem espera mudança nunca disputa a trava do banco com quem grava.
+        self._versoes_na_memoria = {(p, a): v for p, a, v in self._con.execute("SELECT p, aba, v FROM versoes")}
+        self._mudou = threading.Condition()
+        self._tocadas = set()
+        self.esperando = 0   # quantos PCs estão pendurados em esperar_mudanca agora (aparece em /v1/saude)
 
     # ---------------------------------------------------------------- base
     def _transacao(self):
@@ -73,13 +85,30 @@ class Armazem:
                 except Exception:
                     armazem._tranca.release()
                     raise
+                armazem._tocadas = set()
 
             def __exit__(self, tipo, valor, rastro):
+                tocadas = set()
                 try:
                     armazem._con.execute("ROLLBACK" if tipo else "COMMIT")
+                    if not tipo:
+                        tocadas = armazem._tocadas
                 finally:
+                    armazem._tocadas = set()
                     armazem._tranca.release()
+                if tocadas:   # fora da trava do banco: quem espera acorda e já enxerga o que foi gravado
+                    with armazem._mudou:
+                        for chave in tocadas:
+                            armazem._versoes_na_memoria[chave] = armazem._versoes_na_memoria.get(chave, 0) + 1
+                        armazem._mudou.notify_all()
         return _T()
+
+    def _tocar(self, p, aba):
+        """Marca que a aba mudou (dentro da transação): a versão sobe quando a gravação for confirmada."""
+        if (p, aba) in self._tocadas:   # uma gravação = um passo de versão, mesmo que mexa em muitas linhas
+            return
+        self._con.execute("INSERT INTO versoes (p, aba, v) VALUES (?,?,1) ON CONFLICT(p, aba) DO UPDATE SET v = v + 1", (p, aba))
+        self._tocadas.add((p, aba))
 
     def _existe(self, p, aba):
         return self._con.execute("SELECT 1 FROM abas WHERE p=? AND aba=?", (p, aba)).fetchone() is not None
@@ -152,6 +181,28 @@ class Armazem:
                 lidas[nome] = corpo
         return lidas, erros
 
+    def versoes_das_abas(self, planilha_id, nomes):
+        """-> {aba: versão}. Aba que nunca foi gravada tem versão 0. Barato: não lê linha nenhuma."""
+        with self._mudou:
+            return {n: self._versoes_na_memoria.get((planilha_id, n), 0) for n in nomes}
+
+    def esperar_mudanca(self, planilha_id, aba, versao_vista, segundos=20):
+        """Segura a chamada até a aba mudar em relação a `versao_vista` (ou até dar o tempo) e devolve a versão de agora.
+        Quem chega com uma versão velha recebe a atual na hora. O tempo máximo é de 25 s (a rede não gosta de pedido pendurado)."""
+        limite = time.monotonic() + max(0.0, min(float(segundos), TEMPO_MAXIMO_DE_ESPERA))
+        chave = (planilha_id, aba)
+        with self._mudou:
+            self.esperando += 1
+            try:
+                while self._versoes_na_memoria.get(chave, 0) == versao_vista:
+                    restante = limite - time.monotonic()
+                    if restante <= 0:
+                        break
+                    self._mudou.wait(restante)
+                return self._versoes_na_memoria.get(chave, 0)
+            finally:
+                self.esperando -= 1
+
     # ---------------------------------------------------------------- escrita
     def escrever(self, planilha_id, atualizacoes):
         """atualizacoes = [("'Aba'!K5", valor), ...]"""
@@ -164,6 +215,7 @@ class Armazem:
                     raise ErroArmazem(f"endereço de célula inválido: {endereco}")
                 aba, coluna, n = m.group(1).replace("''", "'"), coluna_para_indice(m.group(2)), int(m.group(3))
                 self._exigir(planilha_id, aba)
+                self._tocar(planilha_id, aba)
                 linha = self._ler_linha(planilha_id, aba, n)
                 linha += [""] * (coluna + 1 - len(linha))
                 linha[coluna] = texto(valor)
@@ -184,11 +236,13 @@ class Armazem:
         if self._existe(p, aba):
             raise ErroArmazem(f"A aba '{aba}' já existe")
         self._con.execute("INSERT INTO abas (p, aba) VALUES (?,?)", (p, aba))
+        self._tocar(p, aba)
 
     def inserir_no_topo(self, planilha_id, aba, linhas):
         """Põe as linhas logo abaixo do cabeçalho (a linha 2), empurrando o resto para baixo."""
         with self._transacao():
             self._exigir(planilha_id, aba)
+            self._tocar(planilha_id, aba)
             self._deslocar(planilha_id, aba, 2, len(linhas))
             for i, linha in enumerate(linhas):
                 self._gravar_linha(planilha_id, aba, 2 + i, linha)
@@ -198,6 +252,7 @@ class Armazem:
         with self._transacao():
             if not self._existe(planilha_id, aba):
                 self._con.execute("INSERT INTO abas (p, aba) VALUES (?,?)", (planilha_id, aba))
+            self._tocar(planilha_id, aba)
             self._con.execute("DELETE FROM linhas WHERE p=? AND aba=?", (planilha_id, aba))
             for i, linha in enumerate(linhas, start=1):
                 self._gravar_linha(planilha_id, aba, i, linha)
@@ -208,12 +263,14 @@ class Armazem:
             self._exigir(planilha_id, aba)
             atual = self._ler_linha(planilha_id, aba, 1)
             if atual[:len(cabecalho)] != [texto(c) for c in cabecalho]:
+                self._tocar(planilha_id, aba)
                 self._gravar_linha(planilha_id, aba, 1, [texto(c) for c in cabecalho] + atual[len(cabecalho):])
 
     def anexar_linhas(self, planilha_id, aba, linhas):
         """Acrescenta no fim. Duas chamadas ao mesmo tempo nunca caem na mesma linha."""
         with self._transacao():
             self._exigir(planilha_id, aba)
+            self._tocar(planilha_id, aba)
             n = self._fim(planilha_id, aba)
             for linha in linhas:
                 n += 1
@@ -223,6 +280,7 @@ class Armazem:
         """Apaga as linhas [inicio, fim) (1 = cabeçalho, 2 = 1ª de dados) e, no mesmo pedido, põe `novas` no lugar."""
         with self._transacao():
             self._exigir(planilha_id, aba)
+            self._tocar(planilha_id, aba)
             self._con.execute("DELETE FROM linhas WHERE p=? AND aba=? AND n >= ? AND n < ?", (planilha_id, aba, inicio, fim))
             self._deslocar(planilha_id, aba, fim, -(fim - inicio))
             if novas:
@@ -233,6 +291,7 @@ class Armazem:
     def apagar_aba(self, planilha_id, aba):
         with self._transacao():
             self._exigir(planilha_id, aba)
+            self._tocar(planilha_id, aba)
             self._con.execute("DELETE FROM linhas WHERE p=? AND aba=?", (planilha_id, aba))
             self._con.execute("DELETE FROM abas WHERE p=? AND aba=?", (planilha_id, aba))
 

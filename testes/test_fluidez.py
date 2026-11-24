@@ -86,7 +86,7 @@ class _Backend:
 def _estado_de_mentira(backend):
     classe = next(c for c in vars(estado_envio).values() if isinstance(c, type) and hasattr(c, "situacao_envio"))
     e = types.SimpleNamespace(backend=backend, central="planilha", _fila_status=None, _lendo_fila_status=threading.Lock(),
-                              FILA_STATUS_SEGUNDOS=3.0, envio_nf=types.SimpleNamespace(locais={}, fila={"x": 1}, situacao=lambda i, f: {"estado": "aguardando", "fila": f}))
+                              FILA_STATUS_SEGUNDOS=3.0, envio_nf=types.SimpleNamespace(locais={}, fila={"x": 1}, fila_ao_vivo=False, situacao=lambda i, f: {"estado": "aguardando", "fila": f}))
     e._fila_para_status = types.MethodType(classe._fila_para_status, e)
     e._ler_fila_status = types.MethodType(classe._ler_fila_status, e)
     e.situacao_envio = types.MethodType(classe.situacao_envio, e)
