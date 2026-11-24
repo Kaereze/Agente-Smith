@@ -9,6 +9,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.24] — 2026-11-24 (PC servidor)
+
+- **Mudou:** o PC `DESKTOP-7M6539V` passa a se chamar **Servidor RA** (`config.json > nomes_dos_pcs`; antes aparecia como Camila). Ele será o PC do servidor da futura API.
+
 ## [2026.11.16] — 2026-11-16 (envio sem espera, Camila no lugar do Afonso, nomes dos PCs)
 
 - **Mudou:** depois de pedir o envio, a tela não mostra mais a bolinha "Enviando": só um aviso curto de pedido entregue. Só a falha aparece (pílula vermelha com "Ver"). A conferência segue em silêncio, a cada 5 s.
