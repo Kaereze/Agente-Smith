@@ -1,0 +1,13 @@
+# Como subir (no PC "Servidor RA"):  copie .env.exemplo para .env, ponha um token seu e rode:  docker compose up -d --build
+services:
+  central:
+    build:
+      context: ../..
+      dockerfile: docker/servidor_central/Dockerfile
+    restart: unless-stopped          # volta sozinho se travar ou se o Windows reiniciar
+    ports:
+      - "8770:8770"
+    environment:
+      CENTRAL_TOKEN: ${CENTRAL_TOKEN:?defina CENTRAL_TOKEN no arquivo .env}
+    volumes:
+      - ./dados:/dados               # o banco e as cópias de segurança ficam nesta pasta, fora do container

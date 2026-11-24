@@ -9,6 +9,13 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Não publicada] — 2026-11-24 (API central, etapa 1)
+
+### Adicionado
+- **Servidor central (API)**, ainda desligado nos PCs: `src/servidor_central/` guarda as abas da Planilha Central num SQLite e atende pela rede (porta 8770, token em `CENTRAL_TOKEN`); `src/central/backend_api.py` é o cliente, com os mesmos 11 métodos do `BackendGoogle`. Cópia de segurança diária (`servidor_central.backup`), `Dockerfile` e `docker-compose.yml` em `docker/servidor_central/`.
+- Plano completo e etapas em `Segundo Cérebro/6 Documentos/Plano da API central.md`.
+- 26 testes novos (`testes/test_api_central.py`), incluindo um que compara os métodos do Google, do cliente e do servidor.
+
 ## [2026.11.24] — 2026-11-24 (PC servidor)
 
 - **Mudou:** o PC `DESKTOP-7M6539V` passa a se chamar **Servidor RA** (`config.json > nomes_dos_pcs`; antes aparecia como Camila). Ele será o PC do servidor da futura API.

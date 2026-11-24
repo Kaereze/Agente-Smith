@@ -1,0 +1,100 @@
+"""Servidor central (API) do Painel Fiscal (24/11/2026, início da API).
+
+Um PC (o "Servidor RA") guarda os dados no `Armazem` e atende os outros pela rede do escritório. Os PCs deixam de ler e
+gravar a planilha do Google e passam a pedir aqui, com os mesmos métodos do `BackendGoogle`.
+
+Rotas:
+  GET  /v1/saude    -> {"ok": true, "abas": N}            (sem token: só para o Docker e o monitoramento saberem que está de pé)
+  POST /v1/chamar   -> {"metodo": "ler_abas", "args": [...], "kwargs": {...}}  (com o cabeçalho X-Token)
+
+Segurança: sem o token certo nada é lido nem gravado. O token vem da variável CENTRAL_TOKEN (nunca do código, nunca do
+repositório); sem ele o servidor nem sobe. Só os métodos da lista METODOS podem ser chamados.
+"""
+import hmac
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from servidor_central.armazem import Armazem, ErroArmazem
+
+METODOS = frozenset({"listar_abas", "ler_abas", "escrever", "criar_aba_status", "criar_aba_log", "inserir_no_topo",
+                     "substituir_aba", "garantir_colunas", "anexar_linhas", "apagar_linhas", "apagar_aba"})
+LIMITE_CORPO = 32 * 1024 * 1024   # as partes de anexo das NFs vão em abas: pedido grande é normal, infinito não
+PORTA = 8770
+
+
+def criar_handler(armazem, token):
+    token = (token or "").encode("utf-8")
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def log_message(self, *args):   # o log de cada pedido não diz nada que o Painel já não registre
+            pass
+
+        def _responder(self, corpo, codigo=200):
+            dados = json.dumps(corpo, ensure_ascii=False).encode("utf-8")
+            self.send_response(codigo)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(dados)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(dados)
+
+        def _token_ok(self):
+            enviado = (self.headers.get("X-Token") or "").encode("utf-8")
+            return bool(token) and hmac.compare_digest(enviado, token)
+
+        def do_GET(self):
+            if self.path == "/v1/saude":
+                return self._responder({"ok": True, "abas": sum(len(armazem.listar_abas(p)) for p in armazem.planilhas())})
+            self._responder({"ok": False, "erro": "rota desconhecida"}, 404)
+
+        def do_POST(self):
+            tamanho = int(self.headers.get("Content-Length") or 0)
+            if tamanho > LIMITE_CORPO:
+                self.close_connection = True   # não lê o corpo todo: só recusa
+                return self._responder({"ok": False, "erro": "pedido grande demais"}, 413)
+            corpo = self.rfile.read(tamanho) if tamanho else b""
+            if not self._token_ok():
+                return self._responder({"ok": False, "erro": "token inválido"}, 403)
+            if self.path != "/v1/chamar":
+                return self._responder({"ok": False, "erro": "rota desconhecida"}, 404)
+            try:
+                pedido = json.loads(corpo.decode("utf-8"))
+                metodo, args, kwargs = pedido["metodo"], pedido.get("args", []), pedido.get("kwargs", {})
+            except (ValueError, KeyError, TypeError):
+                return self._responder({"ok": False, "erro": "pedido mal formado"}, 400)
+            if metodo not in METODOS:
+                return self._responder({"ok": False, "erro": f"método desconhecido: {metodo}"}, 404)
+            try:
+                resultado = getattr(armazem, metodo)(*args, **kwargs)
+            except ErroArmazem as e:   # aba que não existe etc.: o cliente refaz como o erro do Google
+                return self._responder({"ok": False, "tipo": "ErroArmazem", "erro": str(e)}, 409)
+            except TypeError as e:     # argumento errado
+                return self._responder({"ok": False, "tipo": "TypeError", "erro": str(e)}, 400)
+            self._responder({"ok": True, "resultado": resultado})
+
+    return Handler
+
+
+def servir(armazem, token, porta=PORTA, endereco="0.0.0.0"):   # nosec B104: é o servidor da rede do escritório; o token protege
+    servidor = ThreadingHTTPServer((endereco, porta), criar_handler(armazem, token))
+    servidor.daemon_threads = True
+    return servidor
+
+
+def main():
+    token = os.environ.get("CENTRAL_TOKEN", "")
+    if len(token) < 24:
+        sys.exit("CENTRAL_TOKEN ausente ou curto demais (mínimo 24 caracteres). Defina a variável antes de subir o servidor.")
+    banco = os.environ.get("CENTRAL_BANCO", "central.sqlite")
+    porta = int(os.environ.get("CENTRAL_PORTA", PORTA))
+    servidor = servir(Armazem(banco), token, porta)
+    print(f"Servidor central no ar na porta {porta} (banco: {banco})", flush=True)
+    servidor.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

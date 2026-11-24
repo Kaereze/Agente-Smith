@@ -158,6 +158,7 @@ def test_falha_de_leitura_nao_derruba(cfg, planilha):
 def test_tema_e_operador_ficam_juntos_nas_preferencias_do_pc(tmp_path, monkeypatch):
     import app_servidor
     monkeypatch.setattr(app_servidor, "CAMINHO_PREFS", tmp_path / "app.json")
+    monkeypatch.setattr(app_servidor, "nome_fixo_do_pc", lambda: "")   # o nome fixo deste PC (config.json) não vale no teste
     app_servidor.salvar_pref("agente", "Clara")
     app_servidor.salvar_pref("tema", "dark")
     assert app_servidor.ler_prefs() == {"agente": "Clara", "tema": "dark"}   # trocar o tema não apaga o operador

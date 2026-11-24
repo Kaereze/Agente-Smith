@@ -13,7 +13,8 @@ Se você é o Claude: leia também `CLAUDE.md` e o índice `Segundo Cérebro (Ag
 | **Quanto tempo** algo espera, limites, assinaturas, mensagens padrão | `ajustes.json` (copie de `ajustes.exemplo.json`); **não precisa mexer em código** |
 | Um **número novo** numa tela | `src/painel/` (a conta) e `app_ui/` (o desenho) |
 | Algo de **Planilha, Google, cota** | `src/central/` |
-| **Um PC não enxerga outro** | `src/rede/` |
+| **Um PC não enxerga outro** | `src/servidor_central/` | O **servidor da API** (em construção): um PC guarda os dados e atende os outros PCs | Com muito cuidado (guarda dados de hóspedes) |
+| `src/rede/` |
 | **LGPD**: quem viu o dado, pedido de um titular | `src/privacidade/` e `ferramentas/pedido_titular.py` |
 | **Instalar ou atualizar** um PC | `INSTALAR_OU_ATUALIZAR.bat`, `ATUALIZAR_PAINEL.bat`, `INSTALAR_PC_SO_PAINEL.bat` (dê dois cliques) |
 | Abrir o Painel em casa, com dados fictícios | `PAINEL_DEMO_EM_CASA.bat` |
@@ -35,6 +36,7 @@ Se você é o Claude: leia também `CLAUDE.md` e o índice `Segundo Cérebro (Ag
 | `ajustes.json` | Tempos, limites, textos e assinaturas (não sobe para o GitHub; fica em cada PC) | **Sim, sem código** |
 | `ferramentas/` | Programas de apoio: conferir antes do commit, pedido do titular, mapas gerados | Raramente |
 | `Automacoes/` | Scripts de instalação e das tarefas do Windows nos PCs | **Não renomear nem mover**: as tarefas dos 4 PCs apontam para eles |
+| `docker/` | Arquivos para colocar o servidor central no ar no PC "Servidor RA" (Dockerfile, compose, token de exemplo) | Só junto com o servidor; o `.env` com o token **nunca** sobe |
 | `Bat/` | Atalhos antigos (instalar, rodar testes, cópia agendada) | **Não renomear**: tarefas agendadas usam |
 | `apps_script/` | O código do Google Apps Script (formulários) | Só no Google |
 | `.github/` e `.githooks/` | Testes automáticos no GitHub e a trava antes do commit | Raramente |

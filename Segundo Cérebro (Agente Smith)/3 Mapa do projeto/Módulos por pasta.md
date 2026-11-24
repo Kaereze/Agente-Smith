@@ -31,6 +31,7 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 
 | Módulo | Para que serve |
 |---|---|
+| `backend_api` | Cliente do servidor central (24/11/2026, início da API): os mesmos métodos do `BackendGoogle`, mas pedindo ao servidor. |
 | `cota_google` | Orçamento da cota do Google Sheets, dividido entre os programas dos 4 PCs. |
 | `faxina` | Faxina diária da Central (só no PC principal) — pra nada virar bola de neve (usuário, 08/10/2026). |
 | `fiscal_intelligence` | Leitura (somente) da planilha Fiscal Intelligence, gravada pelo Mail Analytics. |
@@ -120,6 +121,17 @@ Mexa aqui quando um PC não enxerga outro: pedido assinado, cifra, código únic
 |---|---|
 | `rede_local` | Conversa direta entre os Painéis dos 4 PCs pela rede do escritório (os 4 ficam na mesma rede — usuário, 08/10/2026). |
 | `rede_pcs` | Os PCs da equipe conversando pela Planilha Central (pedido do usuário, 06/10/2026: "mexer nos outros |
+
+## `src/servidor_central/`: O servidor central (API) do Painel Fiscal: um PC guarda os dados e atende os outros
+
+Mexa aqui quando o assunto é o servidor da API: como ele guarda as abas, a porta, o token, a cópia de segurança.
+
+| Módulo | Para que serve |
+|---|---|
+| `__main__` |  |
+| `armazem` | Armazém do servidor central: guarda as abas da "Planilha Central" num arquivo SQLite (24/11/2026, início da API). |
+| `backup` | Cópia de segurança diária do banco do servidor central: `python -m servidor_central.backup [pasta_das_copias]`. |
+| `servidor` | Servidor central (API) do Painel Fiscal (24/11/2026, início da API). |
 
 ## `src/sistema/`: A base do programa: gravar arquivo, log, trava, limpeza
 
