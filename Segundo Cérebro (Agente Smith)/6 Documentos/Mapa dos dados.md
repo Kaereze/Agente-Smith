@@ -12,6 +12,7 @@ tags: [cerebro/documentos, lgpd, dados]
 
 | Arquivo | Para que serve | Pessoal | Quanto tempo fica | Quem escreve |
 |---|---|---|---|---|
+| `central_api.json` | Se este PC usa o servidor central (API), o endereço e o token dele. Leva segredo: nunca sobe para o GitHub | não | enquanto o Painel precisa | `backend_roteado` |
 | `app.json` | Preferências deste PC: tema e operador escolhido | não | enquanto o Painel precisa | `app_servidor` |
 | `maquina.json` | Identidade deste PC (nome e papel: principal ou comum) | não | enquanto o Painel precisa | `config` |
 | `versao_rodando.txt` | Versão do Painel que está rodando (para pedir reinício quando chega código novo) | não | enquanto o Painel precisa | `estado_sistema` |

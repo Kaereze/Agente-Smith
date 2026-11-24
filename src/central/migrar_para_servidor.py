@@ -9,8 +9,8 @@ O token do servidor vem da variável CENTRAL_TOKEN (nunca como argumento: ficari
 
 Segurança e cuidado:
 - No Google ela só LÊ (chave de somente leitura): nunca grava nem apaga nada na planilha.
-- Copia as abas internas do Painel (envios, correio, PCs, comandos...). As abas "(respostas)" dos formulários dos hotéis ficam
-  no Google, que é quem as alimenta.
+- Copia as abas internas do Painel (envios, correio, PCs, comandos...). As abas "(respostas)" dos formulários dos hotéis e o
+  Cadastro_Hoteis (que a equipe edita na planilha) ficam no Google (regra em central/backend_roteado.py).
 - Não escreve conteúdo de linha em lugar nenhum da tela nem do log: só nomes de aba e contagens (são dados de hóspedes).
 - Se o servidor já tem abas, ela se recusa a copiar (para não passar por cima de dado que os PCs já gravaram lá); `--refazer` libera.
 - A Central é escrita pelos PCs o tempo todo: abas "vivas" (Envios_NF, PCs_Painel...) podem diferir por linhas gravadas entre a
@@ -20,13 +20,14 @@ import argparse
 import os
 import sys
 
-SUFIXO_FORMULARIO = "(respostas)"
+from central.backend_roteado import fica_no_google
+
 LOTE_DE_ABAS = 8   # abas lidas por chamada ao Google: não segura tudo na memória nem passa dos 6 pedidos por minuto
 
 
 def e_aba_interna(nome):
-    """As abas de respostas dos formulários dos hotéis são do Google (Forms); o resto é do Painel."""
-    return not str(nome).strip().endswith(SUFIXO_FORMULARIO)
+    """O que vai para o servidor: tudo menos o que fica no Google (formulários dos hotéis e Cadastro_Hoteis; a regra é do roteador)."""
+    return not fica_no_google(nome)
 
 
 def abas_a_copiar(origem, planilha_id, so=None):

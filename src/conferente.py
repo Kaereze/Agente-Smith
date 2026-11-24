@@ -483,11 +483,10 @@ def _identificar(cfg):
     try:
         import pythoncom
         import identidade
-        from config import caminho_chave_google
-        from central.sheets import BackendGoogle
+        from central.backend_roteado import criar_backend
         pythoncom.CoInitialize()
         ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
-        dados = identidade.detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
+        dados = identidade.detectar(cfg, ns, criar_backend(cfg, somente_leitura=True))
         papel = carregar_config()["papel"]
         logger.info(f"🪪 Este PC: {dados.get('agente') or '?'} → papel {papel}")
     except Exception as e:
@@ -673,8 +672,8 @@ def main():
     outlook_vivo.iniciar_guardiao()   # usuário, 13/10/2026: Outlook obrigatoriamente aberto (com janela) com o PC ligado
 
     import pythoncom
-    from config import caminho_chave_google
-    from central.sheets import BackendGoogle, garantir_rotulos_status
+    from central.backend_roteado import criar_backend
+    from central.sheets import garantir_rotulos_status
 
     intervalo = int(cfg["conferencia"]["intervalo_segundos"])
     logger.info(f"👀 Conferente de NF ligado (Itens Enviados a cada {intervalo}s; "
@@ -707,7 +706,7 @@ def main():
             if not e_principal(cfg):
                 raise _SoConferente
             if backend is None:
-                backend = BackendGoogle(caminho_chave_google(cfg))
+                backend = criar_backend(cfg)
                 garantir_rotulos_status(backend, cfg)
             if agora >= proximo_sinal:
                 publicar_sinal(backend, cfg)
@@ -822,7 +821,7 @@ def main():
                 try:
                     from emails import espelho_emails
                     if espelho is None:
-                        espelho = espelho_emails.Espelho(BackendGoogle(caminho_chave_google(cfg)), cfg)
+                        espelho = espelho_emails.Espelho(criar_backend(cfg), cfg)
                     antes = _publicado(espelho)
                     with desempenho.MEDIDOR.medir("conferente.espelho_emails", logger=logger):
                         espelho.volta(namespace)

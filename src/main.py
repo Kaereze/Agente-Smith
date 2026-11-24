@@ -15,7 +15,7 @@ from notas.controle_nf import abrir_registro
 from notas.historico import (ATENCAO, ERRO, NADA, ORIGEM_AGENDADO, ORIGEM_MANUAL, SUCESSO, Execucao,
                        JaEnviadas, explicar_aba_pulada, texto_simples)
 from sistema import armazem
-from config import e_principal, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, caminho_chave_google, carregar_config
+from config import e_principal, PASTA_LOGS, PASTA_SIMULACAO, ErroDeConfig, carregar_config
 from notas import robo_antigo
 from emails.envio_pc_dono import NaoEnviado, com_pc_dono
 from emails.diario_envios import MINUTOS_ATE_DESISTIR, DiarioEnvios, idade_minutos, solicitacoes_da_entrada
@@ -406,7 +406,7 @@ OCUPADO = 3   # exit code quando a trava está com outra execução
 def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_lock=0):
     from sistema.lock_execucao import adquirir_lock, liberar_lock
     from emails.outlook import OutlookNF
-    from central.sheets import BackendGoogle
+    from central.backend_roteado import criar_backend
 
     agendado = "--agendado" in sys.argv
     origem = origem or (ORIGEM_AGENDADO if agendado else ORIGEM_MANUAL)
@@ -426,7 +426,7 @@ def rodar(codigo_se_ocupado=0, origem=None, quem=None, selecao=None, esperar_loc
     backend = None
     log_exec = Execucao(origem, quem, cfg["modo"])
     try:
-        backend = BackendGoogle(caminho_chave_google(cfg), somente_leitura=cfg["modo"] == "SIMULACAO")
+        backend = criar_backend(cfg, somente_leitura=cfg["modo"] == "SIMULACAO")
         # caixa do hotel em outro PC: o PC dono manda (usuário, 15/10/2026: não usar a caixa do Ondina)
         return executar(cfg, backend, com_pc_dono(OutlookNF(cfg), backend, cfg), log_exec=log_exec, selecao=selecao)
     except Exception as e:

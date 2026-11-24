@@ -1,6 +1,6 @@
 # Plano da API central (servidor)
 
-Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapas 1 e 2 prontas (servidor, cliente, ferramenta de cópia); nada ligado nos PCs ainda.**
+Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapas 1, 2 e 3 prontas; a API vem DESLIGADA em todos os PCs (nada muda até alguém ligar o arquivo local).**
 
 ## A ideia em uma frase
 Hoje a "Planilha Central" do Google faz o papel de banco de dados e de correio entre os PCs. Passa a existir **um servidor** (o PC **Servidor RA**) que guarda os dados e atende os outros PCs. Os PCs deixam de ler e gravar a planilha e deixam de falar entre si pela rede.
@@ -34,13 +34,20 @@ Um teste (`testes/test_api_central.py`) compara os métodos e argumentos do `Bac
 |---|---|---|
 | 1 | Servidor + cliente + testes + Docker + backup | **pronto** (26 testes) |
 | 2 | Ferramenta que **copia** a Central do Google para o servidor (só leitura no Google) e confere linha a linha | **pronta** (`ferramentas/copiar_central_para_servidor.py`; 11 testes). Ensaio real em 24/11/2026: 33 abas, 61.983 linhas, 2 min, 29 MB; 26 abas iguais de primeira e as outras 7 (que os PCs reescrevem o tempo todo) fecharam na 2ª passada |
-| 3 | Escolher o backend por configuração (`central.backend`: `google` ou `api`); ligar **um** PC de teste (o Servidor RA) | a fazer |
+| 3 | Escolher o backend por PC e ligar **um** PC de teste (o Servidor RA) | **pronta** (`src/central/backend_roteado.py`; 16 testes). Teste real em 24/11/2026 (servidor no próprio PC, sem Docker): Painel lendo do servidor, 1.086 pedidos, 82 hotéis, sem nenhum erro nem aviso de lentidão em 4 min; voltas regulares de ~18 s. Depois desfeito (arquivo local removido) |
 | 4 | O PC dono da caixa pergunta ao servidor pelos envios (substitui o aviso direto entre PCs e a leitura de 1 min da fila) | a fazer |
 | 5 | Ligar os outros PCs, um por vez, com o Google como espelho | a fazer |
 | 6 | `sincronizar` grava no servidor; Google fica só com os formulários | a fazer |
 | 7 | Telas e rotas que hoje "fingem" ser planilha ganham tabelas de verdade (envios, correio, PCs), mais rápidas | depois, se valer a pena |
 
 Cada etapa só vai para os PCs com o "pode subir" do João. Nada é desligado antes de a seguinte estar provada.
+
+## Como funciona a escolha (etapa 3)
+- Todos os programas pedem o acesso aos dados em `criar_backend(cfg)` (`src/central/backend_roteado.py`). Sem o arquivo local, é o Google de sempre.
+- Para ligar **um PC**: criar `estado/central_api.json` (fora do GitHub, porque leva o token): `{"ligada": true, "url": "http://IP:8770", "token": "..."}` e reiniciar o Painel. Para desligar: apagar o arquivo (ou `"ligada": false`) e reiniciar.
+- O que vai para o servidor: as abas internas da Central. O que **fica no Google**: as 80 abas de formulário `(respostas)`, o `Cadastro_Hoteis` (a equipe edita na própria planilha), todas as outras planilhas (hotéis, Mail Analytics) e o `sincronizar` (que grava as cópias dos formulários direto no Google).
+- **Cuidado:** um PC ligado vê os dados do servidor, não os do Google. Ligar só um PC dá um PC **isolado** dos outros (serve de teste). A virada de todos juntos é a etapa 5.
+- Modo casa (só visualização) continua sem gravar em lugar nenhum. Servidor fora do ar: o Painel mostra erro e tenta de novo na volta seguinte, como acontece com o Google.
 
 ## Como copiar a Central para o servidor (etapa 2)
 1. `python ferramentas/copiar_central_para_servidor.py --so-listar` mostra o que seria copiado (nomes e contagens, nunca conteúdo).

@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from sistema.arquivos import salvar_json
-from config import CAMINHO_MAQUINA, carregar_config, caminho_chave_google
+from config import CAMINHO_MAQUINA, carregar_config
 from sistema.log_util import configurar_logging
 from emails import outlook_vivo
 from central.tratamento import normalizar
@@ -99,10 +99,10 @@ def ler():
 
 
 if __name__ == "__main__":
-    from central.sheets import BackendGoogle
+    from central.backend_roteado import criar_backend
     cfg = carregar_config()
     ns = outlook_vivo.aplicativo().GetNamespace("MAPI")
-    dados = detectar(cfg, ns, BackendGoogle(caminho_chave_google(cfg), somente_leitura=True))
+    dados = detectar(cfg, ns, criar_backend(cfg, somente_leitura=True))
     print(f"\nEste PC: {dados.get('agente') or '(não identificado)'}"
           + (f" · CONFLITO: {dados['conflito']}" if dados.get("conflito") else "")
           + f"\nPapel: {carregar_config()['papel']}  (principal = agente '{cfg.get('agente_principal')}')")

@@ -33,7 +33,7 @@ garantir_utf8()
 from painel import app_dados as dados
 from sistema.arquivos import salvar_json, so_na_nuvem
 from sistema import armazem
-from config import caminho_chave_google, carregar_config
+from config import carregar_config
 from notas.controle_nf import Registro, _tokens, ler_assunto_nf, provas_da_solicitacao
 from sistema.log_util import configurar_logging
 from emails import outlook_vivo
@@ -565,18 +565,18 @@ def confirmar(backend, cfg, namespace=None, usar_dropbox=True, gravar=False, ago
 
 def rodar(namespace, cfg, usar_dropbox):
     """Chamado pelo conferente."""
-    from central.sheets import BackendGoogle
-    backend = BackendGoogle(caminho_chave_google(cfg))
+    from central.backend_roteado import criar_backend
+    backend = criar_backend(cfg)
     return confirmar(backend, cfg, namespace, usar_dropbox=usar_dropbox, gravar=True)
 
 
 if __name__ == "__main__":
-    from central.sheets import BackendGoogle
+    from central.backend_roteado import criar_backend
     cfg = carregar_config()
     gravar = "--gravar" in sys.argv
     ns = None if "--sem-email" in sys.argv else outlook_vivo.aplicativo().GetNamespace("MAPI")
     desde = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--desde=")), None)
-    achadas = confirmar(BackendGoogle(caminho_chave_google(cfg)), cfg, ns,
+    achadas = confirmar(criar_backend(cfg), cfg, ns,
                         usar_dropbox="--sem-dropbox" not in sys.argv, gravar=gravar, desde=desde,
                         rever="--rever" in sys.argv, ocr="--sem-ocr" not in sys.argv)
     print(("\nGRAVADO" if gravar else "\nPRÉVIA — nada gravado") + f": {len(achadas)} NF(s) confirmada(s)")

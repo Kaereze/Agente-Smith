@@ -35,7 +35,8 @@ def _central():
     return SoLeitura({
         "Envios_NF": [["id", "estado"], ["ENV-1", "enviado"], [], ["ENV-3", "aguardando", "", "x"]],
         "PCs_Painel": [["pc", "agente"], ["DESKTOP-A", "Clara"]],
-        "Cadastro_Hoteis": [["hotel", "caixa"], [SEGREDO, "x@exemplo.com"]],
+        "Ligacoes": [["id", "hospede"], ["L-1", SEGREDO]],
+        "Cadastro_Hoteis": [["hotel", "caixa"], ["Hotel A", "x@exemplo.com"]],   # a equipe edita na planilha: fica no Google
         "Vazia": [],
         "Solicitação Nota Fiscal (HOTEL A) (respostas)": [["Carimbo"], ["01/01/2026"]],
         "Nota Fiscal (Biton) (respostas)": [["Carimbo"]],
@@ -44,7 +45,7 @@ def _central():
 
 def test_so_as_abas_internas_sao_copiadas_e_as_de_formulario_ficam_no_google():
     abas, faltam = mig.abas_a_copiar(_central(), P)
-    assert abas == ["Envios_NF", "PCs_Painel", "Cadastro_Hoteis", "Vazia"] and faltam == []
+    assert abas == ["Envios_NF", "PCs_Painel", "Ligacoes", "Vazia"] and faltam == []   # sem as de formulário e sem o Cadastro_Hoteis
 
 
 def test_pedir_so_algumas_abas_e_avisar_das_que_nao_existem():
@@ -72,11 +73,11 @@ def test_conferencia_acha_a_aba_que_mudou_e_diz_a_linha_sem_mostrar_o_conteudo()
     origem, destino = _central(), Armazem()
     abas, _ = mig.abas_a_copiar(origem, P)
     mig.copiar(origem, destino, P, abas)
-    destino.escrever(P, [("'Cadastro_Hoteis'!A2", "OUTRO NOME")])
+    destino.escrever(P, [("'Ligacoes'!B2", "OUTRO NOME")])
     r = mig.conferir(origem, destino, P, abas)
-    assert list(r["diferentes"]) == ["Cadastro_Hoteis"] and r["diferentes"]["Cadastro_Hoteis"]["primeira_linha_diferente"] == 2
+    assert list(r["diferentes"]) == ["Ligacoes"] and r["diferentes"]["Ligacoes"]["primeira_linha_diferente"] == 2
     texto = mig.relatorio_da_conferencia(r)
-    assert "Cadastro_Hoteis" in texto and SEGREDO not in texto and "OUTRO NOME" not in texto
+    assert "Ligacoes" in texto and SEGREDO not in texto and "OUTRO NOME" not in texto
 
 
 def test_conferencia_acha_linha_a_mais_no_servidor():
