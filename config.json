@@ -71,7 +71,7 @@
   "agente_principal": "João",
   "_ajuda_agentes": "E-mail por agente (só se destino_envio = agente)",
   "_ajuda_nomes_dos_pcs": "Nome do operador de um PC, pelo nome do computador. Vale mais que a detecção pelas contas e que a escolha na tela (o PC da Clara tem caixas de Bernardo e era detectado como Bernardo)",
-  "nomes_dos_pcs": {"DESKTOP-FA8HRTN": "Clara", "DESKTOP-DF2300B": "Bernardo", "DESKTOP-7M6539V": "Camila"},
+  "nomes_dos_pcs": {"DESKTOP-FA8HRTN": "Clara", "DESKTOP-DF2300B": "Bernardo", "DESKTOP-7M6539V": "Servidor RA"},
   "agentes": {
     "João": "",
     "Cristian": "notafiscal@redeandradedunashotel.com.br",
