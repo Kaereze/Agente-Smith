@@ -4,11 +4,16 @@
     python ferramentas/copiar_central_para_servidor.py --servidor http://... --conferir           só compara
     python ferramentas/copiar_central_para_servidor.py --arquivo central.sqlite                   copia para um arquivo (teste)
     python ferramentas/copiar_central_para_servidor.py --so-listar                                só mostra o que seria copiado
+    python ferramentas/copiar_central_para_servidor.py --servidor http://... --para-google --confirmo-escrever-no-google
+                                                                                                  CAMINHO DE VOLTA (ver abaixo)
 
-O token do servidor vem da variável CENTRAL_TOKEN (nunca como argumento: ficaria no histórico do terminal).
+O token do servidor sai da chave do Google deste PC (o mesmo cálculo do servidor). CENTRAL_TOKEN, se existir, vale mais; nunca como argumento.
 
 Segurança e cuidado:
-- No Google ela só LÊ (chave de somente leitura): nunca grava nem apaga nada na planilha.
+- No Google ela só LÊ (chave de somente leitura): nunca grava nem apaga nada na planilha. A ÚNICA exceção é `--para-google`, o
+  caminho de volta da virada (desfazer: o que foi gravado no servidor volta para as abas do Google). Ele reescreve as abas
+  internas do Google com o que o servidor tem, então só roda com `--confirmo-escrever-no-google`, e só depois de todos os PCs
+  terem voltado para o Google (comando `desligar_servidor TODOS`), para ninguém gravar no meio.
 - Copia as abas internas do Painel (envios, correio, PCs, comandos...). As abas "(respostas)" dos formulários dos hotéis e o
   Cadastro_Hoteis (que a equipe edita na planilha) ficam no Google (regra em central/backend_roteado.py).
 - Não escreve conteúdo de linha em lugar nenhum da tela nem do log: só nomes de aba e contagens (são dados de hóspedes).
@@ -57,7 +62,18 @@ def _normal(linhas):
     return saida
 
 
-def copiar(origem, destino, planilha_id, abas):
+LINHAS_POR_ESCRITA = 2000   # no caminho de volta (Google): abas grandes vão em pedaços, um pedido enorme é recusado
+
+
+def _gravar_aba(destino, planilha_id, nome, linhas, em_pedacos):
+    if not em_pedacos or len(linhas) <= LINHAS_POR_ESCRITA:
+        return destino.substituir_aba(planilha_id, nome, linhas)
+    destino.substituir_aba(planilha_id, nome, linhas[:LINHAS_POR_ESCRITA])
+    for i in range(LINHAS_POR_ESCRITA, len(linhas), LINHAS_POR_ESCRITA):
+        destino.anexar_linhas(planilha_id, nome, linhas[i:i + LINHAS_POR_ESCRITA])
+
+
+def copiar(origem, destino, planilha_id, abas, em_pedacos=False):
     """Lê `abas` da origem (em lotes) e grava cada uma inteira no destino. -> {"copiadas": {aba: n_linhas}, "erros": {aba: motivo}}"""
     copiadas, erros = {}, {}
     for lote in _lotes(list(abas), LOTE_DE_ABAS):
@@ -69,7 +85,7 @@ def copiar(origem, destino, planilha_id, abas):
                 continue
             linhas = _normal(lidas[nome])
             try:
-                destino.substituir_aba(planilha_id, nome, linhas)
+                _gravar_aba(destino, planilha_id, nome, linhas, em_pedacos)
             except Exception as e:   # uma aba que falha não impede as outras: aparece no relatório
                 erros[nome] = f"{type(e).__name__}: {str(e)[:150]}"
                 continue
@@ -113,13 +129,13 @@ def relatorio_da_conferencia(r):
     return "\n".join(linhas)
 
 
-def copiar_e_conferir(origem, destino, planilha_id, abas, refazer=False, escrever=print):
+def copiar_e_conferir(origem, destino, planilha_id, abas, refazer=False, escrever=print, em_pedacos=False):
     """A cópia inteira: recusa se o destino já tem abas (a menos que `refazer`), copia e confere. -> código de saída (0 = tudo igual)"""
     if destino.listar_abas(planilha_id) and not refazer:
         escrever("O servidor já tem abas. Para não passar por cima do que os PCs já gravaram lá, nada foi copiado. "
                  "Use --refazer só se tiver certeza.")
         return 2
-    resultado = copiar(origem, destino, planilha_id, abas)
+    resultado = copiar(origem, destino, planilha_id, abas, em_pedacos=em_pedacos)
     escrever(relatorio_da_copia(resultado))
     r = conferir(origem, destino, planilha_id, abas)
     escrever(relatorio_da_conferencia(r))
@@ -130,11 +146,39 @@ def _destino(args):
     if args.arquivo:
         from servidor_central.armazem import Armazem
         return Armazem(args.arquivo)
-    token = os.environ.get("CENTRAL_TOKEN", "")
-    if not token:
-        sys.exit("Defina a variável CENTRAL_TOKEN com o token do servidor (não use argumento: ele ficaria no histórico).")
     from central.backend_api import BackendAPI
+    from central.backend_roteado import token_derivado
+    from config import carregar_config
+    # o token é o mesmo cálculo que o servidor e os PCs fazem com a chave do Google; CENTRAL_TOKEN só vale se alguém quiser outro
+    token = os.environ.get("CENTRAL_TOKEN", "") or token_derivado(carregar_config())
+    if not token:
+        sys.exit("Este PC não tem a chave do Google: não dá para calcular o token (ou defina CENTRAL_TOKEN; nunca como argumento).")
     return BackendAPI(args.servidor, token, tempo=120)
+
+
+def caminho_de_volta(servidor, google, planilha_id, abas=None, escrever=print):
+    """Desfaz a virada: copia as abas internas do servidor para o Google, em pedaços, e confere. -> código de saída"""
+    no_servidor = [n for n in servidor.listar_abas(planilha_id) if e_aba_interna(n)]
+    abas = [n for n in no_servidor if n in abas] if abas else no_servidor
+    escrever(f"{len(abas)} aba(s) do servidor serão escritas no Google.")
+    resultado = copiar(servidor, google, planilha_id, abas, em_pedacos=True)
+    escrever(relatorio_da_copia(resultado))
+    r = conferir(servidor, google, planilha_id, abas)
+    escrever(relatorio_da_conferencia(r))
+    return 0 if not resultado["erros"] and not r["diferentes"] and not r["erros"] else 1
+
+
+def _caminho_de_volta(args, cfg, planilha):
+    if not args.servidor:
+        sys.exit("--para-google precisa de --servidor (de onde copiar).")
+    if not args.confirmo_escrever_no_google:
+        sys.exit("--para-google REESCREVE as abas internas do Google com o que está no servidor. Se tem certeza, e se todos os PCs já "
+                 "voltaram para o Google (desligar_servidor TODOS), repita com --confirmo-escrever-no-google.")
+    from config import caminho_chave_google
+    from central.sheets import BackendGoogle
+    google = BackendGoogle(caminho_chave_google(cfg))   # a única vez em que esta ferramenta usa a chave que grava
+    pedidas = [a.strip() for a in args.abas.split(",")] if args.abas else None
+    return caminho_de_volta(_destino(args), google, planilha, pedidas)
 
 
 def main(argv=None):
@@ -146,6 +190,8 @@ def main(argv=None):
     ap.add_argument("--so-listar", action="store_true", help="só mostra quais abas seriam copiadas")
     ap.add_argument("--refazer", action="store_true", help="copia mesmo que o servidor já tenha abas")
     ap.add_argument("--abas", help="só estas abas, separadas por vírgula")
+    ap.add_argument("--para-google", action="store_true", help="CAMINHO DE VOLTA: grava o que está no servidor nas abas do Google")
+    ap.add_argument("--confirmo-escrever-no-google", action="store_true", help="exigido por --para-google")
     args = ap.parse_args(argv)
     if not args.so_listar and not (args.servidor or args.arquivo):
         ap.error("diga para onde: --servidor ou --arquivo (ou use --so-listar)")
@@ -154,6 +200,8 @@ def main(argv=None):
     from central.sheets import BackendGoogle
     cfg = carregar_config()
     planilha = cfg["planilha_central_id"]
+    if args.para_google:
+        return _caminho_de_volta(args, cfg, planilha)
     origem = BackendGoogle(caminho_chave_google(cfg), somente_leitura=True)   # chave que só lê: o Google nunca é alterado
     pedidas = [a.strip() for a in args.abas.split(",")] if args.abas else None
     abas, faltam = abas_a_copiar(origem, planilha, pedidas)

@@ -132,8 +132,12 @@ def test_copia_pela_rede_para_o_servidor_de_verdade():
         srv.server_close()
 
 
-def test_sem_token_na_variavel_a_ferramenta_nao_tenta_o_servidor(monkeypatch):
+def test_sem_variavel_nem_chave_do_google_a_ferramenta_nao_tenta_o_servidor(monkeypatch):
+    import config
+    from central import backend_roteado
     monkeypatch.delenv("CENTRAL_TOKEN", raising=False)
+    monkeypatch.setattr(config, "carregar_config", lambda *a, **k: {})
+    monkeypatch.setattr(backend_roteado, "token_derivado", lambda cfg: "")
     args = type("A", (), {"arquivo": None, "servidor": "http://127.0.0.1:1"})()
     with pytest.raises(SystemExit):
         mig._destino(args)

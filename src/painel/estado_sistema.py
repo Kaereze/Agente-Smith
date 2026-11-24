@@ -7,6 +7,7 @@ import time
 
 from painel import atividade
 import atualizador
+from central import virada
 from emails import envio_nf
 from emails import indice_emails
 from emails import outlook_vivo
@@ -210,7 +211,13 @@ class SistemaMixin:
 
     def _executar_comando(self, id_c, comando, por):
         try:
-            texto = self._verificar_atualizacao(False, por) if comando == "atualizar" else "comando desconhecido"
+            base = rede_pcs.comando_base(comando)
+            if base == "atualizar":
+                texto = self._verificar_atualizacao(False, por)
+            elif base in virada.COMANDOS_DA_VIRADA:
+                texto = self._virada(comando, por)
+            else:
+                texto = "comando desconhecido"
         except Exception as e:
             texto = f"falhou: {e}"
         try:
@@ -219,9 +226,24 @@ class SistemaMixin:
         except Exception as e:
             logger.warning(f"⚠️ Não consegui responder o comando {id_c} ({e})")
 
+    def _virada(self, comando, por):
+        """ligar_servidor URL / desligar_servidor (central/virada.py): grava a escolha deste PC e reinicia os serviços, para o
+        Painel, o conferente e o robô lerem a escolha nova. O reinício espera um pouco: a resposta do comando sai antes."""
+        if rede_pcs.comando_base(comando) == virada.COMANDO_LIGAR:
+            ok, texto = virada.ligar(comando.split(None, 1)[1] if " " in comando.strip() else "", self.cfg)
+        else:
+            ok, texto = virada.desligar()
+        atividade.registrar(self.backend, self.central, [atividade.linha(
+            atividade.ATUALIZADO if ok else atividade.FALHA, detalhe=f"{comando.split()[0]} pedido por {por}: {texto}", agente=self._agente())])
+        if ok and "reiniciando" in texto:
+            threading.Timer(8, atualizador.so_reiniciar).start()
+        return texto
+
     def pedir_comando(self, para, comando, por):
-        if comando not in rede_pcs.COMANDOS:
+        if rede_pcs.comando_base(comando) not in rede_pcs.COMANDOS:
             raise ValueError("comando desconhecido")
+        if rede_pcs.comando_base(comando) == virada.COMANDO_LIGAR and not virada.url_valida(comando.split(None, 1)[1] if " " in comando.strip() else "")[0]:
+            raise ValueError("endereço do servidor inválido")
         pcs = {p["pc"].lower() for p in rede_pcs.ler_pcs(self.envio_nf.pcs_linhas)}
         if para != "TODOS" and para.lower() not in pcs:
             raise ValueError("PC desconhecido")

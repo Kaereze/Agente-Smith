@@ -16,11 +16,17 @@ import ajustes
 
 ABA_COMANDOS = "Comandos_PC"
 CAB_COMANDOS = ["Quando", "ID", "Para", "Comando", "Por", "Resposta"]
-COMANDOS = {"atualizar"}
+COMANDOS = {"atualizar", "ligar_servidor", "desligar_servidor"}   # a 1ª palavra do comando; ligar_servidor leva o endereço depois
 VALIDADE_COMANDO_MIN = ajustes.valor("atualizacao.validade_comando_minutos")   # pedido mais velho que isso não é executado (PC estava desligado)
 PC_ONLINE_SEGUNDOS = ajustes.valor("rede.pc_online_segundos")
 CONFERENCIA_ATRASADA_MIN = ajustes.valor("rede.conferencia_atrasada_minutos")   # conferente parado: sem volta do Outlook há mais que isso
 CAMINHO_STATUS_CONFERENCIA = armazem.caminho("confirmar_status.json")
+
+
+def comando_base(comando):
+    """"ligar_servidor http://10.0.0.5:8770" -> "ligar_servidor"."""
+    partes = str(comando or "").split(None, 1)
+    return partes[0] if partes else ""
 
 
 def pedido(para, comando, por, quando=None):
@@ -59,7 +65,7 @@ def pendentes(linhas, pc, agora=None):
         if resp:
             if para.lower() == pc.lower():
                 respondidos.add(id_c)
-        elif para.lower() in (pc.lower(), "todos") and comando in COMANDOS:
+        elif para.lower() in (pc.lower(), "todos") and comando_base(comando) in COMANDOS:
             dt = _data(quando)
             if dt and agora - dt <= datetime.timedelta(minutes=VALIDADE_COMANDO_MIN):
                 pedidos.append((id_c, comando, por))

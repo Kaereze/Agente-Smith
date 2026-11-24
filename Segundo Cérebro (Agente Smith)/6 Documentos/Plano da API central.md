@@ -1,6 +1,6 @@
 # Plano da API central (servidor)
 
-Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapas 1 a 4 prontas; a API vem DESLIGADA em todos os PCs (nada muda até alguém ligar o arquivo local).**
+Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapas 1 a 5 prontas (a ferramenta); a virada de verdade ainda NÃO foi feita. A API vem DESLIGADA em todos os PCs.**
 
 ## A ideia em uma frase
 Hoje a "Planilha Central" do Google faz o papel de banco de dados e de correio entre os PCs. Passa a existir **um servidor** (o PC **Servidor RA**) que guarda os dados e atende os outros PCs. Os PCs deixam de ler e gravar a planilha e deixam de falar entre si pela rede.
@@ -36,8 +36,8 @@ Um teste (`testes/test_api_central.py`) compara os métodos e argumentos do `Bac
 | 2 | Ferramenta que **copia** a Central do Google para o servidor (só leitura no Google) e confere linha a linha | **pronta** (`ferramentas/copiar_central_para_servidor.py`; 11 testes). Ensaio real em 24/11/2026: 33 abas, 61.983 linhas, 2 min, 29 MB; 26 abas iguais de primeira e as outras 7 (que os PCs reescrevem o tempo todo) fecharam na 2ª passada |
 | 3 | Escolher o backend por PC e ligar **um** PC de teste (o Servidor RA) | **pronta** (`src/central/backend_roteado.py`; 16 testes). Teste real em 24/11/2026 (servidor no próprio PC, sem Docker): Painel lendo do servidor, 1.086 pedidos, 82 hotéis, sem nenhum erro nem aviso de lentidão em 4 min; voltas regulares de ~18 s. Depois desfeito (arquivo local removido) |
 | 4 | O PC dono da caixa é **avisado pelo servidor** no instante em que o pedido chega (substitui o aviso direto entre PCs, que dá timeout, e a espera pela volta de 15 s) | **pronta** (16 testes novos). Teste ao vivo em 24/11/2026: o vigia do Painel real ficou pendurado no servidor, acordou no mesmo instante da gravação e voltou a esperar em 0,5 s; derrubei o servidor e ele avisou uma vez e se reconectou sozinho. **Não mandei e-mail de verdade** (o envio ponta a ponta foi provado só em teste com Outlook falso) |
-| 5 | Ligar os outros PCs, um por vez, com o Google como espelho | a fazer |
-| 6 | `sincronizar` grava no servidor; Google fica só com os formulários | a fazer |
+| 5 | Ferramentas e roteiro da **virada** (ligar e desligar o servidor nos PCs por comando, quem está onde, caminho de volta para o Google, servidor sem Docker) | **ferramentas prontas** (36 testes). Ensaio ao vivo em 24/11/2026 só no Servidor RA, pelo canal real do Google: `ligar_servidor` → o PC conferiu o servidor, gravou, respondeu e reiniciou ligado; `desligar_servidor` → voltou ao Google. **A virada dos outros PCs não foi feita: falta o "vai" do João, IP fixo e servidor rodando de verdade** |
+| 6 | `sincronizar` grava no servidor; Google fica só com os formulários | a fazer (e talvez nem seja preciso: ele só grava as abas de formulário, que ficam no Google) |
 | 7 | Telas e rotas que hoje "fingem" ser planilha ganham tabelas de verdade (envios, correio, PCs), mais rápidas | depois, se valer a pena |
 
 Cada etapa só vai para os PCs com o "pode subir" do João. Nada é desligado antes de a seguinte estar provada.
@@ -63,7 +63,35 @@ Cada etapa só vai para os PCs com o "pode subir" do João. Nada é desligado an
 3. `--conferir` só compara; `--abas A,B` limita; `--refazer` é a única forma de copiar para um servidor que já tem abas.
 4. Abas "vivas" podem divergir por gravações dos PCs entre a cópia e a conferência: repita só elas com `--abas ... --refazer` (só antes de os PCs usarem o servidor).
 
-## Para colocar no ar no Servidor RA (DESKTOP-7M6539V)
+## Virada (etapa 5): o roteiro
+**O que muda de lugar:** todo PC ligado passa a ler e gravar as abas internas no servidor. **O que nunca muda de lugar:** o canal `Comandos_PC` (fica no Google: é por ele que se liga, desliga e atualiza, mesmo com o servidor fora do ar), os formulários dos hotéis, o `Cadastro_Hoteis` e as outras planilhas.
+
+**Antes (nada disto mexe nos PCs):**
+1. Reservar um **IP fixo** para o Servidor RA no roteador (hoje 10.145.150.247; o endereço do servidor vai nos comandos).
+2. No Servidor RA, rodar `Automacoes\agendar_servidor_central.ps1` (cria a tarefa `ServidorCentral` e libera a porta 8770 só para a rede local; pede administrador uma vez). Isso funciona **hoje, sem Docker**; o Docker pode vir depois com o mesmo código. Conferir: `http://IP:8770/v1/saude`.
+3. Primeira cópia (ensaio): `python ferramentas/copiar_central_para_servidor.py --servidor http://IP:8770`. Pode repetir à vontade com `--refazer` enquanto nenhum PC usa o servidor.
+4. Combinar um **horário calmo** (fora do expediente, sem envio em andamento).
+
+**Na hora (uns 10 minutos):**
+1. Pausar o robô no Painel e esperar os envios em andamento acabarem.
+2. Cópia final: `copiar_central_para_servidor.py --servidor http://IP:8770 --refazer`. As abas que os PCs reescrevem o tempo todo (correio, lista de PCs, caixa de pedidos) podem diferir por poucas linhas: repita só elas com `--abas`.
+3. Ligar todos: `python ferramentas/virada_servidor_central.py --ligar http://IP:8770 --para TODOS --confirmo`. Cada PC confere o servidor, grava a escolha e reinicia sozinho; quem não conseguir responde o motivo (`--ver` mostra as respostas).
+4. Conferir **quem está onde**: `python ferramentas/virada_servidor_central.py --onde http://IP:8770`. Tem que mostrar todos os PCs em `servidor`. Se aparecer `google` e `servidor` ao mesmo tempo, o aviso `ATENCAO` diz: reenvie o comando ao que ficou para trás (o comando vale 60 minutos; um PC desligado que ligar depois disso perde e fica isolado) ou volte todos.
+5. Teste de verdade: um e-mail de teste de um PC para uma caixa de outro PC; olhar `/v1/saude` (`esperando` = PCs ligados).
+6. Religar o robô.
+
+**Voltar (a qualquer momento):**
+1. `python ferramentas/virada_servidor_central.py --desligar --para TODOS --confirmo` (pelo canal do Google; funciona com o servidor fora do ar).
+2. Conferir com `--onde` que todos estão em `google`.
+3. Só depois, para trazer de volta o que foi gravado no servidor: `copiar_central_para_servidor.py --servidor http://IP:8770 --para-google --confirmo-escrever-no-google` (reescreve as abas internas do Google em pedaços e confere). Sem este passo, o Google fica com os dados de antes da virada.
+
+**Cuidados:**
+- Só o admin (João, no PC dele) manda ligar/desligar. O PC só liga se o servidor responde e já tem a Central copiada.
+- O token não é senha para guardar: sai da chave do Google de cada PC (e do servidor).
+- O banco do servidor tem dados de hóspedes: fica em `C:\ServidorCentral` (fora do projeto e do git). Cópia de segurança diária: `python -m servidor_central.backup` (Docker) ou copiar o arquivo com o servidor parado.
+- Servidor fora do ar com os PCs ligados nele: o Painel mostra erro e tenta de novo; envios param até voltar. Por isso o primeiro passo da volta é o `--desligar`.
+
+## Para colocar no ar no Servidor RA com Docker (opcional, depois)
 1. Instalar o WSL2 e o Docker Desktop (este PC ainda **não** tem nenhum dos dois).
 2. Windows: nunca suspender nem hibernar; entrar sozinho na conta; Docker Desktop iniciando com o Windows.
 3. Reservar um IP fixo para o PC no roteador.

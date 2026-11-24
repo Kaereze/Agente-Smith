@@ -42,6 +42,7 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 | `sheets` | Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log. |
 | `tratamento` | Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP. |
 | `vigia_formularios` | Cópia rápida dos formulários (23/10/2026, OK do João): pedido do hóspede no Painel em ~10-20 s, e não 6-12 min. |
+| `virada` | Ligar e desligar o servidor central num PC, por comando (API central, etapa 5, 24/11/2026). |
 
 ## `src/emails/`: Tudo de e-mail e Outlook: ler, espelhar, buscar, enviar a NF
 

@@ -9,11 +9,16 @@ Todos os programas pedem o backend aqui (`criar_backend`). Sem o arquivo `estado
 
 Cada PC liga ou desliga por conta própria, com o arquivo local `estado/central_api.json` (fora do GitHub, porque leva o token):
 
-    {"ligada": true, "url": "http://IP-DO-SERVIDOR:8770", "token": "o mesmo CENTRAL_TOKEN do servidor"}
+    {"ligada": true, "url": "http://IP-DO-SERVIDOR:8770"}
+
+O token não precisa ir no arquivo: sai da chave do Google do próprio PC (`token_derivado`). Quem quiser pode pôr `"token"` ou a variável
+CENTRAL_TOKEN. O comando `ligar_servidor` (central/virada.py) cria este arquivo, depois de conferir que o servidor está pronto.
 
 Cuidado: um PC ligado no servidor passa a ver os dados DO SERVIDOR, não os do Google. Ligar só um PC dá um PC isolado dos outros
 (serve de teste). A virada de todos os PCs de uma vez está no plano (etapa 5).
 """
+import hashlib
+import hmac
 import json
 import os
 import re
@@ -24,7 +29,10 @@ from config import caminho_chave_google
 from sistema import armazem
 
 SUFIXO_FORMULARIO = "(respostas)"
-ABAS_QUE_FICAM_NO_GOOGLE = frozenset({"Cadastro_Hoteis"})   # a equipe edita na própria planilha; sai daqui numa etapa futura
+# Cadastro_Hoteis: a equipe edita na própria planilha (sai daqui numa etapa futura).
+# Comandos_PC: o canal que liga/desliga o servidor e manda atualizar os PCs. Se morasse no servidor e ele caísse, não haveria
+# como mandar ninguém voltar para o Google nem atualizar (etapa 5, 24/11/2026).
+ABAS_QUE_FICAM_NO_GOOGLE = frozenset({"Cadastro_Hoteis", "Comandos_PC"})
 _ABA_DO_ENDERECO = re.compile(r"^'((?:[^']|'')*)'!")           # 'Aba'!K5
 
 
@@ -38,8 +46,21 @@ def _caminho():
     return armazem.caminho("central_api.json")
 
 
-def configuracao_local():
-    """O que este PC diz sobre o servidor central -> {"url", "token"} se estiver ligado e completo, senão None."""
+def token_derivado(cfg):
+    """O token do servidor central, calculado da chave do Google que todo PC da equipe já tem (o mesmo jeito do segredo da rede
+    entre os PCs): ninguém precisa copiar senha de um PC para outro. Domínio próprio: não vale como o segredo da rede.
+    -> texto hexadecimal, ou "" se este PC não tem a chave."""
+    try:
+        from rede import rede_local
+        segredo = rede_local.segredo_da_chave(caminho_chave_google(cfg))
+    except Exception:
+        return ""
+    return hmac.new(segredo, b"servidor-central-v1", hashlib.sha256).hexdigest() if segredo else ""
+
+
+def configuracao_local(cfg=None):
+    """O que este PC diz sobre o servidor central -> {"url", "token"} se estiver ligado e completo, senão None.
+    Token: o do arquivo, senão o da variável CENTRAL_TOKEN, senão o derivado da chave do Google (se `cfg` foi dado)."""
     try:
         with open(_caminho(), encoding="utf-8") as f:
             dados = json.load(f)
@@ -48,6 +69,8 @@ def configuracao_local():
     if not isinstance(dados, dict) or not dados.get("ligada"):
         return None
     url, token = str(dados.get("url") or "").strip(), str(dados.get("token") or os.environ.get("CENTRAL_TOKEN", "")).strip()
+    if url and not token and cfg:
+        token = token_derivado(cfg)
     return {"url": url, "token": token} if url and token else None
 
 
@@ -149,7 +172,7 @@ class BackendRoteado:
 def criar_backend(cfg, somente_leitura=False):
     """O backend deste PC: o Google de sempre, ou o roteado quando `estado/central_api.json` está ligado."""
     google = BackendGoogle(caminho_chave_google(cfg), somente_leitura=somente_leitura)
-    servidor = configuracao_local()
+    servidor = configuracao_local(cfg)
     if not servidor:
         return google
     return BackendRoteado(google, BackendAPI(servidor["url"], servidor["token"]), cfg["planilha_central_id"],
@@ -159,7 +182,7 @@ def criar_backend(cfg, somente_leitura=False):
 def criar_backend_casa(cfg):
     """Modo casa (só visualização): lê os dados reais e nunca grava, nem no Google nem no servidor."""
     google = BackendSoLeitura(caminho_chave_google(cfg))
-    servidor = configuracao_local()
+    servidor = configuracao_local(cfg)
     if not servidor:
         return google
     return BackendRoteado(google, BackendAPI(servidor["url"], servidor["token"]), cfg["planilha_central_id"], ignorar_gravacao=True)

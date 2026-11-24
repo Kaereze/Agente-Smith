@@ -12,7 +12,9 @@ Este módulo não importa `app_servidor` (ele roda como `__main__`); o que depen
 """
 import datetime
 
+from central import virada
 from privacidade import acessos
+from rede import rede_pcs
 from sistema.log_util import configurar_logging
 from central.sheets import LINHA_COMANDO, LINHA_PEDIDO
 
@@ -136,6 +138,14 @@ def _atualizar(c, corpo):
     return {"ok": not c.estado.erro, "motivo": c.estado.erro}
 
 
+def _comando(c, corpo):
+    """Manda um comando para um PC (ou TODOS). Ligar/desligar o servidor central muda de onde TODOS leem os dados: só o admin (João)."""
+    comando = str(corpo.get("comando", ""))
+    if rede_pcs.comando_base(comando) in virada.COMANDOS_DA_VIRADA and not c.e_admin():
+        return {"ok": False, "motivo": "Só o João liga ou desliga o servidor central, no PC dele."}, 403
+    return c.estado.pedir_comando(str(corpo.get("para", "")), comando, f"{c.agente()} ({c.pc})")
+
+
 POST = {
     "/api/acao": lambda c, b: c.estado.registrar(c.agente(), c.pc, b["chave"], b["acao"], b.get("valor", "")),
     "/api/tema": _tema,
@@ -156,7 +166,7 @@ POST = {
     "/api/enviar_receber": lambda c, b: c.estado.enviar_receber_todas(c.agente()),
     "/api/ligacao": lambda c, b: c.estado.marcar_ligacao(str(b.get("id", "")), bool(b.get("marcar")), c.agente()),
     "/api/correio/encaminhar": lambda c, b: c.estado.encaminhar_email(b, c.agente()),
-    "/api/comando": lambda c, b: c.estado.pedir_comando(str(b.get("para", "")), str(b.get("comando", "")), f"{c.agente()} ({c.pc})"),
+    "/api/comando": _comando,
     "/api/atualizar": _atualizar,
     "/api/acesso": lambda c, b: {"ok": acessos.registrar(c.agente(), c.pc, str(b.get("tipo", "")), str(b.get("item", "")))},   # a ficha abriu na tela
 }
