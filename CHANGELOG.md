@@ -13,6 +13,7 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 
 ### Adicionado
 - **Servidor central (API)**, ainda desligado nos PCs: `src/servidor_central/` guarda as abas da Planilha Central num SQLite e atende pela rede (porta 8770, token em `CENTRAL_TOKEN`); `src/central/backend_api.py` é o cliente, com os mesmos 11 métodos do `BackendGoogle`. Cópia de segurança diária (`servidor_central.backup`), `Dockerfile` e `docker-compose.yml` em `docker/servidor_central/`.
+- **Etapa 2:** `ferramentas/copiar_central_para_servidor.py` copia as 33 abas internas da Central para o servidor e confere linha a linha (só lê o Google, não mostra conteúdo, recusa copiar por cima de dados já gravados no servidor). 11 testes.
 - Plano completo e etapas em `Segundo Cérebro/6 Documentos/Plano da API central.md`.
 - 26 testes novos (`testes/test_api_central.py`), incluindo um que compara os métodos do Google, do cliente e do servidor.
 

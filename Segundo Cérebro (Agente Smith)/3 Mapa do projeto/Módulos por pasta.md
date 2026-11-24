@@ -36,6 +36,7 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 | `faxina` | Faxina diária da Central (só no PC principal) — pra nada virar bola de neve (usuário, 08/10/2026). |
 | `fiscal_intelligence` | Leitura (somente) da planilha Fiscal Intelligence, gravada pelo Mail Analytics. |
 | `hoteis` | Cadastro único de hotéis: casa os nomes que cada fonte usa com o nome do Cadastro_Hoteis. |
+| `migrar_para_servidor` | Copia a Planilha Central do Google para o servidor central e confere linha a linha (API central, etapa 2, 24/11/2026). |
 | `rede_util` | Retry com backoff exponencial para erros passageiros da API do Google. |
 | `sheets` | Planilha Central: abas de respostas dos hotéis, aba Status (painel/menu) e Log. |
 | `tratamento` | Tratamento dos campos do formulário: datas, CPF/CNPJ, CEP. |

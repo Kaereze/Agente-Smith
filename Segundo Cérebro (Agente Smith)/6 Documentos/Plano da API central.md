@@ -1,6 +1,6 @@
 # Plano da API central (servidor)
 
-Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapa 1 pronta (servidor, cliente e testes); nada ligado nos PCs ainda.**
+Criado em 24/11/2026, a pedido do João, a partir da conversa com o dev. **Estado: etapas 1 e 2 prontas (servidor, cliente, ferramenta de cópia); nada ligado nos PCs ainda.**
 
 ## A ideia em uma frase
 Hoje a "Planilha Central" do Google faz o papel de banco de dados e de correio entre os PCs. Passa a existir **um servidor** (o PC **Servidor RA**) que guarda os dados e atende os outros PCs. Os PCs deixam de ler e gravar a planilha e deixam de falar entre si pela rede.
@@ -33,7 +33,7 @@ Um teste (`testes/test_api_central.py`) compara os métodos e argumentos do `Bac
 | # | O que | Estado |
 |---|---|---|
 | 1 | Servidor + cliente + testes + Docker + backup | **pronto** (26 testes) |
-| 2 | Ferramenta que **copia** a Central do Google para o servidor (só leitura no Google) e confere linha a linha | a fazer |
+| 2 | Ferramenta que **copia** a Central do Google para o servidor (só leitura no Google) e confere linha a linha | **pronta** (`ferramentas/copiar_central_para_servidor.py`; 11 testes). Ensaio real em 24/11/2026: 33 abas, 61.983 linhas, 2 min, 29 MB; 26 abas iguais de primeira e as outras 7 (que os PCs reescrevem o tempo todo) fecharam na 2ª passada |
 | 3 | Escolher o backend por configuração (`central.backend`: `google` ou `api`); ligar **um** PC de teste (o Servidor RA) | a fazer |
 | 4 | O PC dono da caixa pergunta ao servidor pelos envios (substitui o aviso direto entre PCs e a leitura de 1 min da fila) | a fazer |
 | 5 | Ligar os outros PCs, um por vez, com o Google como espelho | a fazer |
@@ -41,6 +41,12 @@ Um teste (`testes/test_api_central.py`) compara os métodos e argumentos do `Bac
 | 7 | Telas e rotas que hoje "fingem" ser planilha ganham tabelas de verdade (envios, correio, PCs), mais rápidas | depois, se valer a pena |
 
 Cada etapa só vai para os PCs com o "pode subir" do João. Nada é desligado antes de a seguinte estar provada.
+
+## Como copiar a Central para o servidor (etapa 2)
+1. `python ferramentas/copiar_central_para_servidor.py --so-listar` mostra o que seria copiado (nomes e contagens, nunca conteúdo).
+2. Com o servidor no ar e a variável `CENTRAL_TOKEN` definida: `python ferramentas/copiar_central_para_servidor.py --servidor http://IP:8770` copia e confere.
+3. `--conferir` só compara; `--abas A,B` limita; `--refazer` é a única forma de copiar para um servidor que já tem abas.
+4. Abas "vivas" podem divergir por gravações dos PCs entre a cópia e a conferência: repita só elas com `--abas ... --refazer` (só antes de os PCs usarem o servidor).
 
 ## Para colocar no ar no Servidor RA (DESKTOP-7M6539V)
 1. Instalar o WSL2 e o Docker Desktop (este PC ainda **não** tem nenhum dos dois).
