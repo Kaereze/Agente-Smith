@@ -263,6 +263,10 @@ Estes são de um tipo de página que só abre dentro do claude.ai (slides e canv
 | 21/10/2026 | Painel Fiscal · Repaginação (canvas de design com as telas da repaginação) | https://claude.ai/artifact/1kAkDWVyGQmXZCgNmC8gjv |
 | 12/10/2026 | Painel Fiscal · Rede Andrade (apresentação em slides) | https://claude.ai/artifact/Fw5L1QntKqJgTeSo6hpEfn |
 | 08/10/2026 | Painel Fiscal · Apresentação (apresentação em slides) | https://claude.ai/artifact/CAGUuEs1xycDApwHoAFZDR |
+| 19/11/2026 | Auditoria de usabilidade, rodada 1 (10 heurísticas de Nielsen, nota 5,4; medidas propostas; mesa de emissão) | https://claude.ai/artifact/3H7qZE3VyCcRX2BMc6Szq9 |
+| 19/11/2026 | Mesa de emissão = Ficha do Hóspede de verdade (CSS real do Painel) antes e depois das 10 regras de Nielsen; versão 3 | https://claude.ai/artifact/X9VPSCb3u4k58wd4ahhaus |
+| 20/11/2026 | Mesa de emissão v4 (mesmo link): faixa com prazo, hotel, responsável (PC ligado/desligado) e e-mails; linha "O Painel leu o pedido"; seção "Como ele quer a nota"; 4º pedido (vencido, repetido, dividido). João pediu para eu decidir as dúvidas; aguarda o OK dele para virar código (a leitura do pedido é regra nova) | https://claude.ai/artifact/X9VPSCb3u4k58wd4ahhaus |
+| 20/11/2026 | Mesa de emissão v5 (mesmo link), "rumo ao 10": contador de cópias, Ajuda + atalhos (C, E, ← →, ?, Esc), aviso de campos em branco, desfazer envio de 10 s, etiquetas 12/24 px. Notas 9,5 (regra 8 em 9,0); o 10 só depois de 5 decisões do João e um teste de 15 min com a equipe. Atualizado no mesmo desenho (João: "não fique fazendo versão nova"): bloco de conferência com veredito (Pode emitir / Falta dado / Confira / Pare: pode ser NF em dobro), Histórico deste CPF (Dropbox, canceladas, mesmo nome; 12 meses), quem está com o pedido aberto, formulário parecido, nº da estada obrigatório | https://claude.ai/artifact/X9VPSCb3u4k58wd4ahhaus |
 
 A documentação oficial em PDF e PowerPoint está em [[Apresentação do projeto]].
 

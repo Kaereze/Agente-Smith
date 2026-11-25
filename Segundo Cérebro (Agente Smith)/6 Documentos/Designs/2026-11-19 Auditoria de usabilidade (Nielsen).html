@@ -1,0 +1,403 @@
+<title>Auditoria de Usabilidade</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: uma coluna de leitura de 1120 px, resumo no topo e detalhe embaixo. Escuro primeiro, como o Painel. */
+:root{
+  color-scheme:dark;
+  --bg:#121417; --panel:#1a1d21; --panel-2:#20242a; --line:#2c3138; --line-2:#3a414a;
+  --text:#e8eaed; --text-2:#a9b0b9; --text-3:#8b939d;
+  --accent:#3b8fe3; --accent-soft:rgba(59,143,227,.14);
+  --amber:#d19a3a; --amber-soft:rgba(209,154,58,.14);
+  --red:#ec5a61; --red-soft:rgba(236,90,97,.14);
+  --f-text:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --bg:#f3f5f8; --panel:#ffffff; --panel-2:#eef1f5; --line:#dde2e8; --line-2:#c6cdd6;
+  --text:#1b1f24; --text-2:#46505b; --text-3:#66707b;
+  --accent:#1f6fc4; --accent-soft:rgba(31,111,196,.10);
+  --amber:#946510; --amber-soft:rgba(148,101,16,.12);
+  --red:#bf2f37; --red-soft:rgba(191,47,55,.10);
+}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f3f5f8; --panel:#ffffff; --panel-2:#eef1f5; --line:#dde2e8; --line-2:#c6cdd6;
+  --text:#1b1f24; --text-2:#46505b; --text-3:#66707b;
+  --accent:#1f6fc4; --accent-soft:rgba(31,111,196,.10);
+  --amber:#946510; --amber-soft:rgba(148,101,16,.12);
+  --red:#bf2f37; --red-soft:rgba(191,47,55,.10);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--f-text);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:var(--s6) 64px}
+.pg{max-width:1120px;margin-inline:auto;display:grid;gap:var(--s7)}
+h1,h2,h3{font-weight:600;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:32px;line-height:1.15}
+h2{font-size:22px;line-height:1.25}
+h3{font-size:16px;line-height:1.3}
+p{margin:0}
+.muted{color:var(--text-2)} .faint{color:var(--text-3)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);font-weight:500}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+section{display:grid;gap:var(--s4)}
+.sec-head{display:grid;gap:var(--s2);max-width:70ch}
+
+/* topo */
+.topo{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:var(--s6);align-items:end}
+.topo p{max-width:60ch;color:var(--text-2)}
+.nota{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s5);display:grid;gap:var(--s2)}
+.nota .grande{font-family:var(--f-num);font-size:56px;line-height:1;font-weight:500;color:var(--amber)}
+.nota .grande small{font-size:20px;color:var(--text-3)}
+.nota .meta{display:flex;gap:var(--s4);flex-wrap:wrap;font-size:13px;color:var(--text-2)}
+.nota .meta b{color:var(--text);font-weight:500}
+
+/* gráfico de notas */
+.barras{display:grid;gap:var(--s2);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s5)}
+.linha{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) 64px;gap:var(--s4);align-items:center}
+.linha .rot{font-size:14px}
+.linha .rot span{color:var(--text-3);font-family:var(--f-num);margin-right:var(--s2)}
+.trilho{position:relative;height:10px;background:var(--panel-2);border-radius:999px}
+.trilho i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--cor)}
+.trilho em{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text-3);opacity:.8;left:80%}
+.linha .v{font-family:var(--f-num);text-align:right;font-size:14px}
+.ok{--cor:var(--accent)} .at{--cor:var(--amber)} .cr{--cor:var(--red)}
+.legenda{display:flex;gap:var(--s5);flex-wrap:wrap;font-size:13px;color:var(--text-2);margin-top:var(--s2)}
+.legenda span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:var(--s2);background:var(--cor);vertical-align:-1px}
+.legenda .meta-l::before{border-radius:0;width:2px;height:12px;background:var(--text-3);margin-right:var(--s2)}
+
+/* cartões de heurística */
+.grade{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
+.cartao{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s5);display:grid;gap:var(--s3);align-content:start;min-width:0}
+.cartao header{display:flex;justify-content:space-between;gap:var(--s3);align-items:baseline}
+.cartao header .n{font-family:var(--f-num);font-size:13px;color:var(--text-3)}
+.cartao .pont{font-family:var(--f-num);font-size:20px;color:var(--cor);white-space:nowrap}
+.cartao .pont small{font-size:13px;color:var(--text-3)}
+.cartao ul{margin:0;padding:0;list-style:none;display:grid;gap:var(--s2)}
+.cartao li{font-size:14px;color:var(--text-2);padding-left:var(--s4);position:relative}
+.cartao li::before{content:"";position:absolute;left:0;top:.65em;width:6px;height:2px;background:var(--line-2)}
+.cartao li b{color:var(--text);font-weight:500}
+.cartao .acao{font-size:14px;border-top:1px solid var(--line);padding-top:var(--s3);color:var(--text)}
+.cartao .acao span{color:var(--text-3);font-size:12px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+
+/* tabelas */
+.rolagem{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+th,td{padding:var(--s3) var(--s4);text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);font-weight:500;background:var(--panel-2)}
+tr:last-child td{border-bottom:0}
+td.mono,th.mono{font-family:var(--f-num);text-align:right;white-space:nowrap}
+.sel{display:inline-block;font-size:12px;padding:2px var(--s2);border-radius:999px;border:1px solid var(--cor);color:var(--cor);background:transparent;white-space:nowrap}
+.sel.ok{background:var(--accent-soft)} .sel.at{background:var(--amber-soft)} .sel.cr{background:var(--red-soft)}
+
+/* sistema de medidas */
+.duas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
+.caixa{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s5);display:grid;gap:var(--s4);min-width:0;align-content:start}
+.regua{display:grid;gap:var(--s2)}
+.regua div{display:grid;grid-template-columns:56px 44px minmax(0,1fr);gap:var(--s3);align-items:center;font-size:13px}
+.regua code{font-family:var(--f-num);color:var(--text-2)}
+.regua i{display:block;height:12px;background:var(--accent);border-radius:2px;opacity:.9}
+.regua small{color:var(--text-3)}
+.tipo{display:grid;gap:var(--s2)}
+.tipo div{display:grid;grid-template-columns:64px minmax(0,1fr);gap:var(--s3);align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:var(--s2)}
+.tipo div:last-child{border-bottom:0}
+.tipo code{font-family:var(--f-num);font-size:12px;color:var(--text-3)}
+.raios{display:flex;gap:var(--s4);flex-wrap:wrap}
+.raios div{display:grid;gap:var(--s2);justify-items:center;font-size:12px;color:var(--text-3);font-family:var(--f-num)}
+.raios i{display:block;width:64px;height:48px;background:var(--panel-2);border:1px solid var(--line-2)}
+.cores{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--s3)}
+.cor{display:grid;gap:var(--s2);font-size:12px;color:var(--text-3)}
+.cor i{display:block;height:44px;border-radius:8px;border:1px solid var(--line-2);background:var(--c)}
+.cor b{font-weight:500;color:var(--text);font-size:13px}
+.antes-depois{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--s3)}
+.ad{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s4);display:grid;gap:var(--s1)}
+.ad .rot{font-size:13px;color:var(--text-2)}
+.ad .par{font-family:var(--f-num);font-size:22px;display:flex;gap:var(--s3);align-items:baseline;flex-wrap:wrap}
+.ad .par s{color:var(--red);text-decoration-thickness:1px;opacity:.9}
+.ad .par b{color:var(--accent);font-weight:500}
+.ad .par span{font-size:12px;color:var(--text-3);font-family:var(--f-text)}
+
+/* mesa de emissão */
+.mesa{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s4)}
+.campos{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.campos div{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:var(--s3);padding:var(--s3) var(--s4);border-bottom:1px solid var(--line);align-items:center;font-size:14px}
+.campos div:last-child{border-bottom:0}
+.campos span{color:var(--text-3);font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.campos b{font-weight:500;font-family:var(--f-num);font-size:13.5px;overflow-wrap:anywhere}
+.campos button{font:inherit;font-size:12px;color:var(--text-2);background:transparent;border:1px solid var(--line-2);border-radius:6px;padding:var(--s1) var(--s2);cursor:pointer;min-height:28px}
+.campos button:hover{color:var(--text);border-color:var(--text-3)}
+.campos button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ex{font-size:12px;color:var(--text-3)}
+
+/* plano */
+.passos{display:grid;gap:var(--s3);margin:0;padding:0;list-style:none}
+.passos li{display:grid;grid-template-columns:36px minmax(0,1fr);gap:var(--s4);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:var(--s4) var(--s5)}
+.passos .p{font-family:var(--f-num);color:var(--accent);font-size:18px}
+.passos b{font-weight:600}
+.passos span{display:block;color:var(--text-2);font-size:14px}
+.decisao{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:var(--s5);display:grid;gap:var(--s3)}
+.decisao ol{margin:0;padding-left:var(--s5);display:grid;gap:var(--s2)}
+.rodape{font-size:13px;color:var(--text-3);max-width:80ch}
+
+@media (max-width:860px){
+  .topo,.grade,.duas,.mesa{grid-template-columns:minmax(0,1fr)}
+  h1{font-size:26px}
+  .linha{grid-template-columns:minmax(0,1fr) 56px;gap:var(--s2) var(--s3)}
+  .linha .trilho{grid-column:1 / -1;order:3}
+  .campos div{grid-template-columns:minmax(0,1fr) auto}
+  .campos span{grid-column:1 / -1}
+}
+</style>
+
+<main class="pg">
+
+<header class="topo">
+  <div style="display:grid;gap:var(--s3)">
+    <span class="eyebrow">Painel Fiscal · rodada 1 · 19/11/2026</span>
+    <h1>Auditoria de usabilidade, tela por tela</h1>
+    <p>As 10 heurísticas de Nielsen aplicadas ao Painel, com a nota de hoje, a prova de cada nota e o que fazer. Só leitura: nada do Painel foi alterado. Esta página é a que você acompanha; eu a atualizo a cada etapa.</p>
+  </div>
+  <div class="nota" aria-label="Nota geral">
+    <span class="eyebrow">Nota geral hoje</span>
+    <div class="grande num">5,4<small> / 10</small></div>
+    <div class="meta"><span>Meta da repaginação: <b>8,0</b></span><span>Telas do menu lidas: <b>4 de 10</b></span></div>
+    <p class="faint" style="font-size:13px">Nota minha, feita sobre código, medições e as telas que você me mostrou. Ela não foi medida com os agentes usando o Painel.</p>
+  </div>
+</header>
+
+<section aria-labelledby="t-notas">
+  <div class="sec-head">
+    <h2 id="t-notas">Nota por heurística</h2>
+    <p class="muted">A linha vertical marca a meta de 8,0. Azul passa de 7, âmbar fica de 5 a 7, vermelho é abaixo de 5.</p>
+  </div>
+  <div class="barras" id="grafico"></div>
+  <div class="legenda"><span class="ok">7 a 10, bom</span><span class="at">5 a 6,9, melhorar</span><span class="cr">abaixo de 5, prioridade</span><span class="meta-l">meta 8,0</span></div>
+</section>
+
+<section aria-labelledby="t-heur">
+  <div class="sec-head">
+    <h2 id="t-heur">O que sustenta cada nota</h2>
+    <p class="muted">Cada ponto vem de algo que eu medi no código, no log ou numa tela que você enviou. Onde não vi, está escrito.</p>
+  </div>
+  <div class="grade" id="cartoes"></div>
+</section>
+
+<section aria-labelledby="t-telas">
+  <div class="sec-head">
+    <h2 id="t-telas">As telas do Painel</h2>
+    <p class="muted">O menu tem 10 destinos. Quatro foram lidos por imagem ou código, e mais a janela de enviar. Os outros seis ficam para a rodada 2, quando eu abrir cada um e medir. Prefiro dizer isso a inventar nota.</p>
+  </div>
+  <div class="rolagem">
+    <table>
+      <thead><tr><th>Tela</th><th>Para que serve</th><th>O que polui hoje</th><th>O que falta</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td><b>Visão geral</b></td><td>Resumo de ontem ou de hoje</td><td>Cinco números, dois gráficos e duas listas na primeira tela, mais dois seletores. Tudo no mesmo peso.</td><td>Uma frase de destaque: o que precisa de ação agora.</td><td><span class="sel at">lida</span></td></tr>
+        <tr><td><b>Notas fiscais</b></td><td>Lista de pedidos com prazo e situação</td><td>Abas, cartões de situação, pílulas de filtro e tabela ao mesmo tempo.</td><td>Os dados da emissão ao lado do pedido (veja a mesa de emissão abaixo).</td><td><span class="sel at">lida</span></td></tr>
+        <tr><td><b>Caixa de entrada</b></td><td>Espelho do Outlook dos 4 PCs</td><td>Faixa de comandos copiada do Outlook, três colunas, cinco filtros e a busca. Muita coisa antes do primeiro e-mail.</td><td>Ordem de trabalho: o que responder primeiro, sem ler e-mail por e-mail.</td><td><span class="sel at">lida</span></td></tr>
+        <tr><td><b>Janela de enviar NF</b> (fora do menu)</td><td>Escrever e enviar a NF ou a resposta</td><td>Era a bolinha de 30 s, resolvida em 16/11.</td><td>Confirmação visível só quando algo falha, já feito. Falta o histórico do que saiu.</td><td><span class="sel ok">boa</span></td></tr>
+        <tr><td><b>Robô</b></td><td>Registro do que o robô fez</td><td>Há um desenho aprovado de painel grande. Falta conferir como ficou na tela real.</td><td>Revisar depois da nova navegação.</td><td><span class="sel at">lida em parte</span></td></tr>
+        <tr><td>Urgência, Itens enviados, Gerência, Monitoramento, Agentes do Smith, Enviar pendentes</td><td>Apoio e administração</td><td colspan="2" class="faint">Ainda não medi estas seis. Entram na rodada 2.</td><td><span class="sel">pendente</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="t-medidas">
+  <div class="sec-head">
+    <h2 id="t-medidas">Medidas corretas: um só sistema para tudo</h2>
+    <p class="muted">Hoje cada tela escolhe as próprias medidas. A proposta é uma régua única de 8 px, usada por todo o Painel. É esta régua que depois vira o código.</p>
+  </div>
+
+  <div class="antes-depois" id="antes-depois"></div>
+
+  <div class="duas">
+    <div class="caixa">
+      <h3>Espaçamento (grade de 8 px)</h3>
+      <div class="regua" id="regua"></div>
+    </div>
+    <div class="caixa">
+      <h3>Tamanhos de texto</h3>
+      <div class="tipo">
+        <div><code>12</code><span style="font-size:12px">Etiqueta e apoio, sempre em maiúsculas pequenas</span></div>
+        <div><code>13</code><span style="font-size:13px">Texto de tabela e metadados</span></div>
+        <div><code>14</code><span style="font-size:14px">Texto padrão de leitura</span></div>
+        <div><code>16</code><span style="font-size:16px;font-weight:500">Título de cartão</span></div>
+        <div><code>20</code><span style="font-size:20px;font-weight:600">Título de tela</span></div>
+        <div><code>28</code><span style="font-size:28px;font-weight:600">Número de destaque</span></div>
+        <div><code>40</code><span style="font-size:40px;font-weight:500" class="num">1.284</span></div>
+      </div>
+    </div>
+    <div class="caixa">
+      <h3>Cantos arredondados</h3>
+      <div class="raios">
+        <div><i style="border-radius:4px"></i>4 · campos</div>
+        <div><i style="border-radius:8px"></i>8 · botões</div>
+        <div><i style="border-radius:12px"></i>12 · cartões</div>
+        <div><i style="border-radius:999px"></i>pílula · estados</div>
+      </div>
+    </div>
+    <div class="caixa">
+      <h3>Cores, só cinza, azul, âmbar e vermelho</h3>
+      <div class="cores">
+        <div class="cor" style="--c:var(--bg)"><i></i><b>Fundo</b>base da janela</div>
+        <div class="cor" style="--c:var(--panel)"><i></i><b>Cartão</b>conteúdo</div>
+        <div class="cor" style="--c:var(--accent)"><i></i><b>Azul</b>ação e foco</div>
+        <div class="cor" style="--c:var(--amber)"><i></i><b>Âmbar</b>atenção, confira</div>
+        <div class="cor" style="--c:var(--red)"><i></i><b>Vermelho</b>falha, urgente</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="t-mesa">
+  <div class="sec-head">
+    <h2 id="t-mesa">O que falta: a mesa de emissão</h2>
+    <p class="muted">Você disse que o Painel existe para puxar o que importa para emitir a nota, sem abrir e-mail por e-mail. Esta é a proposta de como isso aparece, com dados inventados.</p>
+  </div>
+  <div class="mesa">
+    <div>
+      <div class="campos" id="campos"></div>
+      <p class="ex" style="margin-top:var(--s2)">Exemplo com dados inventados. Cada botão copia só aquele campo.</p>
+    </div>
+    <div class="caixa">
+      <h3>Regras da mesa</h3>
+      <ul style="margin:0;padding-left:var(--s5);display:grid;gap:var(--s2);color:var(--text-2);font-size:14px">
+        <li>Fica ao lado do pedido, sem abrir janela. Um clique em "copiar" por campo, ou "copiar tudo".</li>
+        <li>O campo que falta aparece em âmbar, escrito "falta", nunca em branco.</li>
+        <li>A situação da NF mostra a prova: estada, arquivo e hora. Verde nunca sai só por nome parecido.</li>
+        <li>O que não é da emissão fica recolhido: histórico, anexos e conversa.</li>
+        <li>O e-mail original abre em um clique, mas você deixa de precisar dele.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="t-codigo">
+  <div class="sec-head">
+    <h2 id="t-codigo">Estrutura do código, medida hoje</h2>
+    <p class="muted">Sem número não existe "bem estruturado". Estas são as medidas atuais e a meta de cada uma. Ficam numa tabela que repito a cada etapa.</p>
+  </div>
+  <div class="rolagem">
+    <table>
+      <thead><tr><th>Medida</th><th class="mono">Hoje</th><th class="mono">Meta</th><th>Por que importa</th></tr></thead>
+      <tbody>
+        <tr><td>Tamanhos de texto diferentes no CSS</td><td class="mono">25</td><td class="mono">7</td><td>Cada tamanho extra é uma tela que se comporta diferente.</td></tr>
+        <tr><td>Raios de canto diferentes</td><td class="mono">20</td><td class="mono">4</td><td>Consistência visual e menos regras para manter.</td></tr>
+        <tr><td>Valores de espaçamento (gap) diferentes</td><td class="mono">20</td><td class="mono">7</td><td>É a régua de 8 px acima.</td></tr>
+        <tr><td>Cores em hexadecimal espalhadas</td><td class="mono">357</td><td class="mono">&lt; 30</td><td>Tema claro e escuro ficam impossíveis de manter com 357 cores soltas.</td></tr>
+        <tr><td>Regras com <span class="num">!important</span></td><td class="mono">411</td><td class="mono">&lt; 50</td><td>Cada uma é uma camada que briga com outra, o motivo dos ajustes que "não aparecem".</td></tr>
+        <tr><td>Camadas (<span class="num">z-index</span>) diferentes</td><td class="mono">20</td><td class="mono">6</td><td>Menus que abrem cortados, como o da Caixa de Clara.</td></tr>
+        <tr><td>Arquivos de CSS e linhas</td><td class="mono">17 · 3.065</td><td class="mono">menos camadas</td><td><span class="num">estilo.css</span> tem 2.152 linhas e as camadas novas o sobrescrevem.</td></tr>
+        <tr><td>Arquivos de JavaScript e linhas</td><td class="mono">32 · 5.576</td><td class="mono">mantém</td><td>Já foi dividido por assunto. Está em boa forma.</td></tr>
+        <tr><td>Leitura da Planilha Central (Google)</td><td class="mono">5 s média · 16 s pior 5%</td><td class="mono">&lt; 1 s</td><td>É a origem da maior parte do lag. Só o banco de dados (Supabase) resolve.</td></tr>
+        <tr><td>Resposta de um clique de envio</td><td class="mono">0,7 s</td><td class="mono">&lt; 0,3 s</td><td>Já bom. Depois da repaginação cai com a lista pronta na memória.</td></tr>
+        <tr><td>Testes automáticos</td><td class="mono">834</td><td class="mono">+ 1 por tela nova</td><td>É o que impede um conserto de quebrar outra coisa.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="t-plano">
+  <div class="sec-head">
+    <h2 id="t-plano">Plano, uma etapa de cada vez</h2>
+  </div>
+  <ol class="passos">
+    <li><span class="p">1</span><div><b>Auditoria, rodada 1 (esta página)</b><span>Feita. A rodada 2 mede as seis telas que faltam.</span></div></li>
+    <li><span class="p">2</span><div><b>Sistema de medidas</b><span>A régua, os tamanhos, os cantos e as cores acima viram um arquivo único de variáveis. Você aprova antes de qualquer código.</span></div></li>
+    <li><span class="p">3</span><div><b>Desenho das telas no Artifact</b><span>Uma tela de cada vez, com a mesa de emissão primeiro. Você escolhe a ordem.</span></div></li>
+    <li><span class="p">4</span><div><b>Limpar o código por baixo</b><span>Trocar as 411 regras forçadas pelas variáveis, medindo antes e depois. É daqui que sai a sensação de Painel mais leve.</span></div></li>
+    <li><span class="p">5</span><div><b>Banco de dados</b><span>A Fase 4 do plano. É a que tira o lag da leitura do Google. Depende da conta no Supabase.</span></div></li>
+  </ol>
+  <div class="decisao">
+    <h3>Preciso de você para seguir</h3>
+    <ol>
+      <li>Aprova a régua de 8 px e as cores só em cinza, azul, âmbar e vermelho?</li>
+      <li>Começo a etapa 3 pela <b>mesa de emissão</b> ou pela <b>Caixa de entrada</b>?</li>
+      <li>Falta algum dado na mesa de emissão que você precisa na hora de emitir? Pode listar.</li>
+    </ol>
+  </div>
+  <p class="rodape">Sobre "sem bug e sem lag": eu não prometo zero. Eu prometo medir. Cada etapa traz a tabela de medidas acima atualizada e os testes passando. O que o Painel não resolve sozinho é a velocidade do Google, e isso está dito na tabela.</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+  var H=[
+    {n:1,t:"Visibilidade do estado do sistema",p:6.5,ev:[
+      "<b>Melhorou:</b> o clique de enviar responde em 0,7 s e o pedido entregue some da tela (16/11). Só a falha aparece.",
+      "<b>Ainda pesa:</b> a etapa de atividade leva cerca de 40 s por volta e a leitura do Google varia de 1 a 60 s, sem aviso claro para quem espera."],
+      a:"Todo carregamento mostra o que acontece e há quanto tempo, com limite de 100 ms para o primeiro sinal."},
+    {n:2,t:"Linguagem do mundo real",p:7.0,ev:[
+      "<b>Bom:</b> as telas e os avisos já falam em português simples, como \"Caixa de Saída travada, aperte F9\".",
+      "<b>Falha:</b> termos internos aparecem para o usuário, como Conferente, Agentes do Smith e erros do tipo \"URLError\"."],
+      a:"Trocar cada termo técnico pela palavra que o agente usa no dia a dia."},
+    {n:3,t:"Controle e liberdade do usuário",p:4.0,ev:[
+      "<b>Falha comprovada:</b> trocar de agente por um clique, sem confirmação, aconteceu duas vezes (08/11 e 11/11) e zerou a caixa do João.",
+      "Não há \"desfazer\" visível para ações no Outlook, como excluir ou mover."],
+      a:"Confirmar trocas de agente e ações em lote, e oferecer \"desfazer\" por alguns segundos."},
+    {n:4,t:"Consistência e padrões",p:3.5,ev:[
+      "<b>Medido:</b> 25 tamanhos de texto, 20 raios de canto, 20 espaçamentos, 357 cores e 20 camadas (z-index).",
+      "411 regras com <span class=\"num\">!important</span> mostram camadas novas brigando com as antigas. É por isso que um ajuste de CSS às vezes não aparece."],
+      a:"Um único sistema de medidas, usado por todas as telas, e cada botão existindo uma vez só."},
+    {n:5,t:"Prevenção de erros",p:5.5,ev:[
+      "<b>Corrigido em 12/11:</b> NF verde só com CPF/CNPJ e as duas datas. O resto fica amarelo para conferir.",
+      "<b>Aberto:</b> a troca de agente ainda não pede confirmação e o menu da Caixa de Clara abria cortado."],
+      a:"Confirmação nas ações de risco e estados amarelos para tudo que não tem prova forte."},
+    {n:6,t:"Reconhecer em vez de lembrar",p:6.5,ev:[
+      "<b>Bom:</b> a ficha do hóspede abre pelo pedido ligado ao e-mail, sem esperar o texto, e tem \"copiar tudo\".",
+      "<b>Falta:</b> os dados da emissão ainda exigem abrir o e-mail. É a mesa de emissão desta página."],
+      a:"Mostrar ao lado do pedido tudo que a emissão usa, com o que falta em âmbar."},
+    {n:7,t:"Flexibilidade e eficiência",p:6.0,ev:[
+      "<b>Tem:</b> setas ↑ ↓ andam pelos e-mails e botões rápidos de Sem resposta e Correção com contagem.",
+      "<b>Não vi:</b> ações em lote, como marcar vários e-mails, nem atalhos de teclado para as ações mais usadas."],
+      a:"Atalhos para responder, enviar NF e marcar, e seleção de vários itens."},
+    {n:8,t:"Estética e design minimalista",p:5.0,ev:[
+      "<b>Visão geral:</b> cinco números, dois gráficos, duas listas e dois seletores na primeira tela.",
+      "<b>Caixa de entrada:</b> uma faixa de comandos copiada do Outlook, três colunas e cinco filtros antes do primeiro e-mail."],
+      a:"Cada tela mostra só o que serve àquela tarefa. O resto fica recolhido, e não escondido."},
+    {n:9,t:"Ajudar a reconhecer e corrigir erros",p:6.0,ev:[
+      "<b>Bom:</b> a falha de envio vira pílula vermelha com o motivo e o botão \"Escrever de novo\", sem perder o texto.",
+      "<b>Falha:</b> alguns erros de rede chegam na tela em linguagem técnica."],
+      a:"Toda mensagem de erro diz o que houve e o que fazer, em uma frase."},
+    {n:10,t:"Ajuda e documentação",p:5.0,ev:[
+      "<b>Tem:</b> botão de ajuda no rodapé e 21 dicas em botões.",
+      "<b>Falta:</b> ajuda dentro de cada tela, e um guia curto para o agente novo, como a Camila."],
+      a:"Uma ajuda de três linhas em cada tela, e o guia do primeiro dia."}
+  ];
+  function cls(p){return p>=7?"ok":(p>=5?"at":"cr")}
+  function fmt(p){return p.toFixed(1).replace(".",",")}
+  var g=document.getElementById("grafico"), c=document.getElementById("cartoes"), i, h;
+  for(i=0;i<H.length;i++){
+    h=H[i];
+    g.insertAdjacentHTML("beforeend",
+      '<div class="linha '+cls(h.p)+'"><div class="rot"><span>'+(h.n<10?"0":"")+h.n+'</span>'+h.t+'</div>'+
+      '<div class="trilho" role="img" aria-label="Nota '+fmt(h.p)+' de 10"><i style="width:'+(h.p*10)+'%"></i><em></em></div>'+
+      '<div class="v">'+fmt(h.p)+'</div></div>');
+    c.insertAdjacentHTML("beforeend",
+      '<article class="cartao '+cls(h.p)+'"><header><h3>'+h.t+'</h3><div class="pont">'+fmt(h.p)+'<small> / 10</small></div></header>'+
+      '<ul>'+h.ev.map(function(e){return "<li>"+e+"</li>"}).join("")+'</ul>'+
+      '<div class="acao"><span>O que fazer</span>'+h.a+'</div></article>');
+  }
+  var AD=[["Tamanhos de texto",25,7],["Raios de canto",20,4],["Espaçamentos",20,7],["Cores soltas",357,30],["Regras !important",411,50],["Camadas z-index",20,6]];
+  var ad=document.getElementById("antes-depois");
+  AD.forEach(function(x){ad.insertAdjacentHTML("beforeend",'<div class="ad"><div class="rot">'+x[0]+'</div><div class="par"><s>'+x[1]+'</s><b>'+(x[0]==="Cores soltas"||x[0]==="Regras !important"?"< ":"")+x[2]+'</b><span>hoje · proposto</span></div></div>')});
+  var R=[[4,"s1","ícone e texto"],[8,"s2","entre itens"],[12,"s3","dentro de botão"],[16,"s4","dentro de cartão"],[24,"s5","entre cartões"],[32,"s6","entre blocos"],[48,"s7","entre seções"]];
+  var rg=document.getElementById("regua");
+  R.forEach(function(r){rg.insertAdjacentHTML("beforeend",'<div><code>'+r[0]+' px</code><code>'+r[1]+'</code><span style="display:grid;gap:2px"><i style="width:'+r[0]*4+'px;max-width:100%"></i><small>'+r[2]+'</small></span></div>')});
+  var CAMPOS=[["Documento do tomador","123.456.789-09",0],["Nome do tomador","Maria Exemplo Silva",0],["Hotel","Hotel Exemplo Centro",0],["Estada","22112",0],["Check-in e check-out","10/11/2026 a 11/11/2026",0],["Valor","R$ 612,00",0],["Serviços","Diárias",0],["E-mail do hóspede","falta",1],["Situação da NF","Amarela: datas diferentes · arquivo NF 2926",2]];
+  var cp=document.getElementById("campos");
+  CAMPOS.forEach(function(x){
+    var cor=x[2]===1?"var(--amber)":(x[2]===2?"var(--amber)":"var(--text)");
+    cp.insertAdjacentHTML("beforeend",'<div><span>'+x[0]+'</span><b style="color:'+cor+'">'+x[1]+'</b>'+(x[2]===0?'<button type="button" data-copiar="'+x[1]+'">copiar</button>':'<span></span>')+'</div>');
+  });
+  cp.addEventListener("click",function(e){
+    var b=e.target.closest("button[data-copiar]"); if(!b) return;
+    var t=b.getAttribute("data-copiar"), ok=function(){b.textContent="copiado";setTimeout(function(){b.textContent="copiar"},1200)};
+    try{navigator.clipboard.writeText(t).then(ok,function(){})}catch(_){}
+  });
+})();
+</script>
