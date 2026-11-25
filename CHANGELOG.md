@@ -9,6 +9,17 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.25.1] — 2026-11-25 (servidor central pronto: sobe sozinho, backup, troca de IP automática; nos PCs continua DESLIGADO)
+
+Nenhum PC passa a usar o servidor com esta versão: a API central continua desligada. Esta entrega só leva o código para todos os PCs.
+
+- **Adicionado:** se o IP do Servidor RA mudar, os PCs acham o servidor sozinhos. O Servidor RA publica o endereço na aba `Servidor_Endereco` (no Google); o PC confere que é o servidor de verdade (prova da senha e identificador do banco) antes de usar; gravação repetida não duplica. Detalhes no plano da API, "Troca de IP do servidor".
+- **Adicionado:** no Servidor RA, o servidor, o publicador do endereço e o backup diário rodam como SISTEMA ao ligar o Windows, sem logon e sem senha (`Automacoes\agendar_servidor_central.ps1`, rodado à mão uma vez; as atualizações não rodam esse script).
+- **Adicionado:** backup diário do banco do servidor, com a cópia conferida e 14 dias guardados.
+- **Adicionado:** ferramentas `trocar_documento_por_exemplo.py` (troca CPF/CNPJ por exemplo sem mostrar o número) e `enviar_fichas_de_design.py`.
+- **Corrigido:** teste de segurança instável que barrava commits de vez em quando.
+- **Documentos:** notas e fichas de design de 19 e 20/11 (sem dado de hóspede).
+
 ## [2026.11.25] — 2026-11-25 (repaginação, etapa 2: medidas, confirmação de operador e tamanho da tela)
 
 - **Nota:** feita e usada no PC do João desde 19/11; entra para todos os PCs só agora. A API central (2026.11.24.1) continua desligada; esta entrega só traz a tela.
