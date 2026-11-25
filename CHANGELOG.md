@@ -9,8 +9,9 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [Em preparação] — 2026-11-19 (repaginação, etapa 2: medidas, confirmação de operador e tamanho da tela)
+## [2026.11.25] — 2026-11-25 (repaginação, etapa 2: medidas, confirmação de operador e tamanho da tela)
 
+- **Nota:** feita e usada no PC do João desde 19/11; entra para todos os PCs só agora. A API central (2026.11.24.1) continua desligada; esta entrega só traz a tela.
 - **Adicionado:** "Tamanho da tela" no menu do operador (clicar no avatar): Automático (ajusta à largura e à escala do Windows daquele PC, de 85% a 130%) ou fixo de 90% a 150%, gravado por PC. Só na janela do app; desliga o zoom solto (Ctrl + e -).
 - **Mudou:** trocar de operador pergunta antes ("Trocar este PC para Bernardo?", foco em Cancelar), porque a troca por um clique zerou a caixa do João duas vezes.
 - **Adicionado:** `pecas/tokens.css` (régua de 8 px, 7 tamanhos de texto, 4 cantos, 5 camadas), `ferramentas/medir_design.py` e uma catraca de testes: o CSS não pode ganhar tamanhos, cores ou `!important` novos.
