@@ -13,43 +13,17 @@ Aqui só se decide e se grava o arquivo `estado/central_api.json`; o reinício d
 arquivo ao subir) é feito por quem chama.
 """
 import datetime
-import ipaddress
 import json
-import re
-from urllib.parse import urlparse
 
-from central import backend_roteado
+from central import backend_roteado, descoberta
 from central.backend_api import BackendAPI
+from central.descoberta import url_valida   # mora em descoberta.py desde 25/11/2026; `virada.url_valida` continua existindo
 from rede import rede_pcs
 
 COMANDO_LIGAR = "ligar_servidor"
 COMANDO_DESLIGAR = "desligar_servidor"
 COMANDOS_DA_VIRADA = frozenset({COMANDO_LIGAR, COMANDO_DESLIGAR})
 ABAS_ESSENCIAIS = ("Envios_NF", "PCs_Painel", "Status")   # se o servidor não tem estas, a Central não foi copiada para lá
-_NOME_DE_REDE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")   # nome simples de PC, sem ponto (nada da internet)
-
-
-def url_valida(texto):
-    """-> (url limpa, "") ou ("", motivo). Só http, só a rede do escritório (IP privado, o próprio PC ou nome de PC sem ponto) e porta."""
-    url = str(texto or "").strip().rstrip("/")
-    try:
-        partes = urlparse(url)
-        porta = partes.port
-    except ValueError:
-        return "", "endereço inválido"
-    if partes.scheme != "http" or not partes.hostname or not porta or partes.path not in ("", "/") or partes.username:
-        return "", "use o formato http://IP:porta (ex.: http://10.0.0.5:8770)"
-    host = partes.hostname
-    try:
-        ip = ipaddress.ip_address(host)
-        if not (ip.is_private or ip.is_loopback):
-            return "", "o servidor central tem que estar na rede do escritório (IP privado), não na internet"
-    except ValueError:
-        if not _NOME_DE_REDE.match(host):
-            return "", "o nome do servidor deve ser o de um PC da rede (sem ponto)"
-    return f"http://{host}:{porta}", ""
-
-
 def conferir_servidor(url, cfg, api=None):
     """O servidor está pronto para este PC passar a usá-lo? -> (ok, texto)"""
     if api is None:
@@ -75,7 +49,11 @@ def ligar(url_pedida, cfg, api=None):
     ok, texto = conferir_servidor(url, cfg, api)
     if not ok:
         return False, f"não liguei: {texto}"
-    _gravar({"ligada": True, "url": url})
+    dados = {"ligada": True, "url": url}
+    servidor_id = descoberta.identificador_do_servidor(url) if api is None else ""
+    if servidor_id:   # guarda QUEM é o servidor: depois de uma troca de IP, só o mesmo banco é aceito (central/descoberta.py)
+        dados["servidor_id"] = servidor_id
+    _gravar(dados)
     return True, f"ligado no servidor central {url} ({texto}); reiniciando"
 
 
@@ -89,7 +67,10 @@ def desligar():
         pass
     if not antes.get("ligada"):
         return True, "já estava no Google"
-    _gravar({"ligada": False, "url": antes.get("url", "")})
+    guardado = {"ligada": False, "url": antes.get("url", "")}
+    if antes.get("servidor_id"):
+        guardado["servidor_id"] = antes["servidor_id"]
+    _gravar(guardado)
     return True, "voltou para o Google; reiniciando"
 
 

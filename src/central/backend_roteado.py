@@ -24,6 +24,7 @@ import os
 import re
 
 from central.backend_api import BackendAPI
+from central.descoberta import DescobertaPeloGoogle
 from central.sheets import BackendGoogle, BackendSoLeitura, ErroPlanilha
 from config import caminho_chave_google
 from sistema import armazem
@@ -32,7 +33,9 @@ SUFIXO_FORMULARIO = "(respostas)"
 # Cadastro_Hoteis: a equipe edita na própria planilha (sai daqui numa etapa futura).
 # Comandos_PC: o canal que liga/desliga o servidor e manda atualizar os PCs. Se morasse no servidor e ele caísse, não haveria
 # como mandar ninguém voltar para o Google nem atualizar (etapa 5, 24/11/2026).
-ABAS_QUE_FICAM_NO_GOOGLE = frozenset({"Cadastro_Hoteis", "Comandos_PC"})
+# Servidor_Endereco: o endereço atual do servidor (central/descoberta.py). É por ela que os PCs acham o servidor depois de uma troca
+# de IP, então não pode morar nele.
+ABAS_QUE_FICAM_NO_GOOGLE = frozenset({"Cadastro_Hoteis", "Comandos_PC", "Servidor_Endereco"})
 _ABA_DO_ENDERECO = re.compile(r"^'((?:[^']|'')*)'!")           # 'Aba'!K5
 
 
@@ -71,7 +74,12 @@ def configuracao_local(cfg=None):
     url, token = str(dados.get("url") or "").strip(), str(dados.get("token") or os.environ.get("CENTRAL_TOKEN", "")).strip()
     if url and not token and cfg:
         token = token_derivado(cfg)
-    return {"url": url, "token": token} if url and token else None
+    if not (url and token):
+        return None
+    configuracao = {"url": url, "token": token}
+    if dados.get("servidor_id"):   # o banco que este PC conhece (gravado por ligar_servidor): só ele vale depois de uma troca de IP
+        configuracao["servidor_id"] = str(dados["servidor_id"]).strip()
+    return configuracao
 
 
 class BackendRoteado:
@@ -169,14 +177,19 @@ class BackendRoteado:
 
 
 # ---------------------------------------------------------------- o que os programas chamam
+def _api(servidor, google, cfg):
+    """O cliente do servidor, já sabendo achar o servidor de novo se o IP dele mudar (central/descoberta.py)."""
+    return BackendAPI(servidor["url"], servidor["token"], descoberta=DescobertaPeloGoogle(google, cfg["planilha_central_id"]),
+                      servidor_id=servidor.get("servidor_id", ""))
+
+
 def criar_backend(cfg, somente_leitura=False):
     """O backend deste PC: o Google de sempre, ou o roteado quando `estado/central_api.json` está ligado."""
     google = BackendGoogle(caminho_chave_google(cfg), somente_leitura=somente_leitura)
     servidor = configuracao_local(cfg)
     if not servidor:
         return google
-    return BackendRoteado(google, BackendAPI(servidor["url"], servidor["token"]), cfg["planilha_central_id"],
-                          somente_leitura=somente_leitura)
+    return BackendRoteado(google, _api(servidor, google, cfg), cfg["planilha_central_id"], somente_leitura=somente_leitura)
 
 
 def criar_backend_casa(cfg):
@@ -185,4 +198,4 @@ def criar_backend_casa(cfg):
     servidor = configuracao_local(cfg)
     if not servidor:
         return google
-    return BackendRoteado(google, BackendAPI(servidor["url"], servidor["token"]), cfg["planilha_central_id"], ignorar_gravacao=True)
+    return BackendRoteado(google, _api(servidor, google, cfg), cfg["planilha_central_id"], ignorar_gravacao=True)

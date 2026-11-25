@@ -2,7 +2,9 @@
 # Pede administrador UMA vez e cria:
 #   (1) a tarefa ServidorCentral: roda como SISTEMA, sobe logo que o Windows liga (30 s depois) e religa a cada 10 min se cair;
 #   (2) a regra de firewall da porta 8770, so para a rede local;
-#   (3) a tarefa ServidorCentral_Backup (copia de seguranca as 03:00): chama agendar_backup_servidor_central.ps1.
+#   (3) a tarefa ServidorCentral_Endereco: quando o IP deste PC mudar, anota o novo na aba Servidor_Endereco do Google e os outros
+#       PCs acham o servidor sozinhos (central/descoberta.py);
+#   (4) a tarefa ServidorCentral_Backup (copia de seguranca as 03:00): chama agendar_backup_servidor_central.ps1.
 # Nao guarda senha nenhuma: a conta SISTEMA nao tem senha. A chave do Google (de onde sai o token) fica na pasta do usuario que
 # rodou este script (%APPDATA%\SolicitacoesNF\chave-api.json); a tarefa recebe essa pasta em --appdata.
 # Resultado desta instalacao: C:\ServidorCentral\agendar.log.
@@ -90,6 +92,26 @@ if ($ok) {
     if ($dono) { $q = Invoke-CimMethod -InputObject $dono -MethodName GetOwner; Write-Host "Processo do servidor roda como: $($q.Domain)\$($q.User)" }
 } else {
     Write-Host "[ATENCAO] O servidor nao respondeu em 45 s. Veja a pasta logs do projeto e o Agendador de Tarefas." -ForegroundColor Yellow
+}
+
+# 4b. publicador do endereco: se o IP deste PC mudar, anota o novo numa aba do Google e os outros PCs acham o servidor sozinhos
+$nomeEndereco = "ServidorCentral_Endereco"
+$scriptEndereco = Join-Path $pastaProjeto "ferramentas\publicar_endereco_servidor.py"
+if (Test-Path $scriptEndereco) {
+    if (Get-ScheduledTask -TaskName $nomeEndereco -ErrorAction SilentlyContinue) {
+        Stop-ScheduledTask -TaskName $nomeEndereco -ErrorAction SilentlyContinue
+        Unregister-ScheduledTask -TaskName $nomeEndereco -Confirm:$false
+    }
+    Get-CimInstance Win32_Process | Where-Object { $_.Name -match '^pythonw?\.exe$' -and $_.CommandLine -match 'publicar_endereco_servidor' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    $acaoE = New-ScheduledTaskAction -Execute $pythonw -Argument "`"$scriptEndereco`" --appdata `"$AppData`"" -WorkingDirectory $pastaProjeto
+    $gatilhoE = New-ScheduledTaskTrigger -AtStartup
+    $gatilhoE.Delay = "PT60S"
+    $gatilhoE.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 10)).Repetition
+    Register-ScheduledTask -TaskName $nomeEndereco -Action $acaoE -Trigger $gatilhoE -Principal $principal -Settings $config `
+        -Description "Anota o endereco (IP) do servidor central numa aba do Google quando ele muda, para os PCs acharem o servidor sozinhos. SISTEMA, ao ligar o Windows." | Out-Null
+    Start-ScheduledTask -TaskName $nomeEndereco
+    Write-Host "Tarefa $nomeEndereco criada (SISTEMA, ao ligar o Windows): publica o endereco quando o IP mudar." -ForegroundColor Green
 }
 
 # 5. backup diario (mesma sessao de administrador, sem pedir de novo)

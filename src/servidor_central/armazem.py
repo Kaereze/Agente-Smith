@@ -19,6 +19,7 @@ import re
 import sqlite3
 import threading
 import time
+import uuid
 
 _CELULA = re.compile(r"^'((?:[^']|'')*)'!([A-Za-z]+)(\d+)$")           # 'Aba'!K5
 _FAIXA = re.compile(r"^([A-Za-z]+)(\d*)(?::([A-Za-z]*)(\d*))?$")       # A100:H  ·  A1:C5  ·  A2
@@ -66,7 +67,11 @@ class Armazem:
             CREATE TABLE IF NOT EXISTS linhas (p TEXT NOT NULL, aba TEXT NOT NULL, n INTEGER NOT NULL, v TEXT NOT NULL,
                                                PRIMARY KEY (p, aba, n));
             CREATE TABLE IF NOT EXISTS versoes (p TEXT NOT NULL, aba TEXT NOT NULL, v INTEGER NOT NULL, PRIMARY KEY (p, aba));
+            CREATE TABLE IF NOT EXISTS meta (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS pedidos (id TEXT PRIMARY KEY, quando REAL NOT NULL, resultado TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS pedidos_quando ON pedidos (quando);
         """)
+        self._fundo = 0   # quantas transações desta thread estão abertas uma dentro da outra (só mexe com a trava na mão)
         # A versão também fica na memória, com a sua própria trava: quem espera mudança nunca disputa a trava do banco com quem grava.
         self._versoes_na_memoria = {(p, a): v for p, a, v in self._con.execute("SELECT p, aba, v FROM versoes")}
         self._mudou = threading.Condition()
@@ -80,14 +85,22 @@ class Armazem:
         class _T:
             def __enter__(self):
                 armazem._tranca.acquire()
+                if armazem._fundo:   # já há uma transação aberta nesta thread (executar_uma_vez): junta-se a ela, quem confirma é a de fora
+                    armazem._fundo += 1
+                    return
                 try:
                     armazem._con.execute("BEGIN IMMEDIATE")
                 except Exception:
                     armazem._tranca.release()
                     raise
+                armazem._fundo = 1
                 armazem._tocadas = set()
 
             def __exit__(self, tipo, valor, rastro):
+                armazem._fundo -= 1
+                if armazem._fundo:   # a de fora confirma (ou desfaz tudo, se o erro subir até ela)
+                    armazem._tranca.release()
+                    return
                 tocadas = set()
                 try:
                     armazem._con.execute("ROLLBACK" if tipo else "COMMIT")
@@ -294,6 +307,32 @@ class Armazem:
             self._tocar(planilha_id, aba)
             self._con.execute("DELETE FROM linhas WHERE p=? AND aba=?", (planilha_id, aba))
             self._con.execute("DELETE FROM abas WHERE p=? AND aba=?", (planilha_id, aba))
+
+    # ---------------------------------------------------------------- identidade e pedido repetido (troca de IP, 25/11/2026)
+    def servidor_id(self):
+        """Quem é este banco. Nasce na primeira vez e viaja junto com as cópias de segurança. Os PCs guardam o número para só
+        aceitar de volta o MESMO servidor depois de uma troca de endereço (outro PC com a mesma chave não vale)."""
+        with self._tranca:
+            linha = self._con.execute("SELECT valor FROM meta WHERE chave='servidor_id'").fetchone()
+            if linha:
+                return linha[0]
+            novo = uuid.uuid4().hex
+            self._con.execute("INSERT OR IGNORE INTO meta (chave, valor) VALUES ('servidor_id', ?)", (novo,))
+            return self._con.execute("SELECT valor FROM meta WHERE chave='servidor_id'").fetchone()[0]
+
+    def executar_uma_vez(self, id_pedido, funcao, guardar_horas=24):
+        """Roda `funcao()` uma só vez por `id_pedido`. Se o MESMO pedido chegar de novo (o PC repetiu porque a resposta se perdeu na
+        troca de endereço), devolve o resultado guardado em vez de gravar em dobro. A gravação e o registro do pedido são uma
+        transação só: ou os dois valem ou nenhum. Erro não fica guardado: repetir um pedido que deu erro tenta de novo."""
+        with self._transacao():
+            guardado = self._con.execute("SELECT resultado FROM pedidos WHERE id=?", (id_pedido,)).fetchone()
+            if guardado is not None:
+                return json.loads(guardado[0])
+            resultado = funcao()
+            agora = time.time()
+            self._con.execute("INSERT INTO pedidos (id, quando, resultado) VALUES (?,?,?)", (id_pedido, agora, json.dumps(resultado)))
+            self._con.execute("DELETE FROM pedidos WHERE quando < ?", (agora - guardar_horas * 3600,))
+            return resultado
 
     def copiar_para(self, caminho):
         """Cópia de segurança consistente, com o servidor no ar (API de backup do SQLite): nunca pega arquivo pela metade."""

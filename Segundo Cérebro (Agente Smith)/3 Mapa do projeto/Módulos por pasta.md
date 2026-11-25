@@ -34,6 +34,7 @@ Mexa aqui quando o problema é a planilha: aba que não atualiza, limite do Goog
 | `backend_api` | Cliente do servidor central (24/11/2026, início da API): os mesmos métodos do `BackendGoogle`, mas pedindo ao servidor. |
 | `backend_roteado` | Escolhe de onde o Painel lê e grava a Central: do Google (como sempre) ou do servidor central (API central, etapa 3, 24/11/2026). |
 | `cota_google` | Orçamento da cota do Google Sheets, dividido entre os programas dos 4 PCs. |
+| `descoberta` | Como os PCs acham o servidor central quando o endereço (IP) dele muda (API central, 25/11/2026). |
 | `faxina` | Faxina diária da Central (só no PC principal) — pra nada virar bola de neve (usuário, 08/10/2026). |
 | `fiscal_intelligence` | Leitura (somente) da planilha Fiscal Intelligence, gravada pelo Mail Analytics. |
 | `hoteis` | Cadastro único de hotéis: casa os nomes que cada fonte usa com o nome do Cadastro_Hoteis. |
