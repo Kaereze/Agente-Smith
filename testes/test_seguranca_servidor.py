@@ -37,8 +37,10 @@ def test_token_errado_ou_sem_token_continua_barrado_e_o_certo_passa():
 def test_pedido_maior_que_o_teto_e_recusado_sem_ler_o_corpo():
     srv, porta = _servidor()
     try:
-        assert _post(porta, "/api/tema", b"{}", extra={"Content-Length": str(app_servidor.CORPO_MAXIMO_BYTES + 1)}) == 413
-        assert _post(porta, "/api/tema", b"{}", extra={"Content-Length": "abc"}) == 400
+        # Sem corpo de verdade: o que se prova é que o servidor recusa pelo cabeçalho, sem ler nada. Com 2 bytes de corpo sobrando, o
+        # servidor fecha com dado não lido e o Windows às vezes derruba a resposta (WinError 10053; 5 em 1500 sob carga em 25/11/2026).
+        assert _post(porta, "/api/tema", None, extra={"Content-Length": str(app_servidor.CORPO_MAXIMO_BYTES + 1)}) == 413
+        assert _post(porta, "/api/tema", None, extra={"Content-Length": "abc"}) == 400
     finally:
         srv.shutdown()
         srv.server_close()
