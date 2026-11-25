@@ -88,7 +88,7 @@ Cada etapa só vai para os PCs com o "pode subir" do João. Nada é desligado an
 **Cuidados:**
 - Só o admin (João, no PC dele) manda ligar/desligar. O PC só liga se o servidor responde e já tem a Central copiada.
 - O token não é senha para guardar: sai da chave do Google de cada PC (e do servidor).
-- O banco do servidor tem dados de hóspedes: fica em `C:\ServidorCentral` (fora do projeto e do git). Cópia de segurança diária: `python -m servidor_central.backup` (Docker) ou copiar o arquivo com o servidor parado.
+- O banco do servidor tem dados de hóspedes: fica em `C:\ServidorCentral` (fora do projeto e do git). Cópia de segurança diária (sem Docker): tarefa `ServidorCentral_Backup`, criada por `Automacoes\agendar_backup_servidor_central.ps1` (sem administrador), roda `ferramentas\backup_servidor_central.py` todo dia às 03:00 (ou ao ligar, se o PC estava desligado): copia para `C:\ServidorCentral\copias\central-AAAA-MM-DD.sqlite` com o servidor ligado, abre a cópia e confere (integridade, abas, linhas), guarda 14 dias e anota só contagens em `copias\backup.log`. **Limite:** as cópias ficam no mesmo disco do banco; protegem de apagão do banco e de erro de gravação, não de o disco do notebook morrer. Para voltar a partir de uma cópia: pare a tarefa `ServidorCentral`, troque `central.sqlite` pela cópia e religue. Com Docker, o equivalente é `python -m servidor_central.backup`.
 - Servidor fora do ar com os PCs ligados nele: o Painel mostra erro e tenta de novo; envios param até voltar. Por isso o primeiro passo da volta é o `--desligar`.
 
 ## Para colocar no ar no Servidor RA com Docker (opcional, depois)
