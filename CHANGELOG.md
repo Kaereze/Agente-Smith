@@ -9,6 +9,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.26.1] — 2026-11-26 (Máquinas para de acusar todo PC de desatualizado)
+
+- **Corrigido:** depois da virada para o servidor central, a tela Máquinas mostrava todos os PCs como desatualizados mesmo na mesma versão. O PC grava a versão com um apóstrofo na frente (`'031bbb2`), só para a planilha não converter o texto; o Google tirava o apóstrofo, o servidor guardava. Agora o servidor faz como o Google nas gravações "como digitado" (`escrever` e `criar_aba_status`): tira o apóstrofo do começo, o que vale também para as horas gravadas do mesmo jeito. As gravações cruas (inserir, anexar, substituir) continuam guardando o texto tal qual, como no Google. As linhas que já estão no servidor se corrigem sozinhas na próxima vez que cada PC grava o seu status. Testes em `test_api_central.py`.
+
 ## [2026.11.26] — 2026-11-26 (tema claro de verdade; relatório do Mail Analytics sai do Outlook do PC principal)
 
 - **Corrigido:** o tema Claro não mudava nada: a tela continuava escura e só aparecia o aviso "Tema: Claro". As cores do modo Outlook (o vidro escuro) estavam fixas no CSS. Agora `app_ui/pecas/tema_claro.css` traz a versão clara, gerada por `ferramentas/gerar_tema_claro.py` a partir dos próprios estilos escuros (fundo escuro vira claro, texto claro vira escuro, cor de destaque mantém o tom com mais contraste, sombra fica mais fraca). Vale com o tema Claro e com o tema Sistema quando o Windows está claro; o tema Escuro não muda. Conferido no modo demonstração: Caixa de Entrada, e-mail aberto, Responder, Visão geral, Robô e Ficha do hóspede, todo texto com contraste de pelo menos 4,5:1 (fora o botão Sinalizar, desligado de propósito). Teste `test_tema_claro.py` avisa se um estilo escuro mudar e o arquivo claro não for gerado de novo.

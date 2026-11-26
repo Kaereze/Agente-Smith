@@ -61,6 +61,24 @@ def test_escrever_celula_com_booleano_vira_TRUE_como_na_planilha():
     assert a.ler_abas(P, ["Status"])[0]["Status"] == [["Robô ligado", "FALSE"], ["Comando", "ENVIAR"]]
 
 
+def test_apostrofo_do_comeco_some_como_no_google_ao_escrever_e_criar_status():
+    """O PC grava a versão como "'031bbb2" (para o Google não converter). O Google tira o apóstrofo; o servidor também tem
+    de tirar, senão o Painel compara "'031bbb2" com "031bbb2" e acusa todo PC de desatualizado."""
+    a = Armazem()
+    a.criar_aba_status(P, "Status", [["Versão", "'031bbb2"], ["Hora", "'26/11/2026 09:30:00"]])
+    a.escrever(P, [("'Status'!C1", "'031bbb2"), ("'Status'!D1", "D'Ávila"), ("'Status'!E1", "''dois")])
+    assert a.ler_abas(P, ["Status"])[0]["Status"] == [["Versão", "031bbb2", "031bbb2", "D'Ávila", "'dois"],
+                                                      ["Hora", "26/11/2026 09:30:00"]]
+
+
+def test_gravacoes_cruas_guardam_o_apostrofo_como_no_google():
+    """inserir_no_topo, anexar e substituir vão como RAW no Google, que guarda o texto tal qual; o servidor também."""
+    a = Armazem()
+    a.criar_aba_log(P, "Log", ["id"])
+    a.inserir_no_topo(P, "Log", [["'cru"]])
+    assert a.ler_abas(P, ["Log"])[0]["Log"] == [["id"], ["'cru"]]
+
+
 def test_escrever_em_aba_com_apostrofo_no_nome():
     a = Armazem()
     a.criar_aba_status(P, "D'Ávila", [["x"]])

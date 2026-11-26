@@ -41,6 +41,14 @@ def texto(valor):
     return str(valor)
 
 
+def como_digitado(valor):
+    """O que o Google guardaria se o valor fosse digitado na célula (USER_ENTERED): o apóstrofo do começo só serve para
+    a planilha não converter o texto ("'031bbb2", "'26/11/2026 09:30") e não fica gravado. Sem isto o servidor guardava
+    o apóstrofo, e o Painel achava que todo PC estava numa versão diferente da dele."""
+    valor = texto(valor)
+    return valor[1:] if valor.startswith("'") else valor
+
+
 def coluna_para_indice(letras):
     """A -> 0, B -> 1, AA -> 26."""
     n = 0
@@ -231,14 +239,14 @@ class Armazem:
                 self._tocar(planilha_id, aba)
                 linha = self._ler_linha(planilha_id, aba, n)
                 linha += [""] * (coluna + 1 - len(linha))
-                linha[coluna] = texto(valor)
+                linha[coluna] = como_digitado(valor)
                 self._gravar_linha(planilha_id, aba, n, linha)
 
     def criar_aba_status(self, planilha_id, nome, linhas):
         with self._transacao():
             self._criar(planilha_id, nome)
             for i, linha in enumerate(linhas, start=1):
-                self._gravar_linha(planilha_id, nome, i, linha)
+                self._gravar_linha(planilha_id, nome, i, [como_digitado(c) for c in linha])
 
     def criar_aba_log(self, planilha_id, nome, cabecalho):
         with self._transacao():
