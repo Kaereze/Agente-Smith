@@ -972,6 +972,7 @@ def main():
                                                                   "anexo": estado.rede_anexo, "ping": estado.rede_ping,
                                                                   "enviar": estado.rede_enviar,
                                                                   "enviar_relatorio": estado.rede_enviar_relatorio,
+                                                                  "desligar_consolidado": estado.rede_desligar_consolidado,
                                                                   "envio_nf": estado.rede_envio_nf,
                                                                   "novidade": estado.rede_novidade,
                                                                   "enviar_receber": estado.rede_enviar_receber,

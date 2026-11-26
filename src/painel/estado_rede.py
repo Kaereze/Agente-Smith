@@ -195,6 +195,10 @@ class RedeMixin:
         pythoncom.CoInitialize()
         return envio_relatorio.enviar_aqui(outlook_vivo.aplicativo(), corpo, envio_relatorio.destinatarios_permitidos(self.cfg))
 
+    def rede_desligar_consolidado(self, _corpo):
+        """O notebook administrador pede (26/11/2026): desliga a tarefa do consolidado do Mail Analytics deste PC."""
+        return envio_relatorio.desligar_consolidado_aqui()
+
     def rede_conferir_envio(self, corpo):
         import pythoncom
         pythoncom.CoInitialize()

@@ -22,6 +22,7 @@ import json
 import re
 import shutil
 import socket
+import subprocess
 import tempfile
 import threading
 from pathlib import Path
@@ -121,6 +122,26 @@ def validar(corpo, permitidos):
         except ValueError as e:
             raise PermissionError(f"anexo {nome} corrompido") from e
     return id_pedido, para, cc, assunto, html, limpos
+
+
+TAREFA_CONSOLIDADO = "MailAnalytics_RelatorioConsolidado"
+
+
+def desligar_consolidado_aqui(rodar=subprocess.run):
+    """O notebook administrador manda o consolidado (usuário, 26/11/2026: "desliga a tarefa no PC do João pela rede"):
+    desliga a tarefa agendada do Mail Analytics DESTE PC, senão ele manda antes, pelo caminho antigo. Só essa tarefa,
+    nome fixo: o pedido da rede não escolhe tarefa nem comando. -> {"pc", "tarefa", "estado"} ("Disabled", "ausente")"""
+    script = (f"$t = Get-ScheduledTask -TaskName '{TAREFA_CONSOLIDADO}' -ErrorAction SilentlyContinue; "
+              f"if (-not $t) {{ 'ausente' }} else {{ Disable-ScheduledTask -TaskName '{TAREFA_CONSOLIDADO}' | Out-Null; "
+              f"(Get-ScheduledTask -TaskName '{TAREFA_CONSOLIDADO}').State }}")
+    r = rodar(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], capture_output=True, text=True,
+              timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    estado = (r.stdout or "").strip().splitlines()[-1:] or [""]
+    resposta = {"pc": socket.gethostname(), "tarefa": TAREFA_CONSOLIDADO, "estado": estado[0]}
+    if r.returncode != 0 or estado[0] not in ("Disabled", "ausente"):
+        resposta["erro"] = ((r.stderr or "").strip() or f"saída {r.returncode}")[:200]
+    logger.info(f"🔕 Tarefa {TAREFA_CONSOLIDADO} a pedido do notebook administrador: {resposta.get('erro') or estado[0]}")
+    return resposta
 
 
 def enviar_aqui(app, corpo, permitidos, agora=None):

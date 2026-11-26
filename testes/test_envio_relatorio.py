@@ -116,6 +116,28 @@ def test_anexo_vai_junto_e_tipo_perigoso_e_recusado():
         er.enviar_aqui(AppFalso(), _pedido(id="MA-" + "b" * 32, anexos=[{"nome": "x.exe", "base64": ""}]), set())
 
 
+class Rodou:
+    def __init__(self, stdout, returncode=0, stderr=""):
+        self.stdout, self.returncode, self.stderr, self.args = stdout, returncode, stderr, None
+
+    def __call__(self, args, **_k):
+        self.args = args
+        return self
+
+
+def test_desligar_consolidado_so_mexe_na_tarefa_do_consolidado():
+    rodar = Rodou("Disabled\n")
+    r = er.desligar_consolidado_aqui(rodar)
+    assert r["estado"] == "Disabled" and "erro" not in r
+    assert rodar.args[0] == "powershell" and rodar.args[-1].count("'MailAnalytics_RelatorioConsolidado'") == 3
+
+
+def test_desligar_consolidado_ausente_ou_negado():
+    assert "erro" not in er.desligar_consolidado_aqui(Rodou("ausente"))
+    r = er.desligar_consolidado_aqui(Rodou("", 1, "Acesso negado."))
+    assert r["erro"] == "Acesso negado."
+
+
 def test_so_o_principal_atende():
     from painel.estado_rede import RedeMixin
 
