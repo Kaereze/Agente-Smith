@@ -1,3 +1,4 @@
+@import url("tema_claro.css");   /* tema claro do modo Outlook (26/11/2026): gerado por ferramentas/gerar_tema_claro.py; este é o último estilo da página */
 /* Recolher as colunas dos E-mails (João, 09/11/2026). Pastas e lista viram uma tirinha de 40 px com uma seta; a leitura ganha o espaço.
    Desenho aprovado no Artifact "Recolher Colunas do Painel". Vem depois de estilo.css e centro_leve.css: vence as larguras fixas deles. */
 /* ---- larguras (as três colunas; só vale com as pastas à vista, acima de 1180 px) ---- */
