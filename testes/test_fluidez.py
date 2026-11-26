@@ -295,6 +295,13 @@ def test_nome_fixo_do_pc_vale_mais_que_a_escolha_na_tela(tmp_path, monkeypatch):
     assert app_servidor.nome_do_agente() == "Bernardo"                                           # outros PCs seguem como antes
 
 
+def test_pc_da_camila_aparece_com_o_nome_dela():
+    """26/11/2026: sem nome fixo, o PC da Camila aparecia para os outros como "Usuário" (o usuário do Windows dela)."""
+    import json
+    cfg = json.loads((_RAIZ / "config.json").read_text(encoding="utf-8"))
+    assert cfg["nomes_dos_pcs"]["DESKTOP-9IHBG3A"] == "Camila"
+
+
 def test_pc_da_clara_esta_na_configuracao():
     import json
     cfg = json.loads((_RAIZ / "config.json").read_text(encoding="utf-8"))

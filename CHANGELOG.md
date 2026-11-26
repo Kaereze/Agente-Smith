@@ -9,6 +9,10 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [2026.11.26.2] — 2026-11-26 (PC da Camila aparece com o nome dela)
+
+- **Corrigido:** o PC da Camila (`DESKTOP-9IHBG3A`), que entrou no servidor central às 16:44, aparecia para os outros PCs como "Usuário" (o nome do usuário do Windows dela). Agora está em `nomes_dos_pcs` do `config.json` como **Camila**, como os PCs da Clara, do Bernardo e o Servidor RA. Teste em `test_fluidez.py`.
+
 ## [2026.11.26.1] — 2026-11-26 (Máquinas para de acusar todo PC de desatualizado)
 
 - **Corrigido:** depois da virada para o servidor central, a tela Máquinas mostrava todos os PCs como desatualizados mesmo na mesma versão. O PC grava a versão com um apóstrofo na frente (`'031bbb2`), só para a planilha não converter o texto; o Google tirava o apóstrofo, o servidor guardava. Agora o servidor faz como o Google nas gravações "como digitado" (`escrever` e `criar_aba_status`): tira o apóstrofo do começo, o que vale também para as horas gravadas do mesmo jeito. As gravações cruas (inserir, anexar, substituir) continuam guardando o texto tal qual, como no Google. As linhas que já estão no servidor se corrigem sozinhas na próxima vez que cada PC grava o seu status. Testes em `test_api_central.py`.
