@@ -9,6 +9,11 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [Não publicado] — 2026-11-26 (relatório do Mail Analytics sai do Outlook do PC principal, a pedido do notebook administrador)
+
+- **Adicionado:** rota de rede `/rede/enviar_relatorio` (`src/emails/envio_relatorio.py`). O notebook administrador do Mail Analytics não abre o Outlook (pedido do usuário, 26/11: "não pode abrir o Outlook dele de jeito nenhum"). Ele pede pela rede e o PC principal envia pelo próprio Outlook, **pela conta do CECOMTUR**, para os chefes que o notebook mandou.
+- **Segurança:** só o PC principal atende; só sai da conta do CECOMTUR (conta ausente ou mais de uma "cecomtur" sem dizer qual: recusa); no máximo 20 destinatários; lista opcional `relatorio_pela_rede.destinatarios_permitidos` no `config.local.json` restringe quem recebe. Pedido com id repetido não manda de novo. Anexo só de tipos de documento, sem caminho.
+
 ## [2026.11.25.1] — 2026-11-25 (servidor central pronto: sobe sozinho, backup, troca de IP automática; nos PCs continua DESLIGADO)
 
 Nenhum PC passa a usar o servidor com esta versão: a API central continua desligada. Esta entrega só leva o código para todos os PCs.

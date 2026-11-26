@@ -14,6 +14,7 @@ tags: [cerebro/documentos, lgpd, dados]
 |---|---|---|---|---|
 | `central_api.json` | Se este PC usa o servidor central (API), o endereço e o token dele. Leva segredo: nunca sobe para o GitHub | não | enquanto o Painel precisa | `backend_roteado` |
 | `app.json` | Preferências deste PC: tema e operador escolhido | não | enquanto o Painel precisa | `app_servidor` |
+| `relatorios_pela_rede.json` | Ids dos relatórios do Mail Analytics já enviados a pedido do notebook administrador (pedido repetido não sai 2 vezes). Só ids e hora | não | 30 dias | `envio_relatorio` |
 | `maquina.json` | Identidade deste PC (nome e papel: principal ou comum) | não | enquanto o Painel precisa | `config` |
 | `versao_rodando.txt` | Versão do Painel que está rodando (para pedir reinício quando chega código novo) | não | enquanto o Painel precisa | `estado_sistema` |
 | `painel_cache.pkl` | Último estado do Painel, para abrir já carregado depois de reiniciar | **sim** | só o último | `app_servidor` |

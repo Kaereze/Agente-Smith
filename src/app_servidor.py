@@ -971,6 +971,7 @@ def main():
         estado.rede_ligada = rede_local.Servidor(estado.segredo, {"buscar": estado.rede_buscar, "texto": estado.rede_texto,
                                                                   "anexo": estado.rede_anexo, "ping": estado.rede_ping,
                                                                   "enviar": estado.rede_enviar,
+                                                                  "enviar_relatorio": estado.rede_enviar_relatorio,
                                                                   "envio_nf": estado.rede_envio_nf,
                                                                   "novidade": estado.rede_novidade,
                                                                   "enviar_receber": estado.rede_enviar_receber,

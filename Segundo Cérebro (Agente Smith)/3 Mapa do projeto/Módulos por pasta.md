@@ -59,6 +59,7 @@ Mexa aqui quando o problema é com o e-mail: a lista não mostra um e-mail, o en
 | `enviar_receber` | Botão "Enviar/Receber todas" (27/10/2026, desenho aprovado: opção C, anel no botão). |
 | `envio_nf` | Envio da NF ao hóspede pelo Painel, saindo da caixa do próprio hotel. |
 | `envio_pc_dono` | Envio pelo PC dono da caixa do hotel (usuário, 15/10/2026: "por que está sendo utilizado meu e-mail do Ondina? |
+| `envio_relatorio` | Relatório do Mail Analytics enviado pelo Outlook do PC principal, pela conta do CECOMTUR, a pedido do notebook administrador. |
 | `espelho_emails` | Espelho do Outlook de cada PC: Caixa de Entrada e Itens Enviados das caixas dos hotéis. |
 | `indice_emails` | Índice local dos e-mails das caixas dos hotéis DESTE PC (usuário, 20/10/2026: pesquisa instantânea; muda a regra |
 | `ligacoes` | Pedido que veio por ligação (usuário, 22/10/2026): os telefones não ligam no PC, então quem marca é o agente, no botão |

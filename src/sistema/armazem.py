@@ -33,6 +33,8 @@ def _d(arquivo, formato, para_que, quem, pessoal=False, guarda="enquanto o Paine
 DADOS = {d.arquivo: d for d in [
     _d("central_api.json", "json", "Se este PC usa o servidor central (API), o endereço e o token dele. Leva segredo: nunca sobe para o GitHub", "backend_roteado", refaz=False),
     _d("app.json", "json", "Preferências deste PC: tema e operador escolhido", "app_servidor", refaz=False),
+    _d("relatorios_pela_rede.json", "json", "Ids dos relatórios do Mail Analytics já enviados a pedido do notebook administrador "
+       "(pedido repetido não sai 2 vezes). Só ids e hora", "envio_relatorio", guarda="30 dias", refaz=False),
     _d("maquina.json", "json", "Identidade deste PC (nome e papel: principal ou comum)", "config", refaz=False),
     _d("versao_rodando.txt", "texto", "Versão do Painel que está rodando (para pedir reinício quando chega código novo)", "estado_sistema"),
     _d("painel_cache.pkl", "cache", "Último estado do Painel, para abrir já carregado depois de reiniciar", "app_servidor", True, "só o último"),

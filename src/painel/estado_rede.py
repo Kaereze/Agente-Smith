@@ -11,6 +11,7 @@ from emails import busca_outlook
 from central import cota_google
 from emails import enviar_receber
 from emails import envio_pc_dono
+from emails import envio_relatorio
 from emails import espelho_emails
 from emails import outlook_vivo
 from rede import rede_local
@@ -184,6 +185,15 @@ class RedeMixin:
         pythoncom.CoInitialize()
         app = outlook_vivo.aplicativo()
         return envio_pc_dono.enviar_aqui(app, app.GetNamespace("MAPI"), corpo, self._caixas_de_hotel())
+
+    def rede_enviar_relatorio(self, corpo):
+        """Pedido do PC administrador (26/11/2026): ele não abre Outlook nenhum; o relatório do Mail Analytics sai daqui,
+        do Outlook do PC principal (envio_relatorio). Só o principal atende."""
+        if not e_principal(self.cfg) or sem_outlook(self.cfg):
+            raise PermissionError("só o PC principal envia o relatório do Mail Analytics")
+        import pythoncom
+        pythoncom.CoInitialize()
+        return envio_relatorio.enviar_aqui(outlook_vivo.aplicativo(), corpo, envio_relatorio.destinatarios_permitidos(self.cfg))
 
     def rede_conferir_envio(self, corpo):
         import pythoncom
