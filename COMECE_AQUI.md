@@ -23,7 +23,8 @@ Se você é o Claude: leia também `CLAUDE.md` e o índice `Segundo Cérebro (Ag
 
 | Pasta | O que é | Pode mexer? |
 |---|---|---|
-| `app_ui/` | **A tela** que você vê: HTML, estilo e JavaScript, dividido por assunto (`telas_*`, `correio_*`, `painel_*`); `pecas/` guarda as peças que se repetem (filtro, etiqueta, janela, resumo) | Sim, para mudar a aparência |
+| `app_ui/` | **A tela de hoje** que você vê: HTML, estilo e JavaScript, dividido por assunto (`telas_*`, `correio_*`, `painel_*`); `pecas/` guarda as peças que se repetem (filtro, etiqueta, janela, resumo). Ela vai sendo trocada pela tela em React, tela por tela; `app_ui/v2/` é a tela nova já montada (não edite: é gerada) | Sim, para mudar a aparência |
+| `app_react/` | **A tela nova em React** (27/11/2026), em componentes: `src/componentes/` (botões, ícones, gráficos; ex.: um só `BotaoEnviarNF.jsx` para todas as telas), `src/moldura/` (cápsula, topo, rodapé), `src/telas/` (Visão geral, Caixa de entrada…), `src/dados/` (as contas, só com dados reais). Montar: `cd app_react`, `npm install` (1ª vez), `npm run build` → sai em `app_ui/v2/`. Os 4 PCs não instalam nada | Sim, para mudar a tela nova |
 | `src/` | **O programa** (Python). Aqui ficam só os programas que os PCs abrem pelo nome (`app_servidor.py`, `conferente.py`, `sincronizar.py`...). O resto está nas pastas abaixo | Sim, com cuidado |
 | `src/painel/` | O servidor do Painel e as contas das telas | Sim |
 | `src/emails/` | Outlook, espelho dos e-mails, busca, envio da NF | Sim |

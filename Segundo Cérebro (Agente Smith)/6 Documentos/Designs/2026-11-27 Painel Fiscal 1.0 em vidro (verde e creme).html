@@ -1,0 +1,574 @@
+<title>Painel Fiscal 1.0 em Vidro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Conceito: vitrine neutra em volta; dentro, o Painel Fiscal em vidro verde e creme. Cada bloco responde a uma pergunta em português simples. */
+:root{--bg:#f2f1ec;--surf:#ffffff;--fg:#1c1f1b;--mut:#5a6158;--line:#dcdcd3;--acc:#1f6b4f;--accfg:#ffffff;--soft:#e6efe8;--mesa:#e4e2d9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111412;--surf:#191d1a;--fg:#e9eee8;--mut:#9eab9e;--line:#2a312c;--acc:#7fd0a6;--accfg:#08140d;--soft:#18271f;--mesa:#0b0e0c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111412;--surf:#191d1a;--fg:#e9eee8;--mut:#9eab9e;--line:#2a312c;--acc:#7fd0a6;--accfg:#08140d;--soft:#18271f;--mesa:#0b0e0c;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+.pg{max-width:1680px;margin:0 auto;display:grid;gap:20px}
+.pg h1{font-size:clamp(24px,3.2vw,34px);line-height:1.12;margin:0 0 8px;letter-spacing:-.015em;text-wrap:balance}
+.pg h2{font-size:18px;margin:0 0 10px}
+.intro{color:var(--mut);max-width:84ch;margin:0}
+.selo-dados{display:inline-block;margin-top:10px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-end}
+.grupo-c{display:grid;gap:6px}
+.grupo-c>span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surf)}
+.seg button{font:inherit;font-size:13.5px;font-weight:500;color:var(--fg);background:none;border:0;border-radius:7px;padding:7px 12px;cursor:pointer;min-height:36px;display:inline-flex;align-items:center;gap:7px}
+.seg button:hover{background:var(--soft)}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--accfg)}
+.seg button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.amostra{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.7);flex:none}
+.mesa{background:var(--mesa);border:1px solid var(--line);border-radius:14px;padding:16px}
+.palco{width:100%}
+.palco.real{overflow:auto}
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card li{color:var(--mut)}
+.card ul{margin:0;padding-left:20px;display:grid;gap:7px}
+.card b{color:var(--fg)}
+
+/* ====================== O PAINEL (o desenho) ====================== */
+.janela{container-type:inline-size;container-name:j;position:relative;overflow:hidden;border-radius:16px;color:var(--texto);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif;isolation:isolate;
+  --cena1:#efe7d4;--cena2:#cfdcc9;--cena3:#e8d6b8;--bolha1:rgba(31,107,79,.34);--bolha2:rgba(214,178,120,.5);
+  --vidro:rgba(255,255,255,.46);--vidro-forte:rgba(255,255,255,.66);--vidro-borda:rgba(255,255,255,.62);--luz:rgba(255,255,255,.7);--sombra:rgba(50,36,22,.5);
+  --texto:#1a1c19;--texto2:#394037;--apagado:#545b52;--linha:rgba(40,46,36,.13);--escuro:#1f2a24;--creme:#efe3c2;--creme-esc:#b08a3e;
+  --sobe:#0f6b44;--sobe-f:rgba(15,107,68,.12);--desce:#a6261d;--desce-f:rgba(166,38,29,.1);--aviso:#7a4f00;--aviso-f:rgba(214,150,30,.18);--info:#1f5f8b;--info-f:rgba(31,95,139,.12);
+  --urg-fundo:rgba(166,38,29,.07);--sel:rgba(20,145,127,.12);
+  --verde:#14917f;--verde-esc:#0b5d52;--verde-t:#0b6c5f}
+.janela[data-mock="escuro"]{--cena1:#0d1410;--cena2:#13261c;--cena3:#2a2417;--bolha1:rgba(40,150,110,.3);--bolha2:rgba(214,178,120,.2);
+  --vidro:rgba(22,30,26,.52);--vidro-forte:rgba(34,44,38,.7);--vidro-borda:rgba(255,255,255,.12);--luz:rgba(255,255,255,.12);--sombra:rgba(0,0,0,.7);
+  --texto:#eef2ec;--texto2:#d2dad1;--apagado:#a3b1a3;--linha:rgba(255,255,255,.11);--escuro:#efe3c2;--creme:#efe3c2;--creme-esc:#d9b86a;
+  --sobe:#86dcb0;--sobe-f:rgba(134,220,176,.14);--desce:#ffa198;--desce-f:rgba(255,161,152,.12);--aviso:#f2c76b;--aviso-f:rgba(242,199,107,.14);--info:#9cc9ef;--info-f:rgba(156,201,239,.13);
+  --urg-fundo:rgba(255,161,152,.08);--sel:rgba(134,220,176,.12);--verde-t:#86dcb0}
+.janela[data-tom="floresta"]{--verde:#2b7a55;--verde-esc:#163f2b}
+.janela[data-tom="floresta"]:not([data-mock="escuro"]){--verde-t:#226646}
+.janela[data-tom="oliva"]{--verde:#5d7f35;--verde-esc:#2f4419}
+.janela[data-tom="oliva"]:not([data-mock="escuro"]){--verde-t:#4a672a}
+.janela *{box-sizing:border-box}
+:where(.janela button){font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+:where(.janela input){font:inherit;color:inherit}
+.janela :is(button,input):focus-visible{outline:2px solid var(--verde);outline-offset:2px}
+.janela .ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cena{position:absolute;inset:0;z-index:-1;background:radial-gradient(55% 45% at 12% 8%,var(--cena2),transparent 70%),radial-gradient(45% 55% at 92% 25%,var(--cena3),transparent 70%),radial-gradient(70% 60% at 50% 105%,var(--cena2),transparent 70%),var(--cena1)}
+.cena i{position:absolute;border-radius:50%;filter:blur(40px)}
+.cena i:nth-child(1){width:34%;height:42%;left:22%;top:6%;background:var(--bolha2)}
+.cena i:nth-child(2){width:30%;height:36%;right:6%;top:38%;background:var(--bolha1)}
+.cena i:nth-child(3){width:26%;height:30%;left:4%;bottom:8%;background:var(--bolha1)}
+.cena i:nth-child(4){width:22%;height:24%;left:48%;bottom:2%;background:var(--bolha2)}
+.vidro{background:var(--vidro);backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6);border:1px solid var(--vidro-borda);box-shadow:inset 0 1px 0 var(--luz),0 18px 40px -30px var(--sombra);border-radius:18px}
+.casca{position:absolute;inset:0;display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"lat topo""lat meio""lat rod";gap:12px 16px;padding:14px 18px 12px}
+@keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes surge{from{opacity:0}to{opacity:1}}
+
+/* barra lateral (a cápsula, comum às duas telas) */
+.lat{grid-area:lat;align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-radius:999px;width:58px;justify-self:center}
+.selo{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;background:linear-gradient(150deg,var(--verde),var(--verde-esc));margin-bottom:4px}
+.lb{position:relative;width:42px;height:42px;border-radius:50%;display:grid!important;place-items:center;color:var(--texto2)}
+.lb:hover{background:var(--vidro-forte)}
+.lb[aria-current="true"]{background:#fff;color:#1b1b1b;box-shadow:0 6px 16px -6px rgba(0,0,0,.35)}
+.lb .n{position:absolute;top:-2px;right:-4px;min-width:18px;height:17px;padding:0 4px;border-radius:9px;background:#d2402c;color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.lat hr{width:22px;border:0;border-top:1px solid var(--linha);margin:2px 0}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(150deg,var(--verde),var(--verde-esc));box-shadow:0 0 0 3px var(--vidro-forte);flex:none}
+
+/* topo */
+.topo{grid-area:topo;display:flex;align-items:center;gap:12px;padding:7px;border-radius:999px;min-width:0}
+.quem{display:flex;align-items:center;gap:10px;flex:none;padding-right:6px}
+.quem b{font-size:15px;font-weight:600;white-space:nowrap}
+.busca{flex:1;min-width:0;max-width:560px;margin-left:auto;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px 0 8px;border-radius:999px;background:var(--vidro-forte);border:1px solid var(--vidro-borda)}
+.orbe{width:26px;height:26px;border-radius:50%;flex:none;background:radial-gradient(circle at 30% 30%,#fff,var(--creme) 30%,var(--verde) 70%,var(--verde-esc))}
+.busca input{flex:1;min-width:0;background:none;border:0;outline:0;font-size:14px;height:100%}
+.busca input::placeholder{color:var(--apagado)}
+kbd{font:11px ui-monospace,Consolas,monospace;border:1px solid var(--linha);border-radius:5px;padding:1px 6px;color:var(--apagado);flex:none;white-space:nowrap}
+.botao-r{position:relative;width:42px;height:42px;border-radius:50%;display:grid!important;place-items:center;background:var(--vidro-forte);border:1px solid var(--vidro-borda)!important;flex:none}
+.botao-r.branco{background:#fff;color:#1b1b1b}
+.ponto{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#d2402c;box-shadow:0 0 0 2px #fff}
+.avisos{position:absolute;top:70px;right:22px;width:350px;z-index:30;padding:10px;display:grid;gap:6px;animation:entra .25s both}
+.avisos h3{margin:4px 6px 2px;font-size:13px}
+.aviso{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px;border-radius:12px;background:var(--vidro-forte)}
+.aviso small{display:block;color:var(--apagado);font-size:12px}
+.abas-ol{display:flex;gap:2px;flex:none;padding-left:6px}
+.abas-ol button{height:36px;padding:0 12px;border-radius:999px;color:var(--texto2);white-space:nowrap}
+.abas-ol button[aria-pressed="true"]{background:#fff;color:#1b1b1b;font-weight:600}
+.caixa-de{display:inline-flex!important;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;background:var(--vidro-forte);border:1px solid var(--vidro-borda)!important;white-space:nowrap;flex:none}
+.caixa-de b{font-weight:600}
+.caixa-de .q{font-size:12px;font-weight:700;color:var(--apagado)}
+
+/* rodapé de situação (comum às duas telas, em linha própria) */
+.rod{grid-area:rod;justify-self:center;display:flex;align-items:center;gap:6px;padding:5px 6px 5px 14px;border-radius:999px;font-size:12.5px;color:var(--texto2);white-space:nowrap;max-width:100%}
+.rod .ok{display:inline-flex;align-items:center;gap:5px;color:var(--sobe);font-weight:600}
+.rod .sep{width:1px;height:16px;background:var(--linha);margin:0 4px}
+.rod .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px}
+.rod .ib{width:30px;height:30px;border-radius:50%;display:grid!important;place-items:center;color:var(--apagado)}
+.rod .ib:hover{background:var(--vidro-forte);color:var(--texto)}
+
+/* ---------- VISÃO GERAL ---------- */
+.principal{grid-area:meio;min-height:0;overflow:auto;padding:26px 30px 30px;border-radius:26px;scrollbar-width:thin}
+.titulo h2{margin:0;font-size:32px;line-height:1.1;font-weight:500;letter-spacing:-.02em}
+.titulo p{margin:6px 0 20px;color:var(--apagado);max-width:72ch}
+.dash{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+.bloco{grid-column:span 12;min-width:0;padding:20px 22px;display:grid;gap:14px;align-content:start;animation:entra .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 80ms)}
+.b-linha{grid-column:span 7}.b-rosca{grid-column:span 5}.b-agentes{grid-column:span 6}.b-meta{grid-column:span 6}
+.pergunta{display:grid;gap:3px}
+.pergunta small{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--verde-t)}
+.pergunta h3{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.resposta{margin:0;font-size:15px;color:var(--texto2);max-width:70ch}
+.resposta b{color:var(--texto)}
+.como-ler{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--apagado);border-top:1px solid var(--linha);padding-top:10px;margin:0}
+.como-ler .ico{margin-top:2px}
+.resumo{grid-column:span 12;padding:18px 22px;display:grid;gap:14px;animation:entra .55s cubic-bezier(.2,.8,.2,1) both}
+.resumo .frase{margin:0;font-size:17px;line-height:1.5;max-width:90ch}
+.resumo .frase b{font-weight:600}
+.numeros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--linha);padding-top:14px}
+.numero{display:grid;gap:3px;padding:0 18px;border-left:1px solid var(--linha);min-width:0;align-content:start}
+.numero:first-child{border-left:0;padding-left:0}
+.numero .v{font-size:30px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.numero .r{font-size:13px;font-weight:600}
+.numero .x{font-size:12.5px;color:var(--apagado)}
+.var{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;padding:1px 7px;border-radius:6px;white-space:nowrap;justify-self:start}
+.var.bom{background:var(--sobe-f);color:var(--sobe)}
+.var.ruim{background:var(--desce-f);color:var(--desce)}
+.estado{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--sobe);background:var(--sobe-f);padding:4px 10px;border-radius:999px;justify-self:start}
+.grafico svg{width:100%;height:auto;display:block;overflow:visible}
+.grafico .grade line{stroke:var(--linha)}
+.grafico text{fill:var(--apagado);font-size:12px;font-family:Inter,sans-serif}
+.serie{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1200;stroke-dashoffset:1200;transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)}
+.on .serie{stroke-dashoffset:0}
+.area{opacity:0;transition:opacity .8s .5s}
+.on .area{opacity:1}
+.legenda{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--texto2)}
+.legenda span{display:inline-flex;align-items:center;gap:7px}
+.legenda i{width:18px;height:3px;border-radius:2px}
+.nota-g{font-size:12px;font-weight:600}
+.rosca-w{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;align-items:center}
+.b-rosca .partes li{font-size:13.5px}
+.rosca{position:relative;width:150px;height:150px}
+.rosca svg{transform:rotate(-90deg)}
+.rosca circle{fill:none;stroke-width:18;transition:stroke-dasharray 1.1s cubic-bezier(.2,.8,.2,1)}
+.rosca .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.rosca .c b{font-size:28px;font-weight:600;line-height:1}
+.rosca .c small{font-size:12px;color:var(--apagado)}
+.partes{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.partes li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:start;font-size:13px}
+.partes i{width:10px;height:10px;border-radius:3px;margin-top:4px}
+.partes b{font-weight:600}
+.partes small{display:block;color:var(--apagado);font-size:12px}
+.partes .p{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.barras{display:grid;gap:12px}
+.barra{display:grid;gap:5px}
+.barra .t{display:flex;justify-content:space-between;gap:4px 10px;font-size:13.5px;flex-wrap:wrap}
+.barra .t b{font-weight:600}
+.barra .t span{color:var(--apagado)}
+.trilho{height:12px;border-radius:999px;background:var(--linha);overflow:hidden}
+.trilho span{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--verde),var(--verde-esc));transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--sobe)!important;font-weight:600;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.meta-g{display:grid;grid-template-columns:140px minmax(0,1fr);gap:18px;align-items:center}
+.anel{position:relative;width:140px;height:140px}
+.anel svg{transform:rotate(-90deg)}
+.anel circle{fill:none;stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+.anel .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.anel .c b{font-size:30px;font-weight:600;line-height:1}
+.anel .c small{font-size:12px;color:var(--apagado)}
+.fatos{display:grid;gap:8px;margin:0;padding:0;list-style:none;font-size:13.5px}
+.fatos li{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;color:var(--texto2)}
+.fatos b{color:var(--texto);font-weight:600}
+.atencao{display:grid;gap:8px}
+.at{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--vidro-forte)}
+.at .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.at .ic.ruim{background:var(--desce-f);color:var(--desce)}
+.at .ic.aviso{background:var(--aviso-f);color:var(--aviso)}
+.at .ic.info{background:var(--info-f);color:var(--info)}
+.at b{font-weight:600}
+.at small{display:block;color:var(--apagado);font-size:12.5px}
+.bt{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;font-weight:600;white-space:nowrap}
+.bt.escuro{background:#1b1b1b;color:#fff}
+.janela[data-mock="escuro"] .bt.escuro{background:#fff;color:#1b1b1b}
+.bt.claro{background:var(--vidro-forte);border:1px solid var(--vidro-borda)!important}
+
+/* ---------- CAIXA DE ENTRADA (igual à de hoje, com as cores novas) ---------- */
+.ol{grid-area:meio;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px}
+.faixa{display:flex;align-items:center;gap:2px;padding:4px 8px;border-radius:14px;min-width:0;animation:surge .4s both}
+.cmd{display:inline-flex!important;align-items:center;gap:7px;height:34px;padding:0 10px;border-radius:8px;color:var(--texto2);white-space:nowrap;flex:none}
+.cmd:hover{background:var(--vidro-forte);color:var(--texto)}
+.cmd.contorno{border:1px solid var(--verde)!important;color:var(--verde-t);font-weight:600}
+.cmd.forte{background:linear-gradient(160deg,var(--verde),var(--verde-esc));color:#fff;font-weight:600}
+.faixa .sep{width:1px;height:18px;background:var(--linha);margin:0 6px;flex:none}
+.faixa .esp{flex:1}
+.mesa-ol{display:grid;grid-template-columns:290px 360px minmax(0,1fr);gap:10px;min-height:0}
+.pn{min-height:0;min-width:0;overflow:hidden;display:flex;flex-direction:column;border-radius:16px;animation:entra .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
+.pn-cab{display:flex;align-items:center;gap:6px;padding:12px 14px 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--apagado)}
+.pst{display:flex!important;align-items:center;gap:10px;width:calc(100% - 12px);margin:1px 6px;padding:8px 9px;border-radius:9px;color:var(--texto2);min-width:0}
+.pst:hover{background:var(--vidro-forte)}
+.pst.sel{background:var(--vidro-forte);color:var(--texto);font-weight:600;box-shadow:inset 3px 0 0 var(--verde)}
+.pst-t{display:grid;flex:1;min-width:0;line-height:1.3}
+.pst-t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pst-t small{font-size:12px;color:var(--apagado);font-weight:400;overflow-wrap:anywhere}
+.qt{min-width:22px;height:20px;padding:0 6px;border-radius:10px;background:var(--sel);color:var(--verde-t);font-size:12px;font-weight:700;display:inline-grid;place-items:center;flex:none;font-variant-numeric:tabular-nums}
+.qt.urg{background:#d2402c;color:#fff}
+.mais-cx{color:var(--verde-t);font-size:13px;padding:6px 16px 12px 40px;font-weight:600}
+.cab-l{display:grid;gap:8px;padding:10px 14px 10px;border-bottom:1px solid var(--linha)}
+.abas-l{display:flex;gap:16px;align-items:center}
+.abas-l button{padding:4px 0;color:var(--texto2);border-bottom:2px solid transparent!important}
+.abas-l button[aria-pressed="true"]{color:var(--verde-t);border-bottom-color:var(--verde)!important;font-weight:600}
+.abas-l .col{margin-left:auto;width:28px;height:28px;border-radius:8px;display:grid!important;place-items:center;border:0!important}
+.filtros-l{display:flex;gap:6px;flex-wrap:wrap}
+.pil{display:inline-flex!important;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--linha)!important;border-radius:999px;color:var(--texto2);font-size:12.5px;white-space:nowrap;background:var(--vidro)}
+.pil b{color:var(--texto);font-weight:600}
+.pil .q{color:var(--apagado);font-weight:600}
+.cab-l .info{font-size:12px;color:var(--apagado)}
+.cab-l .info b{color:var(--texto);font-weight:600}
+.linhas{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+.grp{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--apagado);padding:7px 14px;background:var(--vidro)}
+.em{display:grid!important;gap:2px;width:100%;padding:10px 14px 10px 12px;border-left:3px solid var(--verde)!important;border-bottom:1px solid var(--linha)!important;text-align:left;animation:entra .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 55ms)}
+.em:hover{background:var(--vidro-forte)}
+.em[aria-selected="true"]{background:var(--sel)}
+.em.urg{background:var(--urg-fundo);border-left-color:var(--desce)!important}
+.em.urg .de,.em.urg .as{color:var(--desce)}
+.em .l1{display:flex;justify-content:space-between;gap:8px;min-width:0}
+.em .de{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.em .d{color:var(--verde-t);font-size:12px;flex:none;font-weight:600}
+.em.urg .d{color:var(--desce)}
+.em .as{color:var(--verde-t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.em .pv{color:var(--apagado);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.em .flag{color:var(--desce);flex:none}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap;background:var(--info-f);color:var(--info)}
+.tag.ur{background:transparent;border:1px solid var(--desce);color:var(--desce)}
+.tag.ok{background:var(--sobe-f);color:var(--sobe)}
+.tag.cor{background:var(--aviso-f);color:var(--aviso)}
+.leit{padding:22px 26px;display:grid;gap:12px;align-content:start;overflow:auto;height:100%}
+.leit .vazio{display:grid;place-items:center;align-content:center;gap:8px;min-height:300px;color:var(--apagado);text-align:center}
+.leit h3{margin:0;font-size:21px;font-weight:600;letter-spacing:-.01em}
+.leit .meta-l{color:var(--apagado);font-size:13px}
+.leit p{margin:0;color:var(--texto2);max-width:66ch}
+.leit-corpo{display:grid;gap:12px;animation:surge .35s both}
+.ficha-p{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 16px;padding:14px;border-radius:14px;background:var(--vidro-forte)}
+.ficha-p small{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--apagado)}
+.ficha-p div{min-width:0}
+.ficha-p div:nth-child(3){white-space:nowrap}
+.abas-cel{display:none}
+
+/* ---- 1100 px ---- */
+@container j (max-width:1279px){
+  .b-linha,.b-meta{grid-column:span 12}
+  .b-rosca{grid-column:span 6}.b-agentes{grid-column:span 6}
+  .rosca-w{grid-template-columns:minmax(0,1fr)}
+  .rosca{margin:0 auto}
+  .mesa-ol{grid-template-columns:340px minmax(0,1fr)}
+  .mesa-ol .pastas{display:none}
+  .faixa .cmd:not(.forte):not(.contorno) .ct{display:none}
+  .faixa .cmd:not(.forte):not(.contorno){width:36px;justify-content:center;padding:0}
+  .abas-ol button:not([aria-pressed="true"]){display:none}
+  .rod .x{display:none}
+}
+/* ---- celular ---- */
+@container j (max-width:700px){
+  .casca{grid-template-columns:minmax(0,1fr);grid-template-areas:"topo""meio""rod";padding:12px 12px 10px;gap:10px}
+  .lat,.quem b,.busca kbd,.abas-ol,.caixa-de{display:none!important}
+  .topo .botao-r:not(.branco){display:none!important}
+  .topo{padding:6px}.busca{max-width:none;margin-left:0}
+  .principal{padding:18px 14px}
+  .titulo h2{font-size:26px}
+  .b-linha,.b-rosca,.b-agentes,.b-meta{grid-column:span 12}
+  .bloco,.resumo{padding:16px}
+  .numeros{grid-template-columns:1fr 1fr;gap:14px 0}
+  .numero:nth-child(3){border-left:0;padding-left:0}
+  .meta-g{grid-template-columns:minmax(0,1fr)}
+  .anel{margin:0 auto}
+  .at{grid-template-columns:auto minmax(0,1fr)}
+  .at .bt{grid-column:1 / -1}
+  .ol{grid-template-rows:minmax(0,1fr)}
+  .faixa{display:none}
+  .mesa-ol{grid-template-columns:minmax(0,1fr)}
+  .mesa-ol .leit-pn{display:none}
+  .rod{display:none}
+  .abas-cel{display:grid;grid-area:rod;grid-template-columns:repeat(5,1fr);padding:6px;border-radius:22px}
+  .abas-cel button{display:grid!important;justify-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--texto2);min-height:52px;align-content:center;border-radius:16px;position:relative}
+  .abas-cel button[aria-pressed="true"]{background:#fff;color:#1b1b1b}
+  .abas-cel .n{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:16px;padding:0 4px;border-radius:8px;background:#d2402c;color:#fff;font-size:10px;display:grid;place-items:center}
+  .avisos{left:12px;right:12px;width:auto;top:66px}
+}
+@media (prefers-reduced-motion:reduce){.janela *{animation:none!important;transition:none!important}}
+</style>
+
+<div class="pg" id="raiz"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+(function(){
+const {useState,useEffect,useRef}=React;
+const html=htm.bind(React.createElement);
+const ICONES={
+casa:'<path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+caixa:'<path d="M4 13l2.2-8h11.6L20 13v6H4z"/><path d="M4 13h5l1 2.5h4L15 13h5"/>',
+alerta:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',
+nota:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+robo:'<path d="M20 12a8 8 0 0 0-14-5.3L4 9"/><path d="M4 4v5h5"/><path d="M4 12a8 8 0 0 0 14 5.3L20 15"/><path d="M20 20v-5h-5"/>',
+pc:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+cadeado:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+rede:'<circle cx="12" cy="5.5" r="2"/><circle cx="5.5" cy="18" r="2"/><circle cx="18.5" cy="18" r="2"/><path d="M12 7.5V12M12 12l-5 4.5M12 12l5 4.5"/>',
+enviar:'<path d="M21 3L3 10.5l7 3 3 7z"/><path d="M10 13.5L21 3"/>',
+seta:'<path d="M6 9l6 6 6-6"/>',setaE:'<path d="M15 6l-6 6 6 6"/>',setaD:'<path d="M9 6l6 6-6 6"/>',
+sino:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+tema:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
+ajuda:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/>',
+busca:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+novo:'<path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/>',
+responder:'<path d="M9 7L4 12l5 5"/><path d="M4 12h9a7 7 0 0 1 7 7"/>',
+respTodos:'<path d="M8 7L3 12l5 5"/><path d="M13 7l-5 5 5 5"/><path d="M8 12h5a7 7 0 0 1 7 7"/>',
+encaminhar:'<path d="M15 7l5 5-5 5"/><path d="M20 12h-9a7 7 0 0 0-7 7"/>',
+lido:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 8l8 5 8-5"/>',
+flag:'<path d="M6 21V4h11l-2 4 2 4H6"/>',
+check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+relogio:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',
+nuvem:'<path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/>',
+livro:'<path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M9 4v12"/>',
+pontos:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+envelope:'<rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M4 8l8 5.5L20 8"/>'
+};
+function I({n,s=18}){return html`<svg className="ico" width=${s} height=${s} viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML=${{__html:ICONES[n]||''}}/>`}
+const fmt=n=>Math.round(n).toLocaleString('pt-BR');
+const semMov=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+function Conta({v,suf=''}){
+  const [x,setX]=useState(semMov()?v:0);
+  useEffect(()=>{ if(semMov()){setX(v);return} let raf,t0;const dur=950;
+    const passo=t=>{t0=t0||t;const p=Math.min(1,(t-t0)/dur);setX(v*(1-Math.pow(1-p,3)));if(p<1)raf=requestAnimationFrame(passo)};
+    raf=requestAnimationFrame(passo);return ()=>cancelAnimationFrame(raf)},[v]);
+  return html`<span>${fmt(x)}${suf}</span>`;
+}
+function useLigado(){const [on,setOn]=useState(semMov());useEffect(()=>{const t=setTimeout(()=>setOn(true),90);return ()=>clearTimeout(t)},[]);return on;}
+
+const AGENTES=[{n:'João',v:25},{n:'Clara',v:22},{n:'Bernardo',v:14},{n:'Cristian',v:9}];
+const DIAS=['13/11','14/11','17/11','18/11','19/11','20/11','21/11','Hoje'];
+const CHEGARAM=[38,44,31,49,42,52,36,31];
+const ENVIADAS=[30,41,27,40,39,47,33,23];
+const ABERTOS=[['Esperando a NF ser emitida','O hotel ainda não mandou a nota.',22,'var(--verde)'],['Falta algum dado do hóspede','Precisa pedir CPF/CNPJ ou endereço.',7,'var(--creme-esc)'],['NF pronta, falta enviar','Só falta mandar o e-mail com o PDF.',5,'var(--info)'],['Pedido de correção','A nota saiu errada e precisa ser refeita.',4,'var(--desce)']];
+
+function Lateral({tela,ir}){
+  const it=[['inicio','casa','Visão geral'],['emails','caixa','Caixa de entrada',70],['urg','alerta','Urgência',11],['notas','nota','Notas fiscais'],['robo','robo','Robô'],null,['mon','pc','Monitoramento'],['ag','rede','Agentes do Smith'],['ger','cadeado','Gerência']];
+  return html`<nav className="lat vidro" aria-label="Navegação"><div className="selo" aria-hidden="true">NF</div>${it.map((x,i)=>x?html`<button key=${x[0]} className="lb" title=${x[2]} aria-label=${x[2]} aria-current=${x[0]===tela?'true':undefined} onClick=${()=>ir(x[0])}><${I} n=${x[1]} s=${19}/>${x[3]?html`<span className="n">${x[3]}</span>`:null}</button>`:html`<hr key=${'s'+i}/>`)}
+    <hr/><button className="lb" title="Operador deste PC: João" aria-label="Operador: João"><span className="av" style=${{width:32,height:32,fontSize:12}}>J</span></button></nav>`;
+}
+function BotoesTopo({aviso,setAviso,tema,setTema}){
+  return html`<button className="botao-r" title="Tema claro ou escuro" aria-label="Trocar o tema" onClick=${()=>setTema(tema==='claro'?'escuro':'claro')}><${I} n="tema"/></button>
+    <button className="botao-r branco" title="Avisos" aria-label="Avisos: 3 novos" aria-expanded=${aviso} onClick=${()=>setAviso(!aviso)}><${I} n="sino"/><span className="ponto"></span></button>`;
+}
+function Avisos(){
+  const a=[['alerta','Olívia Rocha Ribeiro está sem resposta há 9 dias','Hotel ESTRELA CENTRO · está na Urgência'],['robo','O robô enviou 12 NF na última hora','último envio às 14:02'],['pc','Os 4 PCs estão ligados e conectados','conferido há 12 segundos']];
+  return html`<div className="avisos vidro" role="dialog" aria-label="Avisos"><h3>Avisos</h3>${a.map(([ic,t,s])=>html`<div className="aviso" key=${t}><${I} n=${ic}/><div>${t}<small>${s}</small></div></div>`)}</div>`;
+}
+function Rodape(){
+  return html`<footer className="rod vidro" aria-label="Situação do sistema">
+    <span className="ok"><${I} n="check" s=${15}/>Tudo funcionando</span><span className="sep"></span>
+    <span className="chip" title="O robô que envia os pedidos"><${I} n="robo" s=${15}/>Robô: ligado<span className="x">· último envio 14:02</span></span>
+    <span className="chip" title="A central que junta os 4 PCs"><${I} n="nuvem" s=${15}/>Central: conectada</span>
+    <span className="chip" title="Computadores da equipe"><${I} n="pc" s=${15}/>4 de 4 PCs ligados</span>
+    <span className="chip x"><${I} n="relogio" s=${15}/>atualizado há 12 s</span><span className="sep"></span>
+    <button className="ib" title="Ajuda: o que cada nome significa" aria-label="Ajuda"><${I} n="ajuda" s=${17}/></button></footer>`;
+}
+function AbasCel({tela,ir}){
+  const t=[['inicio','casa','Início'],['emails','caixa','E-mails',70],['notas','nota','Notas'],['robo','robo','Robô'],['mais','pontos','Mais']];
+  return html`<nav className="abas-cel vidro" aria-label="Seções">${t.map(([k,ic,n,q])=>html`<button key=${k} aria-pressed=${k===tela} onClick=${()=>ir(k)}><${I} n=${ic} s=${20}/><span>${n}</span>${q?html`<span className="n">${q}</span>`:null}</button>`)}</nav>`;
+}
+function ComoLer({children}){return html`<p className="como-ler"><${I} n="livro" s=${15}/><span>${children}</span></p>`}
+
+function GraficoLinhas({on}){
+  const W=640,H=220,pe=28,pd=40,ps=12,pi=28,max=60;
+  const x=i=>pe+i*(W-pe-pd)/(DIAS.length-1), y=v=>ps+(1-v/max)*(H-ps-pi);
+  const linha=arr=>arr.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  const area=linha(CHEGARAM)+' L'+x(DIAS.length-1)+' '+y(0)+' L'+x(0)+' '+y(0)+' Z';
+  const u=DIAS.length-1;
+  return html`<div className=${'grafico'+(on?' on':'')}><svg viewBox=${'0 0 '+W+' '+H} role="img" aria-label="Pedidos que chegaram e NF enviadas nos últimos 8 dias úteis">
+    <g className="grade">${[0,20,40,60].map(v=>html`<g key=${v}><line x1=${pe} x2=${W-pd} y1=${y(v)} y2=${y(v)}/><text x=${pe-8} y=${y(v)+4} textAnchor="end">${v}</text></g>`)}</g>
+    <path className="area" d=${area} fill="var(--verde)" fillOpacity="0.1"/>
+    <path className="serie" d=${linha(CHEGARAM)} stroke="var(--verde)"/>
+    <path className="serie" d=${linha(ENVIADAS)} stroke="var(--escuro)" style=${{transitionDelay:'.2s'}}/>
+    ${DIAS.map((d,i)=>html`<text key=${d} x=${x(i)} y=${H-6} textAnchor="middle" style=${i===u?{fontWeight:700,fill:'var(--texto)'}:null}>${d}</text>`)}
+    ${on?html`<g><circle cx=${x(u)} cy=${y(CHEGARAM[u])} r="5" fill="var(--verde)"/><circle cx=${x(u)} cy=${y(ENVIADAS[u])} r="5" fill="var(--escuro)"/>
+      <text x=${x(u)+9} y=${y(CHEGARAM[u])-6} className="nota-g" style=${{fill:'var(--verde-t)'}}>${CHEGARAM[u]}</text><text x=${x(u)+9} y=${y(ENVIADAS[u])+14} className="nota-g" style=${{fill:'var(--texto)'}}>${ENVIADAS[u]}</text></g>`:null}
+  </svg></div>`;
+}
+function Rosca({on}){
+  const tot=ABERTOS.reduce((a,b)=>a+b[2],0), r=60, c=2*Math.PI*r; let acc=0;
+  return html`<div className="rosca-w"><div className="rosca"><svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="38 pedidos em aberto, divididos em 4 motivos">
+      <circle cx="75" cy="75" r=${r} style=${{stroke:'var(--linha)'}}/>
+      ${ABERTOS.map(([t,,v,cor])=>{const len=v/tot*c-3; const el=html`<circle key=${t} cx="75" cy="75" r=${r} style=${{stroke:cor,strokeDasharray:(on?len:0)+' '+c,strokeDashoffset:-acc}}/>`; acc+=v/tot*c; return el;})}
+    </svg><div className="c"><b><${Conta} v=${tot}/></b><small>em aberto</small></div></div>
+    <ul className="partes">${ABERTOS.map(([t,s,v,cor])=>html`<li key=${t}><i style=${{background:cor}}></i><span><b>${t}</b><small>${s}</small></span><span className="p">${v} · ${Math.round(v/tot*100)}%</span></li>`)}</ul></div>`;
+}
+function Inicio(){
+  const on=useLigado(); const totAg=AGENTES.reduce((a,b)=>a+b.v,0);
+  const meta=1800, feitas=1140, pct=Math.round(feitas/meta*100), r=56, c=2*Math.PI*r;
+  return html`<div>
+   <div className="titulo"><h2>Bom dia, João</h2><p>Este é o resumo do setor fiscal hoje, até as 14:02. Cada bloco responde a uma pergunta. Os números juntam os e-mails dos 4 PCs.</p></div>
+   <div className="dash">
+    <section className="resumo vidro" aria-label="Hoje em uma frase">
+      <span className="estado"><${I} n="check" s=${15}/>Tudo funcionando: robô ligado e os 4 PCs conectados</span>
+      <p className="frase">Hoje chegaram <b>31 pedidos de NF</b> e a equipe já enviou <b>23 notas</b>. Ainda há <b>38 pedidos esperando</b>, e <b>6 deles estão sem resposta há mais de 2 dias</b>: comece por eles.</p>
+      <div className="numeros">
+        <div className="numero"><span className="r">Pedidos que chegaram hoje</span><span className="v"><${Conta} v=${31}/></span><span className="var bom" title="Comparado com ontem, no mesmo horário">5 a menos que ontem</span><span className="x">pelo formulário e por e-mail</span></div>
+        <div className="numero"><span className="r">NF enviadas hoje</span><span className="v"><${Conta} v=${23}/></span><span className="var bom">3 a mais que ontem</span><span className="x">e-mails com o PDF da nota</span></div>
+        <div className="numero"><span className="r">Pedidos esperando</span><span className="v"><${Conta} v=${38}/></span><span className="var bom">5 a menos que ontem</span><span className="x">ainda sem a NF enviada</span></div>
+        <div className="numero"><span className="r">Sem resposta há mais de 2 dias</span><span className="v" style=${{color:'var(--desce)'}}><${Conta} v=${6}/></span><span className="var ruim">2 a mais que ontem</span><span className="x">o hóspede está esperando</span></div>
+      </div>
+    </section>
+    <section className="bloco b-linha vidro" style=${{'--i':1}}>
+      <div className="pergunta"><small>Ritmo da semana</small><h3>Estamos dando conta dos pedidos que chegam?</h3></div>
+      <p className="resposta">Quase sempre. Nos últimos 8 dias úteis chegaram <b>323 pedidos</b> e enviamos <b>280 NF</b> (<b>87%</b>). Hoje o envio está mais lento: <b>23 de 31</b> até agora.</p>
+      <div className="legenda"><span><i style=${{background:'var(--verde)'}}></i>Pedidos que chegaram</span><span><i style=${{background:'var(--escuro)'}}></i>NF enviadas</span></div>
+      <${GraficoLinhas} on=${on}/>
+      <${ComoLer}>Cada ponto é um dia. Quando a linha verde fica acima da outra, chegaram mais pedidos do que enviamos e a fila cresce. Linhas juntas querem dizer que estamos em dia.<//>
+    </section>
+    <section className="bloco b-rosca vidro" style=${{'--i':2}}>
+      <div className="pergunta"><small>Pedidos esperando</small><h3>Por que os 38 pedidos ainda estão em aberto?</h3></div>
+      <p className="resposta">A maioria (<b>58%</b>) só espera o hotel emitir a nota.</p>
+      <${Rosca} on=${on}/>
+      <${ComoLer}>O círculo inteiro são os 38 pedidos. Cada cor é um motivo. Quanto maior a fatia, mais pedidos param nesse motivo.<//>
+    </section>
+    <section className="bloco b-agentes vidro" style=${{'--i':3}}>
+      <div className="pergunta"><small>Equipe</small><h3>Com quem estão os e-mails da caixa de entrada?</h3></div>
+      <p className="resposta">João e Clara cuidam de <b>67%</b> dos e-mails agora. Os 4 PCs estão ligados.</p>
+      <div className="barras">${AGENTES.map(a=>html`<div className="barra" key=${a.n}><div className="t"><b>${a.n}</b><span>${a.v} e-mails · ${Math.round(a.v/totAg*100)}% do total · <span className="st">PC ligado</span></span></div><div className="trilho"><span style=${{width:on?(a.v/AGENTES[0].v*100)+'%':0}}></span></div></div>`)}</div>
+      <${ComoLer}>Cada barra é a caixa de entrada de uma pessoa. A barra cheia é quem tem mais e-mails (João, 25).<//>
+    </section>
+    <section className="bloco b-meta vidro" style=${{'--i':4}}>
+      <div className="pergunta"><small>Meta de novembro</small><h3>Vamos bater a meta de NF do mês?</h3></div>
+      <div className="meta-g"><div className="anel"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label=${pct+'% da meta do mês'}><circle cx="70" cy="70" r=${r} style=${{stroke:'var(--linha)'}}/><circle cx="70" cy="70" r=${r} style=${{stroke:'var(--verde)',strokeDasharray:c,strokeDashoffset:on?c*(1-pct/100):c}}/></svg><div className="c"><b><${Conta} v=${pct} suf="%"/></b><small>da meta</small></div></div>
+        <ul className="fatos"><li><${I} n="check" s=${16}/><span><b>1.140 NF enviadas</b> de 1.800 (a meta do mês).</span></li><li><${I} n="relogio" s=${16}/><span>Faltam <b>660 NF</b> e <b>3 dias úteis</b>.</span></li><li><${I} n="alerta" s=${16}/><span>No ritmo de hoje (cerca de 45 por dia) chegamos a <b>1.275, 71% da meta</b>. Para bater, seriam 220 por dia.</span></li></ul></div>
+      <${ComoLer}>O anel mostra quanto da meta já foi feito. Ele enche conforme as NF são enviadas.<//>
+    </section>
+    <section className="bloco vidro" style=${{'--i':5}}>
+      <div className="pergunta"><small>Agora</small><h3>O que precisa de atenção agora?</h3></div>
+      <div className="atencao">
+        <div className="at"><span className="ic ruim"><${I} n="alerta"/></span><div><b>6 hóspedes sem resposta há mais de 2 dias</b><small>O mais antigo: Olívia Rocha Ribeiro, há 9 dias (ESTRELA CENTRO).</small></div><button className="bt escuro">Ver os 6 e-mails</button></div>
+        <div className="at"><span className="ic aviso"><${I} n="nota"/></span><div><b>5 NF prontas, falta só enviar</b><small>O PDF já está na pasta; é só mandar o e-mail ao hóspede.</small></div><button className="bt claro">Enviar pendentes</button></div>
+        <div className="at"><span className="ic info"><${I} n="robo"/></span><div><b>4 pedidos de correção</b><small>A nota saiu com dado errado e precisa ser refeita pelo hotel.</small></div><button className="bt claro">Ver correções</button></div>
+      </div>
+    </section>
+   </div></div>`;
+}
+
+const EMAILS=[
+ {id:'e1',de:'Tatiane Barbosa Silva',as:'Dados para emissão da NF',pv:'respondido · ESTRELA CENTRO · Olá, seguem os dados para a emissão…',h:'ESTRELA CENTRO',d:'17/11',g:'Semana passada',tags:[['','nota','Sem NF']]},
+ {id:'e2',de:'Olívia Rocha Ribeiro',as:'Re: Solicitação NF',pv:'ESTRELA CENTRO · Obrigado pelo retorno! Fico no aguardo da nota…',h:'ESTRELA CENTRO',d:'17/11',urg:true,g:'Semana passada',tags:[['','nota','Sem NF'],['ur','flag','Sem resposta há 9 dias']]},
+ {id:'e3',de:'Karina Almeida Ribeiro',as:'Re: Nota fiscal',pv:'ESTRELA CENTRO · Bom dia, ainda não recebi a nota…',h:'ESTRELA CENTRO',d:'17/11',urg:true,g:'Semana passada',tags:[['','nota','Sem NF'],['ur','flag','Sem resposta há 9 dias']]},
+ {id:'e4',de:'Daniel Rodrigues Costa',as:'Dados para emissão da NF',pv:'ESTRELA CENTRO · Olá, seguem os dados para emissão…',h:'ESTRELA CENTRO',d:'20/11',g:'Esta semana',tags:[['ok','check','NF enviada · 1447']]},
+ {id:'e5',de:'Isabela Moreira Costa',as:'Cancelamento de nota',pv:'COIMBRA · Bom dia, a nota precisa ser cancelada e reemitida…',h:'COIMBRA',d:'20/11',urg:true,g:'Esta semana',tags:[['cor','robo','Correção']]},
+ {id:'e6',de:'Ricardo Pereira Nascimento',as:'Cancelamento de nota',pv:'ESTRELA CENTRO · Bom dia, a nota precisa ser cancelada…',h:'ESTRELA CENTRO',d:'22/11',urg:true,g:'Esta semana',tags:[['cor','robo','Correção']]}];
+function Caixa({sel,setSel}){
+  const e=EMAILS.find(x=>x.id===sel);
+  const caixas=[['ESTRELA CENTRO','nf@estrela.exemplo',1],['COIMBRA','nf@coimbra.exemplo',1],['MAR AZUL','nf@marazul.exemplo',1],['PORTO NOVO','nf@portonovo.exemplo',1]];
+  return html`<div className="ol">
+    <div className="faixa vidro" role="toolbar" aria-label="Comandos do e-mail">
+      ${[['responder','Responder'],['respTodos','Responder a todos'],['encaminhar','Encaminhar']].map(([ic,t])=>html`<button key=${ic} className="cmd" title=${t} aria-label=${t}><${I} n=${ic} s=${17}/><span className="ct">${t}</span></button>`)}
+      <span className="sep"></span>
+      ${[['lido','Não lido/Lido'],['flag','Sinalizar']].map(([ic,t])=>html`<button key=${ic} className="cmd" title=${t} aria-label=${t}><${I} n=${ic} s=${17}/><span className="ct">${t}</span></button>`)}
+      <span className="esp"></span>
+      <button className="cmd contorno"><${I} n="novo" s=${17}/><span className="ct">Novo e-mail</span></button>
+      <button className="cmd forte"><${I} n="nota" s=${17}/><span className="ct">Enviar NF</span></button>
+      <button className="cmd" title="Enviar/Receber todas" aria-label="Enviar/Receber todas"><${I} n="robo" s=${17}/><span className="ct">Enviar/Receber todas</span></button>
+    </div>
+    <div className="mesa-ol">
+      <aside className="pn vidro pastas" style=${{'--i':0}} aria-label="Pastas">
+        <div className="pn-cab"><${I} n="seta" s=${12}/>Favoritos</div>
+        <button className="pst sel"><${I} n="caixa" s=${17}/><span className="pst-t"><span>Caixa de Entrada (todas)</span></span><span className="qt">25</span></button>
+        <button className="pst"><${I} n="alerta" s=${17}/><span className="pst-t"><span>Urgência</span></span><span className="qt urg">11</span></button>
+        <button className="pst"><${I} n="nota" s=${17}/><span className="pst-t"><span>Formulários do robô</span></span></button>
+        <button className="pst"><${I} n="enviar" s=${17}/><span className="pst-t"><span>Itens Enviados</span></span></button>
+        <div className="pn-cab" style=${{marginTop:6}}>Caixas do PC</div>
+        <button className="pst"><${I} n="seta" s=${14}/><span className="pst-t"><span><b>João</b></span><small><span className="st">PC ligado</span> · 18 caixas</small></span><span className="qt">25</span></button>
+        ${caixas.map(([n,m,q])=>html`<button key=${n} className="pst" style=${{paddingLeft:28}}><${I} n="setaD" s=${12}/><span className="pst-t"><span><b>${n}</b></span><small>${m}</small></span><span className="qt">${q}</span></button>`)}
+        <div className="mais-cx">Mostrar mais 14 caixas</div>
+      </aside>
+      <section className="pn vidro" style=${{'--i':1}} aria-label="Lista de e-mails">
+        <div className="cab-l"><div className="abas-l"><button aria-pressed="true">Todas</button><button aria-pressed="false">Não lidos</button><button className="col" title="Recolher a lista" aria-label="Recolher a lista"><${I} n="setaE" s=${16}/></button></div>
+          <div className="filtros-l"><button className="pil">Hotel: <b>Todos</b><${I} n="seta" s=${13}/></button><button className="pil">Data: <b>mais antigo ↑</b></button></div>
+          <div className="filtros-l"><button className="pil">Sem resposta <span className="q">23</span></button><button className="pil">Correção <span className="q">9</span></button></div>
+          <span className="info"><b>Caixa de Entrada</b> · 25 itens · 25 não lidos</span></div>
+        <div className="linhas" role="listbox" aria-label="E-mails">${['Semana passada','Esta semana'].map(g=>html`<div key=${g}><div className="grp"><${I} n="seta" s=${12}/>${g}</div>${EMAILS.filter(m=>m.g===g).map((m,i)=>html`<button key=${m.id} className=${'em'+(m.urg?' urg':'')} style=${{'--i':i}} role="option" aria-selected=${m.id===sel} onClick=${()=>setSel(m.id)}>
+            <span className="l1"><span className="de">${m.de}</span>${m.urg?html`<span className="flag"><${I} n="flag" s=${14}/></span>`:null}</span>
+            <span className="l1"><span className="as">${m.as}</span><span className="d">${m.d}</span></span>
+            <span className="pv">${m.pv}</span>
+            <span className="tags">${m.tags.map(([k,ic,t])=>html`<span key=${t} className=${'tag '+k}><${I} n=${ic} s=${12}/>${t}</span>`)}</span></button>`)}</div>`)}</div>
+      </section>
+      <article className="pn vidro leit-pn" style=${{'--i':2}} aria-label="Leitura">
+        <div className="leit">${e?html`<div className="leit-corpo" key=${e.id}><h3>${e.as}</h3><div className="meta-l">${e.de} · caixa ${e.h} · ${e.d} às 09:42</div>
+          <p>Olá, tudo bem? Estive hospedada de 12 a 14 de novembro e preciso da nota fiscal da estadia. Os dados da empresa estão abaixo. Fico no aguardo.</p>
+          <div className="ficha-p"><div><small>Hotel</small>${e.h}</div><div><small>Estadia</small>12 a 14/11</div><div><small>Documento</small>CNPJ 11.222.333/0001-81</div><div><small>Situação</small><span className="tags">${e.tags.map(([k,ic,t])=>html`<span key=${t} className=${'tag '+k}>${t}</span>`)}</span></div></div>
+          <p>Próximo passo: emitir a NF e responder com o PDF.</p></div>`
+          :html`<div className="vazio"><${I} n="envelope" s=${44}/><b style=${{color:'var(--texto)'}}>Selecione um e-mail para ler</b><span>Clique numa linha da lista · as setas ↑ ↓ andam pelos e-mails</span></div>`}</div>
+      </article>
+    </div></div>`;
+}
+
+function Janela({W,H,tema,setTema,tom,tela,ir,volta,sel,setSel}){
+  const [aviso,setAviso]=useState(false);
+  const t=(tela==='emails'||tela==='urg')?'emails':'inicio'; const cel=W<760;
+  return html`<div className="janela" data-mock=${tema} data-tom=${tom} style=${{width:W,height:H}}>
+    <div className="cena" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div className="casca">
+      <${Lateral} tela=${t} ir=${ir}/>
+      ${t==='inicio'
+        ?html`<header className="topo vidro"><div className="quem"><span className="av" aria-hidden="true">J</span><b>Bem-vindo, João</b></div>
+            <label className="busca"><span className="orbe" aria-hidden="true"></span><input type="search" placeholder=${cel?'Pesquisar ou pedir…':'Pesquisar hóspede, CPF/CNPJ, nº da NF ou frase'} aria-label="Pesquisar nos e-mails dos 4 PCs"/><kbd>Ctrl K</kbd></label>
+            <${BotoesTopo} aviso=${aviso} setAviso=${setAviso} tema=${tema} setTema=${setTema}/></header>`
+        :html`<header className="topo vidro"><nav className="abas-ol" aria-label="Faixa de comandos"><button aria-pressed="true">Página Inicial</button><button aria-pressed="false">Enviar/Receber</button><button aria-pressed="false">Exibir</button></nav>
+            <button className="caixa-de" title="De quem é a caixa que você está vendo">Caixa de <b>João (minha)</b><span className="q">36</span><${I} n="seta" s=${13}/></button>
+            <label className="busca"><${I} n="busca" s=${17}/><input type="search" placeholder=${cel?'Pesquisar…':'Pesquisar hóspede, CPF/CNPJ, nº da NF ou frase'} aria-label="Pesquisar no Outlook dos 4 PCs"/></label>
+            <${BotoesTopo} aviso=${aviso} setAviso=${setAviso} tema=${tema} setTema=${setTema}/></header>`}
+      ${t==='inicio'?html`<main className="principal vidro" key=${'i'+volta}><${Inicio}/></main>`:html`<${Caixa} key=${'c'+volta} sel=${sel} setSel=${setSel}/>`}
+      ${cel?html`<${AbasCel} tela=${t} ir=${ir}/>`:html`<${Rodape}/>`}
+    </div>
+    ${aviso?html`<${Avisos}/>`:null}</div>`;
+}
+function Palco({W,H,real,children}){
+  const ref=useRef(null);const [disp,setDisp]=useState(1200);
+  useEffect(()=>{const el=ref.current;const f=()=>setDisp(el.clientWidth||1200);f();const ro=new ResizeObserver(f);ro.observe(el);return ()=>ro.disconnect()},[]);
+  const s=real?1:Math.min(1,disp/W);
+  return html`<div className=${'palco'+(real?' real':'')} ref=${ref}><div style=${{width:W*s,height:H*s,margin:'0 auto'}}><div style=${{width:W,height:H,transform:'scale('+s+')',transformOrigin:'0 0'}}>${children}</div></div></div>`;
+}
+function Seg({valor,set,opcoes,rot}){return html`<div className="seg" role="group" aria-label=${rot}>${opcoes.map(([v,t,cor])=>html`<button key=${String(v)} aria-pressed=${valor===v} onClick=${()=>set(v)}>${cor?html`<span className="amostra" style=${{background:cor}}></span>`:null}${t}</button>`)}</div>`}
+
+function App(){
+  const [W,setW]=useState(1440);const [tema,setTema]=useState('claro');const [tom,setTom]=useState('agua');
+  const [tela,setTela]=useState('inicio');const [volta,setVolta]=useState(0);const [sel,setSel]=useState(null);const [real,setReal]=useState(false);
+  const H={1440:960,1100:900,390:844}[W];
+  const ir=t=>{if(t==='inicio'||t==='emails'||t==='urg'){setTela(t);setVolta(v=>v+1)}};
+  return html`<div style=${{display:'contents'}}>
+   <header><h1>Painel Fiscal 1.0 em vidro</h1>
+    <p className="intro">Versão 2. A Visão geral tem menos caixinhas e mais gráficos, e cada bloco responde a uma pergunta em português simples, com a resposta escrita e um "como ler". A Caixa de entrada é a mesma de hoje, só com as cores verde e creme, o fundo de vidro e uma animação leve. Clique na barra lateral, no sino, nos e-mails e no botão de tema dentro do desenho.</p>
+    <span className="selo-dados">Números e nomes inventados, só para o desenho</span></header>
+   <div className="bar">
+    <div className="grupo-c"><span>Tela</span><${Seg} rot="Tela" valor=${tela==='urg'?'emails':tela} set=${ir} opcoes=${[['inicio','Visão geral'],['emails','Caixa de entrada']]}/></div>
+    <div className="grupo-c"><span>Largura</span><${Seg} rot="Largura" valor=${W} set=${v=>{setW(v);setVolta(x=>x+1)}} opcoes=${[[1440,'1440'],[1100,'1100'],[390,'Celular']]}/></div>
+    <div className="grupo-c"><span>Tema</span><${Seg} rot="Tema" valor=${tema} set=${setTema} opcoes=${[['claro','Claro'],['escuro','Escuro']]}/></div>
+    <div className="grupo-c"><span>Tom do verde (ajuste ao logo)</span><${Seg} rot="Tom do verde" valor=${tom} set=${setTom} opcoes=${[['agua','Verde-água','#14917f'],['floresta','Floresta','#2b7a55'],['oliva','Oliva','#5d7f35']]}/></div>
+    <div className="grupo-c"><span>Animação</span><${Seg} rot="Animação" valor=${null} set=${()=>setVolta(v=>v+1)} opcoes=${[['rever','Ver de novo']]}/></div>
+    <div className="grupo-c"><span>Tamanho</span><${Seg} rot="Tamanho" valor=${real} set=${setReal} opcoes=${[[false,'Caber na tela'],[true,'Tamanho real']]}/></div></div>
+   <div className="mesa"><${Palco} W=${W} H=${H} real=${real}><${Janela} W=${W} H=${H} tema=${tema} setTema=${setTema} tom=${tom} tela=${tela} ir=${ir} volta=${volta} sel=${sel} setSel=${setSel}/><//></div>
+   <section className="duas">
+    <div className="card"><h2>Visão geral: o que mudou e por quê (Nielsen)</h2><ul>
+      <li><b>Uma frase no topo</b> diz o dia inteiro em português: o que chegou, o que saiu e por onde começar. (Falar a língua de quem usa.)</li>
+      <li><b>Cada bloco é uma pergunta</b> ("Vamos bater a meta?"), traz a resposta escrita antes do gráfico e termina com "como ler". Ninguém precisa interpretar sozinho. (Ver em vez de decorar; ajuda à mão.)</li>
+      <li><b>Comparações em palavras</b>: "3 a mais que ontem", no lugar de "↑12%". E sempre dizem contra o quê.</li>
+      <li><b>Situação sempre escrita</b> ("Tudo funcionando", "PC ligado"), nunca só pela cor. (Ver o que o sistema está fazendo.)</li>
+      <li><b>"O que precisa de atenção agora"</b> tem um botão em cada item, que leva direto ao que resolver. (Evitar o erro antes dele.)</li>
+      <li><b>Menos caixas dentro de caixas</b>: blocos grandes, com espaço para respirar. (Só o que precisa.)</li></ul></div>
+    <div className="card"><h2>Caixa de entrada: igual à de hoje</h2><ul>
+      <li>Tudo no mesmo lugar: abas do Outlook, "Caixa de", pesquisa, faixa de comandos, pastas, lista com os mesmos filtros e etiquetas, e a leitura.</li>
+      <li>Muda só a cor: o azul virou verde, o urgente continua vermelho, e o fundo é de vidro.</li>
+      <li>Animação leve: as linhas entram uma depois da outra e o e-mail aparece suave ao clicar.</li>
+      <li>A barra de situação ganhou linha própria na base e não cobre mais a lista (o problema da janela de 1100 px).</li>
+      <li>As abas flutuantes do template saíram: a barra lateral já leva às mesmas telas, e dois caminhos para o mesmo lugar confundem.</li></ul></div>
+   </section></div>`;
+}
+ReactDOM.createRoot(document.getElementById('raiz')).render(html`<${App}/>`);
+})();
+</script>

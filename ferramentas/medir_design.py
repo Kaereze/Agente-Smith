@@ -16,7 +16,9 @@ METAS = {"tamanhos_de_texto": 7, "raios_de_canto": 4, "espacamentos_gap": 7, "co
 def _css():
     # só o CSS do Painel: fontes.css (fontes embutidas) e o tokens.css (a própria régua) ficam de fora da conta; o tema_claro.css também
     # (26/11/2026): é gerado por ferramentas/gerar_tema_claro.py a partir do CSS escrito à mão, que já é medido aqui
-    arquivos = [f for f in UI.rglob("*.css") if f.name not in ("fontes.css", "tokens.css", "tema_claro.css")]
+    # a tela nova em React (app_ui/v2, montada de app_react/) tem a régua própria em app_react/src/estilo/tema.css: não entra
+    # nesta catraca, que mede o CSS da tela de hoje até ela ser apagada (27/11/2026)
+    arquivos = [f for f in UI.rglob("*.css") if f.name not in ("fontes.css", "tokens.css", "tema_claro.css") and "v2" not in f.relative_to(UI).parts]
     return arquivos, "\n".join(f.read_text(encoding="utf-8", errors="ignore") for f in arquivos)
 
 

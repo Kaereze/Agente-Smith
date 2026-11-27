@@ -29,3 +29,6 @@ ajustes.json
 
 # pasta antiga do Obsidian (só tinha a configuração da janela): o cofre é "Segundo Cérebro (Agente Smith)"
 Segundo Cérebro/
+
+# tela em React (27/11/2026): as ferramentas ficam só no PC de quem programa; a tela montada (app_ui/v2) sobe
+app_react/node_modules/

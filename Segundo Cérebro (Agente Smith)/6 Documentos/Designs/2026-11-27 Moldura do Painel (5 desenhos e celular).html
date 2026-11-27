@@ -1,0 +1,658 @@
+<title>Desenhos da Moldura Fiscal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Conceito: mesa de comparação. A página é neutra; as janelas do Painel (escuro ou claro) são o que se olha. */
+:root{--bg:#f3f4f7;--surf:#ffffff;--fg:#1a2230;--mut:#586377;--line:#dbe0e8;--acc:#0f62c9;--accfg:#ffffff;--soft:#e8f0fc;--okc:#1b6b34;--warnc:#7a5200;--mesa:#dfe3ea}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121519;--surf:#1a1e25;--fg:#e9edf3;--mut:#9ba6b8;--line:#2a313c;--acc:#5aa7ff;--accfg:#06121f;--soft:#16273d;--okc:#8fd19e;--warnc:#f2c76b;--mesa:#0d0f13;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121519;--surf:#1a1e25;--fg:#e9edf3;--mut:#9ba6b8;--line:#2a313c;--acc:#5aa7ff;--accfg:#06121f;--soft:#16273d;--okc:#8fd19e;--warnc:#f2c76b;--mesa:#0d0f13;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+.pg{max-width:1680px;margin:0 auto;display:grid;gap:22px}
+.pg h1{font-size:clamp(24px,3.2vw,34px);line-height:1.12;margin:0 0 8px;letter-spacing:-.015em;text-wrap:balance}
+.pg h2{font-size:18px;margin:0 0 10px;letter-spacing:-.005em}
+.pg h3{font-size:14px;margin:0 0 6px}
+.intro{color:var(--mut);max-width:80ch;margin:0}
+.selo-dados{display:inline-block;margin-top:10px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--warnc);border:1px solid currentColor;border-radius:6px;padding:3px 8px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-end}
+.grupo-c{display:grid;gap:6px}
+.grupo-c>span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surf)}
+.seg button{font:inherit;font-size:13.5px;font-weight:500;color:var(--fg);background:none;border:0;border-radius:7px;padding:7px 12px;cursor:pointer;min-height:36px}
+.seg button:hover{background:var(--soft)}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--accfg)}
+.seg button:focus-visible,.cartao-d:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.designs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.cartao-d{font:inherit;text-align:left;color:var(--fg);background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;display:grid;gap:2px;min-width:0}
+.cartao-d b{font-size:15px}
+.cartao-d small{color:var(--mut);font-size:12.5px;line-height:1.35}
+.cartao-d[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.cartao-d .cust{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);margin-top:4px}
+.mesa{background:var(--mesa);border:1px solid var(--line);border-radius:14px;padding:16px}
+.palco{width:100%}
+.palco.real{overflow:auto}
+.celulares{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
+.celulares>div{display:grid;gap:8px;justify-items:center}
+.celulares figcaption{font-size:13px;color:var(--mut)}
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card p{margin:0 0 8px;color:var(--mut)}
+.card .lead{color:var(--fg);font-size:15.5px;margin-bottom:12px}
+.tabela-pecas{display:grid;gap:0;border-top:1px solid var(--line)}
+.tabela-pecas>div{display:grid;grid-template-columns:minmax(130px,.55fr) 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tabela-pecas dt{font-weight:600}
+.tabela-pecas dd{margin:0;color:var(--mut)}
+.heur{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.heur li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;font-size:14px}
+.heur .n{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--soft);color:var(--acc);font-weight:700;font-variant-numeric:tabular-nums}
+.heur b{display:block;font-size:13px}
+.heur span{color:var(--mut)}
+.rolagem-x{overflow-x:auto}
+table.mx{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+table.mx th,table.mx td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:center}
+table.mx th:first-child,table.mx td:first-child{text-align:left}
+table.mx thead th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+table.mx td.p{letter-spacing:2px;font-size:13px;color:var(--acc)}
+.legenda{font-size:13px;color:var(--mut);margin:8px 0 0}
+.sug{border-color:var(--acc);background:var(--soft)}
+.arvore{font:13px/1.7 ui-monospace,Consolas,monospace;color:var(--fg);margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.perguntas{margin:0;padding-left:20px;display:grid;gap:6px}
+
+/* ====================== A JANELA DO PAINEL (o desenho) ====================== */
+.janela{container-type:inline-size;container-name:j;position:relative;overflow:hidden;border-radius:10px;border:1px solid var(--borda);background:var(--fundo);color:var(--texto);font:14px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --fundo:#181818;--painel:#1f1f1f;--cartao:#242424;--borda:#333333;--faixa:#292929;--hover:#3a3a3a;--texto:#f0f0f0;--texto2:#d0d0d0;--apagado:#a8a8a8;
+  --destaque:#479ef5;--destaque-suave:#173b63;--sel-texto:#ffffff;--assunto:#6cb8f6;--sel:#2f3a47;
+  --urgente-fundo:#3a2326;--urgente-texto:#ff8d95;--urgente:#e8484f;--ok-fundo:#173b2a;--ok:#8fd19e;--aviso-fundo:#3d3212;--aviso:#f2c76b;--info-fundo:#16324d;--info:#8cc8fa;
+  --vidro:rgba(34,34,40,.62);--vidro-card:rgba(31,31,31,.8);--vidro-borda:rgba(255,255,255,.14);--halo1:rgba(71,158,245,.22);--halo2:rgba(150,110,255,.14)}
+.janela[data-mock="claro"]{--fundo:#eaeef3;--painel:#ffffff;--cartao:#f7f8fa;--borda:#d6dce4;--faixa:#f1f3f6;--hover:#e4e9f0;--texto:#1c2430;--texto2:#3b4656;--apagado:#586577;
+  --destaque:#0f6cbd;--destaque-suave:#d7e8fa;--sel-texto:#0a3560;--assunto:#0f5aa6;--sel:#e1ebf7;
+  --urgente-fundo:#fbe9ec;--urgente-texto:#a4262c;--urgente:#c4314b;--ok-fundo:#e1f3e7;--ok:#1b6b34;--aviso-fundo:#fff2cf;--aviso:#7a5200;--info-fundo:#dfecfb;--info:#0b5394;
+  --vidro:rgba(255,255,255,.66);--vidro-card:rgba(255,255,255,.82);--vidro-borda:rgba(255,255,255,.95);--halo1:rgba(15,108,189,.2);--halo2:rgba(150,110,255,.14)}
+.janela *{box-sizing:border-box}
+:where(.janela button){font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.janela button:focus-visible,.janela input:focus-visible{outline:2px solid var(--destaque);outline-offset:2px}
+.janela .ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.janela b{font-weight:600}
+.v{width:100%;height:100%;display:grid;min-width:0;min-height:0}
+.pn{background:var(--painel);border:1px solid var(--borda);border-radius:8px;overflow:hidden;min-width:0;min-height:0;display:flex;flex-direction:column}
+.num{min-width:22px;height:20px;padding:0 6px;border-radius:10px;background:var(--info-fundo);color:var(--info);font-size:12px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums;flex:none}
+.num.urg{background:var(--urgente);color:#fff}
+
+/* barra lateral */
+.lat{background:var(--painel);display:flex;flex-direction:column;gap:2px;min-height:0;padding:12px 10px}
+.marca{display:flex;align-items:center;gap:10px;padding:2px 6px 10px;min-width:0}
+.selo{width:34px;height:34px;border-radius:9px;background:#0f6cbd;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.marca b{display:block;font-size:15px;white-space:nowrap}
+.marca small{display:block;color:var(--apagado);font-size:12px;white-space:nowrap}
+.nav{display:grid;gap:2px}
+.grupo{display:grid;gap:2px}
+.rot{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--apagado);padding:12px 12px 4px;white-space:nowrap}
+.ln{display:flex!important;align-items:center;gap:12px;height:38px;padding:0 12px;border-radius:8px;color:var(--texto2);width:100%;position:relative}
+.ln:hover{background:var(--hover)}
+.ln[aria-current="true"]{background:var(--destaque-suave);color:var(--sel-texto);font-weight:600}
+.ln-t{flex:1;min-width:0;white-space:nowrap}
+.esp{flex:1}
+.env{display:flex!important;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--destaque)!important;color:var(--assunto);font-weight:600;width:100%}
+.env:hover{background:var(--destaque-suave)}
+.env-t{white-space:nowrap}
+.op{display:flex!important;align-items:center;gap:10px;padding:6px;border-radius:10px;width:100%;min-width:0}
+.op:hover{background:var(--hover)}
+.av{width:34px;height:34px;border-radius:50%;background:#555;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none;border:2px solid var(--destaque)}
+.op-t{display:grid;min-width:0;line-height:1.25}
+.op-t small{color:var(--apagado);font-size:12px;white-space:nowrap}
+.op-t b{white-space:nowrap}
+.rec{display:flex!important;align-items:center;gap:12px;height:34px;padding:0 12px;color:var(--apagado);font-size:13px;border-radius:8px;width:100%}
+.rec:hover{background:var(--hover);color:var(--texto)}
+
+/* topo, trilha, pesquisa */
+.topo{display:flex;align-items:center;gap:14px;padding:0 14px;min-width:0}
+.trilha{display:flex;align-items:center;gap:6px;color:var(--apagado);font-size:13px;white-space:nowrap;flex:none}
+.trilha b{color:var(--texto)}
+.busca{display:flex;align-items:center;gap:8px;height:38px;flex:1;min-width:0;max-width:680px;padding:0 10px 0 12px;background:var(--faixa);border:1px solid var(--borda);border-radius:8px;color:var(--apagado)}
+.busca:focus-within{border-color:var(--destaque)}
+.busca input{flex:1;min-width:0;background:none;border:0;color:var(--texto);font:inherit;font-size:14px;padding:0;height:100%}
+.busca input::placeholder{color:var(--apagado);text-overflow:ellipsis}
+.busca input:focus{outline:0}
+.escopo{flex:none;font-size:12px;font-weight:600;color:var(--assunto);background:var(--destaque-suave);border-radius:6px;padding:2px 8px;white-space:nowrap}
+kbd{flex:none;font:11px ui-monospace,Consolas,monospace;border:1px solid var(--borda);border-radius:4px;padding:1px 6px;color:var(--apagado);white-space:nowrap}
+
+/* faixa de comandos */
+.faixa{display:flex;align-items:center;gap:2px;padding:0 10px;min-width:0}
+.cmd{display:inline-flex!important;align-items:center;gap:8px;height:36px;padding:0 10px;border-radius:7px;color:var(--texto2);white-space:nowrap;flex:none}
+.cmd:hover{background:var(--hover);color:var(--texto)}
+.cmd.forte{background:var(--destaque-suave);color:var(--sel-texto);font-weight:600}
+.cmd.nf{background:var(--destaque);color:#fff;font-weight:600}
+.cmd.nf:hover{filter:brightness(1.08);color:#fff}
+.sep{width:1px;height:20px;background:var(--borda);margin:0 6px;flex:none}
+
+/* pastas */
+.pn-cab{padding:12px 14px 4px;display:flex;align-items:center;justify-content:space-between}
+.rot2{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--apagado)}
+.pst{display:flex!important;align-items:center;gap:10px;width:calc(100% - 12px);margin:1px 6px;padding:7px 8px;border-radius:7px;color:var(--texto2);min-width:0}
+.pst:hover{background:var(--hover)}
+.pst.at-sel{background:var(--sel);color:var(--texto)}
+.pst-t{display:grid;flex:1;min-width:0;line-height:1.25}
+.pst-t b{white-space:nowrap}
+.pst-t small{font-size:12px;color:var(--apagado);white-space:nowrap}
+.pst-t small.alerta{color:var(--aviso);font-weight:600}
+.sub{padding-left:22px}
+.sub .pst{padding:6px 8px}
+.mais{color:var(--assunto);font-size:13px;padding:6px 16px}
+
+/* lista */
+.cab-l{display:grid;gap:8px;padding:10px 14px 8px;border-bottom:1px solid var(--borda)}
+.abas-l{display:flex;gap:16px;align-items:center}
+.abas-l button{padding:6px 0;color:var(--texto2);border-bottom:2px solid transparent}
+.abas-l button[aria-pressed="true"]{color:var(--assunto);border-bottom-color:var(--destaque);font-weight:600}
+.filtros-l{display:flex;gap:8px;flex-wrap:wrap}
+.pil{display:inline-flex!important;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--borda);border-radius:8px;color:var(--texto2);font-size:13px;white-space:nowrap}
+.pil:hover{background:var(--hover)}
+.pil b{color:var(--texto)}
+.pil[aria-pressed="true"]{background:var(--destaque-suave);color:var(--sel-texto);border-color:transparent}
+.caixa-btn{display:none!important}
+.linhas{flex:1;min-height:0;overflow:hidden}
+.grp{font-size:12px;font-weight:600;color:var(--apagado);padding:7px 16px;background:var(--faixa)}
+.em{display:grid!important;gap:2px;width:100%;padding:10px 14px 10px 13px;border-left:3px solid transparent;border-bottom:1px solid var(--borda);text-align:left}
+.em:hover{background:var(--hover)}
+.em.sel{background:var(--sel);border-left-color:var(--destaque)}
+.em.urg{background:var(--urgente-fundo)}
+.em.urg .em-de,.em.urg .em-as{color:var(--urgente-texto)}
+.em-l1{display:flex;justify-content:space-between;gap:8px;min-width:0}
+.em-de{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.em.nl .em-de{font-weight:700}
+.em-d{color:var(--assunto);font-size:12px;flex:none;font-variant-numeric:tabular-nums}
+.em-as{color:var(--assunto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.em-pv{color:var(--apagado);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;font-size:12px;font-weight:600;background:var(--info-fundo);color:var(--info);white-space:nowrap}
+.tag.urg{background:transparent;border:1px solid var(--urgente);color:var(--urgente-texto)}
+.tag.ok{background:var(--ok-fundo);color:var(--ok)}
+.tag.cor{background:var(--aviso-fundo);color:var(--aviso)}
+
+/* leitura */
+.leit{flex:1;min-height:0;overflow:hidden;padding:18px 26px;display:grid;gap:12px;align-content:start}
+.leit h2{margin:0;font-size:20px;line-height:1.25;color:var(--texto)}
+.leit .meta{color:var(--apagado);font-size:13px}
+.leit p{margin:0;color:var(--texto2);max-width:68ch}
+.acoes-l{display:flex;gap:2px;flex-wrap:wrap;padding:8px 18px;border-bottom:1px solid var(--borda);background:var(--faixa)}
+.ficha{display:grid;gap:8px;background:var(--cartao);border:1px solid var(--borda);border-radius:8px;padding:12px 14px;max-width:560px}
+.ficha-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px}
+.ficha-g>div{min-width:0}
+.ficha-g>div:nth-child(3){white-space:nowrap}
+.ficha small{display:block;color:var(--apagado);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.vazio-l{display:grid;place-items:center;color:var(--apagado)}
+
+/* rodapé de situação */
+.status{display:flex;align-items:center;gap:8px;padding:0 12px;min-width:0;font-size:12.5px;color:var(--texto2)}
+.st-c{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip{display:inline-flex!important;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;white-space:nowrap;flex:none;border:1px solid var(--borda)}
+.chip.ok .chip-s{color:var(--ok)}
+.chip.at{background:var(--aviso-fundo);border-color:transparent;color:var(--aviso);font-weight:600}
+.chip-b{display:inline-grid!important;place-items:center;width:28px;height:28px;border-radius:7px;color:var(--apagado);flex:none}
+.chip-b:hover{background:var(--hover);color:var(--texto)}
+.v1 .status,.v3 .status,.v4 .status{background:var(--painel);border-top:1px solid var(--borda)}
+
+/* ---- Desenho 1: barra fixa com nomes ---- */
+.v1{grid-template-columns:232px minmax(0,1fr);grid-template-rows:56px 46px minmax(0,1fr) 32px;grid-template-areas:"lat topo""lat faixa""lat corpo""st st"}
+.v1 .lat{grid-area:lat;border-right:1px solid var(--borda)}
+.v1 .topo{grid-area:topo}.v1 .faixa{grid-area:faixa}.v1 .status{grid-area:st}
+.v1 .corpo{grid-area:corpo;display:grid;grid-template-columns:236px 372px minmax(0,1fr);gap:10px;padding:0 10px 10px;min-height:0}
+/* ---- Desenho 2: trilho com nomes embaixo ---- */
+.v2{grid-template-columns:78px minmax(0,1fr);grid-template-rows:62px minmax(0,1fr);grid-template-areas:"rail topo""rail corpo"}
+.v2 .rail{grid-area:rail;background:var(--painel);border-right:1px solid var(--borda);display:flex;flex-direction:column;align-items:center;padding:10px 6px;gap:2px;position:relative}
+.v2 .rail .selo{margin:2px 0 10px}
+.tr{display:grid!important;justify-items:center;gap:3px;width:66px;padding:8px 2px 7px;border-radius:10px;color:var(--texto2);position:relative;font-size:11px;line-height:1.15;text-align:center!important}
+.tr span{max-width:100%}
+.tr:hover{background:var(--hover)}
+.tr[aria-current="true"]{background:var(--destaque-suave);color:var(--sel-texto);font-weight:600}
+.tr .num{position:absolute;top:1px;right:3px;min-width:18px;height:17px;padding:0 4px;font-size:11px}
+.tr.saude.at{color:var(--aviso);background:var(--aviso-fundo);font-weight:600}
+.v2 .topo{grid-area:topo;gap:12px}
+.v2 .titulo{font-size:18px;font-weight:600;white-space:nowrap;flex:none}
+.v2 .corpo{grid-area:corpo;display:grid;grid-template-columns:232px 360px minmax(0,1fr);gap:10px;padding:0 10px 10px;min-height:0}
+.pop-saude{position:absolute;left:calc(100% + 8px);bottom:8px;width:310px;z-index:5;background:var(--cartao);border:1px solid var(--borda);border-radius:10px;padding:12px;display:grid;gap:8px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.pop-saude .chip{height:auto;min-height:30px;padding:5px 10px;border-radius:8px;white-space:normal;justify-content:flex-start}
+/* ---- Desenho 3: agentes em abas ---- */
+.v3{grid-template-columns:64px minmax(0,1fr);grid-template-rows:54px 58px 46px minmax(0,1fr) 32px;grid-template-areas:"lat topo""lat ag""lat faixa""lat corpo""st st"}
+.v3.nomes{grid-template-columns:220px minmax(0,1fr)}
+.v3 .lat{grid-area:lat;border-right:1px solid var(--borda);align-items:center}
+.v3.nomes .lat{align-items:stretch}
+.v3:not(.nomes) .lat :is(.ln-t,.rot,.env-t,.op-t,.marca div,.rec-t){display:none}
+.v3:not(.nomes) .lat .ln,.v3:not(.nomes) .lat .env,.v3:not(.nomes) .lat .rec{width:44px;height:42px;padding:0;justify-content:center}
+.v3:not(.nomes) .lat .env{border:0!important}
+.v3:not(.nomes) .lat .grupo+.grupo{border-top:1px solid var(--borda);margin-top:4px;padding-top:4px}
+.v3:not(.nomes) .lat .num{position:absolute;top:1px;right:-2px;min-width:18px;height:17px;padding:0 4px;font-size:11px}
+.v3:not(.nomes) .lat .op{width:auto;padding:4px}
+.v3 .topo{grid-area:topo}.v3 .faixa{grid-area:faixa}.v3 .status{grid-area:st}
+.v3 .ag{grid-area:ag;display:flex;gap:6px;padding:0 10px;align-items:flex-end;border-bottom:1px solid var(--borda);background:var(--painel);overflow:hidden}
+.v3 .corpo{grid-area:corpo;display:grid;grid-template-columns:420px minmax(0,1fr);gap:10px;padding:10px;min-height:0}
+.tab-ag{display:grid!important;grid-template-columns:auto auto;gap:0 8px;align-items:center;padding:7px 14px 8px;border-radius:8px 8px 0 0;border-bottom:3px solid transparent;color:var(--texto2);min-width:0}
+.tab-ag:hover{background:var(--hover)}
+.tab-ag[aria-selected="true"]{background:var(--sel);border-bottom-color:var(--destaque);color:var(--texto)}
+.tab-ag b{white-space:nowrap}
+.tab-ag small{grid-column:1 / 3;font-size:12px;color:var(--apagado);white-space:nowrap;display:flex;align-items:center;gap:4px}
+.tab-ag small.alerta{color:var(--aviso);font-weight:600}
+/* ---- Desenho 4: busca primeiro ---- */
+.v4{grid-template-columns:60px minmax(0,1fr);grid-template-rows:62px 46px minmax(0,1fr) 32px;grid-template-areas:"lat topo""lat filtros""lat corpo""st st"}
+.v4 .lat{grid-area:lat;border-right:1px solid var(--borda);align-items:center;padding:10px 6px}
+.v4 .topo{grid-area:topo;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,620px) minmax(0,1fr);gap:14px}
+.v4 .topo .busca{height:42px;max-width:none;border-radius:10px;font-size:15px}
+.v4 .topo .dir{display:flex;justify-content:flex-end;gap:8px}
+.v4 .filtros{grid-area:filtros;display:flex;gap:8px;align-items:center;padding:0 14px;min-width:0}
+.v4 .status{grid-area:st}
+.v4 .corpo{grid-area:corpo;display:grid;grid-template-columns:420px minmax(0,1fr);gap:10px;padding:0 10px 10px;min-height:0}
+.v4 .lat .ln{width:42px;height:42px;padding:0;justify-content:center}
+.paleta-f{position:absolute;inset:0;background:rgba(0,0,0,.48);display:flex;justify-content:center;align-items:flex-start;padding-top:84px;z-index:20}
+.paleta{width:min(640px,92%);background:var(--cartao);border:1px solid var(--borda);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden}
+.paleta .q{display:flex;align-items:center;gap:10px;padding:0 16px;height:50px;border-bottom:1px solid var(--borda);color:var(--apagado);font-size:15px}
+.paleta .q span{color:var(--texto)}
+.paleta .gr{padding:8px 8px 4px;display:grid;gap:1px}
+.paleta .gt{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--apagado);padding:6px 10px 3px}
+.paleta .it{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;color:var(--texto2)}
+.paleta .it.on{background:var(--destaque-suave);color:var(--sel-texto)}
+.paleta .it .esp{flex:1}
+.paleta .rod{padding:8px 16px;border-top:1px solid var(--borda);color:var(--apagado);font-size:12px;display:flex;gap:16px}
+/* ---- Desenho 5: vidro refinado ---- */
+.v5{padding:12px;gap:12px;grid-template-columns:auto minmax(0,1fr);background:radial-gradient(900px 520px at 6% 25%,var(--halo1),transparent 62%),radial-gradient(820px 520px at 96% 92%,var(--halo2),transparent 62%),var(--fundo)}
+.v5 .cap{align-self:center;width:64px;max-height:100%;padding:10px 8px;border-radius:32px;background:var(--vidro);backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--vidro-borda);box-shadow:0 18px 40px rgba(0,0,0,.28);display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden}
+.v5.nomes .cap{width:226px;align-items:stretch;border-radius:28px}
+.v5 .dir{display:grid;grid-template-rows:56px 44px minmax(0,1fr) 40px;gap:10px;min-width:0;min-height:0}
+.pilula{display:flex;align-items:center;gap:12px;padding:0 8px 0 16px;border-radius:28px;background:var(--vidro);backdrop-filter:blur(18px) saturate(1.3);border:1px solid var(--vidro-borda);box-shadow:0 10px 26px rgba(0,0,0,.18);min-width:0}
+.pilula .abas-t{display:flex;gap:4px;flex:none}
+.pilula .abas-t button{height:34px;padding:0 12px;border-radius:17px;color:var(--texto2);white-space:nowrap}
+.pilula .abas-t button[aria-pressed="true"]{background:var(--destaque-suave);color:var(--sel-texto);font-weight:600}
+.pilula .busca{max-width:none;border-radius:20px;height:40px}
+.v5 .faixa{background:var(--vidro);border:1px solid var(--vidro-borda);border-radius:12px;backdrop-filter:blur(18px)}
+.v5 .corpo{display:grid;grid-template-columns:230px 360px minmax(0,1fr);gap:10px;min-height:0}
+.v5 .pn{background:var(--vidro-card);backdrop-filter:blur(14px);border-color:var(--vidro-borda);border-radius:14px}
+.v5 .status{border-radius:20px;background:var(--vidro);border:1px solid var(--vidro-borda);backdrop-filter:blur(18px);height:40px}
+.v5 .cap .ln,.v5 .cap .env,.v5 .cap .rec{border-radius:18px}
+.v5:not(.nomes) .cap .ln{width:44px;height:42px;padding:0;justify-content:center}
+.v5:not(.nomes) .cap :is(.ln-t,.rot,.env-t,.op-t,.marca div,.rec-t){display:none}
+.v5:not(.nomes) .cap .env,.v5:not(.nomes) .cap .rec{width:44px;height:42px;padding:0;justify-content:center;border:0!important}
+.v5:not(.nomes) .cap .op{width:auto;padding:4px}
+.v5:not(.nomes) .cap .marca{padding:0 0 6px}
+.v5:not(.nomes) .cap .grupo+.grupo{border-top:1px solid var(--borda);margin-top:4px;padding-top:4px}
+.v5:not(.nomes) .cap .num{position:absolute;top:1px;right:-2px;min-width:18px;height:17px;padding:0 4px;font-size:11px}
+
+/* ---- estreito (1100 px): o que cede e como ---- */
+@container j (max-width:1279px){
+  .v1{grid-template-columns:64px minmax(0,1fr)}
+  .v1 .lat{align-items:center;padding:12px 6px}
+  .v1 .lat :is(.ln-t,.rot,.env-t,.op-t,.marca div,.rec-t){display:none}
+  .v1 .lat .ln,.v1 .lat .env,.v1 .lat .rec{width:44px;height:42px;padding:0;justify-content:center}
+  .v1 .lat .env{border:0!important}
+  .v1 .lat .grupo+.grupo{border-top:1px solid var(--borda);margin-top:4px;padding-top:4px}
+  .v1 .lat .num{position:absolute;top:1px;right:-2px;min-width:18px;height:17px;padding:0 4px;font-size:11px}
+  .v1 .lat .op{width:auto;padding:4px}
+  .v1 .corpo{grid-template-columns:360px minmax(0,1fr)}
+  .v1 .pastas,.v2 .pastas,.v5 .pastas{display:none}
+  .v2 .corpo{grid-template-columns:360px minmax(0,1fr)}
+  .v5 .corpo{grid-template-columns:360px minmax(0,1fr)}
+  .v3 .corpo,.v4 .corpo{grid-template-columns:380px minmax(0,1fr)}
+  .caixa-btn{display:inline-flex!important}
+  .faixa .cmd:not(.forte):not(.nf) .cmd-t{display:none}
+  .faixa .cmd:not(.forte):not(.nf){width:38px;justify-content:center;padding:0}
+  .status .chip b,.status .st-c .st-t{display:none}
+  .tab-ag{padding:7px 10px 8px}
+  .v4 .topo{grid-template-columns:auto minmax(260px,1fr) auto}
+  .v4 .trilha .tr-pre{display:none}
+  .v5 .pilula .abas-t{display:none}
+  .v5.nomes .cap{width:206px}
+}
+@media (prefers-reduced-motion:reduce){.janela *{animation:none!important;transition:none!important}}
+
+/* ---- celular ---- */
+.cel{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) 62px;height:100%;background:var(--painel)}
+.cel .app-b{display:flex;align-items:center;gap:8px;padding:12px 8px 8px 16px}
+.cel .app-b h2{margin:0;font-size:19px;line-height:1.15}
+.cel .app-b small{display:block;color:var(--apagado);font-size:12.5px;font-weight:400}
+.cel .app-b .esp{flex:1}
+.cel .ib{display:grid!important;place-items:center;width:44px;height:44px;border-radius:12px;color:var(--texto2);position:relative}
+.cel .ib:hover{background:var(--hover)}
+.cel .fichas{display:flex;gap:8px;padding:4px 16px 10px;overflow:hidden}
+.cel .ficha-a{display:inline-flex!important;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--borda);white-space:nowrap;color:var(--texto2);flex:none}
+.cel .ficha-a[aria-pressed="true"]{background:var(--destaque-suave);color:var(--sel-texto);border-color:transparent;font-weight:600}
+.cel .ficha-a.at{border-color:var(--aviso);color:var(--aviso)}
+.cel .st-m{display:flex;align-items:center;gap:6px;padding:0 16px 8px;font-size:12.5px;color:var(--apagado);white-space:nowrap}
+.cel .st-m.at{color:var(--aviso);font-weight:600}
+.cel .lst{overflow:hidden;background:var(--painel);border-top:1px solid var(--borda)}
+.cel .abas-m{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--borda);background:var(--painel)}
+.cel .abas-m button{display:grid!important;justify-items:center;align-content:center;gap:2px;font-size:11px;color:var(--apagado);position:relative;min-height:56px}
+.cel .abas-m button[aria-current="true"]{color:var(--assunto);font-weight:600}
+.cel .abas-m .num{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:17px;padding:0 4px;font-size:11px}
+.cel .leitura-m{overflow:hidden;padding:4px 16px;display:grid;gap:12px;align-content:start}
+.cel .leitura-m h2{margin:0;font-size:19px}
+.cel .acoes-m{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;padding:10px 16px;border-top:1px solid var(--borda);background:var(--painel)}
+.cel .acoes-m button{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 6px;border-radius:10px;border:1px solid var(--borda);white-space:nowrap;font-weight:600}
+.cel .acoes-m .nf{background:var(--destaque);border-color:transparent;color:#fff}
+.cel .ficha-g{grid-template-columns:1fr 1fr}
+.cel .ficha-g>div:nth-child(3){grid-column:1 / -1}
+.cel .mais-l{display:grid;gap:2px;padding:4px 8px;overflow:hidden}
+.cel .mais-l .ln{height:48px}
+</style>
+
+<div class="pg" id="raiz"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+(function(){
+const {useState,useEffect,useRef}=React;
+const html=htm.bind(React.createElement);
+
+/* ---------- ícones de linha (os do Painel, nunca emoji) ---------- */
+const ICONES={
+painel:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4.5" rx="1.5"/><rect x="13.5" y="11" width="7" height="9.5" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/>',
+nota:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+robo:'<path d="M20 12a8 8 0 0 0-14-5.3L4 9"/><path d="M4 4v5h5"/><path d="M4 12a8 8 0 0 0 14 5.3L20 15"/><path d="M20 20v-5h-5"/>',
+cadeado:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+caixa:'<path d="M4 13l2.2-8h11.6L20 13v6H4z"/><path d="M4 13h5l1 2.5h4L15 13h5"/>',
+alerta:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',
+enviar:'<path d="M21 3L3 10.5l7 3 3 7z"/><path d="M10 13.5L21 3"/>',
+log:'<path d="M4 6h16M4 12h10M4 18h16"/>',
+rede:'<circle cx="12" cy="5.5" r="2"/><circle cx="5.5" cy="18" r="2"/><circle cx="18.5" cy="18" r="2"/><path d="M12 7.5V12M12 12l-5 4.5M12 12l5 4.5"/>',
+busca:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+responder:'<path d="M9 7L4 12l5 5"/><path d="M4 12h9a7 7 0 0 1 7 7"/>',
+respTodos:'<path d="M8 7L3 12l5 5"/><path d="M13 7l-5 5 5 5"/><path d="M8 12h5a7 7 0 0 1 7 7"/>',
+encaminhar:'<path d="M15 7l5 5-5 5"/><path d="M20 12h-9a7 7 0 0 0-7 7"/>',
+lido:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 8l8 5 8-5"/>',
+flag:'<path d="M6 21V4h11l-2 4 2 4H6"/>',
+check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+nuvem:'<path d="M7 18a4 4 0 0 1-.6-7.96A6 6 0 0 1 18 9.5 4.3 4.3 0 0 1 17.5 18z"/>',
+pc:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+tema:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
+ajuda:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/>',
+seta:'<path d="M6 9l6 6 6-6"/>',
+setaD:'<path d="M9 6l6 6-6 6"/>',
+setaE:'<path d="M15 6l-6 6 6 6"/>',
+novo:'<path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/>',
+relogio:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',
+mais:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+pessoa:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+menu:'<path d="M4 7h16M4 12h16M4 17h16"/>'
+};
+function Icone({n,s=20}){return html`<svg className="ico" width=${s} height=${s} viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML=${{__html:ICONES[n]||''}}/>`}
+
+/* ---------- dados inventados (nada de hóspede real) ---------- */
+const NAV=[
+ {g:'Geral',i:[{id:'visao',t:'Visão geral',ic:'painel'},{id:'notas',t:'Notas fiscais',ic:'nota'},{id:'robo',t:'Robô',ic:'robo'},{id:'ger',t:'Gerência',ic:'cadeado'}]},
+ {g:'E-mails (4 PCs)',i:[{id:'entrada',t:'Caixa de entrada',ic:'caixa',n:70},{id:'urg',t:'Urgência',ic:'alerta',n:11,urg:true},{id:'env',t:'Itens enviados',ic:'enviar'}]},
+ {g:'Admin',i:[{id:'mon',t:'Monitoramento',ic:'log'},{id:'ag',t:'Agentes do Smith',ic:'rede'}]}
+];
+const AGENTES=[{id:'ber',nome:'Bernardo',n:14},{id:'cla',nome:'Clara',n:22},{id:'cri',nome:'Cristian',n:9},{id:'joa',nome:'João (minha)',n:25}];
+const CAIXAS=[['ESTRELA CENTRO',6],['COIMBRA',4],['MAR AZUL',3],['PORTO NOVO',2],['CASA BRANCA',1]];
+const EMAILS=[
+ {id:'e1',de:'Tatiane Barbosa Silva',as:'Dados para emissão da NF',pv:'respondido · Olá, seguem os dados para a emissão da nota fiscal…',h:'ESTRELA CENTRO',d:'17/11',nl:true,g:'Semana passada',tags:[['info','nota','Sem NF']]},
+ {id:'e2',de:'Olívia Rocha Ribeiro',as:'Re: Solicitação NF',pv:'Obrigado pelo retorno! Fico no aguardo da nota fiscal da estadia…',h:'ESTRELA CENTRO',d:'17/11',nl:true,urg:true,g:'Semana passada',tags:[['info','nota','Sem NF'],['urg','flag','Sem resposta há 9 dias']]},
+ {id:'e3',de:'Karina Almeida Ribeiro',as:'Re: Nota fiscal',pv:'Bom dia, ainda não recebi a nota fiscal da minha hospedagem…',h:'ESTRELA CENTRO',d:'17/11',nl:true,urg:true,g:'Semana passada',tags:[['info','nota','Sem NF'],['urg','flag','Sem resposta há 9 dias']]},
+ {id:'e4',de:'Daniel Rodrigues Costa',as:'Dados para emissão da NF',pv:'Olá, seguem os dados para emissão da nota fiscal da empresa…',h:'COIMBRA',d:'20/11',g:'Esta semana',tags:[['ok','check','NF enviada · 1447']]},
+ {id:'e5',de:'Isabela Moreira Costa',as:'Cancelamento de nota',pv:'Bom dia, a nota precisa ser cancelada e emitida de novo…',h:'COIMBRA',d:'20/11',nl:true,g:'Esta semana',tags:[['cor','robo','Correção']]},
+ {id:'e6',de:'Ricardo Pereira Nascimento',as:'Cancelamento de nota',pv:'Bom dia, a nota precisa ser cancelada e reemitida com outro CNPJ…',h:'MAR AZUL',d:'22/11',nl:true,g:'Esta semana',tags:[['cor','robo','Correção']]}
+];
+const primeiro=n=>n.split(' ')[0];
+
+/* ---------- peças pequenas (cada uma vira um componente React de verdade) ---------- */
+function Num({v,urg}){return html`<span className=${'num'+(urg?' urg':'')}>${v}</span>`}
+function Tag({k,ic,t}){return html`<span className=${'tag '+k}><${Icone} n=${ic} s=${12}/>${t}</span>`}
+function Marca({texto=true}){return html`<div className="marca"><div className="selo" aria-hidden="true">NF</div>${texto?html`<div><b>Painel Fiscal</b><small>Notas fiscais dos hotéis</small></div>`:null}</div>`}
+function Nav(){return html`<nav className="nav" aria-label="Navegação">${NAV.map(g=>html`<div className="grupo" key=${g.g}><span className="rot">${g.g}</span>${g.i.map(i=>html`<button key=${i.id} className="ln" title=${i.t} aria-label=${i.t} aria-current=${i.id==='entrada'?'true':undefined}><${Icone} n=${i.ic}/><span className="ln-t">${i.t}</span>${i.n?html`<${Num} v=${i.n} urg=${i.urg}/>`:null}</button>`)}</div>`)}</nav>`}
+function BtnEnviar(){return html`<button className="env" title="Pede ao robô para enviar os pedidos pendentes" aria-label="Enviar pendentes"><${Icone} n="enviar"/><span className="env-t">Enviar pendentes</span></button>`}
+function Operador(){return html`<button className="op" title="Quem está neste PC: João" aria-label="Operador deste PC: João"><span className="av">J</span><span className="op-t"><b>João</b><small>Este PC</small></span></button>`}
+function Recolher({aberto,rot}){return html`<button className="rec" title=${rot} aria-label=${rot}><${Icone} n=${aberto?'setaE':'setaD'}/><span className="rec-t">${rot}</span></button>`}
+function Busca({kbd,ph="Pesquisar hóspede, CPF/CNPJ, NF ou frase"}){return html`<label className="busca"><${Icone} n="busca" s=${18}/><input type="search" placeholder=${ph} aria-label="Pesquisar nos e-mails dos 4 PCs"/><span className="escopo">4 PCs</span>${kbd?html`<kbd>Ctrl K</kbd>`:null}</label>`}
+function Trilha({pre=true}){return html`<div className="trilha"><span className="tr-pre">Painel Fiscal</span>${pre?html`<${Icone} n="setaD" s=${12}/>`:null}<b>Caixa de entrada</b></div>`}
+
+function Comandos({classe=''}){
+  const sec=[['responder','Responder'],['respTodos','Responder a todos'],['encaminhar','Encaminhar'],['lido','Não lido/Lido'],['flag','Sinalizar']];
+  return html`<div className=${'faixa '+classe} role="toolbar" aria-label="Comandos do e-mail">
+    <button className="cmd forte" title="Novo e-mail"><${Icone} n="novo" s=${18}/><span className="cmd-t">Novo e-mail</span></button><span className="sep"></span>
+    ${sec.map(([ic,t])=>html`<button key=${ic} className="cmd" title=${t} aria-label=${t}><${Icone} n=${ic} s=${18}/><span className="cmd-t">${t}</span></button>`)}
+    <span className="sep"></span><button className="cmd nf" title="Enviar NF do e-mail aberto"><${Icone} n="enviar" s=${18}/><span className="cmd-t">Enviar NF</span></button>
+    <span className="esp"></span><button className="cmd" title="Enviar/Receber todas as caixas" aria-label="Enviar/Receber todas"><${Icone} n="robo" s=${18}/><span className="cmd-t">Enviar/Receber todas</span></button></div>`;
+}
+function Acoes({nome}){
+  return html`<div className="acoes-l" role="toolbar" aria-label="Ações deste e-mail">
+    <button className="cmd" title="Responder"><${Icone} n="responder" s=${18}/><span className="cmd-t">Responder</span></button>
+    <button className="cmd" title="Responder a todos"><${Icone} n="respTodos" s=${18}/><span className="cmd-t">Responder a todos</span></button>
+    <button className="cmd" title="Encaminhar"><${Icone} n="encaminhar" s=${18}/><span className="cmd-t">Encaminhar</span></button>
+    <button className="cmd" title="Sinalizar"><${Icone} n="flag" s=${18}/><span className="cmd-t">Sinalizar</span></button>
+    <span className="esp"></span>
+    <button className="cmd nf" title=${'Enviar NF para '+nome}><${Icone} n="enviar" s=${18}/><span className="cmd-t">Enviar NF para ${nome}</span></button></div>`;
+}
+
+function Status({sit,classe=''}){
+  const p=sit==='problemas';
+  const chips=[
+    {ic:'robo',t:'Robô',v:p?'parado desde 11:40':'rodando · último envio 14:02',at:p},
+    {ic:'nuvem',t:'Central',v:'conectada',at:false},
+    {ic:'pc',t:'PCs',v:p?'3 de 4 · Cristian parado há 2 h':'4 de 4 no ar',at:p},
+    {ic:'relogio',t:'Atualizado',v:'há 12 s',at:false}];
+  return html`<footer className=${'status '+classe} aria-label="Situação do sistema">
+    <span className="st-c"><${Icone} n="caixa" s=${15}/><span className="st-t">70 e-mails</span></span><span className="esp"></span>
+    ${chips.map(c=>html`<button key=${c.t} className=${'chip '+(c.at?'at':'ok')} title=${c.t+': '+c.v}><${Icone} n=${c.ic} s=${15}/><b>${c.t}</b><span>${c.v}</span><${Icone} n=${c.at?'alerta':'check'} s=${13}/></button>`)}
+    <button className="chip-b" title="Tema: segue o Windows, claro ou escuro" aria-label="Tema"><${Icone} n="tema" s=${17}/></button>
+    <button className="chip-b" title="Ajuda e atalhos" aria-label="Ajuda"><${Icone} n="ajuda" s=${17}/></button></footer>`;
+}
+
+function Pastas({sit}){
+  const p=sit==='problemas';
+  const fav=[['caixa','Entrada (todas)',70],['alerta','Urgência',11,true],['nota','Formulários do robô'],['enviar','Itens enviados']];
+  return html`<aside className="pn pastas" aria-label="Pastas de e-mail">
+    <div className="pn-cab"><span className="rot2">Favoritos</span></div>
+    ${fav.map(([ic,t,n,u])=>html`<button key=${t} className=${'pst'+(t.startsWith('Entrada')?' at-sel':'')}><${Icone} n=${ic} s=${18}/><span className="pst-t"><b>${t}</b></span>${n?html`<${Num} v=${n} urg=${u}/>`:null}</button>`)}
+    <div className="pn-cab"><span className="rot2">Agentes e PCs</span></div>
+    ${AGENTES.map(a=>{const cri=p&&a.id==='cri';return html`<div key=${a.id}><button className="pst"><${Icone} n=${a.id==='joa'?'seta':'setaD'} s=${14}/><span className="pst-t"><b>${a.nome}</b><small className=${cri?'alerta':''}>${cri?'PC parado há 2 h':'PC no ar'}</small></span><${Num} v=${a.n}/></button>
+      ${a.id==='joa'?html`<div className="sub">${CAIXAS.map(([c,n])=>html`<button key=${c} className="pst"><span className="pst-t"><b>${c}</b></span><${Num} v=${n}/></button>`)}<div className="mais">Mostrar mais 13 caixas</div></div>`:null}</div>`})}
+  </aside>`;
+}
+
+function CabLista({caixa=true,filtros=true}){
+  return html`<div className="cab-l"><div className="abas-l"><button aria-pressed="true">Todas</button><button aria-pressed="false">Não lidos</button></div>
+    <div className="filtros-l">${caixa?html`<button className="pil caixa-btn" title="Trocar a caixa"><span>Caixa:</span><b>João (minha)</b><${Icone} n="seta" s=${14}/></button>`:null}
+    ${filtros?html`<button className="pil"><span>Hotel:</span><b>Todos</b><${Icone} n="seta" s=${14}/></button><button className="pil"><span>Ordem:</span><b>Mais antigo primeiro</b></button>`:null}</div></div>`;
+}
+function Linha({e,sel,onSel}){
+  return html`<button className=${'em'+(sel?' sel':'')+(e.urg?' urg':'')+(e.nl?' nl':'')} onClick=${onSel} role="option" aria-selected=${sel}>
+    <span className="em-l1"><span className="em-de">${e.de}</span><span className="em-d">${e.d}</span></span>
+    <span className="em-as">${e.as}</span><span className="em-pv">${e.h} · ${e.pv}</span>
+    <span className="tags">${e.tags.map(([k,ic,t])=>html`<${Tag} key=${t} k=${k} ic=${ic} t=${t}/>`)}</span></button>`;
+}
+function Lista({sel,setSel,cab}){
+  return html`<section className="pn lista" aria-label="Lista de e-mails">${cab}<div className="linhas" role="listbox">
+    ${['Semana passada','Esta semana'].map(g=>html`<div key=${g}><div className="grp">${g}</div>${EMAILS.filter(e=>e.g===g).map(e=>html`<${Linha} key=${e.id} e=${e} sel=${sel===e.id} onSel=${()=>setSel(e.id)}/>`)}</div>`)}</div></section>`;
+}
+function Leitura({sel,acoes}){
+  const e=EMAILS.find(x=>x.id===sel)||EMAILS[1];
+  return html`<article className="pn" aria-label="Leitura do e-mail">${acoes?html`<${Acoes} nome=${primeiro(e.de)}/>`:null}<div className="leit">
+    <h2>${e.as}</h2><div className="meta">${e.de} · caixa ${e.h} · ${e.d} às 09:42</div>
+    <p>Olá, tudo bem? Estive hospedada de 12 a 14 de novembro e preciso da nota fiscal da estadia. Os dados da empresa estão abaixo. Fico no aguardo e agradeço desde já.</p>
+    <div className="ficha"><div className="ficha-g"><div><small>Hotel</small>${e.h}</div><div><small>Estadia</small>12 a 14/11</div><div><small>Documento</small>CNPJ 11.222.333/0001-81</div><div><small>Situação</small><${Tag} k=${e.urg?'urg':e.tags[0][0]} ic=${e.tags[0][1]} t=${e.tags[0][2]}/></div></div></div>
+    <p>Próximo passo: emitir a NF e responder com o PDF.</p></div></article>`;
+}
+
+/* ---------- os 5 desenhos de desktop ---------- */
+function V1({sit,sel,setSel}){
+  return html`<div className="v v1"><aside className="lat" aria-label="Navegação"><${Marca}/><${Nav}/><span className="esp"></span><${BtnEnviar}/><${Operador}/><${Recolher} aberto=${true} rot="Só ícones"/></aside>
+    <header className="topo"><${Trilha}/><${Busca}/></header><${Comandos}/>
+    <div className="corpo"><${Pastas} sit=${sit}/><${Lista} sel=${sel} setSel=${setSel} cab=${html`<${CabLista}/>`}/><${Leitura} sel=${sel}/></div>
+    <${Status} sit=${sit}/></div>`;
+}
+function V2({sit,sel,setSel}){
+  const itens=[['painel','Visão geral'],['nota','Notas'],['robo','Robô'],['cadeado','Gerência'],['caixa','E-mails',70],['alerta','Urgência',11,true],['enviar','Enviados'],['log','Monitor'],['rede','Agentes']];
+  const p=sit==='problemas'; const [aberto,setAberto]=useState(true);
+  return html`<div className="v v2"><nav className="rail" aria-label="Navegação"><div className="selo" aria-hidden="true">NF</div>
+    ${itens.map(([ic,t,n,u])=>html`<button key=${t} className="tr" aria-current=${t==='E-mails'?'true':undefined} title=${t}><${Icone} n=${ic}/><span>${t}</span>${n?html`<${Num} v=${n} urg=${u}/>`:null}</button>`)}
+    <span className="esp"></span>
+    <button className="tr" title="Enviar pendentes"><${Icone} n="enviar"/><span>Enviar</span></button>
+    <button className=${'tr saude'+(p?' at':'')} title="Situação do sistema" aria-expanded=${p||aberto} onClick=${()=>setAberto(!aberto)}><${Icone} n=${p?'alerta':'check'}/><span>${p?'1 alerta':'Tudo certo'}</span></button>
+    <button className="tr" title="Operador: João"><span className="av" style=${{width:30,height:30,fontSize:12}}>J</span><span>João</span></button>
+    ${(p||aberto)?html`<div className="pop-saude" role="status"><b>Situação do sistema</b>
+      <span className=${'chip '+(p?'at':'ok')}><${Icone} n="robo" s=${15}/>Robô: ${p?'parado desde 11:40':'rodando · último envio 14:02'}</span>
+      <span className="chip ok"><${Icone} n="nuvem" s=${15}/>Central: conectada</span>
+      <span className=${'chip '+(p?'at':'ok')}><${Icone} n="pc" s=${15}/>PCs: ${p?'3 de 4 · Cristian parado há 2 h':'4 de 4 no ar'}</span>
+      <span className="chip ok"><${Icone} n="relogio" s=${15}/>Atualizado há 12 s</span></div>`:null}</nav>
+    <header className="topo"><span className="titulo">Caixa de entrada</span><${Busca}/>
+      <button className="cmd forte" title="Novo e-mail" style=${{marginLeft:"auto"}}><${Icone} n="novo" s=${18}/><span className="cmd-t">Novo e-mail</span></button>
+      <button className="cmd" title="Enviar/Receber todas" aria-label="Enviar/Receber todas"><${Icone} n="robo" s=${18}/><span className="cmd-t">Enviar/Receber</span></button></header>
+    <div className="corpo"><${Pastas} sit=${sit}/><${Lista} sel=${sel} setSel=${setSel} cab=${html`<${CabLista}/>`}/><${Leitura} sel=${sel} acoes=${true}/></div></div>`;
+}
+function V3({sit,sel,setSel,nomes}){
+  const p=sit==='problemas';
+  const tabs=[{id:'todos',nome:'Todos',n:70,s:'4 PCs'}].concat(AGENTES.map(a=>({id:a.id,nome:a.nome,n:a.n,s:(p&&a.id==='cri')?'PC parado há 2 h':'PC no ar',at:p&&a.id==='cri'})));
+  return html`<div className=${'v v3'+(nomes?' nomes':'')}><aside className="lat" aria-label="Navegação"><${Marca} texto=${nomes}/><${Nav}/><span className="esp"></span><${BtnEnviar}/><${Operador}/><${Recolher} aberto=${nomes} rot=${nomes?'Só ícones':'Mostrar nomes'}/></aside>
+    <header className="topo"><${Trilha}/><${Busca}/></header>
+    <div className="ag" role="tablist" aria-label="Caixa de quem">${tabs.map(t=>html`<button key=${t.id} className="tab-ag" role="tab" aria-selected=${t.id==='joa'}><b>${t.nome}</b><${Num} v=${t.n}/><small className=${t.at?'alerta':''}>${t.at?html`<${Icone} n="alerta" s=${12}/>`:null}${t.s}</small></button>`)}</div>
+    <${Comandos}/>
+    <div className="corpo"><${Lista} sel=${sel} setSel=${setSel} cab=${html`<div className="cab-l"><div className="abas-l"><button aria-pressed="true">Entrada</button><button aria-pressed="false">Urgência <${Num} v=${2} urg=${true}/></button><button aria-pressed="false">Enviados</button></div><div className="filtros-l"><button className="pil"><span>Hotel:</span><b>Todos</b><${Icone} n="seta" s=${14}/></button><button className="pil" aria-pressed="false">Só não lidos</button></div></div>`}/><${Leitura} sel=${sel}/></div>
+    <${Status} sit=${sit}/></div>`;
+}
+function V4({sit,sel,setSel,paleta}){
+  const e=EMAILS.find(x=>x.id===sel)||EMAILS[1];
+  const its=[['caixa','Caixa de entrada',70],['alerta','Urgência',11,true],['enviar','Itens enviados'],['nota','Notas fiscais'],['robo','Robô'],['log','Monitoramento']];
+  return html`<div className="v v4"><aside className="lat" aria-label="Navegação"><${Marca} texto=${false}/>
+    ${its.map(([ic,t,n,u])=>html`<button key=${t} className="ln" title=${t} aria-label=${t} aria-current=${t==='Caixa de entrada'?'true':undefined}><${Icone} n=${ic}/>${n?html`<span style=${{position:'absolute',top:1,right:-2}}><${Num} v=${n} urg=${u}/></span>`:null}</button>`)}
+    <span className="esp"></span><button className="ln" title="Enviar pendentes" aria-label="Enviar pendentes"><${Icone} n="enviar"/></button><button className="op" title="Operador: João" style=${{width:'auto',padding:4}}><span className="av">J</span></button></aside>
+    <header className="topo"><${Trilha}/><${Busca} kbd=${true} ph="Pesquisar ou digitar um comando"/><div className="dir"><button className="cmd forte" title="Novo e-mail"><${Icone} n="novo" s=${18}/><span className="cmd-t">Novo e-mail</span></button></div></header>
+    <div className="filtros" role="toolbar" aria-label="Filtros"><button className="pil" aria-pressed="true"><span>Caixas:</span><b>Todas</b></button>${AGENTES.map(a=>html`<button key=${a.id} className="pil" aria-pressed="false">${a.nome.replace(' (minha)','')} <${Num} v=${a.n}/></button>`)}<button className="pil"><span>Hotel:</span><b>Todos</b><${Icone} n="seta" s=${14}/></button><button className="pil"><${Icone} n="relogio" s=${14}/><b>Últimas 72 h</b></button></div>
+    <div className="corpo"><${Lista} sel=${sel} setSel=${setSel} cab=${html`<div className="cab-l"><div className="abas-l"><button aria-pressed="true">Todas</button><button aria-pressed="false">Não lidos</button></div></div>`}/><${Leitura} sel=${sel} acoes=${true}/></div>
+    <${Status} sit=${sit}/>
+    ${paleta?html`<div className="paleta-f"><div className="paleta" role="dialog" aria-label="Pesquisar ou digitar um comando"><div className="q"><${Icone} n="busca" s=${18}/><span>env</span></div>
+      <div className="gr"><div className="gt">Ações para ${e.de}</div>
+        <div className="it on"><${Icone} n="enviar" s=${18}/>Enviar NF para ${primeiro(e.de)}<span className="esp"></span><kbd>Ctrl Enter</kbd></div>
+        <div className="it"><${Icone} n="responder" s=${18}/>Responder<span className="esp"></span><kbd>R</kbd></div>
+        <div className="it"><${Icone} n="encaminhar" s=${18}/>Encaminhar<span className="esp"></span><kbd>F</kbd></div>
+        <div className="gt">Ir para</div>
+        <div className="it"><${Icone} n="enviar" s=${18}/>Itens enviados<span className="esp"></span><kbd>G depois I</kbd></div>
+        <div className="it"><${Icone} n="alerta" s=${18}/>Urgência (11)<span className="esp"></span><kbd>G depois U</kbd></div></div>
+      <div className="rod"><span>↑ ↓ para andar</span><span>Enter para escolher</span><span>Esc para fechar</span></div></div></div>`:null}</div>`;
+}
+function V5({sit,sel,setSel,nomes}){
+  return html`<div className=${'v v5'+(nomes?' nomes':'')}><aside className="cap" aria-label="Navegação"><${Marca} texto=${nomes}/><${Nav}/><${BtnEnviar}/><${Operador}/><${Recolher} aberto=${nomes} rot=${nomes?'Só ícones':'Mostrar nomes'}/></aside>
+    <div className="dir"><header className="pilula"><div className="abas-t"><button aria-pressed="true">Página inicial</button><button aria-pressed="false">Enviar/Receber</button><button aria-pressed="false">Exibir</button></div><${Busca}/><button className="cmd forte" title="Novo e-mail"><${Icone} n="novo" s=${18}/><span className="cmd-t">Novo e-mail</span></button></header>
+      <${Comandos}/>
+      <div className="corpo"><${Pastas} sit=${sit}/><${Lista} sel=${sel} setSel=${setSel} cab=${html`<${CabLista}/>`}/><${Leitura} sel=${sel}/></div>
+      <${Status} sit=${sit}/></div></div>`;
+}
+
+/* ---------- celular (React Native vai usar a mesma estrutura) ---------- */
+function CelAbas({atual}){
+  const t=[['caixa','Caixa',70],['alerta','Urgência',11,true],['enviar','Enviados'],['nota','Notas'],['mais','Mais']];
+  return html`<nav className="abas-m" aria-label="Seções">${t.map(([ic,n,q,u])=>html`<button key=${n} aria-current=${n===atual?'true':undefined}><${Icone} n=${ic} s=${22}/><span>${n}</span>${q?html`<${Num} v=${q} urg=${u}/>`:null}</button>`)}</nav>`;
+}
+function CelLista({sit,sel,setSel}){
+  const p=sit==='problemas';
+  return html`<div className="cel"><header className="app-b"><div><h2>Caixa de entrada</h2><small>João (minha) · 25 e-mails</small></div><span className="esp"></span><button className="ib" aria-label="Pesquisar"><${Icone} n="busca"/></button></header>
+    <div className="fichas" role="tablist" aria-label="Caixa de quem">${AGENTES.slice().sort((x,y)=>(y.id==='joa')-(x.id==='joa')).map(a=>html`<button key=${a.id} className=${'ficha-a'+((p&&a.id==='cri')?' at':'')} aria-pressed=${a.id==='joa'}>${(p&&a.id==='cri')?html`<${Icone} n="alerta" s=${14}/>`:null}${a.nome.replace(' (minha)','')} ${a.n}</button>`)}<button className="ficha-a" aria-pressed="false">Todos 70</button></div>
+    <div className=${'st-m'+(p?' at':'')}><${Icone} n=${p?'alerta':'check'} s=${14}/>${p?'1 alerta: o PC do Cristian está parado há 2 h':'Tudo certo · atualizado há 12 s'}</div>
+    <div className="lst">${EMAILS.slice(0,4).map(e=>html`<${Linha} key=${e.id} e=${e} sel=${sel===e.id} onSel=${()=>setSel(e.id)}/>`)}</div><${CelAbas} atual="Caixa"/></div>`;
+}
+function CelLeitura({sel}){
+  const e=EMAILS.find(x=>x.id===sel)||EMAILS[1];
+  return html`<div className="cel"><header className="app-b"><button className="ib" aria-label="Voltar"><${Icone} n="setaE"/></button><div><h2 style=${{fontSize:16}}>${e.de}</h2><small>caixa ${e.h} · ${e.d}</small></div></header><span></span><span></span>
+    <div className="leitura-m"><h2>${e.as}</h2><div className="tags">${e.tags.map(([k,ic,t])=>html`<${Tag} key=${t} k=${k} ic=${ic} t=${t}/>`)}</div>
+      <p style=${{margin:0,color:'var(--texto2)'}}>Olá, tudo bem? Estive hospedada de 12 a 14 de novembro e preciso da nota fiscal da estadia. Fico no aguardo.</p>
+      <div className="ficha"><div className="ficha-g"><div><small>Hotel</small>${e.h}</div><div><small>Estadia</small>12 a 14/11</div><div><small>Documento</small>CNPJ 11.222.333/0001-81</div></div></div></div>
+    <div className="acoes-m"><button><${Icone} n="responder" s=${18}/>Responder</button><button><${Icone} n="encaminhar" s=${18}/>Encaminhar</button><button className="nf"><${Icone} n="enviar" s=${18}/>Enviar NF</button></div></div>`;
+}
+function CelMais(){
+  const its=[['painel','Visão geral'],['nota','Notas fiscais'],['robo','Robô'],['cadeado','Gerência'],['log','Monitoramento'],['rede','Agentes do Smith'],['tema','Tema'],['ajuda','Ajuda e atalhos']];
+  return html`<div className="cel"><header className="app-b"><div><h2>Mais</h2><small>Este PC · João</small></div></header><span></span><span></span>
+    <div className="mais-l">${its.map(([ic,t])=>html`<button key=${t} className="ln"><${Icone} n=${ic}/><span className="ln-t">${t}</span><${Icone} n="setaD" s=${16}/></button>`)}
+      <div style=${{padding:'12px 8px'}}><button className="env" style=${{height:48}}><${Icone} n="enviar"/><span className="env-t">Enviar pendentes</span></button></div></div><${CelAbas} atual="Mais"/></div>`;
+}
+
+/* ---------- a janela e o palco ---------- */
+function Janela({v,W,H,tema,sit,nomes,paleta,sel,setSel}){
+  const p={sit,sel,setSel,nomes,paleta};
+  const C=W<760?CelLista:({d1:V1,d2:V2,d3:V3,d4:V4,d5:V5})[v];
+  return html`<div className="janela" data-mock=${tema} style=${{width:W,height:H}}><${C} ...${p}/></div>`;
+}
+function Palco({W,H,real,children}){
+  const ref=useRef(null); const [disp,setDisp]=useState(1200);
+  useEffect(()=>{const el=ref.current; const f=()=>setDisp(el.clientWidth||1200); f(); const ro=new ResizeObserver(f); ro.observe(el); return ()=>ro.disconnect()},[]);
+  const s=real?1:Math.min(1,disp/W);
+  return html`<div className=${'palco'+(real?' real':'')} ref=${ref}><div style=${{width:W*s,height:H*s}}><div style=${{width:W,height:H,transform:'scale('+s+')',transformOrigin:'0 0'}}>${children}</div></div></div>`;
+}
+
+/* ---------- texto de cada desenho ---------- */
+const HEUR=['Ver o que o sistema está fazendo','Falar a língua do usuário','Poder voltar atrás','Mesma coisa, mesmo jeito','Evitar o erro antes dele','Ver em vez de decorar','Rápido para quem já sabe','Só o que precisa','Erro que se explica e se resolve','Ajuda à mão'];
+const DESIGNS=[
+{id:'d1',nome:'1 · Barra fixa com nomes',sub:'O Painel de hoje, arrumado',cust:'Esforço baixo',nomes0:true,
+ resumo:'Mantém o jeito que os agentes já conhecem (barra à esquerda, pastas, lista, leitura) e tira só o que atrapalha: o nome de cada aba sempre à vista, uma barra de topo só, a faixa de comandos em uma linha e a situação do sistema numa barra fina no chão da janela, que nunca cobre a lista.',
+ pecas:[['Barra lateral','Fixa, 232 px, com o nome de cada aba. Em janela estreita vira só ícones (64 px) e o nome aparece como dica.'],['Cápsula com nomes','Deixa de flutuar. O botão "Mostrar os nomes" vira "Só ícones", com o texto escrito.'],['Topo da trilha','A trilha ("Painel Fiscal › Caixa de entrada") e a pesquisa dividem a mesma barra.'],['Topo dos e-mails','O "Caixa de" sai do topo: quem escolhe a caixa é o painel de pastas. Uma coisa, um lugar.'],['Rodapé das pastilhas','Barra fina de 32 px com texto: Robô, Central, PCs, Atualizado. Fica no chão, fora da lista.'],['Faixa de comandos','Uma linha só, com "Novo e-mail" primeiro, como no Outlook. Em janela estreita viram ícones com dica.'],['Campo de pesquisa','Placeholder mais curto e "4 PCs" dentro do campo, dizendo onde ele procura. Texto nunca cortado.'],['Pasta dos e-mails','Favoritos e os 4 agentes, cada um com o número e a situação do PC.'],['Lista de e-mails','Igual à de hoje: a situação vem escrita ("Sem resposta há 9 dias"), não só pela cor.']],
+ heur:[[1,'A barra de baixo diz, com texto, se o robô, a central e os PCs estão bem.'],[4,'A caixa se escolhe num lugar só.'],[6,'Os nomes das abas ficam à vista: ninguém decora ícone.'],[8,'Um topo só e uma faixa só.']],
+ pontos:[1,1,1,1,1,2,1,1,2,1]},
+{id:'d2',nome:'2 · Trilho com rótulos',sub:'Comando junto do e-mail, sem rodapé',cust:'Esforço médio',
+ resumo:'Tira da janela a faixa de comandos e o rodapé. As ações ficam em cima do e-mail aberto, onde elas acontecem, e a situação do sistema vira um botão "Saúde" no trilho: diz "Tudo certo" ou "1 alerta" e abre um quadro com os detalhes.',
+ pecas:[['Barra lateral','Trilho estreito (78 px) com o ícone e o nome embaixo, sempre. Não tem modo "só ícones".'],['Cápsula com nomes','Não precisa: o nome já está lá.'],['Topo da trilha','O título da tela é a trilha. Sem barra separada.'],['Topo dos e-mails','Título, pesquisa grande no meio e "Novo e-mail" e "Enviar/Receber" sempre no mesmo canto.'],['Rodapé das pastilhas','Some. Vira o botão "Saúde" no pé do trilho, com texto, e um quadro ao clicar.'],['Faixa de comandos','As ações do e-mail ficam no topo da leitura: Responder, Responder a todos, Encaminhar, Sinalizar, Enviar NF para Olívia. Sem e-mail aberto, não aparecem.'],['Campo de pesquisa','Largo, no centro do topo, com "4 PCs" dentro.'],['Pasta dos e-mails','O mesmo painel do desenho 1.'],['Lista de e-mails','Igual.']],
+ heur:[[5,'A ação só aparece com o e-mail aberto: não dá para clicar em "Responder" sem e-mail.'],[6,'Ícone com o nome embaixo.'],[8,'Duas faixas a menos: sobra mais espaço para a lista.'],[1,'Cuidado: a situação fica um clique mais longe. Por isso o botão troca de texto e de cor quando há problema.']],
+ pontos:[1,1,1,2,2,2,1,2,1,1]},
+{id:'d3',nome:'3 · Agentes em abas',sub:'Um clique para trocar de caixa',cust:'Esforço médio',nomes0:false,
+ resumo:'Os 4 agentes viram abas grandes no topo (Bernardo, Clara, Cristian, João), cada uma com o número de e-mails e se o PC do agente está no ar. Trocar de caixa é um clique, sem abrir lista de pastas. As pastas viram abas dentro da lista.',
+ pecas:[['Barra lateral','64 px só com ícones; o botão "Mostrar nomes" abre para 220 px.'],['Cápsula com nomes','O mesmo botão, escrito: "Mostrar nomes" / "Só ícones".'],['Topo da trilha','Trilha pequena e pesquisa na mesma barra.'],['Topo dos e-mails','As abas dos agentes tomam o lugar do "Caixa de". Cada uma mostra número e situação do PC.'],['Rodapé das pastilhas','Barra fina de 32 px, igual à do desenho 1.'],['Faixa de comandos','Uma linha, igual à do desenho 1.'],['Campo de pesquisa','Na barra de cima, com "4 PCs" dentro.'],['Pasta dos e-mails','O painel de pastas sai. Entrada, Urgência e Enviados viram abas na lista; o hotel vira filtro.'],['Lista de e-mails','Ganha a largura que o painel de pastas ocupava.']],
+ heur:[[1,'Cada aba mostra o número e se o PC do agente está no ar.'],[2,'Fala de gente (Clara, Cristian), não de pastas.'],[7,'Um clique para trocar de agente.'],[6,'O agente atual está sempre marcado.']],
+ pontos:[2,2,1,2,1,2,2,1,1,1]},
+{id:'d4',nome:'4 · Busca primeiro',sub:'Ctrl+K para pesquisar e mandar comandos',cust:'Esforço alto',
+ resumo:'A pesquisa vira o centro da janela, e o mesmo campo (Ctrl+K) aceita comandos como "Enviar NF para Olívia" ou "Ir para Urgência". Pensado para quem atende ao telefone e quer ir direto ao ponto sem caçar botão. Quem prefere o mouse tem tudo nos botões de sempre.',
+ pecas:[['Barra lateral','Trilho de 60 px só com ícones e dica; marca no topo e operador embaixo.'],['Cápsula com nomes','Não existe.'],['Topo da trilha','Trilha pequena, à esquerda da pesquisa.'],['Topo dos e-mails','Pesquisa grande no meio, "Novo e-mail" à direita e, abaixo, uma linha de filtros (caixas, hotel, últimas 72 h).'],['Rodapé das pastilhas','Barra fina de 32 px com texto.'],['Faixa de comandos','Some. As ações ficam no e-mail aberto e dizem o que fazem: "Enviar NF para Olívia".'],['Campo de pesquisa','Com o atalho Ctrl+K escrito e "4 PCs" dentro. Abre a janela de comandos (use o botão "Ctrl+K aberto" acima).'],['Pasta dos e-mails','As caixas viram filtros: Todas, Bernardo, Clara, Cristian, João.'],['Lista de e-mails','Igual.']],
+ heur:[[7,'Atalhos para quem já sabe; o caminho normal continua para quem está começando.'],[5,'O botão diz o nome do hóspede: evita enviar a NF para o e-mail errado.'],[10,'Digitar "?" mostra todos os atalhos.'],[3,'Esc fecha a janela de comandos e volta ao que estava.']],
+ pontos:[1,1,2,1,2,1,2,2,1,2]},
+{id:'d5',nome:'5 · Vidro refinado',sub:'A cápsula que você escolheu, arrumada',cust:'Esforço médio',nomes0:false,
+ resumo:'A mesma ideia de vidro e cápsula que você escolheu em 08/11, mas com a janela inteira arrumada: cápsula, topo e cartões na mesma linguagem, o rodapé dentro da área útil (nunca por cima da lista) e a pesquisa com largura de verdade.',
+ pecas:[['Barra lateral','Cápsula flutuante de 64 px; abre para 226 px com os nomes.'],['Cápsula com nomes','O botão escreve "Mostrar nomes" / "Só ícones" e os números ficam à vista.'],['Topo da trilha','Dentro da pílula de vidro do topo, à esquerda.'],['Topo dos e-mails','Uma pílula só: abas, pesquisa e Novo e-mail. O "Caixa de" sai (as pastas já mostram).'],['Rodapé das pastilhas','Uma pílula de status em linha própria, na base da janela. A lista nunca fica por baixo dela.'],['Faixa de comandos','Faixa de vidro embaixo da pílula, uma linha só.'],['Campo de pesquisa','Ocupa todo o espaço que sobra na pílula.'],['Pasta dos e-mails','Cartão de vidro com agentes e PCs.'],['Lista de e-mails','Cartão de vidro. Em janela estreita, as pastas viram o botão "Caixa: João".']],
+ heur:[[4,'Cápsula, pílula e cartões usam o mesmo vidro e o mesmo arredondamento.'],[8,'A identidade que você já aprovou, sem a sobreposição que corta a lista.'],[1,'O status fica encaixado, com texto, e não flutuando sobre o conteúdo.']],
+ pontos:[2,1,1,1,1,1,1,1,1,1]},
+{id:'d6',nome:'6 · Celular',sub:'Como a moldura cabe no React Native',cust:'Esforço alto',
+ resumo:'A mesma moldura em tela pequena, em três telas: lista, e-mail e menu "Mais". Abas embaixo (ao alcance do polegar), agentes em fichas deslizantes, situação do sistema em uma linha, e a ação principal ("Enviar NF") sempre visível no e-mail.',
+ pecas:[],heur:[[6,'Abas embaixo com ícone e nome.'],[1,'A linha de situação fica acima da lista, sempre.'],[7,'O polegar alcança as 3 ações do e-mail.'],[8,'Só o que cabe: o resto fica em "Mais".']],pontos:null}
+];
+
+const ARVORE='<Casco>\n  <BarraLateral/>   (Nav, BtnEnviar, Operador)\n  <Topo>            (Trilha, Busca)\n  <FaixaDeComandos/>\n  <PastaDeCaixas/>\n  <ListaDeEmails/>  (Linha, Tag)\n  <Leitura/>        (Acoes, Ficha)\n  <RodapeStatus/>   (Chip)\n</Casco>';
+
+/* ---------- a página ---------- */
+function Seg({valor,set,opcoes,rot}){return html`<div className="seg" role="group" aria-label=${rot}>${opcoes.map(([v,t])=>html`<button key=${String(v)} aria-pressed=${valor===v} onClick=${()=>set(v)}>${t}</button>`)}</div>`}
+function App(){
+  const ids=DESIGNS.map(d=>d.id);
+  const h0=(location.hash||'').replace('#','');
+  const [id,setId]=useState(ids.includes(h0)?h0:'d1');
+  const [W,setW]=useState(1440); const [tema,setTema]=useState('escuro'); const [sit,setSit]=useState('normal');
+  const [nomesM,setNomesM]=useState({d1:true,d3:false,d5:false}); const [paleta,setPaleta]=useState(false); const [real,setReal]=useState(false); const [sel,setSel]=useState('e2');
+  const d=DESIGNS.find(x=>x.id===id);
+  const H={1920:1080,1440:900,1100:760,390:780}[W];
+  const escolher=i=>{setId(i);try{location.hash='#'+i}catch(e){}};
+  const tem=('nomes0' in d);
+  return html`<div style=${{display:'contents'}}>
+  <header><h1>Moldura do Painel Fiscal: 5 desenhos de desktop e o celular</h1>
+   <p className="intro">Cada desenho refaz a janela inteira, não só uma peça: barra lateral, topo, faixa de comandos, pesquisa, pastas, lista, leitura e rodapé. Tudo está feito em React, com as mesmas peças em todos os desenhos, então o que você aprovar vira o Painel real sem refazer. Clique nos desenhos, troque a largura, o tema e a situação do sistema, e clique nos e-mails.</p>
+   <span className="selo-dados">Só dados inventados · nada de hóspede real</span></header>
+  <div className="designs" role="group" aria-label="Desenhos">${DESIGNS.map(x=>html`<button key=${x.id} className="cartao-d" aria-pressed=${x.id===id} onClick=${()=>escolher(x.id)}><b>${x.nome}</b><small>${x.sub}</small><span className="cust">${x.cust}</span></button>`)}</div>
+  ${id!=='d6'?html`<div className="bar">
+    <div className="grupo-c"><span>Largura da janela</span><${Seg} rot="Largura" valor=${W} set=${setW} opcoes=${[[1920,'1920'],[1440,'1440'],[1100,'1100'],[390,'Celular']]}/></div>
+    <div className="grupo-c"><span>Tema</span><${Seg} rot="Tema" valor=${tema} set=${setTema} opcoes=${[['escuro','Escuro'],['claro','Claro']]}/></div>
+    <div className="grupo-c"><span>Situação do sistema</span><${Seg} rot="Situação" valor=${sit} set=${setSit} opcoes=${[['normal','Tudo normal'],['problemas','Com problemas']]}/></div>
+    ${tem?html`<div className="grupo-c"><span>Nomes das abas</span><${Seg} rot="Nomes" valor=${!!nomesM[id]} set=${v=>setNomesM({...nomesM,[id]:v})} opcoes=${[[true,'Com nomes'],[false,'Só ícones']]}/></div>`:null}
+    ${id==='d4'?html`<div className="grupo-c"><span>Janela de comandos</span><${Seg} rot="Ctrl+K" valor=${paleta} set=${setPaleta} opcoes=${[[false,'Fechada'],[true,'Ctrl+K aberto']]}/></div>`:null}
+    <div className="grupo-c"><span>Tamanho</span><${Seg} rot="Tamanho" valor=${real} set=${setReal} opcoes=${[[false,'Caber na tela'],[true,'Tamanho real']]}/></div></div>`
+   :html`<div className="bar"><div className="grupo-c"><span>Tema</span><${Seg} rot="Tema" valor=${tema} set=${setTema} opcoes=${[['escuro','Escuro'],['claro','Claro']]}/></div><div className="grupo-c"><span>Situação do sistema</span><${Seg} rot="Situação" valor=${sit} set=${setSit} opcoes=${[['normal','Tudo normal'],['problemas','Com problemas']]}/></div></div>`}
+  <div className="mesa">${id!=='d6'
+    ?html`<${Palco} W=${W} H=${H} real=${real}><${Janela} v=${id} W=${W} H=${H} tema=${tema} sit=${sit} nomes=${!!nomesM[id]} paleta=${paleta} sel=${sel} setSel=${setSel}/><//>`
+    :html`<div className="celulares"><figure style=${{margin:0}}><${Janela} v="d1" W=${390} H=${780} tema=${tema} sit=${sit} sel=${sel} setSel=${setSel}/><figcaption>1. Lista</figcaption></figure>
+      <figure style=${{margin:0}}><div className="janela" data-mock=${tema} style=${{width:390,height:780}}><${CelLeitura} sel=${sel}/></div><figcaption>2. E-mail aberto</figcaption></figure>
+      <figure style=${{margin:0}}><div className="janela" data-mock=${tema} style=${{width:390,height:780}}><${CelMais}/></div><figcaption>3. Menu "Mais"</figcaption></figure></div>`}</div>
+  <section className="duas"><div className="card"><h2>${d.nome.slice(4)}</h2><p className="lead">${d.resumo}</p>
+      ${d.pecas.length?html`<dl className="tabela-pecas" style=${{margin:0}}>${d.pecas.map(([a,b])=>html`<div key=${a}><dt>${a}</dt><dd>${b}</dd></div>`)}</dl>`:null}</div>
+    <div className="card"><h2>O que melhora (heurísticas de Nielsen)</h2><ul className="heur">${d.heur.map(([n,t])=>html`<li key=${n+t}><span className="n">${n}</span><div><b>${HEUR[n-1]}</b><span>${t}</span></div></li>`)}</ul>
+      <p className="legenda">Os problemas de hoje que estes desenhos atacam: pesquisa com texto cortado, faixa de comandos quebrando em duas linhas, pastilha do rodapé em cima da lista em 1100 px, ícones sem nome e o "Caixa de" repetindo o que o painel de pastas já mostra.</p></div></section>
+  <section className="card"><h2>Comparação dos 5 desenhos</h2><div className="rolagem-x"><table className="mx"><thead><tr><th>Heurística</th>${DESIGNS.slice(0,5).map(x=>html`<th key=${x.id}>${x.nome.slice(0,1)}</th>`)}</tr></thead>
+    <tbody>${HEUR.map((t,i)=>html`<tr key=${t}><td>${i+1}. ${t}</td>${DESIGNS.slice(0,5).map(x=>html`<td key=${x.id} className="p" aria-label=${['igual ao de hoje','melhora um pouco','melhora bem'][x.pontos[i]]}>${['○○','●○','●●'][x.pontos[i]]}</td>`)}</tr>`)}</tbody></table></div>
+    <p className="legenda">●● melhora bem · ●○ melhora um pouco · ○○ igual ao de hoje. É a minha avaliação, para a gente conversar. Quem decide é o teste com os 4 agentes, com o telefone no ouvido.</p></section>
+  <section className="duas"><div className="card sug"><h2>Minha sugestão</h2><p className="lead">Começar pelo desenho 1 e pegar do desenho 3 as abas de agentes.</p><p>O 1 resolve os problemas de hoje com pouca mudança e nenhum agente precisa reaprender. As abas de agentes do 3 deixam a troca de caixa em um clique. Se você quer manter o vidro que escolheu em 08/11, o 5 é o caminho, com as mesmas correções. O 4 (Ctrl+K) vale como segunda etapa, depois que a moldura nova estiver estável.</p></div>
+    <div className="card"><h2>Como isso vira React de verdade</h2><pre className="arvore">${ARVORE}</pre><p>Esta página já usa essas peças. No celular, as mesmas peças usam View, Text e FlatList (React Native), com a mesma lista de e-mails e a mesma regra de "situação escrita".</p></div></section>
+  <section className="card"><h2>O que preciso que você decida</h2><ol className="perguntas"><li>Qual desenho (ou mistura) seguimos? Pode ser "1 com as abas do 3".</li><li>A pesquisa com Ctrl+K (desenho 4) entra agora ou depois?</li><li>Depois da moldura, as telas internas (Visão geral, Monitoramento, Robô) seguem o mesmo padrão?</li></ol></section></div>`;
+}
+ReactDOM.createRoot(document.getElementById('raiz')).render(html`<${App}/>`);
+})();
+</script>

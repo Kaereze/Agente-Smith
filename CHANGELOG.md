@@ -9,6 +9,12 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
+## [não entregue] — 2026-11-27 (tela nova em React: 1ª parte, desligada nos PCs)
+
+- **Adicionado:** a tela nova do Painel em **React** (`app_react/`, montada em `app_ui/v2/`), no visual aprovado em 27/11 (vidro verde e creme, claro e escuro). Primeira parte: a moldura (cápsula, topo em pílula, rodapé em linha própria), a **Visão geral** em perguntas (frase do dia, gráficos, "o que precisa de atenção", só com números reais) e a **Caixa de entrada** (só leitura; responder e enviar NF ainda levam para a tela de hoje). Peças únicas em componentes, como um só `BotaoEnviarNF` para todas as telas.
+- **Adicionado:** o servidor abre a tela nova em `/v2/` e a de hoje em `/classica` (a reserva). O interruptor `"tela": "react"` no `config.local.json` faz a nova abrir em `/`; sem ele, nada muda nos PCs. Testes em `test_tela_react.py`.
+- **Mudou:** `ferramentas/medir_design.py` não conta o CSS montado da tela nova (ela tem a régua própria em `app_react/src/estilo/tema.css`).
+
 ## [2026.11.26.2] — 2026-11-26 (PC da Camila aparece com o nome dela)
 
 - **Corrigido:** o PC da Camila (`DESKTOP-9IHBG3A`), que entrou no servidor central às 16:44, aparecia para os outros PCs como "Usuário" (o nome do usuário do Windows dela). Agora está em `nomes_dos_pcs` do `config.json` como **Camila**, como os PCs da Clara, do Bernardo e o Servidor RA. Teste em `test_fluidez.py`.

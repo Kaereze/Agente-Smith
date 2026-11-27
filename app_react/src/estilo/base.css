@@ -1,0 +1,39 @@
+/* Base comum a todas as telas: letra, vidro, animações. As peças têm o próprio CSS ao lado (Peca.css). */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  color: var(--texto);
+  background:
+    radial-gradient(55% 45% at 12% 8%, var(--cena2), transparent 70%),
+    radial-gradient(45% 55% at 92% 25%, var(--cena3), transparent 70%),
+    radial-gradient(70% 60% at 50% 105%, var(--cena2), transparent 70%),
+    var(--cena1);
+  background-attachment: fixed;
+  overflow: hidden;
+}
+#raiz { height: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+:is(button, input, a):focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; }
+.ico { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.vidro {
+  background: var(--vidro);
+  backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+  border: 1px solid var(--vidro-borda); border-top-color: var(--vidro-topo);
+  box-shadow: inset 0 1px 0 var(--luz), 0 18px 40px -28px var(--sombra);
+  border-radius: 20px;
+}
+.fundo-bolhas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.fundo-bolhas i { position: absolute; border-radius: 50%; filter: blur(40px); }
+.fundo-bolhas i:nth-child(1) { width: 34%; height: 42%; left: 22%; top: 6%; background: var(--bolha2); }
+.fundo-bolhas i:nth-child(2) { width: 30%; height: 36%; right: 6%; top: 38%; background: var(--bolha1); }
+.fundo-bolhas i:nth-child(3) { width: 26%; height: 30%; left: 4%; bottom: 8%; background: var(--bolha1); }
+
+@keyframes entra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes surge { from { opacity: 0; } to { opacity: 1; } }
+.entra { animation: entra .55s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

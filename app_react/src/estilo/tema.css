@@ -1,0 +1,30 @@
+/* Cores do Painel Fiscal 1.0 (verde e creme, vidro). Uma cor, um nome: as telas só usam os nomes.
+   Claro é o padrão; [data-tema="escuro"] no <html> troca tudo. [data-tom] ajusta o verde ao logo. */
+:root {
+  --cena1: #efe7d4; --cena2: #cfdcc9; --cena3: #e8d6b8;
+  --bolha1: rgba(31, 107, 79, .34); --bolha2: rgba(214, 178, 120, .5);
+  --vidro: rgba(255, 255, 255, .5); --vidro-forte: rgba(255, 255, 255, .72); --vidro-borda: rgba(255, 255, 255, .7);
+  --vidro-topo: rgba(255, 255, 255, .95); --luz: rgba(255, 255, 255, .85); --sombra: rgba(50, 36, 22, .5);
+  --texto: #1a1c19; --texto2: #394037; --apagado: #545b52; --linha: rgba(40, 46, 36, .12); --cinza: rgba(40, 46, 36, .14);
+  --sel-fundo: #ffffff; --sel-texto: #1b1b1b; --principal-fundo: #1b1b1b; --principal-texto: #ffffff;
+  --verde: #14917f; --verde-esc: #0b5d52; --verde-texto: #0b6c5f; --verde-suave: rgba(20, 145, 127, .12);
+  --vermelho: #d2402c; --vermelho-texto: #a6261d; --vermelho-suave: rgba(196, 49, 75, .1);
+  --ambar-texto: #7a4f00; --ambar-suave: rgba(214, 150, 30, .18); --azul-texto: #1f5f8b; --azul-suave: rgba(31, 95, 139, .1);
+  --creme: #efe3c2; --linha-grafico: #1f2a24;
+  color-scheme: light;
+}
+:root[data-tema="escuro"] {
+  --cena1: #0d1410; --cena2: #13261c; --cena3: #2a2417;
+  --bolha1: rgba(40, 150, 110, .3); --bolha2: rgba(214, 178, 120, .2);
+  --vidro: rgba(20, 30, 25, .55); --vidro-forte: rgba(40, 52, 45, .72); --vidro-borda: rgba(255, 255, 255, .14);
+  --vidro-topo: rgba(255, 255, 255, .26); --luz: rgba(255, 255, 255, .12); --sombra: rgba(0, 0, 0, .85);
+  --texto: #f3efe4; --texto2: #d6d2c4; --apagado: #aeb3a6; --linha: rgba(255, 255, 255, .1); --cinza: rgba(255, 255, 255, .14);
+  --sel-fundo: #f3efe4; --sel-texto: #141a16; --principal-fundo: #f3efe4; --principal-texto: #141a16;
+  --verde: #2fb38f; --verde-esc: #0b5d52; --verde-texto: #86dcb0; --verde-suave: rgba(134, 220, 176, .16);
+  --vermelho: #e5533d; --vermelho-texto: #ffa198; --vermelho-suave: rgba(255, 161, 152, .14);
+  --ambar-texto: #f2c76b; --ambar-suave: rgba(242, 199, 107, .16); --azul-texto: #9cc9ef; --azul-suave: rgba(156, 201, 239, .14);
+  --linha-grafico: #efe3c2;
+  color-scheme: dark;
+}
+:root[data-tom="floresta"] { --verde: #2b7a55; --verde-esc: #163f2b; }
+:root[data-tom="oliva"] { --verde: #5d7f35; --verde-esc: #2f4419; }
