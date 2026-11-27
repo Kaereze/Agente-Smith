@@ -11,6 +11,7 @@
   --vermelho: #d2402c; --vermelho-texto: #a6261d; --vermelho-suave: rgba(196, 49, 75, .1);
   --ambar-texto: #7a4f00; --ambar-suave: rgba(214, 150, 30, .18); --azul-texto: #1f5f8b; --azul-suave: rgba(31, 95, 139, .1);
   --creme: #efe3c2; --linha-grafico: #1f2a24;
+  --folha: rgba(252, 250, 244, .97);   /* menus e quadros que abrem por cima: quase opacos, para ler sem a lista aparecer atrás */
   color-scheme: light;
 }
 :root[data-tema="escuro"] {
@@ -24,6 +25,7 @@
   --vermelho: #e5533d; --vermelho-texto: #ffa198; --vermelho-suave: rgba(255, 161, 152, .14);
   --ambar-texto: #f2c76b; --ambar-suave: rgba(242, 199, 107, .16); --azul-texto: #9cc9ef; --azul-suave: rgba(156, 201, 239, .14);
   --linha-grafico: #efe3c2;
+  --folha: rgba(28, 38, 32, .97);
   color-scheme: dark;
 }
 :root[data-tom="floresta"] { --verde: #2b7a55; --verde-esc: #163f2b; }

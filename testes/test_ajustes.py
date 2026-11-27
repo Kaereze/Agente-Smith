@@ -135,16 +135,16 @@ def test_toda_chave_usada_no_codigo_existe_e_toda_chave_da_tabela_tem_uso():
     usadas = set()
     for texto in _fontes(RAIZ / "src", {".py"}).values():
         usadas |= set(re.findall(r'ajustes\.valor\("([a-z0-9_.]+)"\)', texto))
-    for texto in _fontes(RAIZ / "app_ui", {".js", ".html"}).values():
-        usadas |= set(re.findall(r'aj\?\.\("([a-z0-9_.]+)"\)', texto))
+    for texto in _fontes(RAIZ / "app_react" / "src", {".js", ".jsx"}).values():   # a tela em React: aj("grupo.nome", padrão)
+        usadas |= set(re.findall(r'\baj\("([a-z0-9_.]+)",', texto))
     assert usadas - set(POR_CHAVE) == set(), "o código pede um ajuste que não está na tabela"
     assert set(POR_CHAVE) - usadas == set(), "ajuste na tabela que nenhum lugar do código usa (enganaria quem muda o valor)"
 
 
 def test_o_valor_de_reserva_da_tela_e_igual_ao_de_fabrica():
     achou = 0
-    for caminho, texto in _fontes(RAIZ / "app_ui", {".js"}).items():
-        for chave, reserva in re.findall(r'aj\?\.\("([a-z0-9_.]+)"\) \?\? ([0-9.]+)', texto):
+    for caminho, texto in _fontes(RAIZ / "app_react" / "src", {".js", ".jsx"}).items():
+        for chave, reserva in re.findall(r'\baj\("([a-z0-9_.]+)", ([0-9.]+)\)', texto):
             achou += 1
             assert float(reserva) == float(POR_CHAVE[chave][1]), (caminho.name, chave, reserva, POR_CHAVE[chave][1])
     assert achou >= 15

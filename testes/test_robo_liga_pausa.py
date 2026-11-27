@@ -8,8 +8,8 @@ sys.path.insert(0, str(RAIZ / "src"))
 import app_servidor  # noqa: E402
 from codigo_fonte import fonte_servidor
 
-ROBO = (RAIZ / "app_ui" / "robo.js").read_text(encoding="utf-8")
 SERVIDOR = fonte_servidor(RAIZ)
+ROBO = (RAIZ / "app_react" / "src" / "telas" / "Robo.jsx").read_text(encoding="utf-8")   # a tela em React (27/11/2026)
 
 
 class _Backend:
@@ -44,5 +44,5 @@ def test_demo_e_so_leitura_nao_escrevem_na_planilha():
 
 def test_so_o_joao_liga_e_a_tela_pede_confirmacao_para_pausar():
     assert '"/api/robo/ligado"' in SERVIDOR and "Só o João liga ou pausa o robô" in SERVIDOR
-    assert 'data-rb-liga="0"' in ROBO and 'data-rb-liga="1"' in ROBO and "so-admin" in ROBO
-    assert "Confirmar: pausar tudo" in ROBO and "rbz.confPausa" in ROBO
+    assert '"/api/robo/ligado"' in ROBO and "desligado={soVer || !admin}" in ROBO and "Só o João liga ou pausa o robô" in ROBO
+    assert "Clique de novo para pausar" in ROBO and "setConfirma(true)" in ROBO   # pausar pede o 2º clique

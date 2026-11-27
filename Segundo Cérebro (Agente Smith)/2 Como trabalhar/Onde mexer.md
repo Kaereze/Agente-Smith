@@ -7,7 +7,22 @@ tags: [cerebro/trabalho]
 ---
 # Onde mexer — vá direto ao ponto
 
-> Antes de procurar no código, ache a tarefa aqui. Tela = `app_ui/`. Servidor = `src/app_servidor.py` (classe `Estado`). Tamanho, propósito e risco de cada pasta e arquivo: [[Pastas e arquivos]].
+> Antes de procurar no código, ache a tarefa aqui. Tela = **React em `app_react/src/`** (montada em `app_ui/v2/` com `npm run build`). Servidor = `src/app_servidor.py` (classe `Estado`). Tamanho, propósito e risco de cada pasta e arquivo: [[Pastas e arquivos]].
+
+## A tela em React (desde 27/11/2026): onde fica agora
+A tela antiga (`app_ui/*.js`, `index.html`, `estilo.css`, `pecas/`) foi **apagada em 27/11/2026**. As linhas das tabelas abaixo que citam esses arquivos contam onde a coisa ficava; o lugar de hoje é este:
+
+| Assunto | Hoje (React, em `app_react/src/`) |
+|---|---|
+| Moldura: cápsula, topo, rodapé, "Quem está neste PC" (operador, tema, tamanho da tela), ajuda, sino de avisos, caixas com problema, histórico da pesquisa | `moldura/` (`Capsula`, `Topo`, `Rodape`, `MenuOperador`, `Ajuda`, `CaixasProblema`); `App.jsx` (tema, F5, tecla ?, faixa "sem dados") |
+| Dados e tela que não trava (versão nova recarrega, `__telaInteira`/`__painelVivo` para a janela) | `dados/usePainel.js`; ações gerais em `dados/acoes.js`; avisos do sistema em `dados/avisos.js` |
+| Caixa de entrada (classificador Todas · Não lidos · Urgência · Formulários · Enviados; filtro de hotéis; pastas por PC) | `telas/CaixaEntrada.jsx`, `telas/correio/` (`Pastas`, `FiltroHoteis`, `Leitura`, `Escrever`, `Ficha`, `Formulario`, `Visor`, `MenuEmail`, `Envios`, `useAcoesCorreio`, `textos`) |
+| Regras do pedido (falta dado, CPF/CNPJ, etapas, etiquetas, texto da emissão, mensagens prontas, assunto pelo PDF) | `dados/formulario.js` (teste `testes/test_regras_tela.py`, com Node) |
+| Botões, ícones, etiquetas, janelas, recado e Desfazer, tela do K | `componentes/` (`Botao`, `BotaoEnviarNF`, `Icone`, `Etiqueta`, `Janela`, `Avisos`, `Carregando` + `logoK.js`) |
+| Robô (ligar/pausar, avisos com "Como resolver"), Monitoramento (Atualizar PC, cadastro de hotéis), Visão geral, Gerência | `telas/` |
+| Tempos e limites do `ajustes.json` na tela | `ajustes.js` → `aj("grupo.nome", padrão)` (padrão igual ao de `src/sistema/ajustes_tabela.py`; `test_ajustes.py` confere) |
+| Testes de tela | `testes/test_tela_react.py` (servidor), `testes/test_tela_react_correio.py` (navegador, Playwright) |
+| O que o servidor entrega | `src/app_servidor.py`: `PAGINAS_DA_TELA`, `arquivo_da_tela_nova`, `_marca_pagina` (da pasta `v2`), `/ajustes.js`, `/assinaturas/`, `/agentes/mapa` |
 
 ## Telas do Painel
 | Quero mexer em… | Tela (front) | Dados (servidor) |

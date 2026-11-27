@@ -6,7 +6,6 @@ import app_servidor
 import config
 from emails import envio_nf as en
 from test_envio_nf import CAIXA, SOL, Relogio, _ler, _prep, _servico
-from tela_texto import pagina
 from codigo_fonte import fonte_servidor
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -73,8 +72,3 @@ def test_instalador_completo_nao_recria_o_conferente_no_pc_so_painel():
     assert 'Unregister-ScheduledTask -TaskName "SolicitacoesNF_Conferente"' in ps
 
 
-def test_tela_pc_so_painel_fica_fora_do_filtro_de_agentes_e_abre_em_todos():
-    html = pagina(RAIZ / "app_ui")
-    assert '(st.pcs || []).filter(p => p.papel !== "so_painel").map(p => p.agente)' in html
-    # sem ela na lista, escopoAtual() devolve "todos" para quem não tem hotel (antes: abria em "Ingrid" e tudo ficava vazio)
-    assert 'agentesEquipe().includes(e) ? e : "todos"' in html

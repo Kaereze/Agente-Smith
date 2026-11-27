@@ -31,3 +31,11 @@
 
 @media (max-width: 1279px) { .robo-grade { grid-template-columns: minmax(0, 1fr); } .robo-lado { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .robo-lado, .dois-numeros { grid-template-columns: minmax(0, 1fr); } .fila-linha { grid-template-columns: auto minmax(0, 1fr); } .etapas { grid-column: 2; } }
+.robo-avisos { margin-bottom: 16px; }
+.robo-aviso { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 10px 12px; border-radius: 16px; background: var(--ambar-suave); }
+.robo-aviso.grave { background: var(--vermelho-suave); }
+.ra-txt { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.ra-txt small { color: var(--texto2); font-size: 12.5px; }
+.ra-passos { display: grid; gap: 8px; justify-items: start; margin-top: 6px; }
+.ra-passos ol { margin: 0; padding-left: 18px; font-size: 13px; color: var(--texto2); display: grid; gap: 3px; }
+@media (max-width: 760px) { .robo-aviso { grid-template-columns: auto minmax(0, 1fr); } .robo-aviso > .botao { grid-column: 2; justify-self: start; } }

@@ -1,8 +1,0 @@
-/* Tamanho da tela: bloco no fim do menu "Quem está neste PC" (pecas/escala.js). Só valores da régua (tokens.css). */
-.op-escala{display:grid;gap:var(--ds-s2);padding:var(--ds-s2) var(--ds-s3) var(--ds-s3)}
-.op-escala-t{display:grid;gap:2px;font-size:var(--ds-t13)}
-.op-escala-t small{font-size:var(--ds-t12);color:var(--tinta-3)}
-.op-escala-b{display:flex;flex-wrap:wrap;gap:var(--ds-s1)}
-.op-escala-b button{padding:var(--ds-s1) var(--ds-s2);min-height:28px;border-radius:var(--ds-r8);font-size:var(--ds-t12);font-weight:500;justify-content:center}
-.op-escala-b button[aria-pressed="true"]{background:var(--verde-suave);border-color:var(--verde)}
-.op-escala-b button:focus-visible{outline:2px solid var(--verde);outline-offset:2px}

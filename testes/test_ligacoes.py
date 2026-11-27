@@ -2,20 +2,12 @@
 botão direito para marcar depois e cartão na Visão geral. Dados inventados."""
 import datetime
 import threading
-from pathlib import Path
 
 import pytest
 
 import app_servidor
 from emails import espelho_emails
 from emails import ligacoes
-from tela_texto import codigo_js
-
-UI = Path(__file__).resolve().parent.parent / "app_ui"
-PAINEL = codigo_js(UI, "painel")
-CORREIO = codigo_js(UI, "correio")
-ETIQUETA = (UI / "pecas" / "etiqueta.js").read_text(encoding="utf-8")
-
 
 def ev(quando, chave, acao, agente="Clara", pc="PC-CLARA", hotel="EXEMPLO PRAIA"):
     return ligacoes.evento(chave, acao, agente, hotel, "nf@exemplo.com", "marina@exemplo.com", "NF 1",
@@ -142,15 +134,3 @@ def test_botao_direito_marca_pela_chave_certa_e_nao_repete():
         e.marcar_ligacao("sumiu", True, "João")
 
 
-def test_tela_botao_embaixo_do_enviar_comeca_desligado_e_vai_no_pedido():
-    assert 'class="btn-lig" id="nf-lig" aria-pressed="false"' in PAINEL
-    assert PAINEL.index('id="nf-ir"') < PAINEL.index('id="nf-lig"')
-    assert PAINEL.count("ligacao: envNF.ligacao || undefined") == 2          # novo e-mail + responder/enviar NF
-    assert "/api/correio/encaminhar\", { id: envNF.resp.id, para: $(\"nf-para\").value.trim(), corpo: $(\"nf-msg\").innerText,\n        selo: envNF.selo || undefined })" in PAINEL
-    assert "rascunho.ligacao" in PAINEL and "function pecaLigacao" in ETIQUETA
-
-
-def test_itens_enviados_lista_de_novo_com_etiqueta_e_botao_direito():
-    assert ".filter(doEscopo)" not in CORREIO                               # o índice virava o "alvo" e a pasta ficava vazia
-    assert "FILTROS_LISTA" not in CORREIO and "filtroDaListaHtml" not in CORREIO   # o menu "Filtro: Todos" saiu (João, 07/11/2026)
-    assert '"/api/ligacao"' in CORREIO and "Marcar como ligação" in CORREIO

@@ -131,4 +131,41 @@ def test_pesquisa_procura_nos_4_pcs_e_limpar_volta_a_caixa(pagina):
     pagina.wait_for_selector(".busca-info:has-text('e-mails com')", timeout=10000)
     assert pagina.locator(".em").count() > 0 and pagina.locator(".busca-pcs > span").count() >= 1
     pagina.locator(".busca-bts button:has-text('Limpar')").click()
-    pagina.wait_for_selector(".abas-lista")
+    pagina.wait_for_selector(".classificador")
+
+
+def test_classificador_mostra_so_urgencias_ou_so_enviados_dentro_da_caixa(pagina):
+    rotulos = pagina.locator(".classificador button").all_inner_texts()
+    assert [r.split("\n")[0].strip() for r in rotulos] == ["Todas", "Não lidos", "Urgência", "Formulários", "Enviados (72 h)"]
+    pagina.locator(".classificador button:has-text('Urgência')").click()
+    assert pagina.locator(".em").count() > 0 and pagina.locator(".em:not(.urg)").count() == 0   # só os urgentes
+    pagina.locator(".classificador button:has-text('Enviados')").click()
+    de = pagina.locator(".em .de").all_inner_texts()
+    assert de and all(x.startswith("Para:") for x in de)                                      # só o que saiu
+    pagina.goto(pagina.url.split("#")[0] + "#urgencia")                                        # o endereço antigo abre a caixa já filtrada
+    pagina.wait_for_selector(".classificador button[aria-selected='true']:has-text('Urgência')")
+
+
+def test_capsula_sem_urgencia_e_enviados_e_admin_ve_monitoramento(pagina):
+    nomes = [b.get_attribute("aria-label") for b in pagina.locator(".capsula-botao").all()]
+    assert "Urgência" not in nomes and "Itens enviados" not in nomes and "Caixa de entrada" in nomes
+    assert "Monitoramento" in nomes and "Agentes do Smith" in nomes                             # demonstração = administrador
+
+
+def test_menu_do_operador_tema_e_ajuda(pagina):
+    pagina.locator("button.capsula-avatar").click()
+    pagina.wait_for_selector(".menu-op")
+    assert pagina.locator(".menu-op .op-item.sel").count() == 1                                 # quem está neste PC
+    pagina.locator(".menu-op .op-botoes button:has-text('Escuro')").click()
+    assert pagina.evaluate("document.documentElement.dataset.tema") == "escuro"
+    pagina.locator(".menu-op .op-botoes button:has-text('Claro')").click()
+    assert pagina.evaluate("document.documentElement.dataset.tema") == "claro"
+    pagina.keyboard.press("Escape")
+    pagina.locator(".linhas").click(position={"x": 5, "y": 5})
+    pagina.keyboard.press("?")
+    pagina.wait_for_selector(".janela.ajuda")
+    assert "Ctrl+Shift+R" in pagina.locator(".janela.ajuda").inner_text()
+
+
+def test_a_janela_do_app_sabe_que_a_tela_esta_viva(pagina):
+    assert pagina.evaluate("window.__telaInteira === true && typeof window.__painelVivo === 'function' && window.__painelVivo() < 60000")

@@ -5,11 +5,9 @@ import sys
 import threading
 import time
 from pathlib import Path
-from tela_texto import pagina
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
-HTML = pagina(RAIZ / "app_ui")
 
 
 def test_servidor_aguenta_a_rajada_da_tela():
@@ -44,20 +42,6 @@ def test_servidor_aguenta_a_rajada_da_tela():
             s.close()
         srv.shutdown()
         srv.server_close()
-
-
-def test_pagina_pela_metade_nao_desiste():
-    guarda = HTML.split("Página que veio pela metade")[1].split("</script>")[0]
-    assert "n < 3" not in guarda and "location.reload()" in guarda and "tela-parada" in guarda
-    assert "window.__telaInteira = ok" in guarda and "typeof pecaFiltro" in guarda and "typeof etiquetasDoEmail" in guarda
-
-
-def test_faixa_sem_dados_e_f5():
-    assert 'id="aviso-parado"' in HTML and "Recarregar agora" in HTML
-    assert "ultimoOk = Date.now();" in HTML and "avisoParado();" in HTML
-    assert 'e.key === "F5"' in HTML and "window.__painelVivo" in HTML
-    bloco = HTML.split("Tela que não trava (usuário, 21/10/2026, desenho Pr6)")[1].split("visibilitychange")[0]
-    assert 'e.key === "r"' not in bloco and '"R"' not in bloco   # Ctrl+R é Responder (correio.js), não recarregar
 
 
 def test_janela_recarrega_tela_parada(monkeypatch):

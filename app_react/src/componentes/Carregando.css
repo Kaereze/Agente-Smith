@@ -1,0 +1,65 @@
+/* Tela de carregamento: o K sendo desenhado (aquarela) no meio; o cartão do canto só quando a ação tem o que contar. */
+.cg-veu { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; pointer-events: none; opacity: 0; visibility: hidden;
+  background: rgba(10, 24, 18, .34); backdrop-filter: blur(7px) saturate(1.1); -webkit-backdrop-filter: blur(7px) saturate(1.1);
+  transition: opacity .28s ease, visibility 0s linear .28s; }
+.cg-veu.on { opacity: 1; visibility: visible; transition: opacity .28s ease; }
+.cg-veu.trava { pointer-events: auto; cursor: progress; }
+.cg-k { width: min(240px, 50vmin); height: auto; aspect-ratio: 1; display: block; overflow: visible; }
+.cg-k { --tinta: var(--verde-esc); }
+:root[data-tema="escuro"] .cg-k { --tinta: var(--creme); }
+.cg-k .pr { fill: var(--tinta); }
+.cg-k .mk path { fill: none; stroke: #fff; stroke-width: 9; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+.cg-k .mk-cheio { fill: #fff; opacity: 0; }
+.cg-k.desenha .mk path { animation: cg-traco var(--dur) cubic-bezier(.55, .1, .25, 1) var(--ini) forwards; }
+.cg-k.desenha .mk-cheio { animation: cg-enche .7s ease-out calc(var(--fim) - .6s) forwards; }
+.cg-k.desenha { animation: cg-aquarela calc(var(--fim) + .3s) ease-out forwards; }
+.cg-k.ok .mk path, .cg-k.erro .mk path { stroke-dashoffset: 0; opacity: 1; }
+.cg-k.ok .mk-cheio, .cg-k.erro .mk-cheio { opacity: 1; }
+.cg-k.ok .pr { fill: var(--verde); transition: fill .3s; }
+.cg-k.erro .pr { fill: var(--vermelho); transition: fill .3s; }
+.cg-k.ok { animation: cg-pulo .5s ease; }
+.cg-k.erro { animation: cg-treme .55s cubic-bezier(.36, .07, .19, .97); }
+@keyframes cg-traco { 0% { stroke-dashoffset: 1; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes cg-enche { to { opacity: 1; } }
+@keyframes cg-aquarela { 0% { filter: blur(1.6px); opacity: .78; } 65% { filter: blur(.7px); opacity: .94; } 100% { filter: blur(0); opacity: 1; } }
+@keyframes cg-pulo { 40% { transform: scale(1.06); } }
+@keyframes cg-treme { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+
+.cg-info { position: fixed; right: 18px; bottom: 76px; z-index: 101; width: min(320px, calc(100vw - 36px)); padding: 14px 16px 12px; border-radius: 20px;
+  font-size: 13px; line-height: 1.45; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .25s, transform .3s, visibility 0s linear .3s; }
+.cg-info.on { opacity: 1; visibility: visible; transform: none; transition: opacity .25s, transform .3s; }
+.cg-tit { font-weight: 600; font-size: 14px; }
+.cg-info.erro .cg-tit { color: var(--vermelho-texto); }
+.cg-det { color: var(--texto2); overflow-wrap: anywhere; }
+.cg-bar { height: 5px; border-radius: 3px; background: var(--cinza); margin: 12px 0 6px; overflow: hidden; }
+.cg-bar i { display: block; height: 100%; background: var(--verde); border-radius: 3px; transition: width .4s ease; }
+.cg-bar.erro i { background: var(--vermelho); }
+.cg-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--apagado); font-variant-numeric: tabular-nums; }
+.cg-pcs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.cg-pcs li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; background: var(--vidro-forte); }
+.cg-pcs .pt { width: 8px; height: 8px; border-radius: 50%; background: var(--apagado); flex: none; }
+.cg-pcs .nm { flex: 1; font-weight: 600; }
+.cg-pcs .rs { color: var(--apagado); font-size: 12px; text-align: right; }
+.cg-pcs li.andando .pt { background: var(--verde); animation: cg-pisca 1s ease-in-out infinite; }
+.cg-pcs li.feito .pt { background: var(--verde); }
+.cg-pcs li.feito.aviso .pt, .cg-pcs li.atraso .pt { background: var(--ambar-texto); }
+.cg-pcs li.falha { background: var(--vermelho-suave); }
+.cg-pcs li.falha .pt { background: var(--vermelho); }
+.cg-pcs li.falha .rs { color: var(--vermelho-texto); font-weight: 600; }
+@keyframes cg-pisca { 50% { opacity: .25; } }
+.cg-rod { display: flex; justify-content: flex-end; margin-top: 10px; }
+.cg-rod button { height: 30px; padding: 0 12px; border-radius: 999px; background: var(--cinza); color: var(--texto); font-weight: 600; font-size: 12.5px; }
+
+/* K pequeno do rodapé (stand-by) */
+.cg-mini { width: 16px; height: 16px; overflow: visible; display: block; }
+.cg-mini .base { fill: currentColor; opacity: .3; }
+.cg-mini .tinta { fill: currentColor; }
+.cg-mini .faixa { animation: cg-varre 1.5s ease-in-out infinite; }
+@keyframes cg-varre { 0% { transform: translateX(-110%); } 70%, 100% { transform: translateX(0); } }
+@media (max-width: 760px) { .cg-info { bottom: 140px; right: 12px; } }
+@media (prefers-reduced-motion: reduce) {
+  .cg-k .mk path { stroke-dashoffset: 0 !important; opacity: 1 !important; animation: none !important; }
+  .cg-k .mk-cheio { opacity: 1 !important; animation: none !important; }
+  .cg-k, .cg-pcs .pt, .cg-mini .faixa { animation: none !important; }
+  .cg-veu, .cg-info { transition: none; }
+}

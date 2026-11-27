@@ -74,12 +74,15 @@ PASTA_UI = PASTA_PROJETO / "app_ui"
 CAMINHO_PREFS = armazem.caminho("app.json")
 
 
+PASTA_TELA = PASTA_UI / "v2"   # a tela em React, montada por `cd app_react; npm run build` (27/11/2026)
+
+
 def _marca_pagina():
-    """Marca da versão da tela (data do arquivo mais novo em app_ui): mudou = a janela aberta recarrega sozinha
+    """Marca da versão da tela (data do arquivo mais novo da tela montada): mudou = a janela aberta recarrega sozinha
     (13/10/2026: a tela foi atualizada sem reiniciar o Painel e a janela continuava com a página antiga)."""
     try:
-        arquivos = [*PASTA_UI.iterdir(), *(PASTA_UI / "pecas").glob("*")]   # pecas/: peças únicas (20/10/2026)
-        return str(int(max(p.stat().st_mtime for p in arquivos if p.suffix in (".html", ".js", ".css"))))
+        arquivos = [PASTA_TELA / "index.html", *(PASTA_TELA / "assets").glob("*")]
+        return str(int(max(p.stat().st_mtime for p in arquivos if p.is_file())))
     except (OSError, ValueError):
         return ""
 
@@ -91,10 +94,14 @@ class ServidorPainel(ThreadingHTTPServer):
 
 
 def _pagina_inteira(tentativas=6):
-    """index.html lido inteiro: durante uma atualização o arquivo pode estar sendo regravado (lido pela metade = página quebrada)."""
+    """index.html da tela lido inteiro: durante uma atualização o arquivo pode estar sendo regravado (lido pela metade = página quebrada).
+    Sem a tela montada (pasta v2 apagada por engano): "" e o servidor responde 503 com o que fazer."""
     html = ""
     for _ in range(tentativas):
-        html = (PASTA_UI / "index.html").read_text(encoding="utf-8", errors="replace")
+        try:
+            html = (PASTA_TELA / "index.html").read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return ""
         if html.rstrip().endswith("</html>"):
             return html
         time.sleep(0.25)
@@ -117,15 +124,10 @@ RESOLVIDA_HORAS = ajustes.valor("limpeza.resolvida_horas")   # solicitação res
 ESTATICOS = {   # lista fechada: nada fora daqui é servido do disco
     "/icone.png": ("icone.png", "image/png"),
     "/favicon.ico": ("icone.ico", "image/x-icon"),
-    "/estilo.css": ("estilo.css", "text/css; charset=utf-8"),
-    "/fontes/fontes.css": ("fontes/fontes.css", "text/css; charset=utf-8"),
 }
-ESTATICOS.update({f"/{f.name}": (f.name, "text/javascript; charset=utf-8") for f in PASTA_UI.glob("*.js")})   # telas, painel, correio, robo, gráficos: um arquivo por assunto
-ESTATICOS.update({f"/fontes/{f.name}": (f"fontes/{f.name}", "font/woff2") for f in (PASTA_UI / "fontes").glob("*.woff2")})
-ESTATICOS.update({f"/pecas/{f.name}": (f"pecas/{f.name}", "text/javascript; charset=utf-8" if f.suffix == ".js" else "text/css; charset=utf-8")
-                  for f in (PASTA_UI / "pecas").glob("*") if f.suffix in (".js", ".css")})   # peças únicas (20/10/2026)
 TIPOS_V2 = {".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".woff2": "font/woff2",
             ".png": "image/png", ".svg": "image/svg+xml"}
+PAGINAS_DA_TELA = ("/", "/index.html", "/v2", "/v2/", "/v2/index.html")   # /v2/ fica por compatibilidade (atalhos antigos)
 
 
 def arquivo_da_tela_nova(caminho):
@@ -134,13 +136,8 @@ def arquivo_da_tela_nova(caminho):
     achou = re.fullmatch(r"/v2/assets/([A-Za-z0-9_.-]{1,120})", caminho or "")
     if not achou or ".." in achou.group(1):
         return None
-    arquivo = PASTA_UI / "v2" / "assets" / achou.group(1)
+    arquivo = PASTA_TELA / "assets" / achou.group(1)
     return arquivo if arquivo.suffix in TIPOS_V2 and arquivo.is_file() else None
-
-
-def tela_react(cfg):
-    """Interruptor da tela (config.json ou config.local.json): "tela": "react" abre a tela nova em "/"; qualquer outro valor, a de hoje."""
-    return str((cfg or {}).get("tela", "")).strip().lower() == "react"
 
 
 EDGE = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
@@ -775,12 +772,17 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
             if self.headers.get("Host") not in hosts_ok:
                 return self._json({"erro": "host"}, 403)
             url = urlparse(self.path)
-            # Tela nova em React (27/11/2026): /v2/ sempre abre a nova, /classica sempre a de hoje (a reserva);
-            # "/" abre a que o interruptor "tela" do config mandar (padrão: a de hoje).
-            nova = url.path in ("/v2", "/v2/", "/v2/index.html") or (url.path in ("/", "/index.html") and tela_react(cfg))
-            if nova and (PASTA_UI / "v2" / "index.html").is_file():
-                html = (PASTA_UI / "v2" / "index.html").read_text(encoding="utf-8").replace("__TOKEN__", token)
-                corpo, gz = comprimir_se_vale(html.encode("utf-8"), self.headers.get("Accept-Encoding"))
+            # A tela do Painel em React (27/11/2026): app_ui/v2, com a senha desta sessão no <meta name="painel-token">.
+            if url.path in PAGINAS_DA_TELA:
+                html = _pagina_inteira()
+                if not html:
+                    corpo = "A tela do Painel não está montada neste PC (falta app_ui/v2). Atualize o Painel.".encode("utf-8")
+                    self.send_response(503)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(corpo)))
+                    self.end_headers()
+                    return self.wfile.write(corpo)
+                corpo, gz = comprimir_se_vale(html.replace("__TOKEN__", token).encode("utf-8"), self.headers.get("Accept-Encoding"))
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Cache-Control", "no-cache")
@@ -796,17 +798,6 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 self.send_response(200)
                 self.send_header("Content-Type", TIPOS_V2[arquivo_v2.suffix])
                 self.send_header("Cache-Control", "max-age=31536000, immutable")   # o nome muda a cada montagem: pode guardar
-                if gz:
-                    self.send_header("Content-Encoding", "gzip")
-                    self.send_header("Vary", "Accept-Encoding")
-                self.send_header("Content-Length", str(len(corpo)))
-                self.end_headers()
-                return self.wfile.write(corpo)
-            if url.path in ("/", "/index.html", "/classica"):
-                html = _pagina_inteira().replace("__TOKEN__", token).replace("__PAGINA__", _marca_pagina())
-                corpo, gz = comprimir_se_vale(html.encode("utf-8"), self.headers.get("Accept-Encoding"))
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
                 if gz:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
@@ -859,7 +850,7 @@ def criar_handler(estado, cfg, token, ultimo_uso, envio=None):
                 if gz:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
-                self.send_header("Cache-Control", "max-age=31536000" if arquivo.startswith("fontes/") else "no-cache")
+                self.send_header("Cache-Control", "no-cache")
                 self.send_header("Content-Length", str(len(corpo)))
                 self.end_headers()
                 return self.wfile.write(corpo)

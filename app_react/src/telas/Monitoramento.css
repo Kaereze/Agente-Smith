@@ -26,3 +26,10 @@
 .mon-versao { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--verde-texto); }
 .mon-versao.diferente { color: var(--ambar-texto); font-weight: 600; }
 .mon-cartao .botao { width: 100%; }
+.atz-linha { font-size: 12px; color: var(--apagado); text-align: center; }
+.atz-ok { color: var(--verde-texto); } .atz-sem { color: var(--ambar-texto); }
+.mon-cadastro { margin-top: 16px; display: grid; gap: 10px; }
+.cad-linha { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(120px, .7fr) auto; gap: 8px; align-items: center; padding: 10px; border-radius: 16px; background: var(--vidro-forte); }
+.cad-linha small { grid-column: 1 / -1; color: var(--apagado); font-size: 12px; }
+@media (max-width: 1100px) { .cad-linha { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 760px) { .cad-linha { grid-template-columns: minmax(0, 1fr); } }

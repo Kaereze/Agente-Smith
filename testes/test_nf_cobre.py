@@ -6,7 +6,6 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
 from notas import nf_cobre  # noqa: E402
-from tela_texto import codigo_js
 from codigo_fonte import fonte, fonte_servidor
 
 NOTA = ("DANFSe v1.0 Documento Auxiliar da NFS-e\nChave de Acesso 4120000000000000000000000000000000000000000000000\n"
@@ -77,12 +76,10 @@ def test_motivo_curto_da_urgencia():
 def test_ligacoes_no_servidor_e_na_tela():
     srv = fonte_servidor(RAIZ)
     envio = fonte(RAIZ, "envio_nf")
-    js = codigo_js(RAIZ / "app_ui", "correio")
     assert '"/api/nf_cobre"' in srv and '"/api/correio/concluir"' in srv
     assert "acao=envio_nf.MOVER_NF" in srv and "mover_para_nf_enviada_no_outlook" in envio
     assert 'p.get("acao") not in (ENCAMINHAR, MOVER_NF)' in envio       # mover pasta nunca registra NF enviada
     assert "def mover_para_nf_enviada_no_outlook" in envio and "item.Delete()" not in envio.split("def mover_para_nf_enviada_no_outlook")[1].split("# ---------- pedido")[0]
-    assert "data-nf-concluir" in js and "mostrarDesfazer(" in js and "Nada é apagado" in js    # só por clique, com desfazer de 10 s
     assert "concluir" not in srv.split("def _alertas_nova_nota")[1].split("def nf_cobre")[0]    # a urgência nunca move e-mail
 
 
@@ -121,19 +118,8 @@ def test_falta_a_nota_do_estacionamento_ou_o_valor_nao_bate():
 
 def test_botao_direito_tirar_da_entrada_vale_ate_para_respondido_e_nunca_apaga():
     srv = fonte_servidor(RAIZ)
-    js = codigo_js(RAIZ / "app_ui", "correio")
     assert '"/api/correio/mover_nf"' in srv and "def mover_email_nf" in srv
     corpo = srv.split("def mover_email_nf")[1].split("def concluir_conversa")[0]
     assert "acao=envio_nf.MOVER_NF" in corpo and "acao=envio_nf.EXCLUIR" not in corpo and "excluir_email(" not in corpo
-    assert 'data-ctx="tirar"' in js and "function tirarDaEntrada" in js and 'if (acao === "tirar") return tirarDaEntrada(id);' in js
-    assert "if (!e || cx.resolvendo[id]) return;" not in js          # a linha cinza (já respondida) abre o menu
-    assert 'mostrarDesfazer("E-mail movido para' in js                # Desfazer de 10 s, nada é apagado
 
 
-def test_tela_de_carregamento_trava_a_tela_ate_terminar_e_nao_prende_para_sempre():
-    js = (RAIZ / "app_ui" / "pecas" / "carregando.js").read_text(encoding="utf-8")
-    css = (RAIZ / "app_ui" / "pecas" / "carregando.css").read_text(encoding="utf-8")
-    assert ".cg-veu.trava{pointer-events:auto" in css and "z-index:100" in css and "z-index:101" in css   # acima de avisos, caixas e janelas
-    assert 'veu.classList.add("on", "trava")' in js and 'veu.classList.remove("trava");   // terminou: destrava' in js
-    assert "e.stopImmediatePropagation(); e.preventDefault();" in js and 'DESTRAVA_MS = (globalThis.aj?.("tela.k_trava_maxima_segundos") ?? 90) * 1000' in js   # atalhos travam; 90 s de segurança
-    assert "mask" in js and 'url(#cg-mascara)' in js and ".cg-k .tr" not in css                       # aquarela: tinta cheia por máscara, sem linhas duplas

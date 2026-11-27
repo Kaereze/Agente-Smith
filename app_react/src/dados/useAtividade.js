@@ -1,6 +1,7 @@
 // O que cada PC está fazendo (/api/atividade): PCs da equipe, registro do robô e versão. Relido a cada 20 s.
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import { aj } from "../ajustes.js";
 
 export default function useAtividade() {
   const [atividade, setAtividade] = useState(null);
@@ -10,7 +11,7 @@ export default function useAtividade() {
       try { const j = await api("/api/atividade"); if (vivo && j.ok !== false) setAtividade(j); } catch { /* tenta de novo na próxima volta */ }
     };
     ler();
-    const t = setInterval(ler, 20000);
+    const t = setInterval(ler, aj("tela.registro_atualiza_segundos", 20) * 1000);
     return () => { vivo = false; clearInterval(t); };
   }, []);
   return { atividade };

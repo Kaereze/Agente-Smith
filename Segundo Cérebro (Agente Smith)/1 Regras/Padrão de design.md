@@ -8,7 +8,24 @@ tags: [cerebro/regras]
 
 **Objetivo (12/10/2026):** o Painel vai ser apresentado a uma empresa grande. Ter **um padrão fixo** em todas as telas (mesma letra, tamanho, aba, card, seleção, tabela, cor), bonito e simples, com animação discreta, tabelas, gráficos e porcentagens, fácil para quem não é de TI, e **rápido**, porque a equipe usa o tempo todo, em ligação e por e-mail.
 
-## Valendo desde 20/10/2026: Prévia 5 (Outlook escuro)
+## Valendo desde 27/11/2026: Painel Fiscal 1.0 em vidro, verde e creme (React)
+> Aprovado pelo João em 27/11/2026 ("ficou perfeito"; o verde e o creme são do logo novo da empresa). Desenhos em
+> `6 Documentos/Designs/2026-11-27 Painel Fiscal 1.0 em vidro (verde e creme).html`. A tela inteira é React em `app_react/`;
+> a tela antiga (JavaScript solto em `app_ui/`) foi apagada em 27/11/2026.
+
+| Item | Onde e como |
+|---|---|
+| Cores | Só pelos nomes de `app_react/src/estilo/tema.css` (`--verde`, `--creme`, `--vidro`, `--folha`, `--vermelho`, `--ambar-*`, `--azul-*`…). Claro é o padrão; `data-tema="escuro"` troca tudo. Tema por PC: Sistema, Claro ou Escuro (menu do avatar) |
+| Verde | **Agora é cor de tema** (antes: "sem verde"): botão de ação verde (Enviar NF), seleção, números bons, etapas feitas |
+| Superfícies | Painéis grandes em vidro (`.vidro`: fundo translúcido + desfoque). Menus e janelas que abrem por cima em `--folha` (quase opaca, para ler sem a lista aparecer atrás) |
+| Formas | Cápsula na lateral, topo e rodapé em pílula, cartões com cantos 18 a 26 px, botões em pílula |
+| Letra | Segoe UI Variable / Segoe UI; números alinhados (`tabular-nums`) |
+| Animação | Entrar suave em sequência (`.entra` com `--i`); números contam a partir de 0; tela de carregamento com o K desenhado; tudo para com "reduzir movimento" do Windows |
+| Peças únicas | `Botao`, `BotaoEnviarNF` (um só para todas as telas), `Etiqueta`, `Icone`, `Janela`, `Avisos` (recado e Desfazer), `Carregando` (K), `Bloco` (Pergunta, Como ler), gráficos em `Graficos.jsx` |
+| Escrita | Cada bloco responde a uma pergunta, com a resposta em frase antes do gráfico e um "como ler"; nunca número inventado (P2) |
+| Conferência | Antes de entregar: fotos em 1920, 1440, 1100 e 390 px, claro e escuro, sem texto cortado (`foto_*` no scratchpad, Playwright) |
+
+## ~~Valendo desde 20/10/2026: Prévia 5 (Outlook escuro)~~ (trocado em 27/11/2026 pelo vidro verde e creme acima)
 > Aprovada pelo João ("Design ficou perfeito!" e "use exatamente esse design dentro do painel fiscal"). Prévia no quadro
 > "Painel Fiscal — Repaginação", página "Prévia 5". Guia de uso: [[Guia do Painel Fiscal]].
 > Cada peça do Painel como está hoje, com o CSS e o HTML embaixo, e todos os designs feitos: [[Designs]].

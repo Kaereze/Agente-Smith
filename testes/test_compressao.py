@@ -2,6 +2,7 @@
 import gzip
 import http.client
 import json
+import re
 import threading
 import types
 from http.server import ThreadingHTTPServer
@@ -36,16 +37,18 @@ def test_servidor_de_verdade_manda_gzip_na_pagina_e_na_api():
     porta = servidor.server_address[1]
     threading.Thread(target=servidor.serve_forever, daemon=True).start()
     try:
-        # página inicial (grande): comprimida só para quem aceita, e igual depois de descomprimir
-        s1, h1, c1 = _pedir(porta, "/", aceita="gzip")
-        s2, h2, c2 = _pedir(porta, "/")
+        # o código montado da tela (grande): comprimido só para quem aceita, e igual depois de descomprimir
+        _, _, pagina = _pedir(porta, "/")
+        js = re.search(rb'(/v2/assets/[A-Za-z0-9_.-]+\.js)', pagina).group(1).decode()
+        s1, h1, c1 = _pedir(porta, js, aceita="gzip")
+        s2, h2, c2 = _pedir(porta, js)
         assert s1 == s2 == 200
         assert h1.get("content-encoding") == "gzip" and "content-encoding" not in h2
-        assert gzip.decompress(c1) == c2 and len(c1) < len(c2) / 3
+        assert gzip.decompress(c1) == c2 and len(c1) < len(c2) / 2
         assert int(h1["content-length"]) == len(c1)
-        # JS estático
-        s3, h3, c3 = _pedir(porta, "/painel.js", aceita="gzip")
-        assert h3.get("content-encoding") == "gzip" and b"function" in gzip.decompress(c3)
+        # a página (pequena, < 1 KB) vai sem compressão e com a senha da sessão
+        s3, h3, c3 = _pedir(porta, "/", aceita="gzip")
+        assert s3 == 200 and "content-encoding" not in h3 and b"token-de-teste" in c3
         # API pequena (< 1 KB): sem compressão, JSON intacto
         s4, h4, c4 = _pedir(porta, "/api/versao", aceita="gzip", extra={"X-Token": "token-de-teste"})
         assert s4 == 200 and "content-encoding" not in h4 and json.loads(c4) == {"v": "v1"}

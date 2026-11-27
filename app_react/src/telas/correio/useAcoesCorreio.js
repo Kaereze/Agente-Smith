@@ -4,8 +4,10 @@
 import { useCallback, useState } from "react";
 import { api } from "../../api.js";
 import { useAvisos } from "../../componentes/Avisos.jsx";
+import { aj } from "../../ajustes.js";
 
 const VALE_MS = 45000;   // o ajuste local vale até o servidor contar a mesma coisa
+const RESOLVENDO_MS = aj("tela.linha_resolvendo_minutos", 4) * 60000;   // a linha respondida fica cinza até o PC dono confirmar
 
 export default function useAcoesCorreio(reler) {
   const { recado, desfazer } = useAvisos();
@@ -61,7 +63,11 @@ export default function useAcoesCorreio(reler) {
   const excluir = useCallback((e) => comDesfazer([e.id], "E-mail excluído", "/api/correio/excluir",
     { id: e.id, entry: e.entry || "", caixa: e.caixa || "", de: e.de || "", nome: e.nome || "", hotel: e.hotel || "", assunto: e.assunto || "" }, "Exclusão desfeita"), [comDesfazer]);
   const tirarDaEntrada = useCallback((e) => comDesfazer([e.id], "E-mail movido para “NF enviada”", "/api/correio/mover_nf", { id: e.id }, "Movimento desfeito"), [comDesfazer]);
-  const respondeu = useCallback((e, todos) => setRespondidos((x) => { const n = { ...x }; (todos?.length ? todos : [e]).forEach((m) => (n[m.id] = true)); return n; }), []);
+  const respondeu = useCallback((e, todos) => {
+    const ids = (todos?.length ? todos : [e]).map((m) => m.id);
+    setRespondidos((x) => { const n = { ...x }; ids.forEach((i) => (n[i] = true)); return n; });
+    setTimeout(() => setRespondidos((x) => { const n = { ...x }; ids.forEach((i) => delete n[i]); return n; }), RESOLVENDO_MS);   // passou do tempo: volta ao normal
+  }, []);
 
   return { aplicar, lido, urgencia, ligacao, excluir, tirarDaEntrada, respondeu, respondidos };
 }

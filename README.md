@@ -48,7 +48,8 @@ src/                 código do robô e do Painel (Python)
   envio_pc_dono.py   envio pela caixa do hotel no PC dono
   app_servidor.py    servidor local do Painel (127.0.0.1) e rede entre os PCs
   espelho_emails.py  espelho do Outlook de cada PC
-app_ui/              telas do Painel Fiscal (HTML, CSS, JS)
+app_react/           tela do Painel Fiscal em React (montada em app_ui/v2)
+app_ui/              o que o servidor entrega pronto: a tela montada (v2), selos, mapa dos agentes, ícone
 apps_script/         menu da Planilha Central (Google Apps Script)
 Automacoes/          agendamentos do Windows (.ps1)
 Bat/                 atalhos (.bat)

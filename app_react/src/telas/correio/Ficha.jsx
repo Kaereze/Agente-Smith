@@ -9,6 +9,7 @@ import Etiqueta from "../../componentes/Etiqueta.jsx";
 import Janela from "../../componentes/Janela.jsx";
 import { useAvisos } from "../../componentes/Avisos.jsx";
 import { copiarTexto } from "./Formulario.jsx";
+import { aj } from "../../ajustes.js";
 import {
   campoDoPedido, CAMPO_DOC, CAMPO_NOME, cepValido, cnpjValido, contarDiarias, cpfValido, dataBr, etapasDoPedido, faltaDados, faltaExtras,
   hpData, nomeDoHospede, nomeSituacao, OCULTOS_FORM, prazoInfo, semAcento, seloDoDocumento, situacaoDoPedido, SITUACOES, textoEmissao, valorDoForm,
@@ -67,7 +68,9 @@ export default function Ficha({ d, emailId, emails, fila, hotel, soVer, voltar, 
   const ehPedido = !!d.chave, falta = faltaDados(d), sit = situacaoDoPedido(d), pz = prazoInfo(d.prazo);
   const m = etapasDoPedido({ hora: String(d.carimbo || d.data || "").slice(0, 16), falta, temPedido: ehPedido });
   const mail = String(d.email || "").trim().toLowerCase(), docNum = c(...CAMPO_DOC).replace(/\D/g, "");
-  const mails = emails.filter((e) => e.id === emailId || (d.chave && e.solicitacao?.chave === d.chave) || (mail && String(e.de || "").toLowerCase() === mail))
+  // E-mails dele(a) só desta hospedagem: desde N dias antes do check-in (ajustes: tela.dias_antes_checkin). Sem check-in: todos.
+  const desde = Number.isFinite(ci.ms) ? new Date(ci.ms - aj("tela.dias_antes_checkin", 30) * 864e5).toISOString().slice(0, 10) : "";
+  const mails = emails.filter((e) => e.id === emailId || (d.chave && e.solicitacao?.chave === d.chave) || (mail && String(e.de || "").toLowerCase() === mail && String(e.quando || "") >= desde))
     .sort((a, b) => String(b.quando).localeCompare(String(a.quando))).slice(0, 6);
   const outros = ehPedido ? (fila || []).filter((o) => o.chave !== d.chave && ((mail && String(o.email || "").toLowerCase() === mail) || (docNum.length >= 11 && campoDoPedido(o, ...CAMPO_DOC).replace(/\D/g, "") === docNum)))
     .sort((a, b) => String(b.data).localeCompare(String(a.data))).slice(0, 5) : [];

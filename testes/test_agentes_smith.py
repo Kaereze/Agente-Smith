@@ -6,7 +6,6 @@ from pathlib import Path
 
 from painel import agentes_smith
 import app_servidor
-from tela_texto import pagina, codigo_js
 from codigo_fonte import fonte_servidor, modulos
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -92,17 +91,6 @@ def test_rota_so_do_administrador_e_arquivo_fora_da_lista_publica():
     assert "e_admin_aqui(estado.cfg, nome_do_agente(), liberado())" in trecho and "403" in trecho
     assert trecho.index("e_admin_aqui") < trecho.index("agentes_smith.estado") < trecho.index("mapa.html")   # nada é lido antes de checar
     assert not [c for c in app_servidor.ESTATICOS if c.startswith("/agentes")]                                # o mapa não sai pela lista pública
-
-
-def test_botao_so_no_grupo_admin_e_quadro_carrega_so_ao_abrir():
-    html = pagina(RAIZ / "app_ui")
-    grupo = html[html.index('id="rot-admin"'):]
-    grupo = grupo[:grupo.index("</nav>")]
-    assert 'data-vista="agentes"' in grupo and "Agentes do Smith" in grupo
-    assert html.count('data-vista="agentes"') == 1                      # só existe esse botão, dentro do grupo admin
-    assert 'id="agentes-quadro"' in html and 'id="agentes-quadro" ' in html and "src=" not in html[html.index('id="agentes-quadro"'):html.index("</iframe>")]
-    js = codigo_js(RAIZ / "app_ui", "painel")
-    assert 'agentes: "Agentes do Smith"' in js and 'agentesQuadro(v === "agentes")' in js
 
 
 def _blocos_do_mapa():

@@ -4,13 +4,7 @@ import time
 from pathlib import Path
 
 from emails import enviar_receber as er
-from tela_texto import pagina, codigo_js
 from codigo_fonte import fonte_servidor
-
-UI = Path(__file__).resolve().parent.parent / "app_ui"
-CORREIO = codigo_js(UI, "correio")
-PAINEL = codigo_js(UI, "painel")
-HTML = pagina(UI)
 
 PCS = [{"pc": "PC-J", "agente": "João", "online": True, "rede": "10.0.0.1:8766"},
        {"pc": "PC-C", "agente": "Clara", "online": True, "rede": "10.0.0.2:8766"},
@@ -144,16 +138,6 @@ def test_rodar_aqui_em_trabalhar_offline_diz_o_motivo():
 
 
 # ---------- a tela ----------
-def test_botao_chama_o_pedido_aos_pcs_e_nao_so_recarrega():
-    assert "if (d.olAcao === \"sync\") enviarReceberTodas();" in CORREIO
-    assert "/api/enviar_receber/status?id=" in CORREIO and CORREIO.count("pintarSync();") >= 4
-    assert "Relendo as caixas dos 4 PCs" not in CORREIO
-
-
-def test_gancho_de_acao_longa_avisa_depois_de_3_s_e_o_api_liga_sozinho():
-    assert 'LIMITE_ACAO_LONGA_MS = (globalThis.aj?.("tela.acao_longa_segundos") ?? 3) * 1000' in PAINEL and "painel:acao-longa" in PAINEL and "painel:acao-longa-fim" in PAINEL
-    assert "const longa = corpo && !SEM_TELA_K.some(" in HTML and HTML.count("longa?.fim(") == 3
-    assert "acao.limiteMs ?? LIMITE_ACAO_LONGA_MS" in PAINEL and "limiteMs: 0" in CORREIO   # o Enviar/Receber abre na hora
 
 
 def test_servidor_so_atende_pelo_painel_deste_pc_e_pela_rede_assinada():
@@ -163,17 +147,6 @@ def test_servidor_so_atende_pelo_painel_deste_pc_e_pela_rede_assinada():
 
 
 # ---------- tela de carregamento do K (peça única, 27/10/2026) ----------
-def test_tela_do_k_entra_na_pagina_e_escuta_os_eventos():
-    ui = Path(__file__).resolve().parents[1] / "app_ui"
-    js = (ui / "pecas" / "carregando.js").read_text(encoding="utf-8")
-    assert '<link rel="stylesheet" href="/pecas/carregando.css">' in HTML and '<script src="/pecas/carregando.js"></script>' in HTML
-    assert "painel:acao-longa" in js and "painel:acao-longa-fim" in js and js.count('"M') >= 60   # os 62 contornos do K
-    css = (ui / "pecas" / "carregando.css").read_text(encoding="utf-8")
-    assert "prefers-reduced-motion" in css and ".cg-pcs li.falha" in css                   # sem movimento + erro de PC
-
-
-def test_a_faixa_de_baixo_nao_mostra_mais_carregando():
-    assert 'classList.remove("oculta", "erro"); $("carregando-txt").textContent = frase' not in HTML
 
 
 # ---------- 29/10/2026: botão ⟳ do topo (um pedido, 10 s no máximo, libera na falha) ----------
@@ -219,25 +192,3 @@ def test_pc_so_painel_nao_entra_no_pedido(tmp_path):
     assert "PC-I" not in chamadas and v["total"] == 3 and not v["falhas"]                         # sem Outlook: nem pedido, nem falha
 
 
-def test_tela_um_clique_loop_de_5_s_standby_no_icone_e_10_s_no_maximo():
-    ui = Path(__file__).resolve().parents[1] / "app_ui"
-    js = (ui / "pecas" / "carregando.js").read_text(encoding="utf-8")
-    css = (ui / "pecas" / "carregando.css").read_text(encoding="utf-8")
-    assert 'const VOLTA_MS = (globalThis.aj?.("tela.k_volta_segundos") ?? 5) * 1000;' in js and "VOLTA_MS - 300" in js                                # o K se desenha em loop de 5 s
-    assert "painel:acao-standby" in js and "a.standbyMs" in js and "window.cgMiniK" in js           # passou de 5 s: sai de cena, o ícone assume
-    assert ".cg-mini" in css and ".cg-pcs li.atraso" in css
-    assert 'standbyMs: (globalThis.aj?.("tela.k_standby_segundos") ?? 5) * 1000' in CORREIO and 'LIMITE_PEDIDO_MS = ((globalThis.aj?.("recarregar.limite_segundos") ?? 10) + 0.5) * 1000' in CORREIO                   # 10 s no máximo (+ folga da rede)
-    assert 'pintarTopo("rodando")' in CORREIO and 'pintarTopo("")' in CORREIO and "recEmCurso" in CORREIO
-    assert "if (recEmCurso || (cx.er && !cx.er.fim)) return;" in CORREIO                           # um clique só enquanto roda
-    assert 'api("/api/atualizar", {})' in CORREIO                                                   # o mesmo clique relê a planilha
-    assert 'enviarReceberTodas();   // relê a planilha e pede o Enviar/Receber' in HTML or "return enviarReceberTodas();" in HTML
-    assert '"/api/atualizar"]' in HTML and 'id="btn-mini"' in HTML and "#btn-atualizar.em-espera .g-mini" in HTML
-
-
-def test_toda_acao_sai_da_tela_grande_em_5_s_e_nao_fica_em_loop_infinito():
-    """29/10/2026 (João): o POST /api/atualizar levou 79 s e a tela do K ficou em loop. Agora nenhuma ação segura a tela além do stand-by."""
-    js = (UI / "pecas" / "carregando.js").read_text(encoding="utf-8")
-    assert 'const STANDBY_PADRAO_MS = (globalThis.aj?.("tela.k_standby_segundos") ?? 5) * 1000;' in js and "a.standbyMs ?? STANDBY_PADRAO_MS" in js        # vale para qualquer ação, não só o recarregar
-    assert "if (a.standbyMs) espera" not in js                                                       # o stand-by não depende de a ação pedir
-    assert 'painel:espera' in js and "emEspera.delete(id)" in js and "emEspera.clear()" in js          # o ícone sabe quando ainda há ação em andamento
-    assert 'window.addEventListener("painel:espera"' in HTML and 'b.classList.toggle("em-espera", e.detail.n > 0)' in HTML

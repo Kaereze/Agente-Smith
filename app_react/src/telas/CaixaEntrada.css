@@ -28,9 +28,6 @@
 .caixa-hotel .nm small { font-size: 11px; color: var(--apagado); overflow: hidden; text-overflow: ellipsis; }
 .caixa-hotel.sel .nm small { color: inherit; opacity: .7; }
 .caixa-hotel.tem .nm b { font-weight: 700; }
-.sub-pastas { display: grid; gap: 2px; margin: 2px 0 4px 26px; }
-.sub-pastas button { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 32px; padding: 0 10px; border-radius: 10px; color: var(--texto2); font-size: 13px; text-align: left; }
-.sub-pastas button.on { background: var(--verde-suave); color: var(--verde-texto); font-weight: 600; }
 .mais-caixas { margin: 0 0 4px 16px; height: 30px; padding: 0 10px; border-radius: 10px; color: var(--verde-texto); font-size: 12.5px; font-weight: 600; text-align: left; }
 .mais-caixas:hover { background: var(--verde-suave); }
 .qt { min-width: 26px; height: 22px; padding: 0 7px; border-radius: 11px; background: var(--verde-suave); color: var(--verde-texto); font-size: 12px; font-weight: 700;
@@ -42,6 +39,37 @@
 .abas-lista button { height: 30px; padding: 0 14px; border-radius: 999px; color: var(--texto2); font-weight: 500; }
 .abas-lista button:disabled { opacity: .45; cursor: not-allowed; }
 .abas-lista button[aria-pressed="true"] { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .45); }
+.classificador { display: flex; flex-wrap: wrap; gap: 4px; }
+.classificador button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 11px; border-radius: 999px; background: var(--vidro-forte);
+  color: var(--texto2); font-weight: 500; font-size: 13px; }
+.classificador button:hover { color: var(--texto); }
+.classificador button[aria-selected="true"] { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .45); }
+.cl-n { min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--cinza); font-size: 11.5px; font-weight: 700; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.classificador button[aria-selected="true"] .cl-n { background: var(--verde-suave); color: var(--verde-texto); }
+.classificador button.urg .cl-n { background: var(--vermelho); color: #fff; }
+.lista-ferr { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.fh { position: relative; min-width: 0; }
+.fh-bt, .ordem-lista { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--linha);
+  color: var(--texto2); font-size: 12.5px; font-weight: 600; max-width: 100%; }
+.fh-bt span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
+.fh-bt.on { border-color: var(--verde); background: var(--verde-suave); color: var(--verde-texto); }
+.ordem-lista select { border: 0; background: transparent; color: inherit; font: inherit; outline: none; cursor: pointer; }
+.ordem-lista select option { color: #1a1c19; }
+.fh-menu { position: absolute; top: 36px; left: 0; z-index: 30; width: min(330px, calc(100vw - 32px)); padding: 10px; border-radius: 18px; display: grid; gap: 8px;
+  background: var(--folha); border: 1px solid var(--vidro-borda); box-shadow: 0 18px 44px -18px rgba(0, 0, 0, .55); animation: entra .2s both; }
+.fh-bts { display: flex; gap: 4px; flex-wrap: wrap; }
+.fh-bts button { height: 28px; padding: 0 10px; border-radius: 999px; background: var(--cinza); color: var(--texto); font-size: 12px; font-weight: 600; }
+.fh-bts button:disabled { opacity: .45; cursor: not-allowed; }
+.fh-lista { display: grid; gap: 2px; max-height: 300px; overflow: auto; scrollbar-width: thin; }
+.fh-it { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; font-size: 13px; cursor: pointer; }
+.fh-it:hover { background: var(--verde-suave); }
+.fh-it input { accent-color: var(--verde); width: 16px; height: 16px; flex: none; }
+.fh-nome { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fh-nome small { color: var(--verde-texto); font-weight: 600; }
+.fh-nv { flex: none; padding: 1px 8px; border-radius: 9px; font-size: 11px; font-weight: 700; background: var(--cinza); color: var(--texto2); }
+.fh-nv.alta { background: var(--vermelho-suave); color: var(--vermelho-texto); } .fh-nv.media { background: var(--ambar-suave); color: var(--ambar-texto); }
+.fh-nv.baixa { background: var(--verde-suave); color: var(--verde-texto); }
+.fh-menu .dica { margin: 0; font-size: 11.5px; color: var(--apagado); }
 .cab-lista .info { font-size: 12px; color: var(--apagado); }
 .cab-lista .info b { color: var(--texto); }
 .busca-info { display: grid; gap: 8px; font-size: 13px; }

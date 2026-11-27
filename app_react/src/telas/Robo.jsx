@@ -1,5 +1,8 @@
 // Robô: o que ele está fazendo (Agora) e o que aconteceu (Registro). Só dados reais (/api/estado, /api/correio, /api/atividade).
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAvisos } from "../componentes/Avisos.jsx";
+import { comoResolver, fraseDoAviso } from "../dados/avisos.js";
+import { api } from "../api.js";
 import Icone from "../componentes/Icone.jsx";
 import Botao from "../componentes/Botao.jsx";
 import Conta from "../componentes/Conta.jsx";
@@ -126,7 +129,56 @@ function Registro() {
   );
 }
 
-export default function Robo({ estado, r }) {
+// Os avisos do sistema que o robô conhece, com o "Como resolver" (passos copiáveis para mandar a quem está no PC)
+function Avisos({ saude: todos, admin, irPara }) {
+  const { recado } = useAvisos();
+  const [aberto, setAberto] = useState({});
+  const saude = (todos || []).filter((a) => comoResolver(a.texto).ver !== "robo");   // "sem envio ao hotel" já está na faixa de baixo, com o "Enviar agora"
+  if (!saude.length) return null;
+  return (
+    <section className="bloco vidro entra robo-avisos" style={{ "--i": 0 }}>
+      <Pergunta assunto="Avisos">O que está atrapalhando o robô?</Pergunta>
+      {saude.slice(0, 6).map((a, i) => {
+        const [titulo, sub] = fraseDoAviso(a.texto), aj = comoResolver(a.texto);
+        return (
+          <div key={i} className={`robo-aviso${a.nivel === "warn" ? "" : " grave"}`}>
+            <Bolinha icone="alerta" tipo={a.nivel === "warn" ? "ambar" : "vermelha"} tamanho={34} />
+            <div className="ra-txt"><b>{titulo}</b>{sub && <small>{sub}</small>}
+              {aj.passos && aberto[i] && (
+                <div className="ra-passos"><ol>{aj.passos.map((p) => <li key={p}>{p}</li>)}</ol>
+                  <Botao pequeno icone="copiar" onClick={async () => { try { await navigator.clipboard.writeText(aj.passos.map((p, k) => `${k + 1}. ${p}`).join("\n")); recado("Instruções copiadas"); } catch { recado("Não deu para copiar agora", true); } }}>Copiar instruções</Botao></div>
+              )}
+            </div>
+            {aj.passos ? <Botao pequeno onClick={() => setAberto({ ...aberto, [i]: !aberto[i] })}>{aberto[i] ? "Fechar" : "Como resolver"}</Botao>
+              : admin ? <Botao pequeno onClick={() => irPara("maquinas")}>Ver no Monitoramento</Botao> : null}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+// Ligar / pausar o envio automático. Pausar pede um 2º clique em 5 s (os pedidos ficam esperando enquanto estiver pausado).
+function BotaoLigar({ ligado, soVer, admin, reler }) {
+  const { recado } = useAvisos();
+  const [confirma, setConfirma] = useState(false);
+  useEffect(() => { if (!confirma) return undefined; const t = setTimeout(() => setConfirma(false), 5000); return () => clearTimeout(t); }, [confirma]);
+  const mudar = async () => {
+    if (ligado && !confirma) { setConfirma(true); return; }
+    setConfirma(false);
+    const r = await api("/api/robo/ligado", { ligado: !ligado });
+    if (r.ok === false) return recado(r.motivo || r.erro || "Não deu certo", true);
+    recado(ligado ? "Envio automático pausado: os pedidos ficam esperando" : "Robô ligado: volta a copiar e enviar");
+    reler?.();
+  };
+  return (
+    <Botao tipo={ligado ? (confirma ? "perigo" : "vidro") : "verde"} icone={ligado ? "desligar" : "robo"} desligado={soVer || !admin}
+      titulo={soVer ? "Este PC só visualiza" : !admin ? "Só o João liga ou pausa o robô" : undefined} onClick={mudar}>
+      {ligado ? (confirma ? "Clique de novo para pausar" : "Pausar o robô") : "Ligar o robô"}</Botao>
+  );
+}
+
+export default function Robo({ estado, r, reler, admin, irPara }) {
   const [aba, setAba] = useState("agora");
   if (!estado || !r) return <main className="principal vidro carregando">Lendo o robô…</main>;
   const ligado = estado.status?.ligado !== false;
@@ -134,9 +186,10 @@ export default function Robo({ estado, r }) {
     <main className="principal vidro">
       <CabecalhoTela icone="robo" titulo="Robô" explica="Copia os pedidos dos formulários e envia para a caixa de cada hotel.">
         <Etiqueta tipo={ligado ? "verde" : "ambar"} icone={ligado ? "check" : "alerta"}>{ligado ? "Ligado" : "Pausado"}</Etiqueta>
+        <BotaoLigar ligado={ligado} soVer={!!estado.so_ver} admin={admin} reler={reler} />
         <AbasPilula rotulo="Parte do robô" valor={aba} aoEscolher={setAba} opcoes={[["agora", "Agora"], ["registro", "Registro"]]} />
       </CabecalhoTela>
-      {aba === "agora" ? <Agora estado={estado} r={r} soVer={!!estado.so_ver} /> : <Registro />}
+      {aba === "agora" ? <><Avisos saude={estado.saude} admin={admin} irPara={irPara} /><Agora estado={estado} r={r} soVer={!!estado.so_ver} /></> : <Registro />}
     </main>
   );
 }

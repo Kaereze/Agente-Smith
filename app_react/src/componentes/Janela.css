@@ -1,6 +1,6 @@
 .janela-fundo { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 12px;
   background: rgba(10, 24, 18, .34); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: aparece .2s both; }
-.janela { display: flex; flex-direction: column; max-height: calc(100vh - 24px); border-radius: 26px; background: var(--vidro-forte); outline: none;
+.janela { display: flex; flex-direction: column; max-height: calc(100vh - 24px); border-radius: 26px; background: var(--folha); border: 1px solid var(--vidro-borda); outline: none;
   box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .6); animation: surge .3s cubic-bezier(.2, .8, .2, 1) both; overflow: hidden; }
 .janela-cab { display: flex; align-items: flex-start; gap: 12px; padding: 20px 22px 12px; }
 .janela-cab > div { flex: 1; min-width: 0; }

@@ -25,7 +25,7 @@ def test_toda_resposta_leva_os_cabecalhos_de_seguranca_inclusive_os_erros():
     porta = servidor.server_address[1]
     threading.Thread(target=servidor.serve_forever, daemon=True).start()
     try:
-        casos = [("/", None, None, 200), ("/painel.js", None, None, 200), ("/api/versao", None, "token-de-teste", 200),
+        casos = [("/", None, None, 200), ("/ajustes.js", None, None, 200), ("/icone.png", None, None, 200), ("/api/versao", None, "token-de-teste", 200),
                  ("/api/versao", None, "errado", 403), ("/api/versao", "outro-site.com", "token-de-teste", 403)]
         for caminho, host, token, status in casos:
             s, h = _pedir(porta, caminho, host, token)

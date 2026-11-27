@@ -11,7 +11,8 @@ import Etiqueta from "../componentes/Etiqueta.jsx";
 import Janela from "../componentes/Janela.jsx";
 import { useAvisos } from "../componentes/Avisos.jsx";
 import { api } from "../api.js";
-import { enviarPendentes, useEnviarReceber } from "../dados/acoes.js";
+import { enviarPendentes } from "../dados/acoes.js";
+import FiltroHoteis, { contarPorHotel, hoteisDe, lerMeus, nivelDoHotel, NIVEIS } from "./correio/FiltroHoteis.jsx";
 import { ehFormulario, etiquetasDoEmail, faltaDados, faltaExtras, formDoTexto, nomeDoHospede, pedidoDoEmail, pedidoDoFormulario } from "../dados/formulario.js";
 import Pastas, { nomeDaCaixa } from "./correio/Pastas.jsx";
 import Leitura, { dadosDoEmail, dataLonga } from "./correio/Leitura.jsx";
@@ -33,7 +34,11 @@ const horaCurta = (q) => {
 };
 const grupo = (dias) => (dias < 1 ? "Hoje" : dias < 2 ? "Ontem" : dias < 7 ? "Esta semana" : "Mais antigos");
 const ORDEM_GRUPOS = ["Hoje", "Ontem", "Esta semana", "Mais antigos"];
-const NOMES_PASTA = { entrada: "Caixa de Entrada", urgencia: "Urgência", form: "Formulários do robô", enviados: "Itens Enviados" };
+// O classificador em cima da lista (João, 27/11/2026: no lugar dos botões Urgência e Itens enviados da cápsula)
+const CLASSES = [["todas", "Todas"], ["naolidos", "Não lidos"], ["urgencia", "Urgência"], ["form", "Formulários"], ["enviados", "Enviados (72 h)"]];
+const NOMES_CLASSE = { todas: "Caixa de Entrada", naolidos: "Não lidos", urgencia: "Urgência", form: "Formulários do robô", enviados: "Itens Enviados" };
+const ORDENS = [["novo", "Mais novo primeiro"], ["antigo", "Mais antigo primeiro"], ["prioridade", "Prioridade do hotel"]];
+const lerOrdem = () => { try { const o = localStorage.getItem("painel.ordemLista"); return ORDENS.some(([v]) => v === o) ? o : "novo"; } catch { return "novo"; } };
 const OQUE = { novo: "o e-mail", enc: "a mensagem", nf: "a resposta com a NF", pedido: "a NF", resp: "a resposta" };
 const digitando = (t) => /INPUT|TEXTAREA|SELECT/.test(t?.tagName) || t?.isContentEditable;
 const temJanela = () => !!document.querySelector(".janela-fundo, .menu-email");
@@ -46,13 +51,16 @@ function etiquetasDaLinha(e, fila, cinza) {
   return l;
 }
 
-export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada", busca = "", setBusca, aba = "inicio", reler, trocarTema }) {
+export default function CaixaEntrada({ correio, estado, classeInicial = "todas", busca = "", setBusca, aba = "inicio", reler, trocarTema, er }) {
   const { recado } = useAvisos();
   const envios = useEnvios();
   const acoes = useAcoesCorreio(reler);
   const { texto } = useTextos();
-  const [vista, setVista] = useState({ pasta: pastaInicial, caixa: "" });
-  const [soNaoLidos, setSoNaoLidos] = useState(false);
+  const [classe, setClasse] = useState(classeInicial);
+  const [caixaSel, setCaixaSel] = useState("");          // caixa de um hotel escolhida nas pastas ("" = todas)
+  const [hoteisSel, setHoteisSel] = useState(lerMeus);   // filtro de hotéis (abre com "Meus hotéis")
+  const [ordem, setOrdemLista] = useState(lerOrdem);
+  const setOrdem = (o) => { setOrdemLista(o); try { localStorage.setItem("painel.ordemLista", o); } catch { /* só nesta janela */ } };
   const [aberto, setAberto] = useState(null);
   const [escrevendo, setEscrevendo] = useState(null);   // { modo, id, extra } — dentro da leitura
   const [novo, setNovo] = useState(null);               // { modo, extra, minimizado, rotulo } — janela por cima
@@ -62,7 +70,6 @@ export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada"
   const [semPastas, setSemPastas] = useState(false);
   const [live, setLive] = useState(null), [buscando, setBuscando] = useState("");
   const listaRef = useRef(null);
-  const er = useEnviarReceber(recado, reler);
 
   const fila = estado?.fila || [];
   const pcs = estado?.pcs || correio?.pcs || [];
@@ -91,20 +98,25 @@ export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada"
     if (r.erro || r.ok === false) { recado(r.erro || r.motivo || "Não deu para pesquisar agora", true); setLive(null); } else setLive(r);
   }
 
+  // a caixa (e a caixa do hotel escolhida) e os hotéis marcados; o classificador conta em cima disso
+  const daCaixa = (l) => l.filter((e) => (!caixaSel || String(e.caixa).toLowerCase() === caixaSel) && (!hoteisSel.size || hoteisDe(e).some((h) => hoteisSel.has(h))));
+  const base = useMemo(() => ({ entrada: daCaixa(entrada), enviados: daCaixa(enviados) }), [entrada, enviados, caixaSel, hoteisSel]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const FILTRO = {
+    todas: (l) => l, naolidos: (l) => l.filter((e) => e.lido === false), urgencia: (l) => l.filter((e) => e.urgente),
+    form: (l) => l.filter((e) => (e.classes || []).includes("formulario")),
+  };
+  const contaClasse = (k) => (k === "enviados" ? base.enviados.length : FILTRO[k](base.entrada).length);
+  const porHotel = useMemo(() => contarPorHotel(entrada), [entrada]);
+  const nivelDe = (m) => { const ns = hoteisDe(m).map((h) => porHotel[h] || 0); return nivelDoHotel(ns.length ? Math.max(...ns) : 0); };
   const lista = useMemo(() => {
-    let l;
-    if (live) l = aplicar(live.resultados || []);
-    else if (vista.pasta === "enviados") l = enviados.filter((e) => !vista.caixa || String(e.caixa).toLowerCase() === vista.caixa);
-    else {
-      l = entrada.filter((e) => !vista.caixa || String(e.caixa).toLowerCase() === vista.caixa);
-      if (vista.pasta === "urgencia") l = l.filter((e) => e.urgente);
-      if (vista.pasta === "form") l = l.filter((e) => (e.classes || []).includes("formulario"));
-    }
-    if (soNaoLidos && vista.pasta !== "enviados") l = l.filter((e) => e.lido === false);
-    return [...l].sort((a, b) => (a.quando < b.quando ? 1 : -1));
-  }, [live, entrada, enviados, vista, soNaoLidos, aplicar]);
+    const l = live ? aplicar(live.resultados || []) : classe === "enviados" ? base.enviados : FILTRO[classe](base.entrada);
+    const d = ordem === "antigo" ? 1 : -1;
+    return [...l].sort((a, b) => (a.quando < b.quando ? -d : a.quando > b.quando ? d : 0));
+  }, [live, base, classe, ordem, aplicar]);   // eslint-disable-line react-hooks/exhaustive-deps
   const idade = (m) => m.dias ?? (Date.now() - new Date(m.quando || 0)) / 864e5;
-  const grupos = ORDEM_GRUPOS.map((g) => [g, lista.filter((m) => grupo(idade(m)) === g)]).filter(([, l]) => l.length);
+  const grupos = ordem === "prioridade" && !live && classe !== "enviados"
+    ? ["alta", "media", "baixa", "vazia"].map((n) => [`Prioridade ${NIVEIS[n].toLowerCase()}`, lista.filter((m) => nivelDe(m) === n)]).filter(([, l]) => l.length)
+    : (ordem === "antigo" ? [...ORDEM_GRUPOS].reverse() : ORDEM_GRUPOS).map((g) => [g, lista.filter((m) => grupo(idade(m)) === g)]).filter(([, l]) => l.length);
   const todos = useMemo(() => [...entrada, ...enviados, ...(live?.resultados || [])], [entrada, enviados, live]);
   const e = aberto ? todos.find((x) => x.id === aberto) : null;
   const cinza = !!(e && acoes.respondidos[e.id]);
@@ -231,7 +243,8 @@ export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada"
   );
   const paraDoForm = leituraFormulario?.email && String(leituraFormulario.email).includes("@") ? String(leituraFormulario.email).trim().toLowerCase() : "";
   const podeEscrever = e && e.pasta === "entrada" && noEspelho(e) && !cinza && !soVer;
-  const tituloLista = live ? "Resultado da pesquisa" : vista.caixa ? `${nomeDaCaixa(vista.caixa, estado?.hoteis)} · ${NOMES_PASTA[vista.pasta === "enviados" ? "enviados" : "entrada"]}` : NOMES_PASTA[vista.pasta];
+  const tituloLista = (caixaSel ? `${nomeDaCaixa(caixaSel, estado?.hoteis)} · ` : "") + NOMES_CLASSE[classe];
+  const todosHoteis = Object.keys(porHotel).concat((estado?.hoteis || []).map((h) => h.hotel)).filter((h, i, a) => h && a.indexOf(h) === i);
   const cmd = (icone, t, aoClicar, { titulo, desligado } = {}) => (
     <button type="button" className="cmd" title={titulo || t} disabled={desligado} onClick={aoClicar}><Icone nome={icone} tamanho={17} /><span className="cmd-texto">{t}</span></button>
   );
@@ -273,8 +286,8 @@ export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada"
         )
       ) : (
         <div className={`ol-mesa${semPastas ? " sem-pastas" : ""}${aberto || escrevendo ? " lendo" : ""}`}>
-          {!semPastas && <Pastas vista={live ? {} : vista} escolher={(v) => { if (ocupado()) return; setBusca?.(""); setVista(v); setAberto(null); }}
-            entrada={entrada} contagem={correio.contagem || {}} enviados={enviados.length} pcs={pcs} hoteis={estado?.hoteis} estePc={correio.este_pc} />}
+          {!semPastas && <Pastas caixa={live ? null : caixaSel} escolher={(c) => { if (ocupado()) return; setBusca?.(""); setCaixaSel(c); setAberto(null); }}
+            entrada={entrada} total={contaClasse("todas")} pcs={pcs} hoteis={estado?.hoteis} estePc={correio.este_pc} />}
           <section className="pn vidro entra" style={{ "--i": 1 }} aria-label="Lista de e-mails">
             <div className="cab-lista">
               {live || buscando ? (
@@ -289,11 +302,26 @@ export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada"
                 </div>
               ) : (
                 <>
-                  <div className="abas-lista" role="group" aria-label="Mostrar">
-                    <button type="button" aria-pressed={!soNaoLidos} onClick={() => setSoNaoLidos(false)}>Todas</button>
-                    <button type="button" aria-pressed={soNaoLidos} onClick={() => setSoNaoLidos(true)} disabled={vista.pasta === "enviados"}>Não lidos</button>
+                  <div className="classificador" role="tablist" aria-label="Mostrar na lista">
+                    {CLASSES.map(([k, t]) => {
+                      const n = contaClasse(k);
+                      return (
+                        <button key={k} type="button" role="tab" aria-selected={classe === k} className={k === "urgencia" && n ? "urg" : ""}
+                          onClick={() => { if (classe !== k && !ocupado()) { setClasse(k); setAberto(null); } }}>
+                          {t}<span className="cl-n">{n}</span></button>
+                      );
+                    })}
                   </div>
-                  <span className="info"><b>{tituloLista}</b> · {lista.length} e-mails{vista.pasta !== "enviados" ? ` · ${lista.filter((x) => x.lido === false).length} não lidos` : ""}</span>
+                  <div className="lista-ferr">
+                    <FiltroHoteis hoteis={todosHoteis} contagem={porHotel} sel={hoteisSel} setSel={setHoteisSel} />
+                    <label className="ordem-lista" title="Como a lista fica arrumada">
+                      <Icone nome="ordem" tamanho={14} />
+                      <select value={ordem} onChange={(ev) => setOrdem(ev.target.value)} aria-label="Ordem da lista">
+                        {ORDENS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <span className="info"><b>{tituloLista}</b> · {lista.length} e-mails{classe !== "enviados" ? ` · ${lista.filter((x) => x.lido === false).length} não lidos` : ""}{hoteisSel.size ? ` · ${hoteisSel.size} hote${hoteisSel.size > 1 ? "is" : "l"} marcado${hoteisSel.size > 1 ? "s" : ""}` : ""}</span>
                 </>
               )}
             </div>

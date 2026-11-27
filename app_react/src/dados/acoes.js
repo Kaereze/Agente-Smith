@@ -3,13 +3,14 @@
 //   useEnviarReceber() → relê a planilha e pede o Enviar/Receber (F9) aos PCs com Outlook; no máximo uns 10 s
 import { useCallback, useRef, useState } from "react";
 import { api } from "../api.js";
+import { aj } from "../ajustes.js";
 
 export async function enviarPendentes() {
   const j = await api("/api/enviar", {});
   return j.ok === false ? { erro: true, texto: j.motivo || j.erro || "Não deu para pedir agora." } : { texto: "Pedido entregue ao robô. Ele envia na próxima rodada." };
 }
 
-const LIMITE_MS = 10500;   // o servidor corta o pedido em 10 s
+const LIMITE_MS = (aj("recarregar.limite_segundos", 10) + 0.5) * 1000;   // o servidor corta o pedido nesse tempo (+ folga da rede)
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function useEnviarReceber(recado, reler) {

@@ -8,8 +8,6 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 from notas import controle_nf  # noqa: E402
 from notas import nf_achadas  # noqa: E402
-from tela_texto import codigo_js
-from codigo_fonte import fonte, fonte_servidor
 
 AGORA = datetime.datetime(2026, 10, 27, 12, 0)
 TEXTO = ("DANFSe v1.0 Documento Auxiliar da NFS-e\nChave de Acesso 4120000000000000000000000000000000000000000000000\n"
@@ -128,15 +126,6 @@ def test_tag_sem_envio_nos_itens_enviados_gera_aviso():
     assert nf_achadas.sem_envio_confirmado(["2186"], enviados, ["h@x.com"]) == []
     assert nf_achadas.sem_envio_confirmado(["2201"], enviados, ["h@x.com"]) == ["2201"]   # a resposta do hóspede não vale
     assert nf_achadas.sem_envio_confirmado(["999"], enviados, ["h@x.com"]) == ["999"]
-
-
-def test_tela_e_servidor_ligados_sem_marcar_outra_nota():
-    js = codigo_js(RAIZ / "app_ui", "painel")
-    srv = fonte_servidor(RAIZ)
-    assert "avisos_nf" in js and "outra nota" in js and "a.outra || a.possivel" in js
-    assert "!o.sugestoes[0].outra && !o.sugestoes[0].possivel" in js          # "outra nota" e "possível" nunca vêm marcadas
-    assert "estado.iniciar_nf_achadas()" in srv and "nf_achadas.achadas_do_pedido" in srv
-    assert "nf_achadas" not in fonte(RAIZ, "envio_nf")   # a peça não envia nada
 
 
 # ---------- gatilho: nota nova na pasta -> etiqueta "NF pronta" do e-mail (27/10/2026) ----------

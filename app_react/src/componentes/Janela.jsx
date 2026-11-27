@@ -21,7 +21,7 @@ export default function Janela({ titulo, sub, children, rodape, aoFechar, largur
   }, []);
   return createPortal(
     <div className="janela-fundo" onMouseDown={(ev) => { if (fecharFora && ev.target === ev.currentTarget) aoFechar?.(); }}>
-      <div ref={caixa} className={`janela vidro ${classe}`} role="dialog" aria-modal="true" aria-label={titulo} tabIndex={-1} style={{ width: `min(${largura}px, calc(100vw - 24px))` }}>
+      <div ref={caixa} className={`janela ${classe}`} role="dialog" aria-modal="true" aria-label={titulo} tabIndex={-1} style={{ width: `min(${largura}px, calc(100vw - 24px))` }}>
         <div className="janela-cab">
           <div><h3>{titulo}</h3>{sub && <p>{sub}</p>}</div>
           {aoFechar && <button type="button" className="janela-x" onClick={aoFechar} aria-label="Fechar" title="Fechar (Esc)"><Icone nome="fechar" tamanho={16} /></button>}

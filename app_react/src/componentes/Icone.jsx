@@ -37,6 +37,9 @@ const DESENHOS = {
   formulario: <><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M9.5 15h5M9.5 12h5" /></>,
   pessoa: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
   baixar: <><path d="M12 4v11M7 10l5 5 5-5" /><path d="M5 20h14" /></>,
+  hotel: <><path d="M4 21V5l8-2v18M12 8h8v13M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2M2 21h20" /></>,
+  desligar: <><path d="M12 3v8" /><path d="M6.3 6.3a8 8 0 1 0 11.4 0" /></>,
+  ordem: <><path d="M7 4v16M3.5 16.5L7 20l3.5-3.5" /><path d="M14 6h7M14 11h5M14 16h3" /></>,
 };
 
 export default function Icone({ nome, tamanho = 18, titulo }) {

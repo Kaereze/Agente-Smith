@@ -1,4 +1,4 @@
-// A tela nova (React) é montada aqui e sai pronta em app_ui/v2, que o servidor do Painel abre em /v2/.
+// A tela do Painel (React) é montada aqui e sai pronta em app_ui/v2, que o servidor do Painel abre em "/".
 // Os 4 PCs não instalam nada: recebem os arquivos já montados pelo git, como sempre.
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";

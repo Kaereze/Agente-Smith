@@ -10,13 +10,8 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 from emails import outlook_vivo  # noqa: E402
 from painel import saude  # noqa: E402
-from tela_texto import pagina
 from codigo_fonte import fonte_servidor
 
-UI = RAIZ / "app_ui"
-HTML = pagina(UI)
-JS = (UI / "pecas" / "caixas.js").read_text(encoding="utf-8")
-CSS = (UI / "pecas" / "caixas.css").read_text(encoding="utf-8")
 SERVIDOR = fonte_servidor(RAIZ)
 
 
@@ -60,29 +55,3 @@ def test_servidor_tem_as_rotas_do_botao():
     assert '"caixas": estado.rede_caixas' in SERVIDOR and '"reiniciar_outlook": estado.rede_reiniciar_outlook' in SERVIDOR
 
 
-def test_a_peca_entra_na_pagina_e_o_x_so_guarda_o_quadro():
-    assert '<link rel="stylesheet" href="/pecas/caixas.css">' in HTML and '<script src="/pecas/caixas.js"></script>' in HTML
-    assert "window.caixasProblema?.(j.saude || [])" in HTML and '"/api/outlook/reiniciar"' in HTML
-    assert "pn.hidden = true" in JS and "bt.hidden = pcs.size === 0" in JS   # o X guarda o quadro; o botão só some sem problema
-    assert "limiteMs: 0" in JS                                                # o reinício abre a tela do K na hora
-
-
-def test_cores_sao_as_da_auditoria_e_sem_verde():
-    for cor in ("#0f6cbd", "#479ef5", "#c4314b", "#ff8d95", "#9a6700", "#f2c76b", "#e7f1fb", "#16324d"):
-        assert cor in CSS
-    for verde in ("#3ddc9e", "#5ec27e", "#08805a", "#107c41", "var(--verde", "var(--mata", "var(--ok"):
-        assert verde not in CSS
-
-
-def test_tela_do_k_tambem_usa_a_paleta_da_auditoria():
-    k = (UI / "pecas" / "carregando.css").read_text(encoding="utf-8")
-    for verde in ("var(--verde", "var(--mata", "var(--ok", "var(--chao", "var(--folha", "var(--linha"):
-        assert verde not in k
-    assert "var(--cp-azul)" in k and "var(--cp-verm)" in k
-
-
-def test_classes_do_resultado_nao_colidem_com_as_do_painel():
-    for antiga in ('"av"', '"ok"', '"er"', "cp-res an", "cp-lin a"):
-        assert antiga not in JS.replace('"cp-azul"', "")
-    for nova in ("cp-am", "cp-azul", "cp-verm", "cp-cinza", "cp-amb"):
-        assert nova in JS and f".{nova}" in CSS or f".cp-res.{nova}" in CSS

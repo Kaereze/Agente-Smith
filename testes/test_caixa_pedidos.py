@@ -1,4 +1,4 @@
-"""Notas fiscais = espelho da Caixa de Entrada (usuário, 11/10/2026): só as solicitações do robô que estão no Outlook."""
+﻿"""Notas fiscais = espelho da Caixa de Entrada (usuário, 11/10/2026): só as solicitações do robô que estão no Outlook."""
 import datetime
 
 from painel import app_dados as dados
@@ -219,7 +219,7 @@ def test_ler_abas_da_contagem():
 def test_pagina_inteira_espera_arquivo_completo(tmp_path, monkeypatch):
     # página lida no meio de uma atualização (sem </html>) = tenta de novo, não entrega pela metade
     import app_servidor
-    monkeypatch.setattr(app_servidor, "PASTA_UI", tmp_path)
+    monkeypatch.setattr(app_servidor, "PASTA_TELA", tmp_path)
     monkeypatch.setattr(app_servidor.time, "sleep", lambda s: None)
     leituras = iter(["<html><script>let a = `", "<html><body>ok</body></html>\n"])
     monkeypatch.setattr(type(tmp_path), "read_text", lambda self, **k: next(leituras))
