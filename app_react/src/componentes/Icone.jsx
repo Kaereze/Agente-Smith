@@ -27,6 +27,16 @@ const DESENHOS = {
   envelope: <><rect x="3.5" y="6" width="17" height="12" rx="2" /><path d="M4 8l8 5.5L20 8" /></>,
   atualizar: <path d="M20 11a8 8 0 00-14-5L4 8M4 4v4h4M4 13a8 8 0 0014 5l2-2M20 20v-4h-4" />,
   voltar: <><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></>,
+  fechar: <path d="M6 6l12 12M18 6L6 18" />,
+  clipe: <path d="M20 11.5l-8.2 8.2a5.2 5.2 0 0 1-7.4-7.4l8.6-8.6a3.5 3.5 0 0 1 5 5l-8.5 8.5a1.7 1.7 0 0 1-2.5-2.5l7.8-7.8" />,
+  lixo: <><path d="M4 7h16M9 7V4.5h6V7" /><path d="M6 7l1 13h10l1-13" /></>,
+  pasta: <><path d="M3 7h7l2 2h9v10H3z" /><path d="M9 14l2 2 4-4" /></>,
+  telefone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
+  copiar: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>,
+  mais: <><circle cx="5.5" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="18.5" cy="12" r="1.3" fill="currentColor" /></>,
+  formulario: <><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M9.5 15h5M9.5 12h5" /></>,
+  pessoa: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
+  baixar: <><path d="M12 4v11M7 10l5 5 5-5" /><path d="M5 20h14" /></>,
 };
 
 export default function Icone({ nome, tamanho = 18, titulo }) {

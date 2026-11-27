@@ -30,6 +30,7 @@ def painel_demo(tmp_path_factory):
     servidor = None
     try:
         cfg = demo.configurar_cfg(carregar_config(exigir_chave=False))
+        cfg["tela"] = ""   # aqui é a tela de hoje (em /); o config.local.json deste PC pode estar com a tela nova ligada
         backend = demo.BackendDemo()
         estado = app_servidor.Estado(backend, cfg)
         demo.preparar(estado, backend)

@@ -5,19 +5,34 @@
 .cmd:hover:not(:disabled) { background: var(--vidro-forte); color: var(--texto); }
 .cmd:disabled { opacity: .5; cursor: not-allowed; }
 .faixa .sep { width: 1px; height: 18px; background: var(--linha); margin: 0 6px; flex: none; }
-.faixa .botao { margin-left: 4px; }
+.faixa .botao { margin-left: 4px; flex: none; }
 
 .ol-mesa { display: grid; grid-template-columns: 280px 370px minmax(0, 1fr); gap: 10px; min-height: 0; }
+.ol-mesa.sem-pastas { grid-template-columns: 400px minmax(0, 1fr); }
 .pn { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: 22px; }
-.pastas { padding: 10px 8px; gap: 3px; overflow: auto; }
-.pn-cab { padding: 10px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--apagado); }
-.pasta { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 10px 0 12px; border-radius: 999px; color: var(--texto); font-weight: 500; text-align: left; }
-.pasta > span:not(.qt):not(.capsula-avatar) { flex: 1; min-width: 0; white-space: nowrap; }
+.pastas { padding: 10px 8px; gap: 3px; overflow: auto; scrollbar-width: thin; }
+.pn-cab { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--apagado); text-align: left; }
+.pn-cab.grupo[aria-expanded="false"] .ico { transform: rotate(-90deg); }
+.pasta { display: flex; align-items: center; gap: 10px; min-height: 42px; width: 100%; padding: 0 10px 0 12px; border-radius: 999px; color: var(--texto); font-weight: 500; text-align: left; flex: none; }
+.pasta > span:not(.qt):not(.capsula-avatar) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pasta:is(button):hover { background: var(--vidro-forte); }
 .pasta.sel { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, .45); }
-.pasta.agente { border-radius: 16px; background: var(--vidro-forte); margin-bottom: 4px; padding: 6px 10px 6px 7px; }
+.pasta.agente { border-radius: 16px; background: var(--vidro-forte); margin: 6px 0 4px; padding: 6px 10px 6px 7px; }
+.pasta.agente.fechado { opacity: .85; }
 .agente-texto { display: grid; line-height: 1.25; }
 .agente-texto small { font-size: 12px; font-weight: 600; }
+.pc-ok { color: var(--verde-texto); } .pc-fora { color: var(--apagado); }
+.caixa-hotel { min-height: 46px; border-radius: 14px; padding-left: 16px; }
+.caixa-hotel .nm { display: grid; line-height: 1.25; }
+.caixa-hotel .nm b { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.caixa-hotel .nm small { font-size: 11px; color: var(--apagado); overflow: hidden; text-overflow: ellipsis; }
+.caixa-hotel.sel .nm small { color: inherit; opacity: .7; }
+.caixa-hotel.tem .nm b { font-weight: 700; }
+.sub-pastas { display: grid; gap: 2px; margin: 2px 0 4px 26px; }
+.sub-pastas button { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 32px; padding: 0 10px; border-radius: 10px; color: var(--texto2); font-size: 13px; text-align: left; }
+.sub-pastas button.on { background: var(--verde-suave); color: var(--verde-texto); font-weight: 600; }
+.mais-caixas { margin: 0 0 4px 16px; height: 30px; padding: 0 10px; border-radius: 10px; color: var(--verde-texto); font-size: 12.5px; font-weight: 600; text-align: left; }
+.mais-caixas:hover { background: var(--verde-suave); }
 .qt { min-width: 26px; height: 22px; padding: 0 7px; border-radius: 11px; background: var(--verde-suave); color: var(--verde-texto); font-size: 12px; font-weight: 700;
   display: inline-grid; place-items: center; flex: none; font-variant-numeric: tabular-nums; }
 .qt.urg { background: var(--vermelho); color: #fff; }
@@ -25,47 +40,51 @@
 .cab-lista { display: grid; gap: 8px; padding: 12px 12px 10px; border-bottom: 1px solid var(--linha); }
 .abas-lista { justify-self: start; display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--vidro-forte); }
 .abas-lista button { height: 30px; padding: 0 14px; border-radius: 999px; color: var(--texto2); font-weight: 500; }
+.abas-lista button:disabled { opacity: .45; cursor: not-allowed; }
 .abas-lista button[aria-pressed="true"] { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .45); }
 .cab-lista .info { font-size: 12px; color: var(--apagado); }
 .cab-lista .info b { color: var(--texto); }
+.busca-info { display: grid; gap: 8px; font-size: 13px; }
+.busca-pcs, .busca-bts { display: flex; gap: 6px; flex-wrap: wrap; }
 .linhas { flex: 1; min-height: 0; overflow: auto; padding: 0 8px 8px; scrollbar-width: thin; }
 .grp { font-size: 12px; font-weight: 600; color: var(--apagado); padding: 10px 8px 6px; }
 .lista-vazia { color: var(--apagado); padding: 16px; }
 .em { display: grid; gap: 2px; width: 100%; padding: 10px 12px; margin-bottom: 6px; border-radius: 16px; background: var(--vidro-forte); text-align: left;
   border: 1.5px solid transparent; animation: entra .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 50ms); }
 .em:hover { border-color: var(--vidro-borda); }
+.em:focus-visible { outline: 2px solid var(--verde); outline-offset: 1px; }
 .em[aria-selected="true"] { border-color: var(--verde); background: var(--verde-suave); }
 .em.urg { background: var(--vermelho-suave); }
-.em.urg .de, .em.urg .as, .em.urg svg { color: var(--vermelho-texto); }
+.em.urg .de, .em.urg .as, .em.urg .ics { color: var(--vermelho-texto); }
+.em.cinza { opacity: .55; }
 .em .l1 { display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
 .em .de { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.em .ics { display: inline-flex; gap: 4px; color: var(--apagado); flex: none; }
 .em.nao-lido .de { font-weight: 700; }
+.em.nao-lido { box-shadow: inset 3px 0 0 var(--verde); }
 .em .as { min-width: 0; color: var(--verde-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .em .d { color: var(--apagado); font-size: 12px; flex: none; }
 .em .pv { color: var(--apagado); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.tags:empty { display: none; }
 
 .leit { padding: 22px 26px; overflow: auto; }
 .leit .vazio { flex: 1; display: grid; place-items: center; align-content: center; gap: 8px; color: var(--apagado); text-align: center; }
 .leit .vazio b { color: var(--texto); }
-.leit-corpo { display: grid; gap: 12px; animation: surge .35s both; }
-.leit-corpo h3 { margin: 0; font-size: 21px; font-weight: 600; }
-.meta-l { color: var(--apagado); font-size: 13px; }
-.leit-corpo p { margin: 0; color: var(--texto2); max-width: 66ch; }
-.ficha-p { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 16px; padding: 14px; border-radius: 16px; background: var(--vidro-forte); }
-.ficha-p small { display: block; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--apagado); }
-.acoes-leitura { display: flex; gap: 8px; flex-wrap: wrap; }
-.leit-corpo .dica { font-size: 12.5px; color: var(--apagado); }
 
 @media (max-width: 1279px) {
-  .ol-mesa { grid-template-columns: 350px minmax(0, 1fr); }
+  .ol-mesa, .ol-mesa.sem-pastas { grid-template-columns: 350px minmax(0, 1fr); }
   .ol-mesa .pastas { display: none; }
   .cmd-texto { display: none; }
   .cmd { width: 36px; justify-content: center; padding: 0; }
+  .leit { padding: 18px 18px; }
 }
 @media (max-width: 760px) {
-  .faixa { display: none; }
-  .ol { grid-template-rows: minmax(0, 1fr); padding-bottom: 70px; }
-  .ol-mesa { grid-template-columns: minmax(0, 1fr); }
+  .faixa { flex-wrap: wrap; row-gap: 4px; border-radius: 20px; }
+  .faixa .sep, .faixa > span[style] { display: none; }
+  .ol { padding-bottom: 70px; }
+  .ol-mesa, .ol-mesa.sem-pastas { grid-template-columns: minmax(0, 1fr); }
   .ol-mesa .leit { display: none; }
+  .ol-mesa.lendo > section { display: none; }
+  .ol-mesa.lendo .leit { display: flex; padding: 16px 14px; }
 }

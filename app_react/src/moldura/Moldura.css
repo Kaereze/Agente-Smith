@@ -25,13 +25,15 @@
 .topo-abas { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--vidro-forte); flex: none; }
 .topo-abas button { height: 34px; padding: 0 14px; border-radius: 999px; color: var(--texto2); white-space: nowrap; font-weight: 500; }
 .topo-abas button[aria-pressed="true"] { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .45); }
-.topo-caixa { height: 40px; display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; border-radius: 999px; background: var(--vidro-forte);
-  border: 1px solid var(--vidro-borda); white-space: nowrap; flex: none; color: var(--apagado); }
-.topo-caixa b { color: var(--texto); font-weight: 600; }
 .topo-busca { flex: 1; min-width: 0; max-width: 560px; margin-left: auto; height: 40px; display: flex; align-items: center; gap: 10px;
   padding: 0 14px 0 7px; border-radius: 999px; background: var(--vidro-forte); border: 1px solid var(--vidro-borda); }
 .topo-busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 14px; }
 .topo-busca input::placeholder { color: var(--apagado); }
+.topo-busca input::-webkit-search-cancel-button { display: none; }
+.topo-busca input:focus, .topo-busca input:focus-visible { outline: none; }
+.topo-busca:focus-within { border-color: var(--verde); box-shadow: 0 0 0 3px var(--verde-suave); }
+.topo-limpar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--texto2); flex: none; }
+.topo-limpar:hover { background: var(--cinza); color: var(--texto); }
 .orbe { width: 26px; height: 26px; flex: none; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fff, var(--creme) 30%, var(--verde) 70%, var(--verde-esc)); }
 kbd { flex: none; font: 11px ui-monospace, Consolas, monospace; color: var(--apagado); border: 1px solid var(--linha); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
 
@@ -47,13 +49,12 @@ kbd { flex: none; font: 11px ui-monospace, Consolas, monospace; color: var(--apa
 .rodape-estado.atencao { background: var(--ambar-suave); color: var(--ambar-texto); }
 .rodape-item { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; }
 .rodape-demo { padding: 3px 10px; border-radius: 999px; background: var(--ambar-suave); color: var(--ambar-texto); font-weight: 600; }
-.rodape-reserva { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--vidro-forte); color: var(--texto2); font-weight: 600; }
 
-@media (max-width: 1279px) { .rodape .fraco { display: none; } .topo-abas button[aria-pressed="false"] { display: none; } }
+@media (max-width: 1279px) { .rodape .fraco { display: none; } .topo-abas button { padding: 0 10px; font-size: 13px; } }
 @media (max-width: 760px) {
   .casco { grid-template-columns: minmax(0, 1fr); grid-template-areas: "topo" "meio" "rod"; padding: 10px; }
   .capsula { position: fixed; left: 10px; right: 10px; bottom: 10px; width: auto; flex-direction: row; justify-content: space-around; padding: 6px; z-index: 20; }
   .capsula hr, .capsula-selo, .capsula > span[style] { display: none; }
-  .topo-quem b, kbd, .topo-caixa, .topo-abas { display: none; }
+  .topo-quem b, kbd, .topo-abas { display: none; }
   .rodape { display: none; }
 }

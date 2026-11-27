@@ -1,0 +1,11 @@
+.avisos-canto { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 60; display: grid; gap: 8px; justify-items: center;
+  width: min(560px, calc(100vw - 32px)); pointer-events: none; }
+.aviso-curto, .aviso-desfazer { pointer-events: auto; display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 10px 16px; border-radius: 16px;
+  background: var(--principal-fundo); color: var(--principal-texto); font-weight: 600; font-size: 13.5px; box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .55);
+  animation: surge .3s cubic-bezier(.2, .8, .2, 1) both; }
+.aviso-curto span { min-width: 0; overflow-wrap: anywhere; }
+.aviso-curto.erro { background: var(--vermelho); color: #fff; }
+.aviso-desfazer { gap: 14px; }
+.aviso-desfazer button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--verde); color: #fff; font-weight: 700; }
+.aviso-desfazer button:hover { filter: brightness(1.08); }
+@media (max-width: 760px) { .avisos-canto { bottom: 140px; } }

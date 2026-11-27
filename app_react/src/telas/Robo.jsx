@@ -6,7 +6,7 @@ import Conta from "../componentes/Conta.jsx";
 import Etiqueta from "../componentes/Etiqueta.jsx";
 import { CabecalhoTela, Pergunta, ComoLer, Bolinha, AbasPilula } from "../componentes/Bloco.jsx";
 import useAtividade from "../dados/useAtividade.js";
-import { api } from "../api.js";
+import { enviarPendentes } from "../dados/acoes.js";
 import "./Robo.css";
 
 // "11/27/2026 01:15:13" (planilha do formulário) -> Date
@@ -37,8 +37,7 @@ function Agora({ estado, r, soVer }) {
     .sort((a, b) => b[1] - a[1]).slice(0, 4).map(([h, n]) => `${h} (${n})`).join(", ");
   const enviarAgora = async () => {
     setEnviando("Pedindo ao robô…");
-    const j = await api("/api/enviar", {});
-    setEnviando(j.ok === false ? (j.motivo || j.erro || "Não deu para pedir agora.") : "Pedido entregue ao robô. Ele envia na próxima rodada.");
+    setEnviando((await enviarPendentes()).texto);
   };
   return (
     <>

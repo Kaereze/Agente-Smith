@@ -1,0 +1,12 @@
+.envios-canto { position: fixed; right: 18px; bottom: 76px; z-index: 55; display: grid; gap: 8px; justify-items: end; max-width: calc(100vw - 36px); }
+.envio-pilula { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 8px; border-radius: 999px; background: var(--vermelho); color: #fff;
+  font-weight: 700; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .5); animation: surge .3s both; }
+.envio-pilula i, .envio-cartao i { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; color: var(--vermelho); font-style: normal; font-weight: 800; }
+.envio-cartao { width: min(360px, calc(100vw - 36px)); padding: 16px; border-radius: 20px; display: grid; gap: 8px; animation: surge .3s both; }
+.envio-cartao b { display: flex; align-items: center; gap: 8px; color: var(--vermelho-texto); }
+.envio-cartao i { background: var(--vermelho); color: #fff; }
+.envio-cartao p { margin: 0; color: var(--texto2); font-size: 13px; overflow-wrap: anywhere; }
+.envio-cartao div { display: flex; justify-content: flex-end; gap: 8px; }
+.envio-cartao button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--cinza); color: var(--texto); font-weight: 600; }
+.envio-cartao button.forte { background: var(--principal-fundo); color: var(--principal-texto); }
+@media (max-width: 760px) { .envios-canto { bottom: 140px; right: 12px; } }

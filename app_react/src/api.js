@@ -13,8 +13,3 @@ export async function api(caminho, corpo) {
   if (!r.ok && j.ok !== false) j = { ...j, ok: false };
   return j;
 }
-
-// Abre uma tela que ainda não foi passada para React, na tela de hoje (a reserva).
-export function abrirNaTelaDeHoje(tela) {
-  window.location.href = "/classica" + (tela ? "#" + tela : "");
-}

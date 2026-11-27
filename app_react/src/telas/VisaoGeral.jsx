@@ -6,7 +6,8 @@ import Botao from "../componentes/Botao.jsx";
 import Conta, { useLigado } from "../componentes/Conta.jsx";
 import { GraficoLinhas, Rosca, Barra, Anel } from "../componentes/Graficos.jsx";
 import { comparaOntem, porcento } from "../dados/resumo.js";
-import { abrirNaTelaDeHoje } from "../api.js";
+import { enviarPendentes } from "../dados/acoes.js";
+import { useAvisos } from "../componentes/Avisos.jsx";
 import "./VisaoGeral.css";
 
 function Numero({ rotulo, valor, comparacao, explica, ruim }) {
@@ -25,8 +26,9 @@ function saudacao(agora) {
   return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
 
-export default function VisaoGeral({ r, agente, irPara }) {
+export default function VisaoGeral({ r, agente, irPara, soVer }) {
   const ligado = useLigado();
+  const { recado } = useAvisos();
   if (!r) return <main className="principal vidro carregando">Lendo os dados dos 4 PCs…</main>;
   const agora = new Date();
   const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -124,7 +126,8 @@ export default function VisaoGeral({ r, agente, irPara }) {
               <Botao onClick={() => irPara("correio")}>Ver na caixa</Botao></div>
             <div className="atencao-item"><span className="bolinha azul"><Icone nome="robo" /></span>
               <div><b>{r.paraHotel} pedidos ainda não foram para o hotel</b><small>O robô manda aos hotéis a cada rodada. Dá para mandar agora.</small></div>
-              <Botao icone="enviar" onClick={() => abrirNaTelaDeHoje("")}>Enviar pendentes</Botao></div>
+              <Botao icone="enviar" desligado={soVer} titulo={soVer ? "Este PC só visualiza" : "Pede ao robô para mandar agora"}
+                onClick={async () => { const j = await enviarPendentes(); recado(j.texto, j.erro); }}>Enviar pendentes</Botao></div>
           </div>
         </section>
       </div>
