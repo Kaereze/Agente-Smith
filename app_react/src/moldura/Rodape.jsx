@@ -1,6 +1,5 @@
 // A pílula da situação do sistema, em linha própria (nunca por cima da lista). Sempre com texto, nunca só cor.
 import Icone from "../componentes/Icone.jsx";
-import { abrirNaTelaDeHoje } from "../api.js";
 import "./Moldura.css";
 
 export default function Rodape({ resumo, demo, lidoEm }) {
@@ -18,9 +17,6 @@ export default function Rodape({ resumo, demo, lidoEm }) {
       <span className="rodape-item"><Icone nome="pc" tamanho={15} />{ligados} de {pcs.length} PCs ligados</span>
       <span className="rodape-item fraco"><Icone nome="relogio" tamanho={15} />lido às {hora}</span>
       {demo && <span className="rodape-demo">Demonstração · dados fictícios</span>}
-      <button type="button" className="rodape-reserva" onClick={() => abrirNaTelaDeHoje("")} title="Volta para a tela de hoje, a reserva">
-        <Icone nome="voltar" tamanho={14} />Tela de hoje
-      </button>
     </footer>
   );
 }

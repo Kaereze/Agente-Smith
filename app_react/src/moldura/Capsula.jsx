@@ -1,15 +1,14 @@
 // A cápsula da barra lateral: um círculo por tela; a tela aberta fica no círculo claro.
-// Telas já passadas para React abrem aqui; as outras abrem na tela de hoje (a reserva).
 import Icone from "../componentes/Icone.jsx";
-import { abrirNaTelaDeHoje } from "../api.js";
 import "./Moldura.css";
 
 export const TELAS = [
-  { chave: "visao", nome: "Visão geral", icone: "casa", react: true },
-  { chave: "correio", nome: "Caixa de entrada", icone: "caixa", react: true, numero: "entrada" },
-  { chave: "urgencia", nome: "Urgência", icone: "alerta", numero: "urgencia", antiga: "correio" },
+  { chave: "visao", nome: "Visão geral", icone: "casa" },
+  { chave: "correio", nome: "Caixa de entrada", icone: "caixa", numero: "entrada" },
+  { chave: "urgencia", nome: "Urgência", icone: "alerta", numero: "urgencia" },
+  { chave: "enviados", nome: "Itens enviados", icone: "enviar" },
   { chave: "fila", nome: "Notas fiscais", icone: "nota" },
-  { chave: "robo", nome: "Robô", icone: "robo", antiga: "" },
+  { chave: "robo", nome: "Robô", icone: "robo" },
   "separador",
   { chave: "maquinas", nome: "Monitoramento", icone: "pc", admin: true },
   { chave: "agentes", nome: "Agentes do Smith", icone: "rede", admin: true },
@@ -24,10 +23,9 @@ export default function Capsula({ tela, irPara, contagem, admin, agente }) {
         if (t === "separador") return <hr key={"s" + i} />;
         if (t.admin && !admin) return null;
         const n = t.numero ? contagem?.[t.numero] : 0;
-        const clicar = () => (t.react ? irPara(t.chave) : abrirNaTelaDeHoje(t.antiga ?? t.chave));
         return (
-          <button key={t.chave} type="button" className="capsula-botao" title={t.react ? t.nome : `${t.nome} (abre na tela de hoje)`}
-            aria-label={t.nome} aria-current={tela === t.chave ? "page" : undefined} onClick={clicar}>
+          <button key={t.chave} type="button" className="capsula-botao" title={t.nome}
+            aria-label={t.nome} aria-current={tela === t.chave ? "page" : undefined} onClick={() => irPara(t.chave)}>
             <Icone nome={t.icone} tamanho={19} />
             {n > 0 && <span className="capsula-numero">{n > 99 ? "99+" : n}</span>}
           </button>

@@ -1,0 +1,28 @@
+.mon-resumo { display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 16px; flex-wrap: wrap; }
+.mon-resumo-texto { flex: 1; min-width: 240px; display: grid; }
+.mon-resumo-texto b { font-size: 16px; }
+.mon-resumo-texto span { color: var(--texto2); font-size: 13.5px; }
+.mon-selos { display: flex; gap: 8px; flex-wrap: wrap; }
+.mon-cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.mon-cartao { padding: 18px; display: flex; flex-direction: column; gap: 12px; border-radius: 24px; }
+.mon-cartao.fora { opacity: .85; }
+.mon-topo { display: flex; align-items: center; gap: 12px; }
+.mon-topo b { display: block; font-size: 17px; margin-bottom: 3px; }
+.mon-uso { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; font-weight: 600; font-size: 13px; }
+.mon-uso.verde { background: var(--verde-suave); color: var(--verde-texto); }
+.mon-uso.cinza { background: var(--cinza); color: var(--texto2); }
+.mon-numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mon-selos-pc { display: flex; flex-wrap: wrap; gap: 4px; }
+.mon-numeros > div { display: grid; padding: 10px 12px; border-radius: 14px; background: var(--vidro-forte); min-width: 0; }
+.mon-numeros b { font-size: 17px; line-height: 1.2; overflow-wrap: anywhere; }
+.mon-numeros small { font-size: 11.5px; color: var(--apagado); }
+.mon-parte { display: grid; gap: 5px; }
+.mon-parte small { font-size: 12px; font-weight: 600; color: var(--texto2); }
+.mon-conf { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--texto2); }
+.mon-ultimos { display: grid; gap: 5px; padding-top: 10px; border-top: 1px solid var(--linha); font-size: 12.5px; }
+.mon-ultimos small { font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--apagado); }
+.mon-ultimos > div { display: grid; grid-template-columns: 44px 1fr; gap: 6px; }
+.mon-ultimos > div span:first-child, .mon-nada { color: var(--apagado); }
+.mon-versao { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--verde-texto); }
+.mon-versao.diferente { color: var(--ambar-texto); font-weight: 600; }
+.mon-cartao .botao { width: 100%; }

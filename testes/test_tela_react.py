@@ -21,8 +21,7 @@ def _subir(tmp_path, mp, tela=""):
     for nome, arq in (("CAMINHO_CACHE", "cache.pkl"), ("CAMINHO_PREFS", "app.json"), ("CAMINHO_CANCELADAS", "canceladas.json")):
         mp.setattr(app_servidor, nome, tmp_path / arq)
     cfg = demo.configurar_cfg(carregar_config(exigir_chave=False))
-    if tela:
-        cfg["tela"] = tela
+    cfg["tela"] = tela   # sempre fixo aqui: o config.local.json deste PC pode estar com a tela nova ligada
     backend = demo.BackendDemo()
     estado = app_servidor.Estado(backend, cfg)
     demo.preparar(estado, backend)

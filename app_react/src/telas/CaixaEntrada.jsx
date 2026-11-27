@@ -19,6 +19,11 @@ const ORDEM_GRUPOS = ["Hoje", "Ontem", "Esta semana", "Mais antigos"];
 
 function etiquetasDoEmail(e) {
   const lista = [];
+  if (e.pasta === "enviado") {
+    (e.anexos || []).slice(0, 2).forEach((a) => lista.push(<Etiqueta key={a} tipo="verde" icone="nota">{a}</Etiqueta>));
+    if (e.ligacao) lista.push(<Etiqueta key="lig" tipo="azul">Ligação</Etiqueta>);
+    return lista;
+  }
   const notas = e.notas || [];
   if (notas.length) lista.push(<Etiqueta key="nf" tipo="verde" icone="check">NF enviada · {notas.join(", ")}</Etiqueta>);
   else if (e.solicitacao) lista.push(<Etiqueta key="sem" tipo="azul" icone="nota">Sem NF</Etiqueta>);
@@ -27,8 +32,8 @@ function etiquetasDoEmail(e) {
   return lista;
 }
 
-export default function CaixaEntrada({ correio, estado }) {
-  const [pasta, setPasta] = useState("entrada");
+export default function CaixaEntrada({ correio, estado, pastaInicial = "entrada" }) {
+  const [pasta, setPasta] = useState(pastaInicial);
   const [soNaoLidos, setSoNaoLidos] = useState(false);
   const [aberto, setAberto] = useState(null);
   const emails = correio?.emails || [];
@@ -36,12 +41,13 @@ export default function CaixaEntrada({ correio, estado }) {
   const caixaPcs = estado?.caixa_pcs || {};
 
   const lista = useMemo(() => {
-    let l = emails.filter((e) => e.pasta === "entrada");
+    let l = pasta === "enviados" ? (correio?.enviados || []) : emails.filter((e) => e.pasta === "entrada");
     if (pasta === "urgencia") l = l.filter((e) => e.urgente);
-    if (soNaoLidos) l = l.filter((e) => !e.lido);
+    if (soNaoLidos && pasta !== "enviados") l = l.filter((e) => !e.lido);
     return [...l].sort((a, b) => (a.quando < b.quando ? 1 : -1));
-  }, [emails, pasta, soNaoLidos]);
-  const grupos = ORDEM_GRUPOS.map((g) => [g, lista.filter((e) => grupo(e.dias || 0) === g)]).filter(([, l]) => l.length);
+  }, [emails, correio, pasta, soNaoLidos]);
+  const idade = (m) => m.dias ?? (Date.now() - new Date(m.quando || 0)) / 864e5;
+  const grupos = ORDEM_GRUPOS.map((g) => [g, lista.filter((m) => grupo(idade(m)) === g)]).filter(([, l]) => l.length);
   const e = lista.find((x) => x.id === aberto);
 
   if (!correio) return <main className="ol-vazio vidro">Lendo as caixas de entrada dos 4 PCs…</main>;
@@ -68,7 +74,7 @@ export default function CaixaEntrada({ correio, estado }) {
             <Icone nome="caixa" tamanho={17} /><span>Caixa de Entrada (todas)</span><span className="qt">{contagem.entrada ?? lista.length}</span></button>
           <button type="button" className={`pasta${pasta === "urgencia" ? " sel" : ""}`} onClick={() => setPasta("urgencia")}>
             <Icone nome="alerta" tamanho={17} /><span>Urgência</span><span className="qt urg">{contagem.urgencia ?? 0}</span></button>
-          <button type="button" className="pasta" onClick={() => abrirNaTelaDeHoje("correio")}><Icone nome="enviar" tamanho={17} /><span>Itens Enviados</span></button>
+          <button type="button" className={`pasta${pasta === "enviados" ? " sel" : ""}`} onClick={() => setPasta("enviados")}><Icone nome="enviar" tamanho={17} /><span>Itens Enviados (72 h)</span><span className="qt">{(correio?.enviados || []).length}</span></button>
           <div className="pn-cab">Agentes e PCs</div>
           {Object.entries(caixaPcs).map(([pc, c]) => (
             <div key={pc} className="pasta agente">
@@ -84,7 +90,7 @@ export default function CaixaEntrada({ correio, estado }) {
               <button type="button" aria-pressed={!soNaoLidos} onClick={() => setSoNaoLidos(false)}>Todas</button>
               <button type="button" aria-pressed={soNaoLidos} onClick={() => setSoNaoLidos(true)}>Não lidos</button>
             </div>
-            <span className="info"><b>{pasta === "urgencia" ? "Urgência" : "Caixa de Entrada"}</b> · {lista.length} e-mails · {lista.filter((x) => !x.lido).length} não lidos</span>
+            <span className="info"><b>{{ urgencia: "Urgência", enviados: "Itens Enviados" }[pasta] || "Caixa de Entrada"}</b> · {lista.length} e-mails · {lista.filter((x) => !x.lido).length} não lidos</span>
           </div>
           <div className="linhas" role="listbox" aria-label="E-mails">
             {grupos.length === 0 && <p className="lista-vazia">Nenhum e-mail aqui.</p>}
@@ -94,7 +100,7 @@ export default function CaixaEntrada({ correio, estado }) {
                 {l.map((m, i) => (
                   <button key={m.id} type="button" role="option" aria-selected={m.id === aberto}
                     className={`em${m.urgente ? " urg" : ""}${m.lido ? "" : " nao-lido"}`} style={{ "--i": Math.min(i, 8) }} onClick={() => setAberto(m.id)}>
-                    <span className="l1"><span className="de">{m.nome || m.de}</span>{m.urgente && <Icone nome="bandeira" tamanho={14} />}</span>
+                    <span className="l1"><span className="de">{pasta === "enviados" ? `Para: ${m.para}` : (m.nome || m.de)}</span>{m.urgente && <Icone nome="bandeira" tamanho={14} />}</span>
                     <span className="l1"><span className="as">{m.assunto}</span><span className="d">{dataCurta(m.quando)}</span></span>
                     <span className="pv">{m.hotel} · {m.previa}</span>
                     <span className="tags">{etiquetasDoEmail(m)}</span>

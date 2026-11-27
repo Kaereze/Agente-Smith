@@ -1,6 +1,7 @@
 // Visão geral: o resumo do dia em perguntas, com a resposta escrita antes de cada gráfico e um "como ler".
 // Todos os números vêm do Painel (resumo.js); nada é inventado.
 import Icone from "../componentes/Icone.jsx";
+import { Pergunta, ComoLer } from "../componentes/Bloco.jsx";
 import Botao from "../componentes/Botao.jsx";
 import Conta, { useLigado } from "../componentes/Conta.jsx";
 import { GraficoLinhas, Rosca, Barra, Anel } from "../componentes/Graficos.jsx";
@@ -8,12 +9,6 @@ import { comparaOntem, porcento } from "../dados/resumo.js";
 import { abrirNaTelaDeHoje } from "../api.js";
 import "./VisaoGeral.css";
 
-function Pergunta({ assunto, children }) {
-  return <div className="pergunta"><small>{assunto}</small><h3>{children}</h3></div>;
-}
-function ComoLer({ children }) {
-  return <p className="como-ler"><Icone nome="livro" tamanho={15} /><span>{children}</span></p>;
-}
 function Numero({ rotulo, valor, comparacao, explica, ruim }) {
   return (
     <div className="numero">

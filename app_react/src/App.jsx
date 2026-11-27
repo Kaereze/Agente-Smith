@@ -1,18 +1,25 @@
 // O Painel Fiscal em React: a moldura (cápsula, topo, rodapé) e a tela escolhida no meio.
-// Telas já em React: Visão geral e Caixa de entrada. As outras abrem na tela de hoje (a reserva) até serem passadas.
 import { useEffect, useMemo, useState } from "react";
 import Capsula from "./moldura/Capsula.jsx";
 import Topo from "./moldura/Topo.jsx";
 import Rodape from "./moldura/Rodape.jsx";
 import VisaoGeral from "./telas/VisaoGeral.jsx";
 import CaixaEntrada from "./telas/CaixaEntrada.jsx";
+import Robo from "./telas/Robo.jsx";
+import Monitoramento from "./telas/Monitoramento.jsx";
+import Notas from "./telas/Notas.jsx";
+import Agentes from "./telas/Agentes.jsx";
+import Gerencia from "./telas/Gerencia.jsx";
+import { TELAS } from "./moldura/Capsula.jsx";
 import usePainel from "./dados/usePainel.js";
 import { resumoDoDia } from "./dados/resumo.js";
 import "./moldura/Moldura.css";
 
 const guardado = (chave, padrao) => { try { return localStorage.getItem(chave) || padrao; } catch { return padrao; } };
 const guardar = (chave, valor) => { try { localStorage.setItem(chave, valor); } catch { /* sem armazenamento: só não lembra */ } };
-const telaDoEndereco = () => (window.location.hash.replace("#", "") === "correio" ? "correio" : "visao");
+const CHAVES = TELAS.filter((t) => t !== "separador").map((t) => t.chave);
+const telaDoEndereco = () => { const h = window.location.hash.replace("#", ""); return CHAVES.includes(h) ? h : "visao"; };
+const DE_EMAIL = ["correio", "urgencia", "enviados"];
 
 export default function App() {
   const { estado, correio, erro, lidoEm } = usePainel();
@@ -41,11 +48,15 @@ export default function App() {
       <div className="casco">
         <Capsula tela={tela} irPara={irPara} admin={!!estado?.admin} agente={estado?.agente}
           contagem={{ entrada: correio?.contagem?.entrada_nao_lidos, urgencia: correio?.contagem?.urgencia }} />
-        <Topo modo={tela === "correio" ? "emails" : "inicio"} agente={estado?.agente} tema={tema}
+        <Topo modo={DE_EMAIL.includes(tela) ? "emails" : "inicio"} agente={estado?.agente} tema={tema}
           trocarTema={() => setTema(tema === "escuro" ? "claro" : "escuro")} avisos={avisos} />
-        {tela === "correio"
-          ? <CaixaEntrada key="correio" correio={correio} estado={estado} />
-          : <VisaoGeral key="visao" r={r} agente={estado?.agente} irPara={irPara} />}
+        {DE_EMAIL.includes(tela) && <CaixaEntrada key={tela} pastaInicial={tela === "correio" ? "entrada" : tela} correio={correio} estado={estado} />}
+        {tela === "visao" && <VisaoGeral r={r} agente={estado?.agente} irPara={irPara} />}
+        {tela === "robo" && <Robo estado={estado} r={r} />}
+        {tela === "maquinas" && <Monitoramento estado={estado} />}
+        {tela === "fila" && <Notas irPara={irPara} />}
+        {tela === "agentes" && <Agentes />}
+        {tela === "gerencia" && <Gerencia />}
         <Rodape resumo={r} demo={!!estado?.demo} lidoEm={lidoEm} />
       </div>
     </>

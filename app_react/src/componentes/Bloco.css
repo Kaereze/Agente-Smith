@@ -1,0 +1,26 @@
+.tela-cab { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.tela-cab-texto h2 { margin: 0; font-size: 28px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
+.tela-cab-texto p { margin: 4px 0 0; color: var(--apagado); font-size: 13.5px; }
+.tela-cab-espaco { flex: 1; }
+.bolinha-grande { width: 48px; height: 48px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(150deg, var(--verde), var(--verde-esc)); }
+
+.pergunta { display: grid; gap: 3px; }
+.pergunta small { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--verde-texto); }
+.pergunta h3 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; }
+.resposta { margin: 0; font-size: 15px; color: var(--texto2); }
+.resposta b { color: var(--texto); }
+.como-ler { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding-top: 10px; border-top: 1px solid var(--linha); font-size: 12.5px; color: var(--apagado); }
+
+.bolinha { flex: none; border-radius: 50%; display: grid; place-items: center; }
+.bolinha.verde { background: var(--verde-suave); color: var(--verde-texto); }
+.bolinha.vermelha { background: var(--vermelho-suave); color: var(--vermelho-texto); }
+.bolinha.ambar { background: var(--ambar-suave); color: var(--ambar-texto); }
+.bolinha.azul { background: var(--azul-suave); color: var(--azul-texto); }
+.bolinha.cinza { background: var(--cinza); color: var(--texto2); }
+
+.abas-pilula { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--vidro-forte); flex: none; }
+.abas-pilula button { height: 34px; padding: 0 16px; border-radius: 999px; color: var(--texto2); font-weight: 500; white-space: nowrap; }
+.abas-pilula button[aria-pressed="true"] { background: var(--sel-fundo); color: var(--sel-texto); font-weight: 600; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .45); }
+
+.bloco { min-width: 0; padding: 20px 22px; display: grid; gap: 14px; align-content: start; }

@@ -2,15 +2,9 @@
 .principal.carregando { display: grid; place-items: center; color: var(--apagado); }
 .titulo h2 { margin: 0; font-size: 32px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; }
 .titulo p { margin: 6px 0 20px; color: var(--apagado); max-width: 72ch; }
+:where(.painel-grade) > .bloco { grid-column: span 12; }
 .painel-grade { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; }
-.bloco { grid-column: span 12; min-width: 0; padding: 20px 22px; display: grid; gap: 14px; align-content: start; }
 .b-largo { grid-column: span 7; } .b-estreito { grid-column: span 5; } .b-meio { grid-column: span 6; }
-.pergunta { display: grid; gap: 3px; }
-.pergunta small { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--verde-texto); }
-.pergunta h3 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; }
-.resposta { margin: 0; font-size: 15px; color: var(--texto2); }
-.resposta b { color: var(--texto); }
-.como-ler { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding-top: 10px; border-top: 1px solid var(--linha); font-size: 12.5px; color: var(--apagado); }
 
 .resumo { grid-column: span 12; padding: 18px 22px; display: grid; gap: 14px; }
 .estado-geral { justify-self: start; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--verde-texto);
@@ -51,10 +45,6 @@
 .lista-atencao { display: grid; gap: 8px; }
 .atencao-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--vidro-forte); }
 .atencao-item small { display: block; color: var(--apagado); font-size: 12.5px; }
-.bolinha { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
-.bolinha.vermelha { background: var(--vermelho-suave); color: var(--vermelho-texto); }
-.bolinha.ambar { background: var(--ambar-suave); color: var(--ambar-texto); }
-.bolinha.azul { background: var(--azul-suave); color: var(--azul-texto); }
 
 @media (max-width: 1279px) {
   .b-largo { grid-column: span 12; } .b-estreito, .b-meio { grid-column: span 6; }

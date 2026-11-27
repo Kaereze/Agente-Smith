@@ -1,0 +1,33 @@
+.faixa-alerta { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin-bottom: 16px; }
+.faixa-alerta > div { flex: 1; min-width: 0; }
+.faixa-alerta small { display: block; color: var(--texto2); font-size: 13px; }
+.robo-recado { margin: -6px 0 14px; color: var(--verde-texto); font-weight: 600; }
+.robo-grade { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; }
+.robo-lado { display: grid; gap: 18px; align-content: start; }
+.fila, .registro-lista { display: grid; gap: 6px; }
+.fila-linha { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 12px; border-radius: 16px; background: var(--vidro-forte); }
+.registro-lista .fila-linha { grid-template-columns: 48px auto minmax(0, 1fr); }
+.fila-texto { display: grid; min-width: 0; }
+.fila-texto b { font-weight: 600; }
+.fila-texto small { color: var(--apagado); font-size: 12.5px; overflow-wrap: anywhere; }
+.registro-hora { font-size: 12.5px; font-weight: 600; color: var(--apagado); }
+.etapas { display: flex; gap: 3px; }
+.etapas i { width: 22px; height: 6px; border-radius: 3px; background: var(--cinza); }
+.etapas i.feita { background: var(--verde); }
+.etapas i.agora { background: var(--azul-texto); }
+.vazio-fila { color: var(--apagado); margin: 6px 0; }
+.mais { font-size: 13px; font-weight: 600; color: var(--verde-texto); }
+.dois-numeros { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dois-numeros > div { display: grid; gap: 2px; padding: 14px 16px; border-radius: 18px; background: var(--vidro-forte); }
+.dois-numeros small { font-size: 12.5px; font-weight: 600; color: var(--texto2); }
+.dois-numeros b { font-size: 30px; font-weight: 600; line-height: 1.1; }
+.dois-numeros b.verde { color: var(--verde-texto); }
+.fato-linha { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--vidro-forte); }
+.fato-linha small { display: block; color: var(--apagado); font-size: 12.5px; }
+.registro-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.busca-pilula { width: 260px; max-width: 100%; height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 999px;
+  background: var(--vidro-forte); border: 1px solid var(--vidro-borda); color: var(--apagado); }
+.busca-pilula input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--texto); }
+
+@media (max-width: 1279px) { .robo-grade { grid-template-columns: minmax(0, 1fr); } .robo-lado { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 760px) { .robo-lado, .dois-numeros { grid-template-columns: minmax(0, 1fr); } .fila-linha { grid-template-columns: auto minmax(0, 1fr); } .etapas { grid-column: 2; } }

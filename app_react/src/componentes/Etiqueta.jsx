@@ -10,7 +10,7 @@ export default function Etiqueta({ children, tipo = "verde", icone, contorno }) 
   const [fundo, cor] = CORES[tipo];
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5, height: 22, padding: "0 9px", borderRadius: 999, whiteSpace: "nowrap",
+      display: "inline-flex", alignItems: "center", gap: 5, minHeight: 22, padding: "2px 9px", borderRadius: 11, lineHeight: 1.3, maxWidth: "100%", overflowWrap: "anywhere",
       fontSize: 12, fontWeight: 600, color: cor, background: contorno ? "transparent" : fundo, border: contorno ? `1px solid ${cor}` : 0,
     }}>
       {icone && <Icone nome={icone} tamanho={12} />}{children}
