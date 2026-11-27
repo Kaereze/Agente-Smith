@@ -9,7 +9,9 @@ O que mudou em cada entrega do robô Solicitações NF e do Painel Fiscal, da ma
 - Entradas antigas não são reescritas; só se acrescenta no topo. O detalhe de cada dia fica no diário do
   [Segundo Cérebro](Segundo%20C%C3%A9rebro/4%20Hist%C3%B3rico/Di%C3%A1rio/).
 
-## [não entregue] — 2026-11-27 (tela nova em React: 1ª parte, desligada nos PCs)
+## [2026.11.27] — 2026-11-27 (a tela do Painel toda em React, no vidro verde e creme; a tela antiga saiu)
+
+Ao atualizar, cada PC reinicia o Painel e já abre a tela nova. O motor (Outlook, planilhas, robô, servidor) não mudou.
 
 - **Mudou (feito em 20/11, nunca entregue; trazido para esta ramificação em 27/11):** Monitoramento e Agentes do Smith também aparecem no PC de casa do João, que não é o principal. Nova lista `painel.pcs_admin` no `config.json` (nome do computador; hoje `DESKTOP-7J2E10S`): ali o João escolhe a si mesmo como operador e ganha as abas de admin. O PC **não** passa a copiar nem enviar e-mail (isso continua sendo o papel "principal"), e nos outros PCs nada muda: o servidor confere o nome do computador (`pc_de_admin` em `src/app_servidor.py`).
 
